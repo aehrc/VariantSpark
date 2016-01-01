@@ -1,7 +1,6 @@
 package au.csiro.variantspark.genomics.reprod
 
 import au.csiro.variantspark.genomics._
-import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 import java.util.zip.GZIPInputStream
 import scala.io.Source
 import java.io.FileInputStream
@@ -11,62 +10,28 @@ import scala.collection.mutable.Buffer
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
 import au.csiro.variantspark.genomics.ContigSet
+import org.apache.commons.math3.random.RandomGenerator
+
 
 /**
- * Create crossing over points based on the provided recombination frequency 
- * distrbution. Which can be loaded from a bed file.
+ * Recombination map for a single contig
  */
-
-// lets split the distribution by contig
-// in general the distribution should just be the probability of splitting at each of the bins 
-// the specification of each bin
-
-/**
- * 
- */
-case class ContigRecombinationMap(val bins:Array[Long], val recombFreq:Array[Double]) {
-  assert(bins.length == recombFreq.length + 1)
-  val p = recombFreq.map(rf => rf*1e-8).toArray
-  
-  /**
-   * Draw splits from this distribution
-   */
-  def drawSplits(rng:XorShift1024StarRandomGenerator):List[Long] = {
-    
-    // mutable version for better performance
-    val result = ListBuffer[Long]()
-    for (i <- 0 until p.length) {
-      if ( p(i)*(bins(i+1)-bins(i)) >= rng.nextDouble()) {
-        result+= splitFromBin(i, rng)
-      }
-    }
-    result.toList
-  }
-  
+case class ContigRecombinationMap(val bins:Array[Long], val recombFreq:Array[Double]) {  
   def length  = bins.last
-  
-  /**
-   * Draw a random positon from the bin
-   */
-  private def splitFromBin(binIndex: Int, rng:XorShift1024StarRandomGenerator):Long =  {
-    bins(binIndex) + (bins(binIndex + 1) - bins(binIndex))/2
-  }
 }
 
+/**
+ * Recombination map for a set of contigs
+ */
 case class RecombinationMap(val contigMap: Map[ContigID, ContigRecombinationMap])  {
-   assert(contigMap.isInstanceOf[Serializable])
- 
-  def crossingOver(rng: XorShift1024StarRandomGenerator):Map[ContigID, MeiosisSpec] = {
-    contigMap.mapValues(cm => MeiosisSpec(cm.drawSplits(rng), rng.nextInt(2)))
-  }
-   
+  
   def toContigSpecSet:ContigSet = {
     val contigSpecs = contigMap.map({ case (kid, krm) => new ContigSpec(kid, krm.length)});
     ContigSet.apply(contigSpecs.toSeq);
   }
 
   def filter(contigSet: ContigSet):RecombinationMap = {
-     RecombinationMap(Map(contigMap.filterKeys(contigSet.contigIds.contains(_)).toArray: _*))
+     RecombinationMap(contigMap.filterKeys(contigSet.contigIds.contains(_)))
    }
 }
 
@@ -97,8 +62,7 @@ object RecombinationMap {
     }
     val mapLike = mutableContigMap
       .mapValues(binsAndRates => ContigRecombinationMap(binsAndRates._1.toArray, binsAndRates._2.toArray))
-    // make a copy to  create a serializable Map
-    RecombinationMap(Map(mapLike.toArray: _*))
+    RecombinationMap(mapLike.toMap)
   }
   
   def fromBedFile(pathToBedFile: String): RecombinationMap = {

@@ -16,10 +16,61 @@ import scala.collection.mutable.ListBuffer
 import au.csiro.variantspark.genomics.reprod.RecombinationMap
 import au.csiro.variantspark.genomics.reprod.MeiosisSpec
 import au.csiro.variantspark.genomics.reprod.MeiosisSpecFactory
+import au.csiro.variantspark.genomics.reprod.ContigRecombinationMap
 
+case class ContigRecombinationDistribution(val bins:Array[Long], val p:Array[Double]) {
+  assert(bins.length == p.length + 1)  
+  /**
+   * Draw splits from this distribution
+   */
+  def drawSplits(rng:RandomGenerator):List[Long] = {
+    
+    // mutable version for better performance
+    val result = ListBuffer[Long]()
+    for (i <- 0 until p.length) {
+      if ( p(i)*(bins(i+1)-bins(i)) >= rng.nextDouble()) {
+        result+= splitFromBin(i, rng)
+      }
+    }
+    result.toList
+  }
+  def length  = bins.last
+  /**
+   * Draw a random positon from the bin
+   */
+  private def splitFromBin(binIndex: Int, rng:RandomGenerator):Long =  {
+    bins(binIndex) + (bins(binIndex + 1) - bins(binIndex))/2
+  }
+}
 
-case class HapMapMeiosisSpecFactory(map: RecombinationMap, seed: Long = defRng.nextLong) extends MeiosisSpecFactory {
+object ContigRecombinationDistribution {
+
+  val conversionFactor = 1e-8
+  def fromRecombiationMap(crm:ContigRecombinationMap): ContigRecombinationDistribution = 
+        ContigRecombinationDistribution(crm.bins, crm.recombFreq.map(rf => rf*conversionFactor).toArray)
+}
+
+case class RecombinationDistribution(val contigMap: Map[ContigID, ContigRecombinationDistribution])  {
+   assert(contigMap.isInstanceOf[Serializable])
+ 
+  def crossingOver(rng: RandomGenerator):Map[ContigID, MeiosisSpec] = {
+    contigMap.mapValues(cm => MeiosisSpec(cm.drawSplits(rng), rng.nextInt(2)))
+  }
+}
+
+object RecombinationDistribution {
+  def fromRecombiationMap(rm: RecombinationMap): RecombinationDistribution = 
+     RecombinationDistribution(Map(rm.contigMap.mapValues(ContigRecombinationDistribution.fromRecombiationMap).toArray: _*))
+}
+
+case class HapMapMeiosisSpecFactory(map: RecombinationDistribution, seed: Long) extends MeiosisSpecFactory {
   val rng = new XorShift1024StarRandomGenerator(seed)  
   def createMeiosisSpec(): Map[ContigID, MeiosisSpec] = map.crossingOver(rng).toSeq.toMap
 }
+
+object HapMapMeiosisSpecFactory {
+  def apply(map: RecombinationMap, seed: Long = defRng.nextLong):HapMapMeiosisSpecFactory = 
+    HapMapMeiosisSpecFactory(RecombinationDistribution.fromRecombiationMap(map), seed)
+}
+
 
