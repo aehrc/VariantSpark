@@ -1,0 +1,163 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>au.csiro.obr17q</groupId>
+	<artifactId>variant-spark</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
+	<name>${project.artifactId}</name>
+	<description>Machine learning for VCF</description>
+	<inceptionYear>2010</inceptionYear>
+	<licenses>
+		<license>
+			<name>My License</name>
+			<url>http://....</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+
+	<properties>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+		<encoding>UTF-8</encoding>
+		<scala.tools.version>2.10</scala.tools.version>
+		<scala.version>2.10.4</scala.version>
+		<skipTests>true</skipTests>
+	</properties>
+	<repositories>
+		<!-- added to get hold of jms.jar -->
+		<repository>
+			<id>repository.jboss.org-public</id>
+			<name>JBoss repository</name>
+			<url>https://repository.jboss.org/nexus/content/groups/public</url>
+		</repository>
+		<repository>
+			<id>pbdava-nexus-release</id>
+			<name>Internal Releases</name>
+			<url>http://pbdava-dev.it.csiro.au:8081/nexus/content/repositories/releases</url>
+		</repository>
+		<repository>
+			<id>pbdava-nexus-snapshot</id>
+			<name>Internal Releases</name>
+			<url>http://pbdava-dev.it.csiro.au:8081/nexus/content/repositories/snapshots</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>pbdava-nexus-thirdparty</id>
+			<name>ThirdParty</name>
+			<url>http://pbdava-dev.it.csiro.au:8081/nexus/content/repositories/thirdparty</url>
+		</repository>
+	</repositories>
+	<dependencies>
+		<dependency>
+			<groupId>org.scala-lang</groupId>
+			<artifactId>scala-library</artifactId>
+			<version>${scala.version}</version>
+			<scope>provided</scope>
+		</dependency>
+                <dependency>
+                        <groupId>au.csiro.pbdava.sparkle</groupId>
+                        <artifactId>sparkle-core</artifactId>
+                        <version>0.2.0-SNAPSHOT</version>
+                        <exclusions>
+                                <exclusion>
+                                        <groupId>org.apache.spark</groupId>
+                                        <artifactId>spark-sql_2.10</artifactId>
+                                </exclusion>
+                                <exclusion>
+                                        <groupId>org.apache.spark</groupId>
+                                        <artifactId>spark-core_2.10</artifactId>
+                                </exclusion>
+                                <exclusion>
+                                        <groupId>org.scala-lang</groupId>
+                                        <artifactId>scala-library</artifactId>
+                                </exclusion>
+                                <exclusion>
+                                        <groupId>it.unimi.dsi</groupId>
+                                        <artifactId>fastutil</artifactId>
+                                </exclusion>
+                        </exclusions>
+                </dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>it.unimi.dsi</groupId>
+			<artifactId>fastutil</artifactId>
+			<version>7.0.8</version>
+		</dependency>
+		<dependency>
+			<groupId>com.github.tototoshi</groupId>
+			<artifactId>scala-csv_2.10</artifactId>
+			<version>1.2.2</version>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<!--  sourceDirectory>src/main/scala</sourceDirectory-->
+		<!--  testSourceDirectory>src/test/scala</testSourceDirectory -->
+		<plugins>
+			<plugin>
+				<groupId>org.scala-tools</groupId>
+				<artifactId>maven-scala-plugin</artifactId>
+				<version>2.15.2</version>
+				<executions>
+					<execution>
+						<id>scala-compile-first</id>
+						<phase>process-resources</phase>
+						<goals>
+						    <goal>add-source</goal>
+							<goal>compile</goal>
+						</goals>
+					</execution>									
+					<execution>
+						<id>scala-test-compile</id>
+						<phase>process-test-resources</phase>
+						<goals>
+							<goal>testCompile</goal>
+						</goals>
+					</execution>
+				</executions>				
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.13</version>
+				<configuration>
+					<skipTests>${skipTests}</skipTests>
+					<useFile>false</useFile>
+					<disableXmlReport>true</disableXmlReport>
+					<!-- If you have classpath issue like NoDefClassError,... -->
+					<!-- useManifestOnlyJar>false</useManifestOnlyJar -->
+					<includes>
+						<include>**/*Suite.*</include>
+					</includes>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>2.3</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<shadedArtifactAttached>true</shadedArtifactAttached>
+					<shadedClassifierName>all</shadedClassifierName>
+				</configuration>
+			</plugin>
+
+		</plugins>
+	</build>
+</project>
