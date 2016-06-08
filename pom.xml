@@ -64,11 +64,7 @@
                         <exclusions>
                                 <exclusion>
                                         <groupId>org.apache.spark</groupId>
-                                        <artifactId>spark-sql_2.10</artifactId>
-                                </exclusion>
-                                <exclusion>
-                                        <groupId>org.apache.spark</groupId>
-                                        <artifactId>spark-core_2.10</artifactId>
+                                        <artifactId>*</artifactId>
                                 </exclusion>
                                 <exclusion>
                                         <groupId>org.scala-lang</groupId>
@@ -80,6 +76,22 @@
                                 </exclusion>
                         </exclusions>
                 </dependency>
+		<dependency>
+			<groupId>org.apache.spark</groupId>
+			<artifactId>spark-core_2.10</artifactId>
+			<version>1.6.1</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.tachyonproject</groupId>
+					<artifactId>*</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.spark</groupId>
+			<artifactId>spark-mllib_2.10</artifactId>
+			<version>1.6.1</version>
+		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
@@ -96,6 +108,13 @@
 			<artifactId>scala-csv_2.10</artifactId>
 			<version>1.2.2</version>
 		</dependency>
+		<!-- http://mvnrepository.com/artifact/com.github.samtools/htsjdk -->
+		<dependency>
+		    <groupId>com.github.samtools</groupId>
+		    <artifactId>htsjdk</artifactId>
+		    <version>2.4.1</version>
+		</dependency>
+		
 	</dependencies>
 
 	<build>

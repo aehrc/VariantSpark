@@ -9,7 +9,7 @@ import au.csiro.pbdava.ssparkle.common.arg4j.AppRunner
 
 class TestCmd extends ArgsApp {
 
-  @Option(name="-if", required=false)
+  @Option(name="-if", required=false, usage="This is input files", aliases=Array("--input-files"))
   val inputFile:String = null
 
   @Option(name="-l", required=false)
@@ -18,6 +18,8 @@ class TestCmd extends ArgsApp {
   
   @Override
   def run():Unit = {
+   
+    
     println("Hello Word: " + inputFile + ", " + limit)
   }
 }
