@@ -1,2 +1,4 @@
 #!/bin/bash
-spark-submit --class au.csiro.variantspark.cli.VariantSparkApp target/variant-spark-0.0.1-SNAPSHOT-all.jar "$@"
+spark-submit --class au.csiro.variantspark.cli.VariantSparkApp \
+ --driver-class-path ./conf \
+ target/variant-spark-0.0.1-SNAPSHOT-all.jar "$@"

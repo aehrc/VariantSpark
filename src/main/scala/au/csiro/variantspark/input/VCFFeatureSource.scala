@@ -5,14 +5,16 @@ import htsjdk.variant.variantcontext.Genotype
 import htsjdk.variant.variantcontext.VariantContext
 import collection.JavaConverters._
 
-class VCFFeatureSource(vcfSource:VCFSource) {
-  def features():RDD[Array[Int]] = vcfSource.genotypes().map(VCFFeatureSource.variantToFeature(VCFFeatureSource.hammingConversion)) 
+class VCFFeatureSource(vcfSource:VCFSource) extends FeatureSource {
+  
+  override lazy val rowNames:List[String] = vcfSource.header.getGenotypeSamples().asScala.toList
+  override def features():RDD[Feature] = vcfSource.genotypes().map(VCFFeatureSource.variantToFeature(VCFFeatureSource.hammingConversion)) 
 }
 
 object VCFFeatureSource {
   
   def apply(vcfSource:VCFSource) = new VCFFeatureSource(vcfSource)
   
-  private def variantToFeature(f:Genotype=>Int)(vc:VariantContext) =  vc.getGenotypes.iterator().asScala.map(f).toArray 
+  private def variantToFeature(f:Genotype=>Int)(vc:VariantContext) =  Feature(vc.getContig() + "_" + vc.getEnd(), vc.getGenotypes.iterator().asScala.map(f).toArray)
   private def hammingConversion(gt:Genotype) = if (gt.isHomRef()) 0 else if (gt.isHomVar()) 2 else 1
 }

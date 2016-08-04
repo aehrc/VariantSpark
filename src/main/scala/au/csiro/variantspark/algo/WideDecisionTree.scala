@@ -11,6 +11,7 @@ import org.apache.spark.mllib.linalg.DenseVector
 import org.apache.spark.mllib.linalg.SparseVector
 import scala.collection.mutable.MutableList
 import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.Logging
 
 
 
@@ -144,7 +145,7 @@ case class DecisionTreeNode(variableIndex: Long, splitPoint: Double, majorityLab
 
 }
 
-class WideDecisionTreeModel(val rootNode: DecisionTreeNode) {
+class WideDecisionTreeModel(val rootNode: DecisionTreeNode) extends  Logging {
 
     def predict(data: RDD[Vector]): Array[Int] = predictIndexed(data.zipWithIndex())
 
@@ -159,7 +160,7 @@ class WideDecisionTreeModel(val rootNode: DecisionTreeNode) {
     }
 
     val indexes = mapTrees(rootNode).toSet
-    println(s"Collecting data: ${indexes.size}")
+    logDebug(s"Collecting data: ${indexes.size}")
     val br_indexes = data.context.broadcast(indexes)
     // now collect values of selected index
     val pointsAsList = data.filter { case (v, i) => br_indexes.value.contains(i) }.collect()
