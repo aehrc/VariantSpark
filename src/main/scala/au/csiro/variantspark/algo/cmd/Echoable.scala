@@ -9,15 +9,18 @@ trait Echoable {
   @Option(name="-s", required=false, usage="Be silent", aliases=Array("--silent"))
   val beSilent:Boolean  = false
   
+  def isSilent = beSilent
+  def isEcho = !isSilent
+  def isVerbose = !beSilent && beVerbose
   
   def echo(msg: =>String) {
-    if (!beSilent) {
+    if (isEcho) {
       println(msg)
     }
   }
 
   def verbose(msg: =>String) {
-    if (!beSilent && beVerbose) {
+    if (isVerbose) {
       println(msg)      
     }
   }
