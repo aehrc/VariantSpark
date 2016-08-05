@@ -30,8 +30,8 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging {
   @Option(name="-fc", required=false, usage="Feature column", aliases=Array("--feature-column"))
   val featureColumn:String = "22_16051249"
   
-  @Option(name="-f", required=false, usage="Number od features to print", aliases=Array("--n-features"))
-  val limit:Int = 20
+  @Option(name="-nv", required=false, usage="Number od variables to print", aliases=Array("--n-variables"))
+  val nVariables:Int = 20
 
   @Option(name="-t", required=false, usage="Number of tree to build", aliases=Array("--n-trees") )
   val nTrees:Int = 5
@@ -44,7 +44,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging {
   def run():Unit = {
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
    
-    echo(s"Finding  ${limit}  most important features using random forest")
+    echo(s"Finding  ${nVariables}  most important features using random forest")
 
     echo(s"Loading header from: ${inputFile}")
     val vcfSource = VCFSource(sc.textFile(inputFile))
@@ -59,9 +59,11 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging {
     echo(s"Loaded labels: ${dumpList(labels.toList)}")
     
     echo(s"Loading features from: ${inputFile}")
+    
     val inputData = source.features().map(_.toVector).zipWithIndex().cache()
     val totalVariables = inputData.count()
     val variablePerview = inputData.map({case (f,i) => f.label}).take(defaultPreviewSize).toList
+    
     echo(s"Loaded variables: ${dumpListHead(variablePerview, totalVariables)}")    
 
     if (isVerbose) {
@@ -73,22 +75,21 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging {
     val rf = new WideRandomForest()
     val traningData = inputData.map{ case (f, i) => (f.values, i)}
     val result  = rf.run(traningData, labels, nTrees)  
-        
+    
+    echo(s"Random forest oob accuracy: ${result.oobError}") 
     // build index for names
     val index = inputData.map({case (f,i) => (i, f.label)}).collectAsMap()
-    val varImportance = result.variableImportance.toSeq.sortBy(-_._2).take(limit).map({ case (i, importance) => (index(i), importance)})
+    val varImportance = result.variableImportance.toSeq.sortBy(-_._2).take(nVariables).map({ case (i, importance) => (index(i), importance)})
     
     if (isEcho && outputFile!=null) {
       echo("Variable importance preview")
-      varImportance.take(math.min(limit, defaultPreviewSize)).foreach({case(label, importance) => echo(s"${label}: ${importance}")})
+      varImportance.take(math.min(nVariables, defaultPreviewSize)).foreach({case(label, importance) => echo(s"${label}: ${importance}")})
     }
     
     LoanUtils.withCloseable(if (outputFile != null ) CSVWriter.open(outputFile) else CSVWriter.open(System.out)) { writer =>
       writer.writeRow(List("variable","importance"))
       writer.writeAll(varImportance.map(t => t.productIterator.toSeq))
     }
-    
-    
   }
 }
 

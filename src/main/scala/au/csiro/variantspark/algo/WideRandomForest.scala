@@ -11,7 +11,7 @@ import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap
 import org.apache.spark.Logging
 
-case class WideRandomForestModel(trees: List[WideDecisionTreeModel], val labelCount:Int) {
+case class WideRandomForestModel(trees: List[WideDecisionTreeModel], val labelCount:Int, oobError:Double) {
   def printout() {
     trees.zipWithIndex.foreach {
       case (tree, index) =>
@@ -97,8 +97,8 @@ class WideRandomForest extends Logging {
       logDebug(s"Tree error: $error")
       (tree, error)
     }
-    val error = trees.map(_._2).sum.toDouble / ntrees
-    logDebug(s"Error: $error")
-    WideRandomForestModel(trees.map(_._1).toList, labelCount)
+    val oobError = trees.map(_._2).sum.toDouble / ntrees
+    logDebug(s"Error: oobError")
+    WideRandomForestModel(trees.map(_._1).toList, labelCount, oobError)
   }
 }
