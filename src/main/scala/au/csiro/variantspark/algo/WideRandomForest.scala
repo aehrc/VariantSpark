@@ -69,7 +69,7 @@ class WideRandomForest extends Logging {
 
     val labelCount = labels.max + 1
     val oobVotes = Array.fill(dims)(Array.fill(labelCount)(0))
-    logDebug("Features" + features.toDouble)
+    logDebug("Features: " + features.toDouble)
     val ntryFraction = if (params.nTryFraction.isNaN ) Math.sqrt(features.toDouble)/features.toDouble else params.nTryFraction
     logDebug(s"RF: Using ntryfraction: $ntryFraction")
     logDebug(s"RF: i.e. trying ${(features * ntryFraction).toInt} features per split")

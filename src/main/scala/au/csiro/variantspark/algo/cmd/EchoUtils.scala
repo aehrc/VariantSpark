@@ -14,7 +14,7 @@ object EchoUtils {
 
   def dumpListHead(l:List[_], totalSize:Long, maxSize:Int = defaultPreviewSize):String = {
 
-      val strList = if (l.size <= maxSize) l.map(_.toString) else List(defaultElipses) ::: l.take(maxSize - 1).map(_.toString) 
+      val strList = if (l.size >= maxSize) l.map(_.toString) else List(defaultElipses) ::: l.take(maxSize - 1).map(_.toString) 
       strList.mkString("[", ",", "]") + s" total: ${totalSize}"
   }
   
