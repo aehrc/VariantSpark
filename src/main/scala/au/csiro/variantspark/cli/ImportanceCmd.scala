@@ -18,17 +18,18 @@ import org.apache.commons.lang3.builder.ToStringBuilder
 import au.csiro.variantspark.algo.cmd.EchoUtils._
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 import com.github.tototoshi.csv.CSVWriter
+import au.csiro.pbdava.ssparkle.common.arg4j.TestArgs
 
-class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging {
+class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
-  @Option(name="-if", required=false, usage="This is input files", aliases=Array("--input-file"))
-  val inputFile:String = "data/small.vcf"
+  @Option(name="-if", required=true, usage="This is input files", aliases=Array("--input-file"))
+  val inputFile:String = null
   
-  @Option(name="-ff", required=false, usage="Features file", aliases=Array("--feature-file"))
-  val featuresFile:String = "data/small-labels.csv"
+  @Option(name="-ff", required=true, usage="Features file", aliases=Array("--feature-file"))
+  val featuresFile:String = null
 
-  @Option(name="-fc", required=false, usage="Feature column", aliases=Array("--feature-column"))
-  val featureColumn:String = "22_16051249"
+  @Option(name="-fc", required=true, usage="Feature column", aliases=Array("--feature-column"))
+  val featureColumn:String = null
   
   @Option(name="-nv", required=false, usage="Number od variables to print", aliases=Array("--n-variables"))
   val nVariables:Int = 20
@@ -37,8 +38,10 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging {
   val nTrees:Int = 5
 
   @Option(name="-of", required=false, usage="Output file", aliases=Array("--output-file") )
-  val outputFile:String = "target/output.csv"
+  val outputFile:String = null
 
+  @Override
+  def testArgs = Array("-if", "data/small.vcf", "-ff", "data/small-labels.csv", "-fc", "22_16051249")
   
   @Override
   def run():Unit = {
