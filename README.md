@@ -17,13 +17,13 @@ variant-spark requires an existing spark 1.6+ installation (either a local one o
 
 To run variant-spark use:
 
-	./variant-spark [--spark spark-options* --] [command] command-options*
+	./variant-spark [--spark <spark-options>* --] [<command>] <command-options>*
 
 In order to obtain the list of the available commands use:
 
 	./variant-spark -h
 	
-In order to obtain helo for a specific command (for example `importance`) use:
+In order to obtain help for a specific command (for example `importance`) use:
 
 	./variant-spark importance -h
 
