@@ -19,6 +19,7 @@ import au.csiro.variantspark.algo.cmd.EchoUtils._
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 import com.github.tototoshi.csv.CSVWriter
 import au.csiro.pbdava.ssparkle.common.arg4j.TestArgs
+import org.apache.hadoop.fs.FileSystem
 
 class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
@@ -45,8 +46,9 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
   
   @Override
   def run():Unit = {
+    implicit val fs = FileSystem.get(sc.hadoopConfiguration)  
+    logDebug(s"Runing with filesystem: ${fs}, home: ${fs.getHomeDirectory}")
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
-   
     echo(s"Finding  ${nVariables}  most important features using random forest")
 
     echo(s"Loading header from: ${inputFile}")

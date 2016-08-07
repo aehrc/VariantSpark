@@ -13,7 +13,8 @@ trait SparkApp extends Logging {
   Logger.getLogger("akka").setLevel(Level.OFF)
   
   lazy val conf = { 
-      val conf = new SparkConf().setAppName(getClass().getSimpleName)
+      val conf = new SparkConf(!System.getProperty("sparkle.local","false").toBoolean)
+        .setAppName(getClass().getSimpleName)
       if (conf.contains("spark.master")) conf else conf.setMaster(defaultMasterUrl) 
     } 
     //.set("spark.shuffle.memoryFraction", "0.2")
