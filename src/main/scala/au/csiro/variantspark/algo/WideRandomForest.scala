@@ -66,8 +66,9 @@ class WideRandomForest extends Logging {
     //dims seems to be the number of samples, not number of dimensions?
     val dims = labels.length
     val features = data.count().toInt
-
     val labelCount = labels.max + 1
+    
+    
     val oobVotes = Array.fill(dims)(Array.fill(labelCount)(0))
     logDebug("Features: " + features.toDouble)
     val ntryFraction = if (params.nTryFraction.isNaN ) Math.sqrt(features.toDouble)/features.toDouble else params.nTryFraction
