@@ -17,7 +17,7 @@ variant-spark requires an existing spark 1.6+ installation (either a local one o
 
 To run variant-spark use:
 
-	./variant-spark [--spark <spark-options>* --] [<command>] <command-options>*
+	./variant-spark [(--spark|--local) <spark-options>* --] [<command>] <command-options>*
 
 In order to obtain the list of the available commands use:
 
@@ -33,10 +33,16 @@ You can use `--spark` maker before the command to pass any `spark-submit` option
 	
 Please, note that `--spark` needs to be the first argument of `variant-spark`
 
+You can also run variant-spark in the `--local` mode. In this mode variant-spark will ignore any Hadoop and Spark configuration files and run in the local mode for both Hadooop and Spark. In particular in this mode all file paths are interpreted as local filesystem paths. Also any parameters passed after `--local` and before `--` are ignored. For example:
+
+	./variant-spark --local -- importance data/small.vcf -ff data/small-labels.csv -fc 22_16051249 -v -t 5
+
+Note: The difference between running in `--local` mode and in `--spark` with `local` master is that in the latter case spark will  use the hadoop filesystem configuration and the input files need to be copied to this filesystem (e.g. HDFS) 
+
 
 ### Running examples
 
-TBP
+
 
 
 	
