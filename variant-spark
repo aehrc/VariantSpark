@@ -27,5 +27,7 @@ if [[ "${RUNNER}" == "spark" ]]; then
  	"${SPARK_PARAMS[@]}" \
  	${PWD}/target/variant-spark-0.0.1-SNAPSHOT-all.jar "$@"
 else
-	java -cp "${PWD}/conf:${PWD}/target/variant-spark-0.0.1-SNAPSHOT-all.jar:/opt/spark/1.6.1/lib/spark-assembly-1.6.1-hadoop2.2.0.jar:/usr/lib/hadoop/lib/*:/usr/lib/hadoop/.//*:/usr/lib/hadoop-hdfs/./:/usr/lib/hadoop-hdfs/lib/*:/usr/lib/hadoop-hdfs/.//*:/usr/lib/hadoop-yarn/lib/*:/usr/lib/hadoop-yarn/.//*:/usr/lib/hadoop-mapreduce/lib/*:/usr/lib/hadoop-mapreduce/.//*"  au.csiro.variantspark.cli.VariantSparkApp "$@"
+	SPARK_ASSEMBLY=$(ls ${SPARK_HOME}/lib/spark-assembly-*.jar)
+	SPARK_CLASSPATH="${PWD}/conf:${PWD}/target/variant-spark-0.0.1-SNAPSHOT-all.jar:${SPARK_ASSEMBLY}:/usr/lib/hadoop/lib/*:/usr/lib/hadoop/.//*:/usr/lib/hadoop-hdfs/./:/usr/lib/hadoop-hdfs/lib/*:/usr/lib/hadoop-hdfs/.//*:/usr/lib/hadoop-yarn/lib/*:/usr/lib/hadoop-yarn/.//*:/usr/lib/hadoop-mapreduce/lib/*:/usr/lib/hadoop-mapreduce/.//*"
+	java -cp "${SPARK_CLASSPATH}"  au.csiro.variantspark.cli.VariantSparkApp "$@"
 fi
