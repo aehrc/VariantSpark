@@ -33,7 +33,7 @@ class FilterCmd extends ArgsApp with TestArgs with SparkApp {
     
     val vcfSource = VCFSource(sc.textFile(inputFile))
     val source  = VCFFeatureSource(vcfSource)
-    val features = source.features().cache()
+    val features = source.features().zipWithIndex().cache()
     val featureCount = features.count()
     println(s"No feautures: ${featureCount}")    
        
