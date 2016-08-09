@@ -15,9 +15,9 @@ import org.apache.spark.mllib.linalg.Vector
 import au.csiro.pbdava.ssparkle.spark.SparkUtils
 
 
-case class SplitInfo(val splitPoint:Int, val gini:Double) 
+case class SplitInfo(val splitPoint:Int, val gini:Double,  val leftGini:Double, val rightGini:Double) 
 
-case class VarSplitInfo(val variableIndex: Long, val splitPoint:Int, val gini:Double) 
+case class VarSplitInfo(val variableIndex: Long, val splitPoint:Int, val gini:Double, val leftGini:Double, val rightGini:Double) 
 
 
 /**
@@ -113,7 +113,7 @@ object WideDecisionTree {
       splitIndices.foreach { i => if (data(i).toInt <= splitPoint) splitLabelCounts(labels(i)) += 1 }
       // TODO: here is where the gini calculation comes
       val (leftGini, rightGini, splitGini) = splitGiniInpurity(splitLabelCounts,totalLabelCounts) 
-      SplitInfo(splitPoint, splitGini)
+      SplitInfo(splitPoint, splitGini, leftGini, rightGini)
     }).reduce((t1,t2)=> if (t1.gini < t2.gini) t1 else t2)   
   }
   
@@ -147,7 +147,7 @@ object WideDecisionTree {
     val data = dataWithIndex._1
     val variableIndex = dataWithIndex._2
     val splitInfos = findSplitsForVariableData(data, br_labels.value, br_splits.value, mTryFactor)
-    splitInfos.map(si => if (si != null) VarSplitInfo(variableIndex, si.splitPoint, si.gini) else null).toArray
+    splitInfos.map(si => if (si != null) VarSplitInfo(variableIndex, si.splitPoint, si.gini, si.leftGini, si.rightGini) else null).toArray
   }
   
   def collectVariablesToMap(data: RDD[(Vector, Long)], variableIndexes:Set[Long]) =  {
@@ -253,14 +253,14 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
 
     // TODO: not sure while this is need
     val dataSize = data.count()
-    val currentSet =  Range(0,labels.length).toArray
+    val currentSet =  Range(0,labels.length).filter(weights(_) > 0).toArray
     
     val br_labels = data.context.broadcast(labels)
     val br_weights = data.context.broadcast(weights)    
     
     val nCategories = labels.max + 1
     val (totalGini, totalLabel) = WideDecisionTree.giniImpurity(currentSet, labels, nCategories)
-    val rootNode = buildSplit(data, List(SubsetInfo(Range(0,labels.length).toArray, totalGini, totalLabel)), br_labels,br_weights, nvarFraction, 0)
+    val rootNode = buildSplit(data, List(SubsetInfo(currentSet, totalGini, totalLabel)), br_labels,br_weights, nvarFraction, 0)
  
     br_labels.destroy()    
     new WideDecisionTreeModel(rootNode.head)
@@ -271,7 +271,7 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
   
       val nCategories = br_labels.value.max + 1
     
-      logInfo(s"Building level ${treeLevel}, splitInfos: ${splitInfos}") 
+      logDebug(s"Building level ${treeLevel}, splitInfos: ${splitInfos}") 
     
       // say for not the criteria are  minNodeSize && notPure && there is giniGain
       
@@ -285,13 +285,13 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
         .foldLeft((List[Option[Int]](),0))({ case ((l,c),includeSplit) => if (includeSplit) ( Some(c) :: l, c + 1)  else (None :: l, c) })
         ._1.reverse
         
-      logInfo(s"Indexed splits to include: ${indexedSplitsToInclude}") 
+      logDebug(s"Indexed splits to include: ${indexedSplitsToInclude}") 
       
       //TODO: if there is not splits to calculate do not call compute splits etc.
       
       val splitsToInclude = indexedSplitsToInclude.zip(splitInfos).filter(_._1.isDefined).map(_._2)
       val splits = splitsToInclude.map(_.indices).toArray
-      logInfo(s"Splits to include: ${splitsToInclude}") 
+      logDebug(s"Splits to include: ${splitsToInclude}") 
    
       
       val bestSplits = SparkUtils.withBrodcast(indexedData.sparkContext)(splits){ br_splits => 
@@ -303,7 +303,7 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
       
       // TODO: somewhere here we need to remove splits that do not have any gini gain (or that are null)
         
-      logInfo(s"Best splits: ${bestSplits.toList}")
+      logDebug(s"Best splits: ${bestSplits.toList}")
         
       
       // well actually what we need to do is to update the split set by creating new splits for all not empty splits
@@ -315,18 +315,23 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
       // filter out splits with no gini gain
       val nextLevelSplits = splitsToInclude.zip(bestSplits).flatMap({ case(splitInfo, bestSplit) =>
         // assuming it's not null
-        List(new SubsetInfo(splitInfo.indices.filter(bestVariablesData(bestSplit.variableIndex)(_) <= bestSplit.splitPoint), 0.0, br_labels.value, nCategories)
-            ,new SubsetInfo(splitInfo.indices.filter(bestVariablesData(bestSplit.variableIndex)(_) > bestSplit.splitPoint), 0.0, br_labels.value, nCategories))
+        List(new SubsetInfo(splitInfo.indices.filter(bestVariablesData(bestSplit.variableIndex)(_) <= bestSplit.splitPoint), bestSplit.leftGini, br_labels.value, nCategories)
+            ,new SubsetInfo(splitInfo.indices.filter(bestVariablesData(bestSplit.variableIndex)(_) > bestSplit.splitPoint), bestSplit.rightGini, br_labels.value, nCategories))
       }).toList
      
-     logInfo(s"Next level splits: ${nextLevelSplits}")
+     logDebug(s"Next level splits: ${nextLevelSplits}")
       
      val nextLevelNodes = if (!nextLevelSplits.isEmpty) buildSplit(indexedData, nextLevelSplits, br_labels, br_weights, nvarFraction, treeLevel + 1) else List()
      // I need to be able to find which nodes to use for splits
      // so I need say an Array that would tell me now which nodes were actually passed to split and what their index vas
      // at this stage we wouild know exactly what we need
      splitInfos.zipWithIndex.map({case (splitInfo, i) => 
-       indexedSplitsToInclude(i).map(ni => SplitNode(0, splitInfo.lenght,  splitInfo.impurity , 0L, 1, 1.0,  nextLevelNodes(2*ni), nextLevelNodes(2*ni+1))).getOrElse(LeafNode(splitInfo.majorityLabel, splitInfo.lenght,  splitInfo.impurity))
+       indexedSplitsToInclude(i).map({ni => 
+         val split = bestSplits(ni)
+         SplitNode(splitInfo.majorityLabel, splitInfo.lenght,  splitInfo.impurity
+             ,split.variableIndex, split.splitPoint, splitInfo.impurity - split.gini,
+             nextLevelNodes(2*ni), nextLevelNodes(2*ni+1))})
+         .getOrElse(LeafNode(splitInfo.majorityLabel, splitInfo.lenght,  splitInfo.impurity))
      }).toList
    }
 }
