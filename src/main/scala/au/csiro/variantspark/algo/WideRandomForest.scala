@@ -77,17 +77,15 @@ class WideRandomForest extends Logging {
 
     val trees = Range(0, ntrees).map { p =>
       logDebug(s"Building tree: $p")
-      //val currentSample = for (i <- 0 until dims) yield (Math.random * dims).toInt // sample with replacement
-      val currentSample = IndexedSeq.fill(dims)((Math.random * dims).toInt) // sample with replacement
-      val tree = new WideDecisionTree().run(data, labels, currentSample.toArray, ntryFraction)
+      //  represent sample as weights       
+      // TODO: This can be done in one pass if drawing from binomial distributions with success 1/n
+      val boostrapSample = Array.fill(dims)(0)
+      Range(0,dims).foreach(_=> boostrapSample((Math.random * dims).toInt) +=1)
+      
+      val tree = new WideDecisionTree().run(data, labels, boostrapSample, ntryFraction)
       val error = if (params.oob) {
         // check which indexes are out of bag
-        val inBag = currentSample.distinct.toSet // 
-        logDebug(s"oob size: ${dims-inBag.size}")
-        // predict on projected data
-        // tree.predict() on projected data
-        // looks like I actually need to get the reversed set anyway
-        val oobIndexes = Range(0,dims).toSet.diff(inBag)
+        val oobIndexes = boostrapSample.zipWithIndex.filter(t => t._1 == 0).map(_._2).toSet
         val predictions = tree.predictIndexed(data.map( t => (WideDecisionTree.projectVector(oobIndexes, invert = false)(t._1), t._2)))
         val indexes = oobIndexes.toSeq.sorted
         predictions.zip(indexes).foreach{ case(v, i) => oobVotes(i)(v) += 1}
