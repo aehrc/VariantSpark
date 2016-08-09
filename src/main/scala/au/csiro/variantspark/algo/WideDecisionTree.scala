@@ -68,6 +68,12 @@ object WideDecisionTree {
   }
 
   
+  def labelMode(currentSet: Array[Int], labels: Array[Int], labelCount:Int): Int = {
+    val labelCounts = Array.fill(labelCount)(0)
+    currentSet.foreach(i => labelCounts(labels(i)) += 1)
+    labelCounts.zipWithIndex.max._2
+  }
+  
   /**
    * This would take a variable information (index and data) 
    * labels and the indexed representation of the current splits 
@@ -231,12 +237,15 @@ class WideDecisionTreeModel(val rootNode: DecisionTreeNode) extends  Logging {
 
 }
 
-case class SubsetInfo(indices:Array[Int], impurity:Double) {
+case class SubsetInfo(indices:Array[Int], impurity:Double, majorityLabel:Int) {
+  def this(indices:Array[Int], impurity:Double, labels:Array[Int], nLabels:Int)  {
+    this(indices, impurity, WideDecisionTree.labelMode(indices, labels, nLabels))
+  }
   def lenght = indices.length
-  override def toString(): String = s"SubsetInfo(${indices.toList},${impurity})"
+  override def toString(): String = s"SubsetInfo(${indices.toList},${impurity}, ${majorityLabel})"
 }
 
-case class DecisionTreeParams(val maxDepth:Int = 6, val minNodeSize:Int =0)
+case class DecisionTreeParams(val maxDepth:Int = 100, val minNodeSize:Int =3)
 
 class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) extends Logging {
   def run(data: RDD[Vector], labels: Array[Int]): WideDecisionTreeModel = run(data.zipWithIndex(), labels, Range(0, data.first().size).toArray, 0.3)
@@ -244,11 +253,14 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
 
     // TODO: not sure while this is need
     val dataSize = data.count()
-    val currentSet =  weights.map(c => if (c>0) 0 else -1).toArray
+    val currentSet =  Range(0,labels.length).toArray
     
     val br_labels = data.context.broadcast(labels)
     val br_weights = data.context.broadcast(weights)    
-    val rootNode = buildSplit(data, List(SubsetInfo(Range(0,labels.length).toArray, 1.0)), br_labels,br_weights, nvarFraction, 0)
+    
+    val nCategories = labels.max + 1
+    val (totalGini, totalLabel) = WideDecisionTree.giniImpurity(currentSet, labels, nCategories)
+    val rootNode = buildSplit(data, List(SubsetInfo(Range(0,labels.length).toArray, totalGini, totalLabel)), br_labels,br_weights, nvarFraction, 0)
  
     br_labels.destroy()    
     new WideDecisionTreeModel(rootNode.head)
@@ -257,6 +269,8 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
   def buildSplit(indexedData: RDD[(Vector, Long)], splitInfos: List[SubsetInfo], br_labels: Broadcast[Array[Int]], br_weights: Broadcast[Array[Int]], nvarFraction: Double, treeLevel:Int): List[DecisionTreeNode] = {
       // for the current set find all candidate splits
   
+      val nCategories = br_labels.value.max + 1
+    
       logInfo(s"Building level ${treeLevel}, splitInfos: ${splitInfos}") 
     
       // say for not the criteria are  minNodeSize && notPure && there is giniGain
@@ -301,8 +315,8 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
       // filter out splits with no gini gain
       val nextLevelSplits = splitsToInclude.zip(bestSplits).flatMap({ case(splitInfo, bestSplit) =>
         // assuming it's not null
-        List(SubsetInfo(splitInfo.indices.filter(bestVariablesData(bestSplit.variableIndex)(_) <= bestSplit.splitPoint), 0.0)
-            ,SubsetInfo(splitInfo.indices.filter(bestVariablesData(bestSplit.variableIndex)(_) > bestSplit.splitPoint), 0.0))
+        List(new SubsetInfo(splitInfo.indices.filter(bestVariablesData(bestSplit.variableIndex)(_) <= bestSplit.splitPoint), 0.0, br_labels.value, nCategories)
+            ,new SubsetInfo(splitInfo.indices.filter(bestVariablesData(bestSplit.variableIndex)(_) > bestSplit.splitPoint), 0.0, br_labels.value, nCategories))
       }).toList
      
      logInfo(s"Next level splits: ${nextLevelSplits}")
@@ -312,7 +326,7 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
      // so I need say an Array that would tell me now which nodes were actually passed to split and what their index vas
      // at this stage we wouild know exactly what we need
      splitInfos.zipWithIndex.map({case (splitInfo, i) => 
-       indexedSplitsToInclude(i).map(ni => SplitNode(0, splitInfo.lenght,  splitInfo.impurity , 0L, 1, 1.0,  nextLevelNodes(2*ni), nextLevelNodes(2*ni+1))).getOrElse(LeafNode(0, splitInfo.lenght,  splitInfo.impurity))
+       indexedSplitsToInclude(i).map(ni => SplitNode(0, splitInfo.lenght,  splitInfo.impurity , 0L, 1, 1.0,  nextLevelNodes(2*ni), nextLevelNodes(2*ni+1))).getOrElse(LeafNode(splitInfo.majorityLabel, splitInfo.lenght,  splitInfo.impurity))
      }).toList
    }
 }
