@@ -261,6 +261,9 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) {
         .fold(Array.fill(splitInfos.length)(null))(WideDecisionTree.merge)
       // TODO: Wouild be good if all best splits were not null (if some are .. hmm this means probably sometthing is wrong with sampling
       
+      // TODO: somewhere here we need to remove splits that do not have any gini gain (or that are null)
+        
+        
       
       // well actually what we need to do is to update the split set by creating new splits for all not empty splits
       // so not we wouild have to collect all the data need to calculate the actual splits
