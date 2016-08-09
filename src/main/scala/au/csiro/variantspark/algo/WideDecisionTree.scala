@@ -7,13 +7,11 @@ import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.RDD.rddToPairRDDFunctions
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
-import org.apache.spark.mllib.linalg.DenseVector
-import org.apache.spark.mllib.linalg.SparseVector
 import scala.collection.mutable.MutableList
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.Logging
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
-
+import org.apache.spark.mllib.linalg.Vector
 
 
 case class SplitInfo(val splitPoint:Int, val gini:Double) 
@@ -33,6 +31,30 @@ case class VarSplitInfo(val variableIndex: Long, val splitPoint:Int, val gini:Do
 
 
 object WideDecisionTree {
+  
+  def sqr(x: Double) = x * x
+
+  def giniImpurityWithTotal(counts: Array[Int]): (Double, Int) = {
+    val total = counts.sum
+    val totalAsDouble = total.toDouble
+    if (total == 0) (0.0, total) else (1 - counts.map(s => sqr(s / totalAsDouble)).sum, total)
+  }
+
+  
+  def giniImpurity(counts: Array[Int]): Double = giniImpurityWithTotal(counts)._1
+
+  
+  def splitGiniInpurity(leftCounts: Array[Int], totalCounts:Array[Int]) =  {
+    val (leftGini, leftTotal) = giniImpurityWithTotal(leftCounts)
+    val (rightGini, rightTotal) = giniImpurityWithTotal(totalCounts.zip(leftCounts).map(t => t._1 -t._2).toArray)
+    (leftGini, rightGini, (leftGini* leftTotal + rightGini* rightTotal)/(leftTotal + rightTotal))
+  }
+  
+  def giniImpurity(currentSet: Array[Int], labels: Array[Int], labelCount:Int):(Double,Int) = {
+    val labelCounts = Array.fill(labelCount)(0)
+    currentSet.foreach(i => labelCounts(labels(i)) += 1)
+    (giniImpurity(labelCounts), labelCounts.zipWithIndex.max._2)
+  }
 
   
   /**
@@ -46,7 +68,7 @@ object WideDecisionTree {
    * @param splitIndex - the split to consider
 	*/
   
-  def findSplit(data:Array[Int], labels:Array[Int], splitIndices:Array[Int]) = {
+  def findSplit(data:Vector, labels:Array[Int], splitIndices:Array[Int]) = {
     
     // essentialy we need to find the best split for data and labels where splits[i] = splitIndex
     // would be nice perhaps if I couild easily subset my vectors
@@ -54,7 +76,7 @@ object WideDecisionTree {
     // for now assume an ordered factor variable from [0, nFactorLen)
     // in which case (if we split with x <=n) we can split at {0,1, ..., nFactorLen-1} 
     // TODO: make an explicit parameter (also can subset by current split) --> essentially could be unique variable values
-    val nFactorLen = data.max + 1
+    val nFactorLen = data.toArray.max.toInt + 1
     val splitCandidates = Range(0, nFactorLen)
     
     // we need to know totals per each labels (in order to be able to calculate total split gini)
@@ -68,10 +90,10 @@ object WideDecisionTree {
     // not do the same for each split candidate and find the minimum one
     splitCandidates.map({splitPoint  => 
       val splitLabelCounts = Array.fill(0)(0)
-      splitIndices.foreach { i => if (data(i) <= splitPoint) splitLabelCounts(labels(i)) += 1 }
+      splitIndices.foreach { i => if (data(i).toInt <= splitPoint) splitLabelCounts(labels(i)) += 1 }
       // TODO: here is where the gini calculation comes
-
-      SplitInfo(splitPoint, 0.0)
+      val (leftGini, rightGini, splitGini) = splitGiniInpurity(splitLabelCounts,totalLabelCounts) 
+      SplitInfo(splitPoint, splitGini)
     }).reduce((t1,t2)=> if (t1.gini < t2.gini) t1 else t2)   
   }
   
@@ -86,7 +108,7 @@ object WideDecisionTree {
    * @param splitRange - the range of splits to consider
    * @param mTryFraction - the fraction of splits to apply this variable to
    */
-  def findSplitsForVariableData(data:Array[Int], labels:Array[Int], splits:Array[Array[Int]], mTryFactor:Double) = {    
+  def findSplitsForVariableData(data:Vector, labels:Array[Int], splits:Array[Array[Int]], mTryFactor:Double) = {    
     splits.map(splitIndices =>  if (Math.random() <= mTryFactor) findSplit(data, labels, splitIndices) else null)
   }
   
@@ -101,37 +123,23 @@ object WideDecisionTree {
     a1
   }
   
-  def findSplitsForVariable(br_labels:Broadcast[Array[Int]], splits:Array[Array[Int]], mTryFactor:Double)(dataWithIndex:(Array[Int],Long)) = {
+  def findSplitsForVariable(br_labels:Broadcast[Array[Int]], splits:Array[Array[Int]], mTryFactor:Double)(dataWithIndex:(Vector,Long)) = {
     val data = dataWithIndex._1
     val variableIndex = dataWithIndex._2
     val splitInfos = findSplitsForVariableData(data, br_labels.value, splits, mTryFactor)
     splitInfos.map(si => if (si != null) VarSplitInfo(variableIndex, si.splitPoint, si.gini) else null).toArray
   }
   
+  def collectVariablesToMap(data: RDD[(Vector, Long)], variableIndexes:Set[Long]) =  {
+      val br_variableIndexes = data.sparkContext.broadcast(variableIndexes)
+      val result = data
+        .filter({ case (data,variableIndex) => br_variableIndexes.value.contains(variableIndex)})
+        .map(_.swap)
+        .collectAsMap().toMap
+      br_variableIndexes.destroy()
+      result
+  }
   
-  
-  
-  def projectVector(indexSet: Set[Int], invert: Boolean = false)(v: Vector): Vector = {
-    val a = v.toArray
-    Vectors.dense((for (i <- a.indices if indexSet.contains(i) == !invert) yield a(i)).toArray)
-  }
-
-  def projectArray(indexSet: Set[Int], invert: Boolean = false)(a: Array[Int]): Array[Int] = {
-    (for (i <- a.indices if indexSet.contains(i) == !invert) yield a(i)).toArray
-  }
-
-  def sqr(x: Double) = x * x
-
-  def giniImpurity(counts: Array[Int]): Double = {
-    val total = counts.sum.toDouble
-    if (total == 0.0) 0.0 else 1 - counts.map(s => sqr(s / total)).sum
-  }
-
-  def giniImpurity(currentSet: Array[Int], labels: Array[Int], labelCount:Int):(Double,Int) = {
-    val labelCounts = Array.fill(labelCount)(0)
-    currentSet.foreach(i => labelCounts(labels(i)) += 1)
-    (giniImpurity(labelCounts), labelCounts.zipWithIndex.max._2)
-  }
 }
 
 abstract class DecisionTreeNode(val majorityLabel: Int, val size: Int, val nodeImpurity: Double) {
@@ -139,7 +147,7 @@ abstract class DecisionTreeNode(val majorityLabel: Int, val size: Int, val nodeI
   def printout(level: Int) 
   def countImportance(accumulations: Long2DoubleOpenHashMap, totalSize:Int)
   def impurityContribution:Double = nodeImpurity * size
-  def resolve(variables: Map[Long, Array[Int]])(sampleIndex:Int):Int
+  def resolve(variables: Map[Long, Vector])(sampleIndex:Int):Int
 }
 
 case class LeafNode(override val majorityLabel: Int,override val  size: Int,override val  nodeImpurity: Double) extends DecisionTreeNode(majorityLabel,size,nodeImpurity) {
@@ -151,7 +159,7 @@ case class LeafNode(override val majorityLabel: Int,override val  size: Int,over
     println(s"${nodeType}[${majorityLabel}, ${size}, ${nodeImpurity}]")
   }
   def countImportance(accumulations: Long2DoubleOpenHashMap, totalSize:Int) {}
-  def resolve(variables: Map[Long, Array[Int]])(sampleIndex:Int):Int = majorityLabel
+  def resolve(variables: Map[Long, Vector])(sampleIndex:Int):Int = majorityLabel
 }
 
 case class SplitNode(override val majorityLabel: Int, override val size: Int,override val  nodeImpurity: Double, splitVariableIndex: Long, splitPoint: Double,
@@ -173,14 +181,14 @@ case class SplitNode(override val majorityLabel: Int, override val size: Int,ove
     right.countImportance(accumulations, totalSize)
   }
 
-  def resolve(variables: Map[Long, Array[Int]])(sampleIndex:Int):Int = if (variables(splitVariableIndex)(sampleIndex) <= splitPoint) left.resolve(variables)(sampleIndex) else left.resolve(variables)(sampleIndex)
+  def resolve(variables: Map[Long, Vector])(sampleIndex:Int):Int = if (variables(splitVariableIndex)(sampleIndex) <= splitPoint) left.resolve(variables)(sampleIndex) else left.resolve(variables)(sampleIndex)
 }
 
 class WideDecisionTreeModel(val rootNode: DecisionTreeNode) extends  Logging {
 
-  def predict(data: RDD[Array[Int]]): Array[Int] = predictIndexed(data.zipWithIndex())
+  def predict(data: RDD[Vector]): Array[Int] = predictIndexed(data.zipWithIndex())
   
-  def predictIndexed(data: RDD[(Array[Int],Long)]): Array[Int] = {
+  def predictIndexed(data: RDD[(Vector,Long)]): Array[Int] = {
     // this is a bit tricky but say lets' collect all the values neeed to resolve the thre
 
     //map the tree into a set of indexes
@@ -189,15 +197,8 @@ class WideDecisionTreeModel(val rootNode: DecisionTreeNode) extends  Logging {
       case SplitNode(_, _, _, variableIndex, _, _, left, right) => variableIndex :: mapTrees(left) ::: mapTrees(right)
       case _ => List()
     }
-
-    val indexes = mapTrees(rootNode).toSet
-    logDebug(s"Collecting data: ${indexes.size}")
-    val br_indexes = data.context.broadcast(indexes)
-    // now collect values of selected index
-    val pointsAsList = data.filter { case (v, i) => br_indexes.value.contains(i) }.collect()
-    br_indexes.destroy()
-    val points = pointsAsList.map(_.swap).toMap        
-    Range(0, data.first()._1.size).map(rootNode.resolve(points)).toArray
+    val treeVariableData =  WideDecisionTree.collectVariablesToMap(data, mapTrees(rootNode).toSet)
+    Range(0, data.first()._1.size).map(rootNode.resolve(treeVariableData)).toArray
   }
 
   def printout() {
@@ -223,8 +224,8 @@ case class SubsetInfo(indices:Array[Int], impurity:Double) {
 case class DecisionTreeParams(val maxDepth:Int = 5, val minNodeSize:Int =0)
 
 class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) {
-  def run(data: RDD[Array[Int]], labels: Array[Int]): WideDecisionTreeModel = run(data.zipWithIndex(), labels, Range(0, data.first().size).toArray, 0.3)
-  def run(data: RDD[(Array[Int], Long)], labels: Array[Int], weights: Array[Int],nvarFraction: Double): WideDecisionTreeModel = {
+  def run(data: RDD[Vector], labels: Array[Int]): WideDecisionTreeModel = run(data.zipWithIndex(), labels, Range(0, data.first().size).toArray, 0.3)
+  def run(data: RDD[(Vector, Long)], labels: Array[Int], weights: Array[Int],nvarFraction: Double): WideDecisionTreeModel = {
 
     // TODO: not sure while this is need
     val dataSize = data.count()
@@ -238,7 +239,7 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) {
     new WideDecisionTreeModel(rootNode.head)
   }
 
-  def buildSplit(indexedData: RDD[(Array[Int], Long)], splitInfos: List[SubsetInfo], br_labels: Broadcast[Array[Int]], br_weights: Broadcast[Array[Int]], nvarFraction: Double, treeLevel:Int): List[DecisionTreeNode] = {
+  def buildSplit(indexedData: RDD[(Vector, Long)], splitInfos: List[SubsetInfo], br_labels: Broadcast[Array[Int]], br_weights: Broadcast[Array[Int]], nvarFraction: Double, treeLevel:Int): List[DecisionTreeNode] = {
       // for the current set find all candidate splits
   
       // say for not the criteria are  minNodeSize && notPure && there is giniGain
@@ -268,20 +269,14 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) {
       // well actually what we need to do is to update the split set by creating new splits for all not empty splits
       // so not we wouild have to collect all the data need to calculate the actual splits
       
-      val bestVariableIndexs = bestSplits.map(_.variableIndex).toSet
-      val bestVariables = indexedData
-        .filter({ case (data,variableIndex) => bestVariableIndexs.contains(variableIndex)})
-        .map(_.swap)
-        .collectAsMap()
-      
-      // and then we decide not to split all of them
+      val bestVariablesData = WideDecisionTree.collectVariablesToMap(indexedData, bestSplits.map(_.variableIndex).toSet)
       
       // generate new split set
       // filter out splits with no gini gain
       val nextLevelSplits = splitsToInclude.zip(bestSplits).flatMap({ case(splitInfo, bestSplit) =>
         // assuming it's not null
-        List(SubsetInfo(splitInfo.indices.filter(bestVariables(bestSplit.variableIndex)(_) <= bestSplit.splitPoint), 0.0)
-            ,SubsetInfo(splitInfo.indices.filter(bestVariables(bestSplit.variableIndex)(_) > bestSplit.splitPoint), 0.0))
+        List(SubsetInfo(splitInfo.indices.filter(bestVariablesData(bestSplit.variableIndex)(_) <= bestSplit.splitPoint), 0.0)
+            ,SubsetInfo(splitInfo.indices.filter(bestVariablesData(bestSplit.variableIndex)(_) > bestSplit.splitPoint), 0.0))
       }).toList
      
      
