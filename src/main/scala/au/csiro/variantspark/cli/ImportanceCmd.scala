@@ -22,6 +22,7 @@ import au.csiro.pbdava.ssparkle.common.arg4j.TestArgs
 import org.apache.hadoop.fs.FileSystem
 import au.csiro.variantspark.algo.WideDecisionTree
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation
+import au.csiro.pbdava.ssparkle.spark.SparkUtils
 
 class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
@@ -85,18 +86,22 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     
     echo(s"Random forest oob accuracy: ${result.oobError}") 
     // build index for names
-    val index = inputData.map({case (f,i) => (i, f.label)}).collectAsMap()
-    val varImportance = result.variableImportance.toSeq.sortBy(-_._2).take(nVariables).map({ case (i, importance) => (index(i), importance)})
+    val topImportantVariables = result.variableImportance.toSeq.sortBy(-_._2).take(nVariables)
+    val topImportantVariableIndexes = topImportantVariables.map(_._1).toSet
+    
+    val index = SparkUtils.withBrodcast(sc)(topImportantVariableIndexes) { br_indexes => 
+      inputData.filter(t => br_indexes.value.contains(t._2)).map({case (f,i) => (i, f.label)}).collectAsMap()
+    }
+    
+    val varImportance = topImportantVariables.map({ case (i, importance) => (index(i), importance)})
     
     if (isEcho && outputFile!=null) {
       echo("Variable importance preview")
       varImportance.take(math.min(nVariables, defaultPreviewSize)).foreach({case(label, importance) => echo(s"${label}: ${importance}")})
     }
     // compute correlation
-    val importntVariableData = WideDecisionTree.collectVariablesToMap(traningData, result.variableImportance.toSeq.sortBy(-_._2).take(nVariables).map(_._1).toSet)
-    
+    val importntVariableData = WideDecisionTree.collectVariablesToMap(traningData, topImportantVariableIndexes) 
     val cor = new PearsonsCorrelation()
-    
     val cors = for (i <-importntVariableData.keys; j <-importntVariableData.keys if i !=j) yield ((index(i),index(j)), cor.correlation(importntVariableData(i).toArray
         , importntVariableData(j).toArray)) 
     cors.filter(t => Math.abs(t._2) > 0.5).toList.sorted.foreach(println)  
