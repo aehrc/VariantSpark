@@ -23,6 +23,7 @@ import org.apache.hadoop.fs.FileSystem
 import au.csiro.variantspark.algo.WideDecisionTree
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation
 import au.csiro.pbdava.ssparkle.spark.SparkUtils
+import au.csiro.pbdava.ssparkle.common.utils.ReusablePrintStream
 
 class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
@@ -44,6 +45,13 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
   @Option(name="-of", required=false, usage="Output file", aliases=Array("--output-file") )
   val outputFile:String = null
 
+  @Option(name="-c", required=false, usage="Compute and display pair-wise correlation for important variables", aliases=Array("--correlation") )
+  val computeCorrelation:Boolean = false
+
+  @Option(name="-ct", required=false, usage="Only display pairs with abs(correlation) greater then the threshold (def=0.6)", aliases=Array("--correlation-threshold") )
+  val correlationThreshold = 0.6
+  
+  
   @Override
   def testArgs = Array("-if", "data/small.vcf", "-ff", "data/small-labels.csv", "-fc", "22_16051249")
   
@@ -99,19 +107,22 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
       echo("Variable importance preview")
       varImportance.take(math.min(nVariables, defaultPreviewSize)).foreach({case(label, importance) => echo(s"${label}: ${importance}")})
     }
-    // compute correlation
-    val importntVariableData = WideDecisionTree.collectVariablesToMap(traningData, topImportantVariableIndexes) 
-    val cor = new PearsonsCorrelation()
-    val cors = for (i <-importntVariableData.keys; j <-importntVariableData.keys if i !=j) yield ((index(i),index(j)), cor.correlation(importntVariableData(i).toArray
-        , importntVariableData(j).toArray)) 
-    cors.filter(t => Math.abs(t._2) > 0.5).toList.sorted.foreach(println)  
        
-    LoanUtils.withCloseable(if (outputFile != null ) CSVWriter.open(outputFile) else CSVWriter.open(System.out)) { writer =>
+    if (computeCorrelation) {
+      // compute correlation
+      val importntVariableData = WideDecisionTree.collectVariablesToMap(traningData, topImportantVariableIndexes) 
+      val cor = new PearsonsCorrelation()
+      val cors = for (i <-importntVariableData.keys; j <-importntVariableData.keys if i !=j) yield ((index(i),index(j)), cor.correlation(importntVariableData(i).toArray
+          , importntVariableData(j).toArray)) 
+      println("correlation")
+      cors.filter(t => Math.abs(t._2) > correlationThreshold).toList.sorted.foreach(println)  
+    }
+    
+    LoanUtils.withCloseable(if (outputFile != null ) CSVWriter.open(outputFile) else CSVWriter.open(ReusablePrintStream.stdout)) { writer =>
       writer.writeRow(List("variable","importance"))
       writer.writeAll(varImportance.map(t => t.productIterator.toSeq))
     }
-    
- 
+
   }
 }
 
