@@ -14,10 +14,25 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import org.apache.spark.mllib.linalg.Vector
 import au.csiro.pbdava.ssparkle.spark.SparkUtils
 
+case class SubsetInfo(indices:Array[Int], impurity:Double, majorityLabel:Int) {
+  def this(indices:Array[Int], impurity:Double, labels:Array[Int], nLabels:Int)  {
+    this(indices, impurity, WideDecisionTree.labelMode(indices, labels, nLabels))
+  }
+  def lenght = indices.length
+  override def toString(): String = s"SubsetInfo(${indices.toList},${impurity}, ${majorityLabel})"
+}
 
 case class SplitInfo(val splitPoint:Int, val gini:Double,  val leftGini:Double, val rightGini:Double) 
 
-case class VarSplitInfo(val variableIndex: Long, val splitPoint:Int, val gini:Double, val leftGini:Double, val rightGini:Double) 
+case class VarSplitInfo(val variableIndex: Long, val splitPoint:Int, val gini:Double, val leftGini:Double, val rightGini:Double) {
+  
+  def split(splitVarData:Map[Long, Vector], labels:Array[Int], nCategories:Int)(subset:SubsetInfo):List[SubsetInfo] = {
+    List(
+        new SubsetInfo(subset.indices.filter(splitVarData(variableIndex)(_) <= splitPoint), leftGini, labels, nCategories),
+        new SubsetInfo(subset.indices.filter(splitVarData(variableIndex)(_) > splitPoint), rightGini, labels, nCategories)
+    )
+  }
+}
 
 
 /**
@@ -240,14 +255,6 @@ class WideDecisionTreeModel(val rootNode: DecisionTreeNode) extends  Logging {
 
 }
 
-case class SubsetInfo(indices:Array[Int], impurity:Double, majorityLabel:Int) {
-  def this(indices:Array[Int], impurity:Double, labels:Array[Int], nLabels:Int)  {
-    this(indices, impurity, WideDecisionTree.labelMode(indices, labels, nLabels))
-  }
-  def lenght = indices.length
-  override def toString(): String = s"SubsetInfo(${indices.toList},${impurity}, ${majorityLabel})"
-}
-
 case class DecisionTreeParams(val maxDepth:Int = 100, val minNodeSize:Int =1)
 
 class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) extends Logging {
@@ -281,9 +288,9 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
       // this is where we can actually do the filtering to see which nodes need further splitting
       // only split these that needs splitting otherwise just create a leave node for others.
       // some filtering may also be needed after the calculation to identify nodes with not gini gain
- 
+       
       // pre-filter the subsets to check if they need further splitting
-      // we also need to maintain the orginal index of the subset so that we can later 
+      // we also need to maintain the original index of the subset so that we can later 
       // join the next level tree nodes
       
       val subsetsToSplit = subsets.zipWithIndex.filter {case (si, _) =>
@@ -316,10 +323,8 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
       val usefulSplitsVarData = WideDecisionTree.collectVariablesToMap(indexedData, usefulSplits.map(_._1.variableIndex).toSet)
       
       // split current subsets into next level ones
-      val nextLevelSubsets = usefulSplits.flatMap({ case (splitInfo, subset) =>
-        // assuming it's not null
-        List(new SubsetInfo(subset.indices.filter(usefulSplitsVarData(splitInfo.variableIndex)(_) <= splitInfo.splitPoint), splitInfo.leftGini, br_labels.value, nCategories)
-            ,new SubsetInfo(subset.indices.filter(usefulSplitsVarData(splitInfo.variableIndex)(_) > splitInfo.splitPoint), splitInfo.rightGini, br_labels.value, nCategories))
+      val nextLevelSubsets = usefulSplits.flatMap({ case (splitInfo, subset) => 
+        splitInfo.split(usefulSplitsVarData, br_labels.value, nCategories)(subset)
       }).toList
      
      logDebug(s"Next level splits: ${nextLevelSubsets}")
