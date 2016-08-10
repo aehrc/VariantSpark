@@ -2,7 +2,9 @@
 
 PWD=$(cd `dirname "$0"`; pwd)
 
-echo "$0" "$@"
+if [[ -n "${VS_ECHO_CMDLINE}" ]]; then
+	echo "$0" "$@"
+fi
 
 RUNNER=spark
 declare -a SPARK_PARAMS 
