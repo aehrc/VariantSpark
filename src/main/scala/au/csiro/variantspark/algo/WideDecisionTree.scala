@@ -269,71 +269,74 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
     new WideDecisionTreeModel(rootNode.head)
   }
 
-  def buildSplit(indexedData: RDD[(Vector, Long)], splitInfos: List[SubsetInfo], br_labels: Broadcast[Array[Int]], br_weights: Broadcast[Array[Int]], nvarFraction: Double, treeLevel:Int): List[DecisionTreeNode] = {
+  def buildSplit(indexedData: RDD[(Vector, Long)], subsets: List[SubsetInfo], br_labels: Broadcast[Array[Int]], br_weights: Broadcast[Array[Int]], nvarFraction: Double, treeLevel:Int): List[DecisionTreeNode] = {
       // for the current set find all candidate splits
   
       val nCategories = br_labels.value.max + 1
     
-      logDebug(s"Building level ${treeLevel}, splitInfos: ${splitInfos}") 
+      logDebug(s"Building level ${treeLevel}, subsets: ${subsets}") 
     
       // say for not the criteria are  minNodeSize && notPure && there is giniGain
       
       // this is where we can actually do the filtering to see which nodes need further splitting
       // only split these that needs splitting otherwise just create a leave node for others.
       // some filtering may also be needed after the calculation to identify nodes with not gini gain
+ 
+      // pre-filter the subsets to check if they need further splitting
+      // we also need to maintain the orginal index of the subset so that we can later 
+      // join the next level tree nodes
       
-      //TODO: if there is not splits to calculate do not call compute splits etc.      
-      val splitsToInclude = splitInfos.zipWithIndex.filter {case (si, _) =>
+      val subsetsToSplit = subsets.zipWithIndex.filter {case (si, _) =>
         si.lenght >= params.minNodeSize && treeLevel < params.maxDepth
       }
+      logDebug(s"Splits to include: ${subsetsToSplit}") 
       
+      //TODO: (OPTIMIZE) if there is not splits to calculate do not call compute splits etc.      
+ 
       
-      val splits = splitsToInclude.map(_._1.indices).toArray
-      logDebug(s"Splits to include: ${splitsToInclude}") 
-   
+      //TODO: (OPTIMIZE) if I pass the subset info including impurity I can do post-filtering in workers
       
-      val bestSplits = SparkUtils.withBrodcast(indexedData.sparkContext)(splits){ br_splits => 
+      val subsetsToSplitAsIndices = subsetsToSplit.map(_._1.indices).toArray
+      val bestSplits = SparkUtils.withBrodcast(indexedData.sparkContext)(subsetsToSplitAsIndices){ br_splits => 
         indexedData
           .map(WideDecisionTree.findSplitsForVariable(br_labels,br_splits, nvarFraction))
-          .fold(Array.fill(splits.length)(null))(WideDecisionTree.merge)
+          .fold(Array.fill(subsetsToSplitAsIndices.length)(null))(WideDecisionTree.merge)
       }
-      // TODO: Wouild be good if all best splits were not null (if some are .. hmm this means probably sometthing is wrong with sampling
-      
-      // TODO: somewhere here we need to remove splits that do not have any gini gain (or that are null)
-        
       logDebug(s"Best splits: ${bestSplits.toList}")
 
-      val (validSplits, validSplitIndexes) = bestSplits.zip(splitsToInclude)
-            .map(t => ((t._1, t._2._1), t._2._2)) //  just remap from (x, (y, i)) => ((x,y),i)
-            .filter({ case ((splitInfo,subsetInfo), i) => splitInfo != null && subsetInfo.impurity > splitInfo.gini
-            }).unzip 
-      // well actually what we need to do is to update the split set by creating new splits for all not empty splits
-      // so not we wouild have to collect all the data need to calculate the actual splits
-      val bestVariablesData = WideDecisionTree.collectVariablesToMap(indexedData, validSplits.map(_._1.variableIndex).toSet)
+      // TODO: Wouild be good if all best splits were not null (if some are .. hmm this means probably sometthing is wrong with sampling
       
-      // generate new split set
-      // filter out splits with no gini gain
-      val nextLevelSplits = validSplits.flatMap({ case (bestSplit, splitInfo) =>
+      // filter out splits that do not imporove impurity 
+      val (usefulSplits, usefulSplitsIndices) = bestSplits.zip(subsetsToSplit)
+            .map(t => ((t._1, t._2._1), t._2._2)) //  just remap from (x, (y, i)) => ((x,y),i)
+            .filter({ case ((splitInfo,subsetInfo), i) => splitInfo != null && subsetInfo.impurity > splitInfo.gini})
+            .unzip 
+            
+      // we need to collect the data for splitting variables so that we can calculate new subsets
+      val usefulSplitsVarData = WideDecisionTree.collectVariablesToMap(indexedData, usefulSplits.map(_._1.variableIndex).toSet)
+      
+      // split current subsets into next level ones
+      val nextLevelSubsets = usefulSplits.flatMap({ case (splitInfo, subset) =>
         // assuming it's not null
-        List(new SubsetInfo(splitInfo.indices.filter(bestVariablesData(bestSplit.variableIndex)(_) <= bestSplit.splitPoint), bestSplit.leftGini, br_labels.value, nCategories)
-            ,new SubsetInfo(splitInfo.indices.filter(bestVariablesData(bestSplit.variableIndex)(_) > bestSplit.splitPoint), bestSplit.rightGini, br_labels.value, nCategories))
+        List(new SubsetInfo(subset.indices.filter(usefulSplitsVarData(splitInfo.variableIndex)(_) <= splitInfo.splitPoint), splitInfo.leftGini, br_labels.value, nCategories)
+            ,new SubsetInfo(subset.indices.filter(usefulSplitsVarData(splitInfo.variableIndex)(_) > splitInfo.splitPoint), splitInfo.rightGini, br_labels.value, nCategories))
       }).toList
      
-     logDebug(s"Next level splits: ${nextLevelSplits}")
+     logDebug(s"Next level splits: ${nextLevelSubsets}")
      
      // need to merge the original mask with the new mask
       
-     val indexedSplitsToInclude = validSplitIndexes.zipWithIndex.toMap
-     val nextLevelNodes = if (!nextLevelSplits.isEmpty) buildSplit(indexedData, nextLevelSplits, br_labels, br_weights, nvarFraction, treeLevel + 1) else List()
+     val subsetIndexToSplitIndexMap = usefulSplitsIndices.zipWithIndex.toMap
+     val nextLevelNodes = if (!nextLevelSubsets.isEmpty) buildSplit(indexedData, nextLevelSubsets, br_labels, br_weights, nvarFraction, treeLevel + 1) else List()
      // I need to be able to find which nodes to use for splits
      // so I need say an Array that would tell me now which nodes were actually passed to split and what their index vas
      // at this stage we wouild know exactly what we need
-     splitInfos.zipWithIndex.map({case (splitInfo, i) => 
-       indexedSplitsToInclude.get(i).map({ni => 
-         val split = validSplits(ni)._1
+     subsets.zipWithIndex.map({case (splitInfo, i) => 
+       subsetIndexToSplitIndexMap.get(i).map({splitIndex => 
+         val split = usefulSplits(splitIndex)._1
          SplitNode(splitInfo.majorityLabel, splitInfo.lenght,  splitInfo.impurity
              ,split.variableIndex, split.splitPoint, splitInfo.impurity - split.gini,
-             nextLevelNodes(2*ni), nextLevelNodes(2*ni+1))})
+             nextLevelNodes(2*splitIndex), nextLevelNodes(2*splitIndex+1))})
          .getOrElse(LeafNode(splitInfo.majorityLabel, splitInfo.lenght,  splitInfo.impurity))
      }).toList
    }
