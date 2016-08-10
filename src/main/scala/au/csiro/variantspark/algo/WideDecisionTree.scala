@@ -96,9 +96,12 @@ object WideDecisionTree {
     // in which case (if we split with x <=n) we can split at {0,1, ..., nFactorLen-1} 
     // TODO: make an explicit parameter (also can subset by current split) --> essentially could be unique variable values
     val nFactorLen = data.toArray.max.toInt + 1
-    // we need to exclude the last value as this give empty split
-    val splitCandidates = Range(0, nFactorLen - 1)
-    
+    // we need to exclude the last value as this give empty split    
+    // TODO: filter out splits with not variability
+    val splitCandidates = if (nFactorLen>1) Range(0, nFactorLen - 1) else Range(0,1)
+        
+    // but what if there is not variablity and all are zeroes?
+    println(splitCandidates)
     // we need to know totals per each labels (in order to be able to calculate total split gini)
     
     // TODO: make an explicit paramer
