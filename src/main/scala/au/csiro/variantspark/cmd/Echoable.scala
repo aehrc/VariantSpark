@@ -1,4 +1,4 @@
-package au.csiro.variantspark.algo.cmd
+package au.csiro.variantspark.cmd
 
 import org.kohsuke.args4j.Option
 

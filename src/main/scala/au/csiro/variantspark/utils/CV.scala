@@ -1,9 +1,5 @@
 package au.csiro.variantspark.utils
 
-
-
-
-
 object CV {
   
   type Model = Projector => Double

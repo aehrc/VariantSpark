@@ -13,6 +13,7 @@ import org.apache.spark.Logging
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import org.apache.spark.mllib.linalg.Vector
 import au.csiro.pbdava.ssparkle.spark.SparkUtils
+import au.csiro.variantspark.metrics.Gini
 
 case class SubsetInfo(indices:Array[Int], impurity:Double, majorityLabel:Int) {
   def this(indices:Array[Int], impurity:Double, labels:Array[Int], nLabels:Int)  {
@@ -48,41 +49,6 @@ case class VarSplitInfo(val variableIndex: Long, val splitPoint:Int, val gini:Do
 
 object WideDecisionTree {
   
-  def projectVector(indexSet: Set[Int], invert: Boolean = false)(v: Vector): Vector = {
-    val a = v.toArray
-    Vectors.dense((for (i <- a.indices if indexSet.contains(i) == !invert) yield a(i)).toArray)
-  }
-
-  def projectArray(indexSet: Set[Int], invert: Boolean = false)(a: Array[Int]): Array[Int] = {
-    (for (i <- a.indices if indexSet.contains(i) == !invert) yield a(i)).toArray
-  }
-  
-  
-  def sqr(x: Double) = x * x
-
-  def giniImpurityWithTotal(counts: Array[Int]): (Double, Int) = {
-    val total = counts.sum
-    val totalAsDouble = total.toDouble
-    if (total == 0) (0.0, total) else (1 - counts.map(s => sqr(s / totalAsDouble)).sum, total)
-  }
-
-  
-  def giniImpurity(counts: Array[Int]): Double = giniImpurityWithTotal(counts)._1
-
-  
-  def splitGiniInpurity(leftCounts: Array[Int], totalCounts:Array[Int]) =  {
-    val (leftGini, leftTotal) = giniImpurityWithTotal(leftCounts)
-    val (rightGini, rightTotal) = giniImpurityWithTotal(totalCounts.zip(leftCounts).map(t => t._1 -t._2).toArray)
-    (leftGini, rightGini, (leftGini* leftTotal + rightGini* rightTotal)/(leftTotal + rightTotal))
-  }
-  
-  def giniImpurity(currentSet: Array[Int], labels: Array[Int], labelCount:Int):(Double,Int) = {
-    val labelCounts = Array.fill(labelCount)(0)
-    currentSet.foreach(i => labelCounts(labels(i)) += 1)
-    (giniImpurity(labelCounts), labelCounts.zipWithIndex.max._2)
-  }
-
-  
   def labelMode(currentSet: Array[Int], labels: Array[Int], labelCount:Int): Int = {
     val labelCounts = Array.fill(labelCount)(0)
     currentSet.foreach(i => labelCounts(labels(i)) += 1)
@@ -101,8 +67,6 @@ object WideDecisionTree {
 	*/
   
   def findSplit(data:Vector, labels:Array[Int], splitIndices:Array[Int]) = {
-    
-    
     //println("Split indexes: " + splitIndices.toList)
     // essentialy we need to find the best split for data and labels where splits[i] = splitIndex
     // would be nice perhaps if I couild easily subset my vectors
@@ -130,7 +94,7 @@ object WideDecisionTree {
       val splitLabelCounts = Array.fill(nCategories)(0)
       splitIndices.foreach { i => if (data(i).toInt <= splitPoint) splitLabelCounts(labels(i)) += 1 }
       // TODO: here is where the gini calculation comes
-      val (leftGini, rightGini, splitGini) = splitGiniInpurity(splitLabelCounts,totalLabelCounts) 
+      val (leftGini, rightGini, splitGini) = Gini.splitGiniInpurity(splitLabelCounts,totalLabelCounts) 
       SplitInfo(splitPoint, splitGini, leftGini, rightGini)
     }).reduce((t1,t2)=> if (t1.gini < t2.gini) t1 else t2)   
   }
@@ -177,7 +141,6 @@ object WideDecisionTree {
       br_variableIndexes.destroy()
       result
   }
-  
 }
 
 abstract class DecisionTreeNode(val majorityLabel: Int, val size: Int, val nodeImpurity: Double) {
@@ -269,7 +232,7 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
     val br_weights = data.context.broadcast(weights)    
     
     val nCategories = labels.max + 1
-    val (totalGini, totalLabel) = WideDecisionTree.giniImpurity(currentSet, labels, nCategories)
+    val (totalGini, totalLabel) = Gini.giniImpurity(currentSet, labels, nCategories)
     val rootNode = buildSplit(data, List(SubsetInfo(currentSet, totalGini, totalLabel)), br_labels,br_weights, nvarFraction, 0)
  
     br_labels.destroy()    
@@ -282,12 +245,6 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
       val nCategories = br_labels.value.max + 1
     
       logDebug(s"Building level ${treeLevel}, subsets: ${subsets}") 
-    
-      // say for not the criteria are  minNodeSize && notPure && there is giniGain
-      
-      // this is where we can actually do the filtering to see which nodes need further splitting
-      // only split these that needs splitting otherwise just create a leave node for others.
-      // some filtering may also be needed after the calculation to identify nodes with not gini gain
        
       // pre-filter the subsets to check if they need further splitting
       // we also need to maintain the original index of the subset so that we can later 
@@ -298,9 +255,7 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
       }
       logDebug(s"Splits to include: ${subsetsToSplit}") 
       
-      //TODO: (OPTIMIZE) if there is not splits to calculate do not call compute splits etc.      
- 
-      
+      //TODO: (OPTIMIZE) if there is not splits to calculate do not call compute splits etc.            
       //TODO: (OPTIMIZE) if I pass the subset info including impurity I can do post-filtering in workers
       
       val subsetsToSplitAsIndices = subsetsToSplit.map(_._1.indices).toArray
@@ -329,20 +284,22 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
      
      logDebug(s"Next level splits: ${nextLevelSubsets}")
      
-     // need to merge the original mask with the new mask
-      
-     val subsetIndexToSplitIndexMap = usefulSplitsIndices.zipWithIndex.toMap
+     // compute the next level tree nodes (notice the recursive call)
      val nextLevelNodes = if (!nextLevelSubsets.isEmpty) buildSplit(indexedData, nextLevelSubsets, br_labels, br_weights, nvarFraction, treeLevel + 1) else List()
+
+     // compute the indexes of splitted subsets against the original indexes
+     val subsetIndexToSplitIndexMap = usefulSplitsIndices.zipWithIndex.toMap
+
      // I need to be able to find which nodes to use for splits
      // so I need say an Array that would tell me now which nodes were actually passed to split and what their index vas
      // at this stage we wouild know exactly what we need
-     subsets.zipWithIndex.map({case (splitInfo, i) => 
+     subsets.zipWithIndex.map({case (subset, i) => 
        subsetIndexToSplitIndexMap.get(i).map({splitIndex => 
          val split = usefulSplits(splitIndex)._1
-         SplitNode(splitInfo.majorityLabel, splitInfo.lenght,  splitInfo.impurity
-             ,split.variableIndex, split.splitPoint, splitInfo.impurity - split.gini,
+         SplitNode(subset.majorityLabel, subset.lenght,  subset.impurity
+             ,split.variableIndex, split.splitPoint, subset.impurity - split.gini,
              nextLevelNodes(2*splitIndex), nextLevelNodes(2*splitIndex+1))})
-         .getOrElse(LeafNode(splitInfo.majorityLabel, splitInfo.lenght,  splitInfo.impurity))
+         .getOrElse(LeafNode(subset.majorityLabel, subset.lenght,  subset.impurity))
      }).toList
    }
 }

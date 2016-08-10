@@ -10,6 +10,7 @@ import au.csiro.variantspark.metrics.Metrics
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap
 import org.apache.spark.Logging
+import au.csiro.variantspark.utils.Projector
 
 case class WideRandomForestModel(trees: List[WideDecisionTreeModel], val labelCount:Int, oobError:Double) {
   def printout() {
@@ -86,7 +87,7 @@ class WideRandomForest extends Logging {
       val error = if (params.oob) {
         // check which indexes are out of bag
         val oobIndexes = boostrapSample.zipWithIndex.filter(t => t._1 == 0).map(_._2).toSet
-        val predictions = tree.predictIndexed(data.map( t => (WideDecisionTree.projectVector(oobIndexes, invert = false)(t._1), t._2)))
+        val predictions = tree.predictIndexed(data.map( t => (Projector.projectVector(oobIndexes, invert = false)(t._1), t._2)))
         //logInfo(s"tree oob pred: ${predictions.toList}")
         val indexes = oobIndexes.toSeq.sorted
         predictions.zip(indexes).foreach{ case(v, i) => oobVotes(i)(v) += 1}

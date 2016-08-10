@@ -1,4 +1,4 @@
-package au.csiro.variantspark.algo.cmd
+package au.csiro.variantspark.cmd
 
 object EchoUtils {
 

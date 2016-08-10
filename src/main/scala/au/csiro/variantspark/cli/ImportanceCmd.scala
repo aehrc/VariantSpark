@@ -12,10 +12,10 @@ import au.csiro.variantspark.input.HashingLabelSource
 import au.csiro.variantspark.algo.WideRandomForest
 import org.apache.spark.mllib.linalg.Vectors
 import au.csiro.variantspark.input.CsvLabelSource
-import au.csiro.variantspark.algo.cmd.Echoable
+import au.csiro.variantspark.cmd.Echoable
 import org.apache.spark.Logging
 import org.apache.commons.lang3.builder.ToStringBuilder
-import au.csiro.variantspark.algo.cmd.EchoUtils._
+import au.csiro.variantspark.cmd.EchoUtils._
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 import com.github.tototoshi.csv.CSVWriter
 import au.csiro.pbdava.ssparkle.common.arg4j.TestArgs
