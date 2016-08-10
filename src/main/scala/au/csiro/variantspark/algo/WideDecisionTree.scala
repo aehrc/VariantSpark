@@ -101,7 +101,7 @@ object WideDecisionTree {
     val splitCandidates = if (nFactorLen>1) Range(0, nFactorLen - 1) else Range(0,1)
         
     // but what if there is not variablity and all are zeroes?
-    println(splitCandidates)
+    // println(splitCandidates)
     // we need to know totals per each labels (in order to be able to calculate total split gini)
     
     // TODO: make an explicit paramer
