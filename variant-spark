@@ -2,6 +2,8 @@
 
 PWD=$(cd `dirname "$0"`; pwd)
 
+echo "$0" "$@"
+
 RUNNER=spark
 declare -a SPARK_PARAMS 
 spark_param_index=0
