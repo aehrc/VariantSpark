@@ -20,6 +20,8 @@ import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 import com.github.tototoshi.csv.CSVWriter
 import au.csiro.pbdava.ssparkle.common.arg4j.TestArgs
 import org.apache.hadoop.fs.FileSystem
+import au.csiro.variantspark.algo.WideDecisionTree
+import org.apache.commons.math3.stat.correlation.PearsonsCorrelation
 
 class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
@@ -90,11 +92,21 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
       echo("Variable importance preview")
       varImportance.take(math.min(nVariables, defaultPreviewSize)).foreach({case(label, importance) => echo(s"${label}: ${importance}")})
     }
+    // compute correlation
+    val importntVariableData = WideDecisionTree.collectVariablesToMap(traningData, result.variableImportance.toSeq.sortBy(-_._2).take(nVariables).map(_._1).toSet)
     
+    val cor = new PearsonsCorrelation()
+    
+    val cors = for (i <-importntVariableData.keys; j <-importntVariableData.keys if i !=j) yield ((index(i),index(j)), cor.correlation(importntVariableData(i).toArray
+        , importntVariableData(j).toArray)) 
+    cors.filter(t => Math.abs(t._2) > 0.5).toList.sorted.foreach(println)  
+       
     LoanUtils.withCloseable(if (outputFile != null ) CSVWriter.open(outputFile) else CSVWriter.open(System.out)) { writer =>
       writer.writeRow(List("variable","importance"))
       writer.writeAll(varImportance.map(t => t.productIterator.toSeq))
     }
+    
+ 
   }
 }
 
