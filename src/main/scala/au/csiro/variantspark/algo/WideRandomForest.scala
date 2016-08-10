@@ -82,7 +82,6 @@ class WideRandomForest extends Logging {
       // TODO: This can be done in one pass if drawing from binomial distributions with success 1/n
       val boostrapSample = Array.fill(dims)(0)
       Range(0,dims).foreach(_=> boostrapSample((Math.random * dims).toInt) +=1)
-      logInfo(s"Sample: ${boostrapSample.toList}")
       val tree = new WideDecisionTree().run(data, labels, boostrapSample, ntryFraction)
       val error = if (params.oob) {
         // check which indexes are out of bag
@@ -98,7 +97,7 @@ class WideRandomForest extends Logging {
       } else {
         Double.NaN
       }
-      logInfo(s"Tree error: $error")
+      logDebug(s"Tree error: $error")
       //tree.printout()
       (tree, error)
     }
