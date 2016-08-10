@@ -81,19 +81,24 @@ class WideRandomForest extends Logging {
       // TODO: This can be done in one pass if drawing from binomial distributions with success 1/n
       val boostrapSample = Array.fill(dims)(0)
       Range(0,dims).foreach(_=> boostrapSample((Math.random * dims).toInt) +=1)
-      
+      logInfo(s"Sample: ${boostrapSample.toList}")
       val tree = new WideDecisionTree().run(data, labels, boostrapSample, ntryFraction)
       val error = if (params.oob) {
         // check which indexes are out of bag
         val oobIndexes = boostrapSample.zipWithIndex.filter(t => t._1 == 0).map(_._2).toSet
         val predictions = tree.predictIndexed(data.map( t => (WideDecisionTree.projectVector(oobIndexes, invert = false)(t._1), t._2)))
+        //logInfo(s"tree oob pred: ${predictions.toList}")
         val indexes = oobIndexes.toSeq.sorted
         predictions.zip(indexes).foreach{ case(v, i) => oobVotes(i)(v) += 1}
-        Metrics.classificatoinError(labels, oobVotes.map(_.zipWithIndex.max._2))
+        //logInfo(s"oob indexes: ${indexes}")
+        val pred = oobVotes.map(_.zipWithIndex.max._2)
+        //logInfo(s"oob pred: ${pred.toList}")
+        Metrics.classificatoinError(labels, pred )
       } else {
         Double.NaN
       }
-      logDebug(s"Tree error: $error")
+      logInfo(s"Tree error: $error")
+      //tree.printout()
       (tree, error)
     }
     val oobError = trees.map(_._2).sum.toDouble / ntrees
