@@ -24,32 +24,6 @@
 		<scala.version>2.10.4</scala.version>
 		<skipTests>true</skipTests>
 	</properties>
-	<repositories>
-		<!-- added to get hold of jms.jar -->
-		<repository>
-			<id>repository.jboss.org-public</id>
-			<name>JBoss repository</name>
-			<url>https://repository.jboss.org/nexus/content/groups/public</url>
-		</repository>
-		<repository>
-			<id>pbdava-nexus-release</id>
-			<name>Internal Releases</name>
-			<url>http://pbdava-dev.it.csiro.au:8081/nexus/content/repositories/releases</url>
-		</repository>
-		<repository>
-			<id>pbdava-nexus-snapshot</id>
-			<name>Internal Releases</name>
-			<url>http://pbdava-dev.it.csiro.au:8081/nexus/content/repositories/snapshots</url>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-		</repository>
-		<repository>
-			<id>pbdava-nexus-thirdparty</id>
-			<name>ThirdParty</name>
-			<url>http://pbdava-dev.it.csiro.au:8081/nexus/content/repositories/thirdparty</url>
-		</repository>
-	</repositories>
 	<dependencies>
 		<dependency>
 			<groupId>org.scala-lang</groupId>
@@ -57,25 +31,6 @@
 			<version>${scala.version}</version>
 			<scope>provided</scope>
 		</dependency>
-                <dependency>
-                        <groupId>au.csiro.pbdava.sparkle</groupId>
-                        <artifactId>sparkle-core</artifactId>
-                        <version>0.2.0-SNAPSHOT</version>
-                        <exclusions>
-                                <exclusion>
-                                        <groupId>org.apache.spark</groupId>
-                                        <artifactId>*</artifactId>
-                                </exclusion>
-                                <exclusion>
-                                        <groupId>org.scala-lang</groupId>
-                                        <artifactId>scala-library</artifactId>
-                                </exclusion>
-                                <exclusion>
-                                        <groupId>it.unimi.dsi</groupId>
-                                        <artifactId>fastutil</artifactId>
-                                </exclusion>
-                        </exclusions>
-                </dependency>
 		<dependency>
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-core_2.10</artifactId>
@@ -116,7 +71,16 @@
 		    <artifactId>htsjdk</artifactId>
 		    <version>2.5.1</version>
 		</dependency>
-				
+		<dependency>
+			<groupId>joda-time</groupId>
+			<artifactId>joda-time</artifactId>
+			<version>2.7</version>
+		</dependency>
+		<dependency>
+			<groupId>args4j</groupId>
+			<artifactId>args4j</artifactId>
+			<version>2.0.29</version>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -124,15 +88,15 @@
 		<!--  testSourceDirectory>src/test/scala</testSourceDirectory -->
 		<plugins>
 			<plugin>
-				<groupId>org.scala-tools</groupId>
-				<artifactId>maven-scala-plugin</artifactId>
-				<version>2.15.2</version>
+			    <groupId>net.alchim31.maven</groupId>
+			    <artifactId>scala-maven-plugin</artifactId>
+			    <version>3.2.2</version>
 				<executions>
 					<execution>
 						<id>scala-compile-first</id>
 						<phase>process-resources</phase>
 						<goals>
-						    <goal>add-source</goal>
+						    <!--goal>add-source</goal-->
 							<goal>compile</goal>
 						</goals>
 					</execution>									
@@ -192,7 +156,15 @@
 					</transformers>
 				</configuration>
 			</plugin>
-
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.2</version>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 </project>
