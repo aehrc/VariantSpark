@@ -24,6 +24,7 @@ import au.csiro.variantspark.algo.WideDecisionTree
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation
 import au.csiro.pbdava.ssparkle.spark.SparkUtils
 import au.csiro.pbdava.ssparkle.common.utils.ReusablePrintStream
+import au.csiro.variantspark.algo.WideRandomForestCallback
 
 class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
@@ -90,7 +91,15 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     echo(s"Training random forest - trees: ${nTrees}")  
     val rf = new WideRandomForest()
     val traningData = inputData.map{ case (f, i) => (f.values, i)}
+    
+    implicit val rfCallback = new WideRandomForestCallback() {
+      override  def onTreeComplete(treeIndex:Int, oobError:Double, elapsedTimeMs:Long) {
+        echo(s"Finished tree: ${treeIndex}, current oobError: ${oobError}, time: ${elapsedTimeMs} ms")
+      }
+    }
     val result  = rf.run(traningData, labels, nTrees)  
+    
+    
     
     echo(s"Random forest oob accuracy: ${result.oobError}") 
     // build index for names

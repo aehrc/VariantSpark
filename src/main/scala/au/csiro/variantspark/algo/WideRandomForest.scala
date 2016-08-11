@@ -61,15 +61,17 @@ case class RandomForestParams(
     nTryFraction:Double =  Double.NaN
 )
 
-class WideRandomForest extends Logging {
-  def run(data: RDD[(Vector, Long)], labels: Array[Int], ntrees: Int, params:RandomForestParams = RandomForestParams()): WideRandomForestModel = {
+trait WideRandomForestCallback {
+  def onTreeComplete(treeIndex:Int, oobError:Double, elapsedTimeMs:Long)
+}
+
+class WideRandomForest(params:RandomForestParams = RandomForestParams()) extends Logging {
+  def run(data: RDD[(Vector, Long)], labels: Array[Int], ntrees: Int)(implicit callback:WideRandomForestCallback = null): WideRandomForestModel = {
     // subsample
     //dims seems to be the number of samples, not number of dimensions?
     val dims = labels.length
     val features = data.count().toInt
-    val labelCount = labels.max + 1
-    
-    
+    val labelCount = labels.max + 1    
     val oobVotes = Array.fill(dims)(Array.fill(labelCount)(0))
     logDebug("Features: " + features.toDouble)
     val ntryFraction = if (params.nTryFraction.isNaN ) Math.sqrt(features.toDouble)/features.toDouble else params.nTryFraction
@@ -78,6 +80,7 @@ class WideRandomForest extends Logging {
 
     val trees = Range(0, ntrees).map { p =>
       logDebug(s"Building tree: $p")
+      val startTime = System.currentTimeMillis()
       //  represent sample as weights       
       // TODO: This can be done in one pass if drawing from binomial distributions with success 1/n
       val boostrapSample = Array.fill(dims)(0)
@@ -97,11 +100,15 @@ class WideRandomForest extends Logging {
       } else {
         Double.NaN
       }
+      val endTime = System.currentTimeMillis()
+      val elapsedTime = endTime - startTime
       logDebug(s"Tree error: $error")
+      Option(callback).foreach(_.onTreeComplete(p, error, elapsedTime))
       //tree.printout()
       (tree, error)
     }
-    val oobError = trees.map(_._2).sum.toDouble / ntrees
+    //val oobError = trees.map(_._2).sum.toDouble / ntrees
+    val oobError = trees.last._2
     logDebug(s"Error: oobError")
     WideRandomForestModel(trees.map(_._1).toList, labelCount, oobError)
   }
