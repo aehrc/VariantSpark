@@ -1,20 +1,27 @@
 package au.csiro.pbdava.ssparkle.common.utils
 
-class Timed {
-  var elapsedTime:Long = 0
+
+case class TimedResult[T](val result:T, val elapsedTime:Long) {
+  def withResult(f:T=>Unit):TimedResult[T] = {
+    f(result)
+    this
+  }
+  def withResultAndTime(f:(T,Long)=>Unit):TimedResult[T] = {
+    f(result, elapsedTime)
+    this
+  }
   
-  def time[R](c: => R):R = {
-    val startTime = System.currentTimeMillis()
-    val result = c 
-    elapsedTime = System.currentTimeMillis() - startTime
-    result
+  def report(msg: =>String) = {
+    println(s"${msg} time: ${elapsedTime}")
+    this
   }
 }
 
 object Timed {
-  def time[R](c: => R):(R,Long) = {
-    val timed = new Timed()
-    val r = timed.time(c)
-    (r, timed.elapsedTime)
+  def time[T](c: => T):TimedResult[T] =  {
+    val startTime = System.currentTimeMillis()
+    val result = c 
+    val elapsedTime = System.currentTimeMillis() - startTime
+    TimedResult(result, elapsedTime)
   }
 }

@@ -11,6 +11,7 @@ import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap
 import org.apache.spark.Logging
 import au.csiro.variantspark.utils.Projector
+import au.csiro.pbdava.ssparkle.common.utils.Timed._
 
 case class WideRandomForestModel(trees: List[WideDecisionTreeModel], val labelCount:Int, oobError:Double) {
   def printout() {
@@ -66,11 +67,11 @@ trait WideRandomForestCallback {
 }
 
 class WideRandomForest(params:RandomForestParams = RandomForestParams()) extends Logging {
-  def run(data: RDD[(Vector, Long)], labels: Array[Int], ntrees: Int)(implicit callback:WideRandomForestCallback = null): WideRandomForestModel = {
+  def train(indexedData: RDD[(Vector, Long)], labels: Array[Int], ntrees: Int)(implicit callback:WideRandomForestCallback = null): WideRandomForestModel = {
     // subsample
     //dims seems to be the number of samples, not number of dimensions?
     val dims = labels.length
-    val features = data.count().toInt
+    val features = indexedData.count().toInt
     val labelCount = labels.max + 1    
     val oobVotes = Array.fill(dims)(Array.fill(labelCount)(0))
     logDebug("Features: " + features.toDouble)
@@ -83,29 +84,29 @@ class WideRandomForest(params:RandomForestParams = RandomForestParams()) extends
       val startTime = System.currentTimeMillis()
       //  represent sample as weights       
       // TODO: This can be done in one pass if drawing from binomial distributions with success 1/n
-      val boostrapSample = Array.fill(dims)(0)
-      Range(0,dims).foreach(_=> boostrapSample((Math.random * dims).toInt) +=1)
-      val tree = new WideDecisionTree().run(data, labels, boostrapSample, ntryFraction)
-      val error = if (params.oob) {
-        // check which indexes are out of bag
-        val oobIndexes = boostrapSample.zipWithIndex.filter(t => t._1 == 0).map(_._2).toSet
-        val predictions = tree.predictIndexed(data.map( t => (Projector.projectVector(oobIndexes, invert = false)(t._1), t._2)))
-        //logInfo(s"tree oob pred: ${predictions.toList}")
-        val indexes = oobIndexes.toSeq.sorted
-        predictions.zip(indexes).foreach{ case(v, i) => oobVotes(i)(v) += 1}
-        //logInfo(s"oob indexes: ${indexes}")
-        val pred = oobVotes.map(_.zipWithIndex.max._2)
-        //logInfo(s"oob pred: ${pred.toList}")
-        Metrics.classificatoinError(labels, pred )
-      } else {
-        Double.NaN
-      }
-      val endTime = System.currentTimeMillis()
-      val elapsedTime = endTime - startTime
-      logDebug(s"Tree error: $error")
-      Option(callback).foreach(_.onTreeComplete(p, error, elapsedTime))
-      //tree.printout()
-      (tree, error)
+      time {
+        val boostrapSample = Array.fill(dims)(0)
+        Range(0,dims).foreach(_=> boostrapSample((Math.random * dims).toInt) +=1)
+        val tree = new WideDecisionTree().run(indexedData, labels, boostrapSample, ntryFraction)
+        val error = if (params.oob) {
+          // check which indexes are out of bag
+          val oobIndexes = boostrapSample.zipWithIndex.filter(t => t._1 == 0).map(_._2).toSet
+          val predictions = tree.predictIndexed(indexedData.map( t => (Projector.projectVector(oobIndexes, invert = false)(t._1), t._2)))
+          //logInfo(s"tree oob pred: ${predictions.toList}")
+          val indexes = oobIndexes.toSeq.sorted
+          predictions.zip(indexes).foreach{ case(v, i) => oobVotes(i)(v) += 1}
+          //logInfo(s"oob indexes: ${indexes}")
+          val pred = oobVotes.map(_.zipWithIndex.max._2)
+          //logInfo(s"oob pred: ${pred.toList}")
+          Metrics.classificatoinError(labels, pred )
+        } else {
+          Double.NaN
+        }
+        logDebug(s"Tree error: $error")
+        (tree, error)
+      }.withResultAndTime{ case ((tree, error), elapsedTime) =>
+        Option(callback).foreach(_.onTreeComplete(p, error, elapsedTime))
+      }.result
     }
     //val oobError = trees.map(_._2).sum.toDouble / ntrees
     val oobError = trees.last._2

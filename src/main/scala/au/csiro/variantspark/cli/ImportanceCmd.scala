@@ -97,7 +97,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
         echo(s"Finished tree: ${treeIndex}, current oobError: ${oobError}, time: ${elapsedTimeMs} ms")
       }
     }
-    val result  = rf.run(traningData, labels, nTrees)  
+    val result  = rf.train(traningData, labels, nTrees)  
     
     
     

@@ -36,7 +36,7 @@ class FilterCmd extends ArgsApp with TestArgs with SparkApp {
     val features = source.features().zipWithIndex().cache()
     val featureCount = features.count()
     println(s"No feautures: ${featureCount}")    
-       
+    /*
     val (sampleCount, sampleTime) = Timed.time(features.sample(false, 0.05).collect().size)
     println(s"No feautures sample: ${sampleCount}, time: ${sampleTime}")
 
@@ -49,7 +49,9 @@ class FilterCmd extends ArgsApp with TestArgs with SparkApp {
       features.filter(t => br_index.value.contains(t._2)).collect().size
     }
     println(s"No feautures set: ${setCount}, time: ${setTime}") 
-  }
+    * 
+    */
+   }     
 }
 
 object FilterCmd  {
