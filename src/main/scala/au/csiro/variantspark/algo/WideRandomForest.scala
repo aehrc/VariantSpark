@@ -10,8 +10,26 @@ import au.csiro.variantspark.metrics.Metrics
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap
 import org.apache.spark.Logging
+import au.csiro.variantspark.utils.RDDProjections._
 import au.csiro.variantspark.utils.Projector
 import au.csiro.pbdava.ssparkle.common.utils.Timed._
+import au.csiro.variantspark.utils.Sample
+
+class VotingAggregator(val nLabels:Int, val nSamples:Int) {
+  lazy val votes = Array.fill(nSamples)(Array.fill(nLabels)(0))
+  
+  def addVote(predictions:Array[Int], indexes:Iterable[Int]) {
+    require(predictions.length <= nSamples, "Valid number of samples")
+    predictions.zip(indexes).foreach{ case(v, i) => votes(i)(v) += 1}
+  }
+  
+  def addVote(predictions:Array[Int]) {
+    require(predictions.length == nSamples, "Full prediction range")
+    predictions.zipWithIndex.foreach{ case(v, i) => votes(i)(v) += 1}
+  }
+  
+  def predictions = votes.map(_.zipWithIndex.max._2)
+}
 
 case class WideRandomForestModel(trees: List[WideDecisionTreeModel], val labelCount:Int, oobError:Double) {
   def printout() {
@@ -37,80 +55,66 @@ case class WideRandomForestModel(trees: List[WideDecisionTreeModel], val labelCo
     accumulations.map { case (index, value) => (index.toLong, value.toDouble/trees.size) }.toMap
   }
   
-  def predict(data: RDD[Vector]): Array[Int] = {
-    val sampleCount = data.first.size
-    // for classification we just do majority vote
-    val votes = Array.fill(sampleCount)(Array.fill(labelCount)(0))
-    trees.map(_.predict(data)).foreach { x => x.zipWithIndex.foreach{ case (v, i) => votes(i)(v)+=1}} // this is each tree vote for eeach sample
-    // now for each sample find the label with the highest count
-    votes.map(_.zipWithIndex.max._2)
-  }
+  def predict(data: RDD[Vector]): Array[Int] = predictIndexed(data.zipWithIndex())
 
-  def predictIndexed(data: RDD[(Vector,Long)]): Array[Int] = {
-    val sampleCount = data.first._1.size
-    // for classification we just do majority vote
-    val votes = Array.fill(sampleCount)(Array.fill(labelCount)(0))
-    trees.map(_.predictIndexed(data)).foreach { x => x.zipWithIndex.foreach{ case (v, i) => votes(i)(v)+=1}} // this is each tree vote for eeach sample
-    // now for each sample find the label with the highest count
-    votes.map(_.zipWithIndex.max._2)
+  def predictIndexed(indexedData: RDD[(Vector,Long)]): Array[Int] = {
+    val agg = new VotingAggregator(labelCount, indexedData.first._1.size)
+    trees.map(_.predictIndexed(indexedData)).foreach(agg.addVote)
+    agg.predictions
   }
   
 }
 
 case class RandomForestParams(
     oob:Boolean = true,
-    nTryFraction:Double =  Double.NaN
-)
+    nTryFraction:Double =  Double.NaN, 
+    bootstrap:Boolean = true,
+    subsample:Double = Double.NaN
+) {
+  def resolveDefaults(nSamples:Int, nVariables:Int):RandomForestParams = {
+    RandomForestParams(
+        oob = oob, 
+        nTryFraction = if (!nTryFraction.isNaN) nTryFraction else Math.sqrt(nVariables.toDouble)/nVariables,
+        bootstrap = bootstrap,
+        subsample = if (!subsample.isNaN) subsample else if (bootstrap) 1.0 else 0.666
+    )
+  }
+}
 
 trait WideRandomForestCallback {
   def onTreeComplete(treeIndex:Int, oobError:Double, elapsedTimeMs:Long)
 }
 
 class WideRandomForest(params:RandomForestParams = RandomForestParams()) extends Logging {
-  def train(indexedData: RDD[(Vector, Long)], labels: Array[Int], ntrees: Int)(implicit callback:WideRandomForestCallback = null): WideRandomForestModel = {
-    // subsample
-    //dims seems to be the number of samples, not number of dimensions?
-    val dims = labels.length
-    val features = indexedData.count().toInt
-    val labelCount = labels.max + 1    
-    val oobVotes = Array.fill(dims)(Array.fill(labelCount)(0))
-    logDebug("Features: " + features.toDouble)
-    val ntryFraction = if (params.nTryFraction.isNaN ) Math.sqrt(features.toDouble)/features.toDouble else params.nTryFraction
-    logDebug(s"RF: Using ntryfraction: $ntryFraction")
-    logDebug(s"RF: i.e. trying ${(features * ntryFraction).toInt} features per split")
-
-    val trees = Range(0, ntrees).map { p =>
+  def train(indexedData: RDD[(Vector, Long)], labels: Array[Int], nTrees: Int)(implicit callback:WideRandomForestCallback = null): WideRandomForestModel = {
+    val nSamples = labels.length
+    val nVariables = indexedData.count().toInt
+    val nLabels = labels.max + 1  
+    logDebug(s"Data:  nSamples:${nSamples}, nVariables: ${nVariables}, nLabels:${nLabels}")
+   
+    val actualParams = params.resolveDefaults(nSamples, nVariables)  
+    logDebug(s"Parameters: ${actualParams}")
+   
+    val oobAggregator = if (actualParams.oob) Option(new VotingAggregator(nLabels,nSamples)) else None
+    
+    val (trees, errors) = Range(0, nTrees).map { p =>
       logDebug(s"Building tree: $p")
-      val startTime = System.currentTimeMillis()
-      //  represent sample as weights       
-      // TODO: This can be done in one pass if drawing from binomial distributions with success 1/n
       time {
-        val boostrapSample = Array.fill(dims)(0)
-        Range(0,dims).foreach(_=> boostrapSample((Math.random * dims).toInt) +=1)
-        val tree = new WideDecisionTree().run(indexedData, labels, boostrapSample, ntryFraction)
-        val error = if (params.oob) {
-          // check which indexes are out of bag
-          val oobIndexes = boostrapSample.zipWithIndex.filter(t => t._1 == 0).map(_._2).toSet
-          val predictions = tree.predictIndexed(indexedData.map( t => (Projector.projectVector(oobIndexes, invert = false)(t._1), t._2)))
-          //logInfo(s"tree oob pred: ${predictions.toList}")
-          val indexes = oobIndexes.toSeq.sorted
-          predictions.zip(indexes).foreach{ case(v, i) => oobVotes(i)(v) += 1}
-          //logInfo(s"oob indexes: ${indexes}")
-          val pred = oobVotes.map(_.zipWithIndex.max._2)
-          //logInfo(s"oob pred: ${pred.toList}")
-          Metrics.classificatoinError(labels, pred )
-        } else {
-          Double.NaN
-        }
-        logDebug(s"Tree error: $error")
-        (tree, error)
+        //TODO: Make sure tree accepts sample a indexs not weights !!!
+        val sample = Sample.fraction(nSamples, actualParams.subsample, actualParams.bootstrap)
+        val tree = new WideDecisionTree().run(indexedData, labels, sample.indexes, actualParams.nTryFraction)
+        val oobError = oobAggregator.map { agg =>
+          val oobIndexes = sample.indexesOut
+          val oobPredictions = tree.predictIndexed(indexedData.project(Projector(oobIndexes.toArray)))
+          agg.addVote(oobPredictions, oobIndexes)
+          Metrics.classificatoinError(labels, agg.predictions)
+        }.getOrElse(Double.NaN)
+        (tree, oobError)
       }.withResultAndTime{ case ((tree, error), elapsedTime) =>
+        logDebug(s"Tree: ${p} >> oobError: ${error}, time: ${elapsedTime}")
         Option(callback).foreach(_.onTreeComplete(p, error, elapsedTime))
       }.result
-    }
-    //val oobError = trees.map(_._2).sum.toDouble / ntrees
-    val oobError = trees.last._2
-    logDebug(s"Error: oobError")
-    WideRandomForestModel(trees.map(_._1).toList, labelCount, oobError)
+    }.unzip
+    WideRandomForestModel(trees.toList, nLabels, errors.last)
   }
 }

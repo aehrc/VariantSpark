@@ -1,6 +1,5 @@
 package au.csiro.variantspark.utils
 
-
 import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.commons.math3.random.RandomDataGenerator
@@ -25,37 +24,6 @@ class Projector(indexSet: Set[Int], include: Boolean = true) extends Serializabl
   def indexes = indexSet
 }
 
-
-object Sampling {
-
-    /**
-     * Get indexes that should be included in sample from array of this size
-     */
-    def subsample(size:Int, sampleSize:Int):Array[Int] =  {
-      if (sampleSize>size) throw new RuntimeException("Sample size greater then sample len")
-      val rdg = new RandomDataGenerator()
-      return rdg.nextPermutation(size, sampleSize)
-    }
-  
-    /**
-     * Get indexes that should be included in sample from array of this size
-     */
-    def subsample(size:Int, fraction:Double):Array[Int] =  subsample(size, math.round(size*fraction).toInt)
- 
-    def folds(size:Int, nFolds:Int):List[Array[Int]] = {
-      val rdg = new RandomDataGenerator()
-      //check it there is enough to have at least one element per folr
-      if (size < nFolds)
-        throw new RuntimeException("Not enougth elements")
-      val permutation = rdg.nextPermutation(size, size)
-      // now I just need to distribute this collections evenly into n folds
-      val byFold = Array.range(0, size).groupBy(permutation(_)%nFolds)
-      // we do not really care which order we get the folds in
-      byFold.values.toList
-  }
-    
-}
-  
 object Projector {
   
   def apply(indexes:Array[Int], include:Boolean = true) = new Projector(indexes.toSet, include)
@@ -78,6 +46,11 @@ object Projector {
 
   def projectArray(indexSet: Set[Int], invert: Boolean = false)(a: Array[Int]): Array[Int] = {
     (for (i <- a.indices if indexSet.contains(i) == !invert) yield a(i)).toArray
-  }
-  
+  } 
 }
+
+object RDDProjections {
+  implicit def toVectorRDD(rdd:RDD[Vector]) = new VectorRDDFunction(rdd)
+  implicit def toIndexedVectorRDD(rdd:RDD[(Vector, Long)]) = new IndexedVectorRDDFunction(rdd)
+}
+
