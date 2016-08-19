@@ -102,7 +102,7 @@ class WideRandomForest(params:RandomForestParams = RandomForestParams()) extends
       time {
         //TODO: Make sure tree accepts sample a indexs not weights !!!
         val sample = Sample.fraction(nSamples, actualParams.subsample, actualParams.bootstrap)
-        val tree = new WideDecisionTree().run(indexedData, labels, sample.indexes, actualParams.nTryFraction)
+        val tree = new WideDecisionTree().run(indexedData, labels, actualParams.nTryFraction, sample)
         val oobError = oobAggregator.map { agg =>
           val oobIndexes = sample.indexesOut
           val oobPredictions = tree.predictIndexed(indexedData.project(Projector(oobIndexes.toArray)))

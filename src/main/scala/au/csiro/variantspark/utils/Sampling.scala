@@ -15,6 +15,7 @@ class Sample(val nSize:Int, val indexes:Array[Int]) {
 
 
 object Sample {
+  def all(nSize:Int) = new Sample(nSize, Range(0, nSize).toArray)
   def fraction(nSize:Int, fraction:Double, withReplacement:Boolean = false) = new Sample(nSize, 
       Sampling.subsample(nSize, fraction, withReplacement))
 }
@@ -28,7 +29,7 @@ object Sampling {
       if (!withReplacement && sampleSize>size) throw new RuntimeException("Sample size greater then sample len")
       val rdg = new RandomDataGenerator()
       return if (withReplacement) 
-        Array.fill[Int](sampleSize)(rdg.nextInt(0,size)) else rdg.nextPermutation(size, sampleSize)
+        Array.fill[Int](sampleSize)(rdg.nextInt(0,size-1)) else rdg.nextPermutation(size, sampleSize)
     }
     
     def subsample(size:Int, sampleSize:Int):Array[Int] = subsample(size, sampleSize, false)

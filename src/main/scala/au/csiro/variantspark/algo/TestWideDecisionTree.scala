@@ -37,10 +37,6 @@ object TestWideDecisionTree extends SparkApp {
     val labels = clusterAssignment.toArray
     
     val (trainSetProj, testSetProj) = Projector.splitRDD(vectorData, 0.8)
-    
-    
-    
-    
     val trainSetWithIndex = vectorData.project(trainSetProj).zipWithIndex().cache()
     val trainLables = trainSetProj.projectArray(labels)
 

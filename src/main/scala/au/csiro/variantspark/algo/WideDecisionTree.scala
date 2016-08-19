@@ -14,6 +14,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import org.apache.spark.mllib.linalg.Vector
 import au.csiro.pbdava.ssparkle.spark.SparkUtils
 import au.csiro.variantspark.metrics.Gini
+import au.csiro.variantspark.utils.Sample
 
 case class SubsetInfo(indices:Array[Int], impurity:Double, majorityLabel:Int) {
   def this(indices:Array[Int], impurity:Double, labels:Array[Int], nLabels:Int)  {
@@ -34,7 +35,6 @@ case class VarSplitInfo(val variableIndex: Long, val splitPoint:Int, val gini:Do
     )
   }
 }
-
 
 /**
  * So what are the stopping conditions
@@ -221,25 +221,24 @@ class WideDecisionTreeModel(val rootNode: DecisionTreeNode) extends  Logging {
 case class DecisionTreeParams(val maxDepth:Int = 100, val minNodeSize:Int =1)
 
 class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) extends Logging {
-  def run(data: RDD[Vector], labels: Array[Int]): WideDecisionTreeModel = run(data.zipWithIndex(), labels, Range(0, data.first().size).toArray, 0.3)
-  def run(data: RDD[(Vector, Long)], labels: Array[Int], weights: Array[Int],nvarFraction: Double): WideDecisionTreeModel = {
-
+  
+  
+  def run(data: RDD[Vector], labels: Array[Int]): WideDecisionTreeModel = run(data.zipWithIndex(), labels, 0.3, Sample.all(data.first().size))
+  def run(data: RDD[(Vector, Long)], labels: Array[Int], nvarFraction: Double, sample:Sample): WideDecisionTreeModel = {
     // TODO: not sure while this is need
     val dataSize = data.count()
-    val currentSet =  Range(0,labels.length).filter(weights(_) > 0).toArray
+    //TODO (OPTIMIZE): Perhpas is't better to use unique indexes and weights
+    val currentSet =  sample.indexesIn.toArray
     
-    val br_labels = data.context.broadcast(labels)
-    val br_weights = data.context.broadcast(weights)    
-    
+    val br_labels = data.context.broadcast(labels)    
     val nCategories = labels.max + 1
     val (totalGini, totalLabel) = Gini.giniImpurity(currentSet, labels, nCategories)
-    val rootNode = buildSplit(data, List(SubsetInfo(currentSet, totalGini, totalLabel)), br_labels,br_weights, nvarFraction, 0)
- 
+    val rootNode = buildSplit(data, List(SubsetInfo(currentSet, totalGini, totalLabel)), br_labels, nvarFraction, 0)
     br_labels.destroy()    
     new WideDecisionTreeModel(rootNode.head)
   }
 
-  def buildSplit(indexedData: RDD[(Vector, Long)], subsets: List[SubsetInfo], br_labels: Broadcast[Array[Int]], br_weights: Broadcast[Array[Int]], nvarFraction: Double, treeLevel:Int): List[DecisionTreeNode] = {
+  def buildSplit(indexedData: RDD[(Vector, Long)], subsets: List[SubsetInfo], br_labels: Broadcast[Array[Int]], nvarFraction: Double, treeLevel:Int): List[DecisionTreeNode] = {
       // for the current set find all candidate splits
   
       val nCategories = br_labels.value.max + 1
@@ -285,7 +284,7 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
      logDebug(s"Next level splits: ${nextLevelSubsets}")
      
      // compute the next level tree nodes (notice the recursive call)
-     val nextLevelNodes = if (!nextLevelSubsets.isEmpty) buildSplit(indexedData, nextLevelSubsets, br_labels, br_weights, nvarFraction, treeLevel + 1) else List()
+     val nextLevelNodes = if (!nextLevelSubsets.isEmpty) buildSplit(indexedData, nextLevelSubsets, br_labels, nvarFraction, treeLevel + 1) else List()
 
      // compute the indexes of splitted subsets against the original indexes
      val subsetIndexToSplitIndexMap = usefulSplitsIndices.zipWithIndex.toMap
@@ -301,7 +300,7 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
              nextLevelNodes(2*splitIndex), nextLevelNodes(2*splitIndex+1))})
          .getOrElse(LeafNode(subset.majorityLabel, subset.lenght,  subset.impurity))
      }).toList
-   }
+  }
 }
 
 
