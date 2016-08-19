@@ -51,10 +51,14 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
 
   @Option(name="-ct", required=false, usage="Only display pairs with abs(correlation) greater then the threshold (def=0.6)", aliases=Array("--correlation-threshold") )
   val correlationThreshold = 0.6
-  
+ 
+  @Option(name="-d", required=false, usage="Include important variables data"
+        , aliases=Array("--inlcude-data") )
+  val includeData = false
+ 
   
   @Override
-  def testArgs = Array("-if", "data/small.vcf", "-ff", "data/small-labels.csv", "-fc", "22_16051249")
+  def testArgs = Array("-if", "data/small.vcf", "-ff", "data/small-labels.csv", "-fc", "22_16051249", "-d")
   
   @Override
   def run():Unit = {
@@ -116,7 +120,12 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
       echo("Variable importance preview")
       varImportance.take(math.min(nVariables, defaultPreviewSize)).foreach({case(label, importance) => echo(s"${label}: ${importance}")})
     }
-       
+
+      // TODO (Optimize): Only needed when data is reqruied
+      // compute correlation
+    val importntVariableData = WideDecisionTree.collectVariablesToMap(traningData, topImportantVariableIndexes) 
+
+    
     if (computeCorrelation) {
       // compute correlation
       val importntVariableData = WideDecisionTree.collectVariablesToMap(traningData, topImportantVariableIndexes) 
@@ -128,10 +137,11 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     }
     
     LoanUtils.withCloseable(if (outputFile != null ) CSVWriter.open(outputFile) else CSVWriter.open(ReusablePrintStream.stdout)) { writer =>
-      writer.writeRow(List("variable","importance"))
-      writer.writeAll(varImportance.map(t => t.productIterator.toSeq))
+      val header = List("variable","importance") ::: (if (includeData) source.rowNames else Nil)
+      writer.writeRow(header)
+      writer.writeAll(topImportantVariables.map({case (i, importance) => 
+        List(index(i), importance) ::: (if (includeData) importntVariableData(i).toArray.toList else Nil)}))
     }
-
   }
 }
 
