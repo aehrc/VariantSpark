@@ -12,9 +12,10 @@ import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.Logging
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import org.apache.spark.mllib.linalg.Vector
-import au.csiro.pbdava.ssparkle.spark.SparkUtils
+import au.csiro.pbdava.ssparkle.spark.SparkUtils._
 import au.csiro.variantspark.metrics.Gini
 import au.csiro.variantspark.utils.Sample
+import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
 
 case class SubsetInfo(indices:Array[Int], impurity:Double, majorityLabel:Int) {
   def this(indices:Array[Int], impurity:Double, labels:Array[Int], nLabels:Int)  {
@@ -212,9 +213,7 @@ class WideDecisionTreeModel(val rootNode: DecisionTreeNode) extends  Logging {
     accumulations
   }
 
-  def variableImportance(): Map[Long, Double] = {
-    variableImportanceAsFastMap.entrySet().map(e => (e.getKey.toLong, e.getValue.toDouble)).toMap
-  }
+  def variableImportance(): Map[Long, Double] =  variableImportanceAsFastMap.asScala
 
 }
 
@@ -258,7 +257,7 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
       //TODO: (OPTIMIZE) if I pass the subset info including impurity I can do post-filtering in workers
       
       val subsetsToSplitAsIndices = subsetsToSplit.map(_._1.indices).toArray
-      val bestSplits = SparkUtils.withBrodcast(indexedData.sparkContext)(subsetsToSplitAsIndices){ br_splits => 
+      val bestSplits = withBrodcast(indexedData)(subsetsToSplitAsIndices){ br_splits => 
         indexedData
           .map(WideDecisionTree.findSplitsForVariable(br_labels,br_splits, nvarFraction))
           .fold(Array.fill(subsetsToSplitAsIndices.length)(null))(WideDecisionTree.merge)

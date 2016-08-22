@@ -1,6 +1,7 @@
 package au.csiro.pbdava.ssparkle.spark
 
 import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 import org.apache.spark.broadcast.Broadcast
 import scala.reflect.ClassTag
 
@@ -16,4 +17,6 @@ object SparkUtils {
       br.destroy()
     }
   }
+  
+  implicit def rdd2sc(rdd:RDD[_]) = rdd.sparkContext
 }

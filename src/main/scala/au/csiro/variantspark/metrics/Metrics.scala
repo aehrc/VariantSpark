@@ -19,9 +19,9 @@ object Metrics {
     (index.toDouble - sumAi*sumBi/over2(n).toDouble)/((sumAi+sumBi)/2.0 - sumAi*sumBi/over2(n).toDouble)
   }
   
-  
-  def classificatoinError(expected:Array[Int], predicted:Array[Int]):Double = {
+  def accuracy(expected:Array[Int], predicted:Array[Int]):Double = {
     expected.toSeq.zip(predicted).filter(i => i._1 != i._2).size.toDouble/expected.length
   }
   
+  def classificatoinError(expected:Array[Int], predicted:Array[Int]):Double = accuracy(expected, predicted)
 }

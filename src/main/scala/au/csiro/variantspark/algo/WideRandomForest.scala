@@ -14,8 +14,9 @@ import au.csiro.variantspark.utils.RDDProjections._
 import au.csiro.variantspark.utils.Projector
 import au.csiro.pbdava.ssparkle.common.utils.Timed._
 import au.csiro.variantspark.utils.Sample
+import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
 
-class VotingAggregator(val nLabels:Int, val nSamples:Int) {
+case class VotingAggregator(val nLabels:Int, val nSamples:Int) {
   lazy val votes = Array.fill(nSamples)(Array.fill(nLabels)(0))
   
   def addVote(predictions:Array[Int], indexes:Iterable[Int]) {
@@ -23,15 +24,17 @@ class VotingAggregator(val nLabels:Int, val nSamples:Int) {
     predictions.zip(indexes).foreach{ case(v, i) => votes(i)(v) += 1}
   }
   
-  def addVote(predictions:Array[Int]) {
+  def addVote(predictions:Array[Int]):VotingAggregator = {
     require(predictions.length == nSamples, "Full prediction range")
     predictions.zipWithIndex.foreach{ case(v, i) => votes(i)(v) += 1}
+    this
   }
   
   def predictions = votes.map(_.zipWithIndex.max._2)
 }
 
 case class WideRandomForestModel(trees: List[WideDecisionTreeModel], val labelCount:Int, oobError:Double) {
+  
   def printout() {
     trees.zipWithIndex.foreach {
       case (tree, index) =>
@@ -40,27 +43,20 @@ case class WideRandomForestModel(trees: List[WideDecisionTreeModel], val labelCo
     }
   }
 
-  def variableImportance: Map[Long, Double] = {
-    // average by all trees
-    val accumulations = new Long2DoubleOpenHashMap()
-    val counts = new Long2IntOpenHashMap()
-    trees.foreach { t =>
-      val treeImportnace = t.variableImportanceAsFastMap
-      treeImportnace.foreach {
-        case (index, imp) =>
-          accumulations.addTo(index, imp)
-          counts.addTo(index, 1)
-      }
-    }
-    accumulations.map { case (index, value) => (index.toLong, value.toDouble/trees.size) }.toMap
+  def variableImportance: Map[Long, Double] = {   
+    // average the importance of each variable over all trees
+    // if a variable is not used in a tree it's importance for this tree is assumed to be 0
+    trees.map(_.variableImportanceAsFastMap).fold(new Long2DoubleOpenHashMap())(_.addAll(_))
+      .asScala.mapValues(_/trees.size)
   }
   
   def predict(data: RDD[Vector]): Array[Int] = predictIndexed(data.zipWithIndex())
 
-  def predictIndexed(indexedData: RDD[(Vector,Long)]): Array[Int] = {
-    val agg = new VotingAggregator(labelCount, indexedData.first._1.size)
-    trees.map(_.predictIndexed(indexedData)).foreach(agg.addVote)
-    agg.predictions
+  def predictIndexed(indexedData: RDD[(Vector,Long)]): Array[Int] = predictIndexed(indexedData, indexedData.first._1.size)
+ 
+  def predictIndexed(indexedData: RDD[(Vector,Long)], nSamples:Int): Array[Int] = {
+     trees.map(_.predictIndexed(indexedData))
+       .foldLeft(VotingAggregator(labelCount, nSamples))(_.addVote(_)).predictions
   }
   
 }

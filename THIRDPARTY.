@@ -1,0 +1,30 @@
+
+Scala 
+Copyright (c) 2002-2016 EPFL
+Copyright (c) 2011-2016 Lightbend, Inc. (formerly Typesafe, Inc.)
+Scala License (http://www.scala-lang.org/license.html)
+
+Apache Spark (http://spark.apache.org/)
+Copyright 2014 and onwards The Apache Software Foundation.
+Apache License Version 2.0 (https://github.com/apache/spark/blob/master/LICENSE)
+
+htsjdk (https://samtools.github.io/htsjdk/)
+Copyright (c) 2007 and onwards by The Broad Institute, Inc
+MIT, Public Domain, GNU Lesser General Public License (LGPL) Version 2.1
+
+args4j (http://args4j.kohsuke.org/)
+Copyright 2003-2016 Kohsuke Kawaguchi
+MIT (https://opensource.org/licenses/mit-license.php)
+
+Joda-Time (http://www.joda.org/joda-time/)
+Copyright 2002-2016 Joda.org. All Rights Reserved.
+Apache License Version 2.0 (http://www.joda.org/joda-time/license.html)
+
+fastutil (http://fastutil.di.unimi.it/)
+Copyright 2003-2016 Paolo Boldi and Sebastiano Vigna
+Apache License Version 2.0 (https://github.com/vigna/fastutil/blob/master/LICENSE-2.0)
+
+scala-csv (https://github.com/tototoshi/scala-csv)
+Copyright 2013-2015 Toshiyuki Takahashi https://github.com/tototoshi/scala-csv
+Apache License Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
+
