@@ -16,7 +16,15 @@ class WideRadomForrestModelTest extends SparkTest {
   val nLabels = 4
   val nSamples  = 2
   val testData = sc.parallelize(List(Vectors.zeros(nSamples)))
-    
+
+  @Test  
+  def whenManyPredictorsThenAveragesImportnace() {
+    val importances = List(Map(1l -> 1.0, 2l->1.0), Map(1l->1.0, 2l->0.5, 3l->0.6), Map(1L-> 1.0)).map(m => new Long2DoubleOpenHashMap(m.keys.toArray, m.values.toArray))
+    val model = WideRandomForestModel(importances.map(TestPredictorWithImportance(null,_)).toList, nLabels)
+    val totalImportnace = model.variableImportance
+    assertEquals(Map(1L->1.0, 2L->0.5, 3L->0.2), totalImportnace)
+  }  
+  
   @Test
   def whenEmptyPredictsHighestLabel() {
     val model = WideRandomForestModel(List(), nLabels)
@@ -38,14 +46,6 @@ class WideRadomForrestModelTest extends SparkTest {
     val model = WideRandomForestModel(assumedPreditions.map(TestPredictorWithImportance(_, null)).toList, nLabels)
     val prediction = model.predict(testData)
     assertArrayEquals(Array(1,0), prediction)
-  }
-
-  
-  def whenManyPredictorsThenAveragesImportnace() {
-    val importances = List(Map(1l -> 1.0, 2l->1.0), Map(1l->1.0, 2l->0.5, 3l->0.3), Map(1L-> 1.0)).map(m => new Long2DoubleOpenHashMap(m.keys.toArray, m.values.toArray))
-    val model = WideRandomForestModel(importances.map(TestPredictorWithImportance(null,_)).toList, nLabels)
-    val totalImportnace = model.variableImportance
-    assertEquals(Map(1L->1.0, 2L->0.5, 3L->0.1), totalImportnace)
   }
   
 }
