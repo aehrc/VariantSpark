@@ -186,9 +186,7 @@ case class SplitNode(override val majorityLabel: Int, override val size: Int,ove
   def resolve(variables: Map[Long, Vector])(sampleIndex:Int):Int = if (variables(splitVariableIndex)(sampleIndex) <= splitPoint) left.resolve(variables)(sampleIndex) else right.resolve(variables)(sampleIndex)
 }
 
-class WideDecisionTreeModel(val rootNode: DecisionTreeNode) extends  Logging {
-
-  def predict(data: RDD[Vector]): Array[Int] = predictIndexed(data.zipWithIndex())
+class WideDecisionTreeModel(val rootNode: DecisionTreeNode) extends PredictiveModelWithImportance with  Logging {
   
   def predictIndexed(data: RDD[(Vector,Long)]): Array[Int] = {
     // this is a bit tricky but say lets' collect all the values neeed to resolve the thre
@@ -212,9 +210,6 @@ class WideDecisionTreeModel(val rootNode: DecisionTreeNode) extends  Logging {
     rootNode.countImportance(accumulations, rootNode.size)
     accumulations
   }
-
-  def variableImportance(): Map[Long, Double] =  variableImportanceAsFastMap.asScala
-
 }
 
 case class DecisionTreeParams(val maxDepth:Int = 100, val minNodeSize:Int =1)

@@ -22,7 +22,7 @@
 		<encoding>UTF-8</encoding>
 		<scala.tools.version>2.10</scala.tools.version>
 		<scala.version>2.10.4</scala.version>
-		<skipTests>true</skipTests>
+		<!--skipTests>true</skipTests-->
 	</properties>
 	<dependencies>
 		<dependency>

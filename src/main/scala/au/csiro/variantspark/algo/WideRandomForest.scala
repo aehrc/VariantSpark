@@ -30,10 +30,12 @@ case class VotingAggregator(val nLabels:Int, val nSamples:Int) {
     this
   }
   
-  def predictions = votes.map(_.zipWithIndex.max._2)
+  def predictions = votes.map(_.zipWithIndex.maxBy(_._1)._2)
 }
 
-case class WideRandomForestModel(trees: List[WideDecisionTreeModel], val labelCount:Int, oobError:Double) {
+case class WideRandomForestModel(val trees: List[PredictiveModelWithImportance], val labelCount:Int, oobErrors:List[Double] = List.empty) {
+  
+  def oobError:Double = oobErrors.last
   
   def printout() {
     trees.zipWithIndex.foreach {
@@ -81,7 +83,14 @@ trait WideRandomForestCallback {
   def onTreeComplete(treeIndex:Int, oobError:Double, elapsedTimeMs:Long)
 }
 
-class WideRandomForest(params:RandomForestParams = RandomForestParams()) extends Logging {
+
+object WideRandomForest {
+  type ModelBuilder = (RDD[(Vector,Long)], Array[Int], Double, Sample) => PredictiveModelWithImportance
+  
+  def wideDecisionTreeBuilder(indexedData: RDD[(Vector, Long)], labels: Array[Int], nTryFraction: Double, sample:Sample) = new WideDecisionTree().run(indexedData, labels, nTryFraction, sample)
+}
+
+class WideRandomForest(params:RandomForestParams=RandomForestParams(),modelBuilder:WideRandomForest.ModelBuilder = WideRandomForest.wideDecisionTreeBuilder) extends Logging {
   def train(indexedData: RDD[(Vector, Long)], labels: Array[Int], nTrees: Int)(implicit callback:WideRandomForestCallback = null): WideRandomForestModel = {
     val nSamples = labels.length
     val nVariables = indexedData.count().toInt
@@ -98,7 +107,7 @@ class WideRandomForest(params:RandomForestParams = RandomForestParams()) extends
       time {
         //TODO: Make sure tree accepts sample a indexs not weights !!!
         val sample = Sample.fraction(nSamples, actualParams.subsample, actualParams.bootstrap)
-        val tree = new WideDecisionTree().run(indexedData, labels, actualParams.nTryFraction, sample)
+        val tree = modelBuilder(indexedData, labels, actualParams.nTryFraction, sample)
         val oobError = oobAggregator.map { agg =>
           val oobIndexes = sample.indexesOut
           val oobPredictions = tree.predictIndexed(indexedData.project(Projector(oobIndexes.toArray)))
@@ -111,6 +120,6 @@ class WideRandomForest(params:RandomForestParams = RandomForestParams()) extends
         Option(callback).foreach(_.onTreeComplete(p, error, elapsedTime))
       }.result
     }.unzip
-    WideRandomForestModel(trees.toList, nLabels, errors.last)
+    WideRandomForestModel(trees.toList, nLabels, errors.toList)
   }
 }
