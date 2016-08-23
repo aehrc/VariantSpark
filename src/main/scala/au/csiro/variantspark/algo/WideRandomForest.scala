@@ -48,7 +48,7 @@ case class WideRandomForestModel(val trees: List[PredictiveModelWithImportance],
   def variableImportance: Map[Long, Double] = {   
     // average the importance of each variable over all trees
     // if a variable is not used in a tree it's importance for this tree is assumed to be 0
-    trees.map(_.variableImportanceAsFastMap).fold(new Long2DoubleOpenHashMap())(_.addAll(_))
+    trees.map(_.variableImportanceAsFastMap).foldLeft(new Long2DoubleOpenHashMap())(_.addAll(_))
       .asScala.mapValues(_/trees.size)
   }
   

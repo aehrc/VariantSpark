@@ -9,7 +9,7 @@ class Long2DoubleOpenHashMap2Map(val ohm:Long2DoubleOpenHashMap) extends AnyVal 
     ohm.entrySet().map(e => (e.getKey.toLong, e.getValue.toDouble)).toMap
 
   def addAll(m2:Long2DoubleOpenHashMap):Long2DoubleOpenHashMap =  {
-      ohm.foreach { case (i, v) => ohm.addTo(i,v) }
+      m2.foreach { case (i, v) => ohm.addTo(i,v) }
       ohm
   }
 }
