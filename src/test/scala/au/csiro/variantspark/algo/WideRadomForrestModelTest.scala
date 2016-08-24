@@ -19,10 +19,10 @@ class WideRadomForrestModelTest extends SparkTest {
 
   @Test  
   def whenManyPredictorsThenAveragesImportnace() {
-    val importances = List(Map(1l -> 1.0, 2l->1.0), Map(1l->1.0, 2l->0.5, 3l->0.6), Map(1L-> 1.0)).map(m => new Long2DoubleOpenHashMap(m.keys.toArray, m.values.toArray))
+    val importances = List(Map(1l -> 1.0, 2l->1.0), Map(1l->1.0, 2l->0.5, 3l->6.0), Map(1L-> 1.0)).map(m => new Long2DoubleOpenHashMap(m.keys.toArray, m.values.toArray))
     val model = WideRandomForestModel(importances.map(TestPredictorWithImportance(null,_)).toList, nLabels)
     val totalImportnace = model.variableImportance
-    assertEquals(Map(1L->1.0, 2L->0.5, 3L->0.2), totalImportnace)
+    assertEquals(Map(1L->1.0, 2L->0.5, 3L->2.0), totalImportnace)
   }  
   
   @Test

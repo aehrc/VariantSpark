@@ -16,6 +16,7 @@ import au.csiro.pbdava.ssparkle.spark.SparkUtils._
 import au.csiro.variantspark.metrics.Gini
 import au.csiro.variantspark.utils.Sample
 import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
+import au.csiro.variantspark.utils.VectorRDDFunction._
 
 case class SubsetInfo(indices:Array[Int], impurity:Double, majorityLabel:Int) {
   def this(indices:Array[Int], impurity:Double, labels:Array[Int], nLabels:Int)  {
@@ -132,36 +133,29 @@ object WideDecisionTree {
     val splitInfos = findSplitsForVariableData(data, br_labels.value, br_splits.value, mTryFactor)
     splitInfos.map(si => if (si != null) VarSplitInfo(variableIndex, si.splitPoint, si.gini, si.leftGini, si.rightGini) else null).toArray
   }
-  
-  def collectVariablesToMap(data: RDD[(Vector, Long)], variableIndexes:Set[Long]) =  {
-      val br_variableIndexes = data.sparkContext.broadcast(variableIndexes)
-      val result = data
-        .filter({ case (data,variableIndex) => br_variableIndexes.value.contains(variableIndex)})
-        .map(_.swap)
-        .collectAsMap().toMap
-      br_variableIndexes.destroy()
-      result
-  }
 }
 
 abstract class DecisionTreeNode(val majorityLabel: Int, val size: Int, val nodeImpurity: Double) {
   def isLeaf:Boolean
+  
   def printout(level: Int) 
-  def countImportance(accumulations: Long2DoubleOpenHashMap, totalSize:Int)
   def impurityContribution:Double = nodeImpurity * size
-  def resolve(variables: Map[Long, Vector])(sampleIndex:Int):Int
+  def predict(variables: Map[Long, Vector])(sampleIndex:Int):Int
+  def toStream:Stream[DecisionTreeNode]
+  def splitsToStream:Stream[SplitNode]  = toStream.filter(!_.isLeaf).asInstanceOf[Stream[SplitNode]]
+  def leafsToStream:Stream[LeafNode]  = toStream.filter(_.isLeaf).asInstanceOf[Stream[LeafNode]]
 }
 
 case class LeafNode(override val majorityLabel: Int,override val  size: Int,override val  nodeImpurity: Double) extends DecisionTreeNode(majorityLabel,size,nodeImpurity) {
-  val isLeaf = false
+  val isLeaf = true
 
   def printout(level: Int) {
     print(new String(Array.fill(level)(' ')))
     val nodeType = "leaf"
     println(s"${nodeType}[${majorityLabel}, ${size}, ${nodeImpurity}]")
   }
-  def countImportance(accumulations: Long2DoubleOpenHashMap, totalSize:Int) {}
-  def resolve(variables: Map[Long, Vector])(sampleIndex:Int):Int = majorityLabel
+  def predict(variables: Map[Long, Vector])(sampleIndex:Int):Int = majorityLabel
+  def toStream:Stream[DecisionTreeNode] = this #:: Stream.empty
 }
 
 case class SplitNode(override val majorityLabel: Int, override val size: Int,override val  nodeImpurity: Double, splitVariableIndex: Long, splitPoint: Double,
@@ -177,39 +171,29 @@ case class SplitNode(override val majorityLabel: Int, override val size: Int,ove
     right.printout(level + 1)      
   }
   
-  def countImportance(accumulations: Long2DoubleOpenHashMap, totalSize:Int) {
-    accumulations.addTo(splitVariableIndex, (size*nodeImpurity - (left.impurityContribution + right.impurityContribution))/totalSize.toDouble)
-    left.countImportance(accumulations, totalSize)
-    right.countImportance(accumulations, totalSize)
-  }
-
-  def resolve(variables: Map[Long, Vector])(sampleIndex:Int):Int = if (variables(splitVariableIndex)(sampleIndex) <= splitPoint) left.resolve(variables)(sampleIndex) else right.resolve(variables)(sampleIndex)
+  // TODO (CHECK): Not sure but this can be the same as impurity reduction
+  def impurityDelta  = impurityContribution - (left.impurityContribution + right.impurityContribution)
+  def predict(variables: Map[Long, Vector])(sampleIndex:Int):Int = if (variables(splitVariableIndex)(sampleIndex) <= splitPoint) left.predict(variables)(sampleIndex) else right.predict(variables)(sampleIndex)
+  def toStream:Stream[DecisionTreeNode] = this #:: left.toStream #::: right.toStream
 }
 
 class WideDecisionTreeModel(val rootNode: DecisionTreeNode) extends PredictiveModelWithImportance with  Logging {
   
-  def predictIndexed(data: RDD[(Vector,Long)]): Array[Int] = {
-    // this is a bit tricky but say lets' collect all the values neeed to resolve the thre
-
-    //map the tree into a set of indexes
-
-    def mapTrees(treeNode: DecisionTreeNode): List[Long] =  treeNode match {
-      case SplitNode(_, _, _, variableIndex, _, _, left, right) => variableIndex :: mapTrees(left) ::: mapTrees(right)
-      case _ => List()
-    }
-    val treeVariableData =  WideDecisionTree.collectVariablesToMap(data, mapTrees(rootNode).toSet)
-    Range(0, data.first()._1.size).map(rootNode.resolve(treeVariableData)).toArray
+  def splitVariableIndexes = rootNode.splitsToStream.map(_.splitVariableIndex).toSet
+  
+  def predictIndexed(indexedData: RDD[(Vector,Long)]): Array[Int] = {
+    val treeVariableData =  indexedData.collectAtIndexes(splitVariableIndexes)
+    Range(0, indexedData.size).map(rootNode.predict(treeVariableData)).toArray
   }
 
   def printout() {
     rootNode.printout(0)
   }
 
-  def variableImportanceAsFastMap: Long2DoubleOpenHashMap = {
-    val accumulations = new Long2DoubleOpenHashMap();
-    rootNode.countImportance(accumulations, rootNode.size)
-    accumulations
-  }
+  def variableImportanceAsFastMap: Long2DoubleOpenHashMap = rootNode.splitsToStream.
+    foldLeft(new Long2DoubleOpenHashMap()){ case (m, splitNode) => 
+      m.increment(splitNode.splitVariableIndex, splitNode.impurityDelta / rootNode.size)
+    }
 }
 
 case class DecisionTreeParams(val maxDepth:Int = 100, val minNodeSize:Int =1)
@@ -268,7 +252,7 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
             .unzip 
             
       // we need to collect the data for splitting variables so that we can calculate new subsets
-      val usefulSplitsVarData = WideDecisionTree.collectVariablesToMap(indexedData, usefulSplits.map(_._1.variableIndex).toSet)
+      val usefulSplitsVarData = indexedData.collectAtIndexes(usefulSplits.map(_._1.variableIndex).toSet)
       
       // split current subsets into next level ones
       val nextLevelSubsets = usefulSplits.flatMap({ case (splitInfo, subset) => 

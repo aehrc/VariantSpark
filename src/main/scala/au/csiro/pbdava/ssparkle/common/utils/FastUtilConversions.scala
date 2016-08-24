@@ -12,6 +12,11 @@ class Long2DoubleOpenHashMap2Map(val ohm:Long2DoubleOpenHashMap) extends AnyVal 
       m2.foreach { case (i, v) => ohm.addTo(i,v) }
       ohm
   }
+  
+  def increment(i:Long, inc:Double) = {
+    ohm.addTo(i, inc)
+    ohm
+  }
 }
 
 object FastUtilConversions {
