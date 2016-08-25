@@ -7,7 +7,7 @@ import collection.JavaConverters._
 
 class VCFFeatureSource(vcfSource:VCFSource) extends FeatureSource {
   
-  override lazy val rowNames:List[String] = vcfSource.header.getGenotypeSamples().asScala.toList
+  override lazy val sampleNames:List[String] = vcfSource.header.getGenotypeSamples().asScala.toList
   override def features():RDD[Feature] = vcfSource.genotypes().map(VCFFeatureSource.variantToFeature(VCFFeatureSource.hammingConversion)) 
 }
 

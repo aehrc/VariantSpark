@@ -73,11 +73,11 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     verbose(s"VCF Version: ${vcfSource.version}")
     verbose(s"VCF Header: ${vcfSource.header}")    
     val source  = VCFFeatureSource(vcfSource)
-    echo(s"Loaded rows: ${dumpList(source.rowNames)}")
+    echo(s"Loaded rows: ${dumpList(source.sampleNames)}")
      
     echo(s"Loading labels from: ${featuresFile}, column: ${featureColumn}")
     val labelSource = new CsvLabelSource(featuresFile, featureColumn)
-    val labels = labelSource.getLabels(source.rowNames)
+    val labels = labelSource.getLabels(source.sampleNames)
     echo(s"Loaded labels: ${dumpList(labels.toList)}")
     
     echo(s"Loading features from: ${inputFile}")
@@ -136,7 +136,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     }
     
     LoanUtils.withCloseable(if (outputFile != null ) CSVWriter.open(outputFile) else CSVWriter.open(ReusablePrintStream.stdout)) { writer =>
-      val header = List("variable","importance") ::: (if (includeData) source.rowNames else Nil)
+      val header = List("variable","importance") ::: (if (includeData) source.sampleNames else Nil)
       writer.writeRow(header)
       writer.writeAll(topImportantVariables.map({case (i, importance) => 
         List(index(i), importance) ::: (if (includeData) importntVariableData(i).toArray.toList else Nil)}))

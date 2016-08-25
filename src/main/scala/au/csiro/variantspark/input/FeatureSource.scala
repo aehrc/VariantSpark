@@ -12,6 +12,6 @@ case class Feature(label:String, values: Array[Int]) {
 
 
 trait FeatureSource {
-  def rowNames:List[String]
+  def sampleNames:List[String]
   def features():RDD[Feature]
 }

@@ -11,7 +11,9 @@ class CsvLabelSource(val fileName:String, val columnName:String)(implicit fs:Fil
   
   lazy val labelMap = {
     LoanUtils.withCloseable(CSVReader.open(new InputStreamReader(fs.open(new Path(fileName))))) { reader => 
-      val columnIndex = reader.readNext().get.indexOf(columnName)
+      val header = reader.readNext().get
+      println(header)
+      val columnIndex = header.indexOf(columnName)
       reader.iterator.map(row => (row(0), row(columnIndex).toInt)).toMap
     }
   }

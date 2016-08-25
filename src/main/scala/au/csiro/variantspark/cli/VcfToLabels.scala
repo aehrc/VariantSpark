@@ -40,7 +40,7 @@ class VcfToLabels extends ArgsApp with SparkApp {
     val columns = source.features().take(limit)
     LoanUtils.withCloseable(CSVWriter.open(new File(outputFile))) { writer =>
       writer.writeRow("" :: columns.map(_.label).toList)
-      source.rowNames.zipWithIndex.foreach { case( row, i) =>
+      source.sampleNames.zipWithIndex.foreach { case( row, i) =>
         writer.writeRow(row :: columns.map(_.values(i)).toList)        
       }
     }

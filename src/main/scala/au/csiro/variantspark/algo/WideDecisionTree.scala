@@ -68,7 +68,7 @@ object WideDecisionTree {
    * @param splitIndex - the split to consider
 	*/
   
-  def findSplit(data:Vector, labels:Array[Int], splitIndices:Array[Int]) = {
+  def findSplit(data:Vector, labels:Array[Int], splitIndices:Array[Int]):SplitInfo = {
     //println("Split indexes: " + splitIndices.toList)
     // essentialy we need to find the best split for data and labels where splits[i] = splitIndex
     // would be nice perhaps if I couild easily subset my vectors
@@ -194,14 +194,19 @@ class WideDecisionTreeModel(val rootNode: DecisionTreeNode) extends PredictiveMo
     foldLeft(new Long2DoubleOpenHashMap()){ case (m, splitNode) => 
       m.increment(splitNode.splitVariableIndex, splitNode.impurityDelta / rootNode.size)
     }
+  
+  def impurity = rootNode.toStream.map(_.nodeImpurity).toList
+  def variables = rootNode.splitsToStream.map(_.splitVariableIndex).toList
+  def threshods = rootNode.splitsToStream.map(_.splitPoint).toList
 }
 
-case class DecisionTreeParams(val maxDepth:Int = 100, val minNodeSize:Int =1)
+case class DecisionTreeParams(val maxDepth:Int = Int.MaxValue, val minNodeSize:Int = 1)
+
 
 class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) extends Logging {
   
   
-  def run(data: RDD[Vector], labels: Array[Int]): WideDecisionTreeModel = run(data.zipWithIndex(), labels, 0.3, Sample.all(data.first().size))
+  def run(data: RDD[Vector], labels: Array[Int]): WideDecisionTreeModel = run(data.zipWithIndex(), labels, 1.0, Sample.all(data.first().size))
   def run(data: RDD[(Vector, Long)], labels: Array[Int], nvarFraction: Double, sample:Sample): WideDecisionTreeModel = {
     // TODO: not sure while this is need
     val dataSize = data.count()
