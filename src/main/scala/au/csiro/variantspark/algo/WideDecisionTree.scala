@@ -54,7 +54,7 @@ object WideDecisionTree {
   def labelMode(currentSet: Array[Int], labels: Array[Int], labelCount:Int): Int = {
     val labelCounts = Array.fill(labelCount)(0)
     currentSet.foreach(i => labelCounts(labels(i)) += 1)
-    labelCounts.zipWithIndex.max._2
+    labelCounts.zipWithIndex.maxBy(_._1)._2
   }
   
   /**
@@ -121,17 +121,16 @@ object WideDecisionTree {
   
   def merge(a1:Array[VarSplitInfo], a2:Array[VarSplitInfo]) = {
     def mergeSplitInfo(s1:VarSplitInfo, s2:VarSplitInfo) = {
-      if (s1 == null) s2 else if (s2 == null) s1 else if (s1.gini < s2.gini) s1 else s2
+      if (s1 == null) s2 else if (s2 == null) s1 else if (s1.gini < s2.gini) s1 else if (s2.gini < s1.gini) s2 else if (s1.variableIndex < s2.variableIndex) s1 else s2
     }
     Range(0,a1.length).foreach(i=> a1(i) = mergeSplitInfo(a1(i), a2(i)))
     a1
   }
   
-  def findSplitsForVariable(br_labels:Broadcast[Array[Int]], br_splits:Broadcast[Array[Array[Int]]], mTryFactor:Double)(dataWithIndex:(Vector,Long))  = {
-    val data = dataWithIndex._1
-    val variableIndex = dataWithIndex._2
-    val splitInfos = findSplitsForVariableData(data, br_labels.value, br_splits.value, mTryFactor)
-    splitInfos.map(si => if (si != null) VarSplitInfo(variableIndex, si.splitPoint, si.gini, si.leftGini, si.rightGini) else null).toArray
+  def findSplitsForVariable(br_labels:Broadcast[Array[Int]], br_splits:Broadcast[Array[Array[Int]]], 
+      mTryFactor:Double)(dataWithIndex:(Vector,Long))  = dataWithIndex match { case (data, variableIndex) =>
+        val splitInfos = findSplitsForVariableData(data, br_labels.value, br_splits.value, mTryFactor)
+        splitInfos.map(si => if (si != null) VarSplitInfo(variableIndex, si.splitPoint, si.gini, si.leftGini, si.rightGini) else null).toArray
   }
 }
 
@@ -192,7 +191,7 @@ class WideDecisionTreeModel(val rootNode: DecisionTreeNode) extends PredictiveMo
 
   def variableImportanceAsFastMap: Long2DoubleOpenHashMap = rootNode.splitsToStream.
     foldLeft(new Long2DoubleOpenHashMap()){ case (m, splitNode) => 
-      m.increment(splitNode.splitVariableIndex, splitNode.impurityDelta / rootNode.size)
+      m.increment(splitNode.splitVariableIndex, splitNode.impurityDelta)
     }
   
   def impurity = rootNode.toStream.map(_.nodeImpurity).toList

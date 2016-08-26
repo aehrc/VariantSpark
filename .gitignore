@@ -40,3 +40,6 @@ doc/publications/incob2014/images/mahout-logo.svg
 .tmpBin
 .cache-tests
 .ipynb_checkpoints
+
+.RData 
+.Rhistory 
