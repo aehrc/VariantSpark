@@ -57,6 +57,10 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
         , aliases=Array("--inlcude-data") )
   val includeData = false
  
+  // spark relareds
+  @Option(name="-sp", required=false, usage="Spark parallelism", aliases=Array("--spark-par"))
+  val sparkPar = 0
+  
   
   @Override
   def testArgs = Array("-if", "data/small.vcf", "-ff", "data/small-labels.csv", "-fc", "22_16051249", "-d")
@@ -65,13 +69,13 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
   def run():Unit = {
     implicit val fs = FileSystem.get(sc.hadoopConfiguration)  
     
-    logInfo("Running with executors: " + sc.getExecutorStorageStatus.length)
+    logInfo("Running with executors: " + sc.getExecutorMemoryStatus.size)
     logDebug(s"Runing with filesystem: ${fs}, home: ${fs.getHomeDirectory}")
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
     echo(s"Finding  ${nVariables}  most important features using random forest")
 
     echo(s"Loading header from: ${inputFile}")
-    val vcfSource = VCFSource(sc.textFile(inputFile))
+    val vcfSource = VCFSource(sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
     verbose(s"VCF Version: ${vcfSource.version}")
     verbose(s"VCF Header: ${vcfSource.header}")    
     val source  = VCFFeatureSource(vcfSource)
