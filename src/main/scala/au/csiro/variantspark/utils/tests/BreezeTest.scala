@@ -7,23 +7,14 @@ import org.apache.spark.mllib.linalg.Vectors
 object BreezeTest {
   def main(argv:Array[String]) {
     
+    val a = Array.fill(10)(1.0)
     
-    val v = DenseVector.zeros[Double](1000000)
-    Timed.time {
-      Range(0, 1000).foreach  { _ =>
-        //val a = v.toArray
-        val d = v.data
-      }
-    }.report("Breeze: toArray")
-  
-    
-   val sv = Vectors.dense(v.toArray)
-    Timed.time {
-      Range(0, 1000).foreach  { _ =>
-        val a = sv.toArray
-      }
-    }.report("Spark: toArray")    
-
+    val v = DenseVector(a)
+    println(v)
+    val k = v - DenseVector.fill(10)(0.5)
+    k*=10.0
+    println(k)
+    println(a.toList)
     
   
   }

@@ -5,6 +5,10 @@ import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.commons.math3.random.RandomDataGenerator
 import org.apache.spark.rdd.RDD
+import org.apache.commons.math3.random.RandomGeneratorFactory
+import org.apache.commons.math3.random.RandomGenerator
+import org.uncommons.maths.random.XORShiftRNG
+import it.unimi.dsi.util.XorShiftStarRandomGenerator
 
 
 class Sample(val nSize:Int, val indexes:Array[Int]) {
@@ -18,7 +22,7 @@ class Sample(val nSize:Int, val indexes:Array[Int]) {
 object Sample {
   def all(nSize:Int) = new Sample(nSize, Range(0, nSize).toArray)
   def fraction(nSize:Int, fraction:Double, withReplacement:Boolean = false) = new Sample(nSize, 
-      Sampling.subsample(nSize, fraction, withReplacement))
+      Sampling.subsampleFraction(nSize, fraction, withReplacement))
 }
 
 object Sampling {
@@ -26,9 +30,9 @@ object Sampling {
     /**
      * Get indexes that should be included in sample from array of this size
      */
-    def subsample(size:Int, sampleSize:Int, withReplacement:Boolean):Array[Int] =  {
+    def subsample(size:Int, sampleSize:Int, withReplacement:Boolean)(implicit rg:RandomGenerator = new XorShiftStarRandomGenerator()):Array[Int] =  {
       if (!withReplacement && sampleSize>size) throw new RuntimeException("Sample size greater then sample len")
-      val rdg = new RandomDataGenerator()
+      val rdg = new RandomDataGenerator(rg)
       return if (withReplacement) 
         Array.fill[Int](sampleSize)(rdg.nextInt(0,size-1)) else rdg.nextPermutation(size, sampleSize)
     }
@@ -38,7 +42,7 @@ object Sampling {
     /**
      * Get indexes that should be included in sample from array of this size
      */
-    def subsample(size:Int, fraction:Double, withReplacement:Boolean = false):Array[Int] = 
+    def subsampleFraction(size:Int, fraction:Double, withReplacement:Boolean = false):Array[Int] = 
         subsample(size, if (fraction ==1.0) size else  math.round(size*fraction).toInt, withReplacement)
  
     def folds(size:Int, nFolds:Int):List[Array[Int]] = {

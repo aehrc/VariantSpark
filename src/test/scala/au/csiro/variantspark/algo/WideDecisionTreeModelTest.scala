@@ -46,7 +46,7 @@ class WideDecisionTreeModelTest extends SparkTest {
           )
        )
     )
-    assertEquals(Map(1L -> (10 * 1.0 - (4*0.4 + 6*0.6))/10, 2L -> ((4*0.4 - (3*0.2 + 1*0.1)) + (6* 0.6 -  (2*0.1 + 4*0.2)))/10 ), decisionTreeModel.variableImportanceAsFastMap.asScala)
+    assertEquals(Map(1L -> (10 * 1.0 - (4*0.4 + 6*0.6)), 2L -> ((4*0.4 - (3*0.2 + 1*0.1)) + (6* 0.6 -  (2*0.1 + 4*0.2))) ), decisionTreeModel.variableImportanceAsFastMap.asScala)
   }
 }
 

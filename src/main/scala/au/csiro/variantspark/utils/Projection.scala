@@ -28,7 +28,7 @@ object Projector {
   
   def apply(indexes:Array[Int], include:Boolean = true) = new Projector(indexes.toSet, include)
   
-  def subsample(v:Vector, fraction:Double):Projector = Projector(Sampling.subsample(v.size, fraction))
+  def subsample(v:Vector, fraction:Double):Projector = Projector(Sampling.subsampleFraction(v.size, fraction))
 
   def split(v:Vector, fraction:Double):(Projector, Projector) = subsample(v, fraction).toPair
   
