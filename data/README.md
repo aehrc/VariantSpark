@@ -1,8 +1,6 @@
 Test Datasets
 ---------------
 
-
-
 ### CNAE-9 Data Set 
 
 This is a data set containing 1080 documents of free text business descriptions of Brazilian companies categorized into a 
