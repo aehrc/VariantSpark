@@ -80,7 +80,8 @@ case class RandomForestParams(
 }
 
 trait WideRandomForestCallback {
-  def onTreeComplete(treeIndex:Int, oobError:Double, elapsedTimeMs:Long)
+  def onParamsResolved(actualParams:RandomForestParams) {}
+  def onTreeComplete(treeIndex:Int, oobError:Double, elapsedTimeMs:Long) {}
 }
 
 
@@ -97,7 +98,8 @@ class WideRandomForest(params:RandomForestParams=RandomForestParams(),modelBuild
     val nLabels = labels.max + 1  
     logDebug(s"Data:  nSamples:${nSamples}, nVariables: ${nVariables}, nLabels:${nLabels}")
    
-    val actualParams = params.resolveDefaults(nSamples, nVariables)  
+    val actualParams = params.resolveDefaults(nSamples, nVariables) 
+    Option(callback).foreach(_.onParamsResolved(actualParams))
     logDebug(s"Parameters: ${actualParams}")
    
     val oobAggregator = if (actualParams.oob) Option(new VotingAggregator(nLabels,nSamples)) else None

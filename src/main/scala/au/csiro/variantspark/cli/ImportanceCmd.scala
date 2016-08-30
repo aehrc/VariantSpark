@@ -27,13 +27,14 @@ import au.csiro.pbdava.ssparkle.common.utils.ReusablePrintStream
 import au.csiro.variantspark.algo.WideRandomForestCallback
 import au.csiro.variantspark.utils.VectorRDDFunction._
 import au.csiro.variantspark.input.CsvFeatureSource
+import au.csiro.variantspark.algo.RandomForestParams
 
 class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
   @Option(name="-if", required=true, usage="This is input files", aliases=Array("--input-file"))
   val inputFile:String = null
 
-  @Option(name="-it", required=true, usage="Input file type (vcf|csv) ", aliases=Array("--input-type"))
+  @Option(name="-it", required=false, usage="Input file type (vcf|csv) ", aliases=Array("--input-type"))
   val inputType:String = "vcf"
 
   @Option(name="-ff", required=true, usage="Features file", aliases=Array("--feature-file"))
@@ -61,11 +62,19 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
         , aliases=Array("--inlcude-data") )
   val includeData = false
  
+  @Option(name="-rt", required=false, usage="RandomForest mTry" , aliases=Array("--rf-mtry"))
+  val rfMTry:Long = -1L
+  
+  @Option(name="-rtf", required=false, usage="RandomForest mTry fraction" , aliases=Array("--rf-mtry-fraction"))
+  val rfMTryFraction:Double = Double.NaN
+  
+  @Option(name="-ro", required=false, usage="RandomForest estimate oob" , aliases=Array("--rf-oob"))
+  val rfEstimateOob:Boolean = false
+  
   // spark relareds
   @Option(name="-sp", required=false, usage="Spark parallelism", aliases=Array("--spark-par"))
   val sparkPar = 0
-  
-  
+ 
   @Override
   def testArgs = Array("-if", "data/small.vcf", "-ff", "data/small-labels.csv", "-fc", "22_16051249", "-d")
   
@@ -113,10 +122,15 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     }
     
     echo(s"Training random forest - trees: ${nTrees}")  
-    val rf = new WideRandomForest()
+    val rf = new WideRandomForest(RandomForestParams(oob=rfEstimateOob,
+        nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction))
     val traningData = inputData.map{ case (f, i) => (f.values, i)}
     
     implicit val rfCallback = new WideRandomForestCallback() {
+      override   def onParamsResolved(actualParams:RandomForestParams) {
+        echo(s"RF Params: ${actualParams}")
+        echo(s"RF Params mTry: ${(actualParams.nTryFraction * totalVariables).toLong}")
+      }
       override  def onTreeComplete(treeIndex:Int, oobError:Double, elapsedTimeMs:Long) {
         echo(s"Finished tree: ${treeIndex}, current oobError: ${oobError}, time: ${elapsedTimeMs} ms")
       }
