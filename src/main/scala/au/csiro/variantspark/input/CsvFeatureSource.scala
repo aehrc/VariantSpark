@@ -5,17 +5,25 @@ import org.apache.spark.SparkContext
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 import java.io.FileInputStream
 import com.github.tototoshi.csv.CSVReader
+import au.csiro.pbdava.ssparkle.spark.SparkUtils._
+import com.github.tototoshi.csv.CSVFormat
+import com.github.tototoshi.csv.CSVParser
+import com.github.tototoshi.csv.DefaultCSVFormat
 
-class CsvFeatureSource(val fileName:String)(implicit sc:SparkContext) extends FeatureSource {
-  //TODO just for now to it an in memory thing
-  lazy val headerAndLines:(List[String], Seq[Feature]) = {
-    LoanUtils.withCloseable(CSVReader.open(fileName)) { reader => 
-      // drop the first element is it's empty 
-      val header = reader.readNext().get.tail
-      val data = reader.iterator.map(l => Feature(l.head, l.tail.map(_.toInt).toArray)).toList
-      (header, data)
+class DefaultCSVFormatSpec extends DefaultCSVFormat with Serializable
+
+case object DefaultCSVFormatSpec extends DefaultCSVFormatSpec
+
+case class CsvFeatureSource(data:RDD[String], csvFormat:CSVFormat = DefaultCSVFormatSpec) extends FeatureSource {
+  lazy val fileHeader:String = data.first
+  lazy val br_header = data.context.broadcast(fileHeader)
+  def sampleNames:List[String] = new CSVParser(csvFormat).parseLine(fileHeader).get.tail
+  def features():RDD[Feature] = {
+    val local_br_header = this.br_header
+    data.mapPartitions { it =>
+       val header = local_br_header.value
+       val csvParser = new CSVParser(csvFormat)
+       it.filter(!_.equals(header)).map(csvParser.parseLine(_).get).map(l => Feature(l.head, l.tail.map(_.toInt).toArray))
     }
   }
-  def sampleNames:List[String] = headerAndLines._1
-  def features():RDD[Feature] = sc.parallelize(headerAndLines._2)
 }

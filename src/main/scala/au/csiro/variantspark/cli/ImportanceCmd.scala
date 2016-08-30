@@ -26,12 +26,16 @@ import au.csiro.pbdava.ssparkle.spark.SparkUtils
 import au.csiro.pbdava.ssparkle.common.utils.ReusablePrintStream
 import au.csiro.variantspark.algo.WideRandomForestCallback
 import au.csiro.variantspark.utils.VectorRDDFunction._
+import au.csiro.variantspark.input.CsvFeatureSource
 
 class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
   @Option(name="-if", required=true, usage="This is input files", aliases=Array("--input-file"))
   val inputFile:String = null
-  
+
+  @Option(name="-it", required=true, usage="Input file type (vcf|csv) ", aliases=Array("--input-type"))
+  val inputType:String = "vcf"
+
   @Option(name="-ff", required=true, usage="Features file", aliases=Array("--feature-file"))
   val featuresFile:String = null
 
@@ -65,20 +69,29 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
   @Override
   def testArgs = Array("-if", "data/small.vcf", "-ff", "data/small-labels.csv", "-fc", "22_16051249", "-d")
   
+  def loadVCF() = {
+    echo(s"Loading header from VCF file: ${inputFile}")
+    val vcfSource = VCFSource(sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
+    verbose(s"VCF Version: ${vcfSource.version}")
+    verbose(s"VCF Header: ${vcfSource.header}")    
+    VCFFeatureSource(vcfSource)    
+  }
+  
+  def loadCSV() = {
+    echo(s"Loading csv file: ${inputFile}")
+    CsvFeatureSource(sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
+  }
+  
   @Override
   def run():Unit = {
-    implicit val fs = FileSystem.get(sc.hadoopConfiguration)  
-    
-    logInfo("Running with executors: " + sc.getExecutorMemoryStatus.size)
+    implicit val fs = FileSystem.get(sc.hadoopConfiguration)      
     logDebug(s"Runing with filesystem: ${fs}, home: ${fs.getHomeDirectory}")
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
     echo(s"Finding  ${nVariables}  most important features using random forest")
 
-    echo(s"Loading header from: ${inputFile}")
-    val vcfSource = VCFSource(sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
-    verbose(s"VCF Version: ${vcfSource.version}")
-    verbose(s"VCF Header: ${vcfSource.header}")    
-    val source  = VCFFeatureSource(vcfSource)
+    val fileLoader = if ("csv".equals(inputType)) loadCSV _ else loadVCF _
+    val source = fileLoader()
+    
     echo(s"Loaded rows: ${dumpList(source.sampleNames)}")
      
     echo(s"Loading labels from: ${featuresFile}, column: ${featureColumn}")
