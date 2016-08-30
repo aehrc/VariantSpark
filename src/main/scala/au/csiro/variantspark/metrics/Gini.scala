@@ -1,6 +1,6 @@
 package au.csiro.variantspark.metrics
 
-import au.csiro.variantspark.algo.FactorVariable
+import au.csiro.variantspark.utils.FactorVariable
 
 object Gini {
   def sqr(x: Double) = x * x

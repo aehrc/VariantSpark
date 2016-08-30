@@ -17,16 +17,19 @@ import au.csiro.variantspark.metrics.Gini
 import au.csiro.variantspark.utils.Sample
 import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
 import au.csiro.variantspark.utils.VectorRDDFunction._
+import au.csiro.variantspark.utils.FactorVariable
+import org.apache.commons.math3.random.RandomGenerator
+import org.apache.commons.math3.random.JDKRandomGenerator
 
 case class SubsetInfo(indices:Array[Int], impurity:Double, majorityLabel:Int) {
   def this(indices:Array[Int], impurity:Double, labels:Array[Int], nLabels:Int)  {
-    this(indices, impurity, WideDecisionTree.labelMode(indices, labels, nLabels))
+    this(indices, impurity, FactorVariable.labelMode(indices, labels, nLabels))
   }
   def lenght = indices.length
   override def toString(): String = s"SubsetInfo(${indices.toList},${impurity}, ${majorityLabel})"
 }
 
-case class SplitInfo(val splitPoint:Int, val gini:Double,  val leftGini:Double, val rightGini:Double) 
+case class SplitInfo(val splitPoint:Int, val gini:Double,  val leftGini:Double, val rightGini:Double)
 
 case class VarSplitInfo(val variableIndex: Long, val splitPoint:Int, val gini:Double, val leftGini:Double, val rightGini:Double) {
   
@@ -37,6 +40,53 @@ case class VarSplitInfo(val variableIndex: Long, val splitPoint:Int, val gini:Do
     )
   }
 }
+
+
+case class ClassificationSplitter(val labels:Array[Int], mTryFactor:Double=1.0) extends Logging {
+  
+  val nCategories = labels.max + 1
+ /**
+   * This would take a variable information (index and data) 
+   * labels and the indexed representation of the current splits 
+   * and the split range to process
+   * 
+   * @param data  - the values of the variable for each sample
+   * @param splits - the indexed representation of the current splits
+   * @param splitIndex - the split to consider
+	*/
+
+  //TODO (Consider): using null rather then option
+  //TODO (Optimnize): detect constant label splits early
+  def findSplit(data:Vector, splitIndices:Array[Int]):Option[SplitInfo] = {
+    // essentialy we need to find the best split for data and labels where splits[i] = splitIndex
+    // would be nice perhaps if I couild easily subset my vectors    
+    // TODO: make an explicit parameter (also can subset by current split) --> essentially could be unique variable values
+    
+    // TODO (Optimize): it make sense to use a range instead of set (especially for 0,1,2) datasets
+    // Even though it man mean running more additions
+    val splitCandidates = splitIndices.map(data(_).toInt).toSet        
+    //logDebug(s"split candidates: ${splitCandidates}")
+    
+    if (splitCandidates.size > 1) {
+      val totalLabelCounts = Array.fill(nCategories)(0)
+      splitIndices.foreach { i => totalLabelCounts(labels(i)) += 1 }
+      
+      // not do the same for each split candidate and find the minimum one
+      splitCandidates.map({splitPoint  => 
+        val splitLabelCounts = Array.fill(nCategories)(0)
+        splitIndices.foreach { i => if (data(i).toInt <= splitPoint) splitLabelCounts(labels(i)) += 1 }
+        val (leftGini, rightGini, splitGini) = Gini.splitGiniInpurity(splitLabelCounts,totalLabelCounts) 
+        SplitInfo(splitPoint, splitGini, leftGini, rightGini)
+      }).reduceOption((t1,t2)=> if (t1.gini <= t2.gini) t1 else t2)      
+    } else None
+  } 
+  
+  def findSplits(data:Vector, splits:Array[Array[Int]])(implicit rng:RandomGenerator = new JDKRandomGenerator()):Array[SplitInfo] = {
+    splits.map(splitIndices =>  if (rng.nextDouble() <= mTryFactor) findSplit(data, splitIndices).getOrElse(null) else null)
+  }
+  
+}
+
 
 /**
  * So what are the stopping conditions
@@ -51,56 +101,6 @@ case class VarSplitInfo(val variableIndex: Long, val splitPoint:Int, val gini:Do
 
 object WideDecisionTree {
   
-  def labelMode(currentSet: Array[Int], labels: Array[Int], labelCount:Int): Int = {
-    val labelCounts = Array.fill(labelCount)(0)
-    currentSet.foreach(i => labelCounts(labels(i)) += 1)
-    labelCounts.zipWithIndex.maxBy(_._1)._2
-  }
-  
-  /**
-   * This would take a variable information (index and data) 
-   * labels and the indexed representation of the current splits 
-   * and the split range to process
-   * 
-   * @param data  - the values of the variable for each sample
-   * @param labels - the labels (categories) for each sample
-   * @param splits - the indexed representation of the current splits
-   * @param splitIndex - the split to consider
-	*/
-  
-  def findSplit(data:Vector, labels:Array[Int], splitIndices:Array[Int]):SplitInfo = {
-    //println("Split indexes: " + splitIndices.toList)
-    // essentialy we need to find the best split for data and labels where splits[i] = splitIndex
-    // would be nice perhaps if I couild easily subset my vectors
-    
-    // for now assume an ordered factor variable from [0, nFactorLen)
-    // in which case (if we split with x <=n) we can split at {0,1, ..., nFactorLen-1} 
-    // TODO: make an explicit parameter (also can subset by current split) --> essentially could be unique variable values
-    val nFactorLen = data.toArray.max.toInt + 1
-    // we need to exclude the last value as this give empty split    
-    // TODO: filter out splits with not variability
-    val splitCandidates = if (nFactorLen>1) Range(0, nFactorLen - 1) else Range(0,1)
-        
-    // but what if there is not variablity and all are zeroes?
-    // println(splitCandidates)
-    // we need to know totals per each labels (in order to be able to calculate total split gini)
-    
-    // TODO: make an explicit paramer
-    val nCategories = labels.max + 1
-    
-    val totalLabelCounts = Array.fill(nCategories)(0)
-    splitIndices.foreach { i => totalLabelCounts(labels(i)) += 1 }
-    
-    // not do the same for each split candidate and find the minimum one
-    splitCandidates.map({splitPoint  => 
-      val splitLabelCounts = Array.fill(nCategories)(0)
-      splitIndices.foreach { i => if (data(i).toInt <= splitPoint) splitLabelCounts(labels(i)) += 1 }
-      // TODO: here is where the gini calculation comes
-      val (leftGini, rightGini, splitGini) = Gini.splitGiniInpurity(splitLabelCounts,totalLabelCounts) 
-      SplitInfo(splitPoint, splitGini, leftGini, rightGini)
-    }).reduce((t1,t2)=> if (t1.gini < t2.gini) t1 else t2)   
-  }
-  
   /**
    * This would take a variable information (index and data) 
    * labels and the indexed representation of the current splits 
@@ -111,13 +111,9 @@ object WideDecisionTree {
    * @param splits - the indexed representation of the current splits
    * @param splitRange - the range of splits to consider
    * @param mTryFraction - the fraction of splits to apply this variable to
-   */
-  def findSplitsForVariableData(data:Vector, labels:Array[Int], splits:Array[Array[Int]], mTryFactor:Double) = {    
-    splits.map(splitIndices =>  if (Math.random() <= mTryFactor) findSplit(data, labels, splitIndices) else null)
-  }
-  
-  // but the whole thing is essentially an aggrefation on a map trying to find the best variable for each split 
-  
+   */  
+  // but the whole thing is essentially an aggrefation on a map trying to find the best variable for each of the splits
+  // in the list (they represents best splits a tree level)
   
   def merge(a1:Array[VarSplitInfo], a2:Array[VarSplitInfo]) = {
     def mergeSplitInfo(s1:VarSplitInfo, s2:VarSplitInfo) = {
@@ -127,10 +123,20 @@ object WideDecisionTree {
     a1
   }
   
-  def findSplitsForVariable(br_labels:Broadcast[Array[Int]], br_splits:Broadcast[Array[Array[Int]]], 
-      mTryFactor:Double)(dataWithIndex:(Vector,Long))  = dataWithIndex match { case (data, variableIndex) =>
-        val splitInfos = findSplitsForVariableData(data, br_labels.value, br_splits.value, mTryFactor)
+  def findSplitsForVariable(br_splits:Broadcast[Array[Array[Int]]], br_splitter:Broadcast[ClassificationSplitter])
+      (dataWithIndex:(Vector,Long))  = dataWithIndex match { case (data, variableIndex) =>
+        val splitter = br_splitter.value
+        val splitInfos = splitter.findSplits(data, br_splits.value)
         splitInfos.map(si => if (si != null) VarSplitInfo(variableIndex, si.splitPoint, si.gini, si.leftGini, si.rightGini) else null).toArray
+  }
+  
+  def findBestSplits(indexedData: RDD[(Vector, Long)], subsetsToSplit:List[SubsetInfo], br_splitter:Broadcast[ClassificationSplitter]) =  {
+      val subsetsToSplitAsIndices = subsetsToSplit.map(_.indices).toArray
+      withBrodcast(indexedData)(subsetsToSplitAsIndices){ br_splits => 
+        indexedData
+          .map(WideDecisionTree.findSplitsForVariable(br_splits, br_splitter))
+          .fold(Array.fill(subsetsToSplitAsIndices.length)(null))(WideDecisionTree.merge)
+      }
   }
 }
 
@@ -203,28 +209,25 @@ case class DecisionTreeParams(val maxDepth:Int = Int.MaxValue, val minNodeSize:I
 
 
 class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) extends Logging {
-  
-  
   def run(data: RDD[Vector], labels: Array[Int]): WideDecisionTreeModel = run(data.zipWithIndex(), labels, 1.0, Sample.all(data.first().size))
   def run(data: RDD[(Vector, Long)], labels: Array[Int], nvarFraction: Double, sample:Sample): WideDecisionTreeModel = {
     // TODO: not sure while this is need
     val dataSize = data.count()
     //TODO (OPTIMIZE): Perhpas is't better to use unique indexes and weights
     val currentSet =  sample.indexesIn.toArray
-    
-    val br_labels = data.context.broadcast(labels)    
-    val nCategories = labels.max + 1
-    val (totalGini, totalLabel) = Gini.giniImpurity(currentSet, labels, nCategories)
-    val rootNode = buildSplit(data, List(SubsetInfo(currentSet, totalGini, totalLabel)), br_labels, nvarFraction, 0)
-    br_labels.destroy()    
+    val splitter = ClassificationSplitter(labels, nvarFraction)
+    val br_splitter = data.context.broadcast(splitter)
+    val (totalGini, totalLabel) = Gini.giniImpurity(currentSet, labels, splitter.nCategories)
+    val rootNode = buildSplit(data, List(SubsetInfo(currentSet, totalGini, totalLabel)), br_splitter, 0)
+    br_splitter.destroy()    
     new WideDecisionTreeModel(rootNode.head)
   }
 
-  def buildSplit(indexedData: RDD[(Vector, Long)], subsets: List[SubsetInfo], br_labels: Broadcast[Array[Int]], nvarFraction: Double, treeLevel:Int): List[DecisionTreeNode] = {
-      // for the current set find all candidate splits
-  
-      val nCategories = br_labels.value.max + 1
-    
+  /**
+   * Builds (recursively) the decision tree level by level
+   */
+  def buildSplit(indexedData: RDD[(Vector, Long)], subsets: List[SubsetInfo], br_splitter: Broadcast[ClassificationSplitter],treeLevel:Int): List[DecisionTreeNode] = {
+      // for the current set find all candidate splits    
       logDebug(s"Building level ${treeLevel}, subsets: ${subsets}") 
        
       // pre-filter the subsets to check if they need further splitting
@@ -238,13 +241,8 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
       
       //TODO: (OPTIMIZE) if there is not splits to calculate do not call compute splits etc.            
       //TODO: (OPTIMIZE) if I pass the subset info including impurity I can do post-filtering in workers
-      
-      val subsetsToSplitAsIndices = subsetsToSplit.map(_._1.indices).toArray
-      val bestSplits = withBrodcast(indexedData)(subsetsToSplitAsIndices){ br_splits => 
-        indexedData
-          .map(WideDecisionTree.findSplitsForVariable(br_labels,br_splits, nvarFraction))
-          .fold(Array.fill(subsetsToSplitAsIndices.length)(null))(WideDecisionTree.merge)
-      }
+        
+      val bestSplits = WideDecisionTree.findBestSplits(indexedData, subsetsToSplit.unzip._1.toList, br_splitter)
       logDebug(s"Best splits: ${bestSplits.toList}")
 
       // TODO: Wouild be good if all best splits were not null (if some are .. hmm this means probably sometthing is wrong with sampling
@@ -260,13 +258,13 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
       
       // split current subsets into next level ones
       val nextLevelSubsets = usefulSplits.flatMap({ case (splitInfo, subset) => 
-        splitInfo.split(usefulSplitsVarData, br_labels.value, nCategories)(subset)
+        splitInfo.split(usefulSplitsVarData, br_splitter.value.labels, br_splitter.value.nCategories)(subset)
       }).toList
      
      logDebug(s"Next level splits: ${nextLevelSubsets}")
      
      // compute the next level tree nodes (notice the recursive call)
-     val nextLevelNodes = if (!nextLevelSubsets.isEmpty) buildSplit(indexedData, nextLevelSubsets, br_labels, nvarFraction, treeLevel + 1) else List()
+     val nextLevelNodes = if (!nextLevelSubsets.isEmpty) buildSplit(indexedData, nextLevelSubsets, br_splitter, treeLevel + 1) else List()
 
      // compute the indexes of splitted subsets against the original indexes
      val subsetIndexToSplitIndexMap = usefulSplitsIndices.zipWithIndex.toMap

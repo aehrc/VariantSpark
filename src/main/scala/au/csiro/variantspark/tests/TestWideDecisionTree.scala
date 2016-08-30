@@ -1,4 +1,4 @@
-package au.csiro.variantspark.algo
+package au.csiro.variantspark.tests
 
 import au.csiro.pbdava.ssparkle.spark.SparkApp
 import org.apache.spark.mllib.linalg.Vectors
@@ -8,6 +8,8 @@ import au.csiro.variantspark.metrics.Metrics
 import au.csiro.variantspark.utils.Projector
 import au.csiro.variantspark.utils.VectorRDDFunction._
 import au.csiro.variantspark.utils.CV
+import au.csiro.variantspark.algo.WideRandomForest
+import scala.Range
 
 object TestWideDecisionTree extends SparkApp {
   conf.setAppName("VCF cluster")

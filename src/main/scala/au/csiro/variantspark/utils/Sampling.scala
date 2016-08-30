@@ -8,7 +8,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.commons.math3.random.RandomGeneratorFactory
 import org.apache.commons.math3.random.RandomGenerator
 import org.uncommons.maths.random.XORShiftRNG
-import it.unimi.dsi.util.XorShiftStarRandomGenerator
+import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 
 
 class Sample(val nSize:Int, val indexes:Array[Int]) {
@@ -30,7 +30,7 @@ object Sampling {
     /**
      * Get indexes that should be included in sample from array of this size
      */
-    def subsample(size:Int, sampleSize:Int, withReplacement:Boolean)(implicit rg:RandomGenerator = new XorShiftStarRandomGenerator()):Array[Int] =  {
+    def subsample(size:Int, sampleSize:Int, withReplacement:Boolean)(implicit rg:RandomGenerator = new XorShift1024StarRandomGenerator()):Array[Int] =  {
       if (!withReplacement && sampleSize>size) throw new RuntimeException("Sample size greater then sample len")
       val rdg = new RandomDataGenerator(rg)
       return if (withReplacement) 

@@ -5,7 +5,7 @@ import org.apache.spark.rdd.RDD
 import au.csiro.variantspark.input.Feature
 import org.apache.spark.SparkContext
 import au.csiro.variantspark.utils.Sampling
-import it.unimi.dsi.util.XorShiftStarRandomGenerator
+import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 
 case class OrdinalFeatureSource(val nLevels:Int, val nVariables:Int, 
       val nSamples:Int, val seed: Long = 13L)(implicit sc:SparkContext) extends FeatureSource {
@@ -16,7 +16,7 @@ case class OrdinalFeatureSource(val nLevels:Int, val nVariables:Int,
     val seed = this.seed
     sc.parallelize(Range(0, nVariables).toList)
       .mapPartitionsWithIndex { case (pi, iter) =>
-        implicit val rf = new XorShiftStarRandomGenerator(pi ^ seed)
+        implicit val rf = new XorShift1024StarRandomGenerator(pi ^ seed)
         iter.map(i => Feature("v_" + i, Sampling.subsample(nLevels, nSamples, true)))
       }
   }

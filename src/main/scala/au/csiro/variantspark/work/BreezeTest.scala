@@ -1,4 +1,4 @@
-package au.csiro.variantspark.utils.tests
+package au.csiro.variantspark.work
 
 import au.csiro.pbdava.ssparkle.common.utils.Timed
 import breeze.linalg.DenseVector

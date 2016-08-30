@@ -1,4 +1,6 @@
-package au.csiro.variantspark.algo
+package au.csiro.variantspark.utils
+
+import scala.Range
 
 case class FactorVariable(val values:Array[Int], val nCategories:Int, subset:Option[Array[Int]] = None ) {
   
@@ -17,4 +19,10 @@ case class FactorVariable(val values:Array[Int], val nCategories:Int, subset:Opt
 
 object FactorVariable {
   def apply(values:Array[Int]):FactorVariable = apply(values, values.max + 1)
+  
+  def labelMode(currentSet: Array[Int], labels: Array[Int], labelCount:Int): Int = {
+    val labelCounts = Array.fill(labelCount)(0)
+    currentSet.foreach(i => labelCounts(labels(i)) += 1)
+    labelCounts.zipWithIndex.maxBy(_._1)._2
+  }
 }

@@ -1,4 +1,4 @@
-package au.csiro.variantspark.utils.tests
+package au.csiro.variantspark.work
 
 import htsjdk.variant.vcf.VCFFileReader
 import java.io.File
