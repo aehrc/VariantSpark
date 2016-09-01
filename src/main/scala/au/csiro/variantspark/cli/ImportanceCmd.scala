@@ -59,7 +59,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
   val correlationThreshold = 0.6
  
   @Option(name="-d", required=false, usage="Include important variables data"
-        , aliases=Array("--inlcude-data") )
+        , aliases=Array("--include-data") )
   val includeData = false
  
   @Option(name="-rt", required=false, usage="RandomForest mTry" , aliases=Array("--rf-mtry"))
@@ -121,6 +121,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
       source.features().take(defaultPreviewSize).foreach(f=> verbose(s"${f.label}:${dumpList(f.values.toList, longPreviewSize)}"))
     }
     
+    val startTime = System.currentTimeMillis()
     echo(s"Training random forest - trees: ${nTrees}")  
     val rf = new WideRandomForest(RandomForestParams(oob=rfEstimateOob,
         nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction))
@@ -138,8 +139,8 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     val result  = rf.train(traningData, labels, nTrees)  
     
     
-    
-    echo(s"Random forest oob accuracy: ${result.oobError}") 
+    val duration = System.currentTimeMillis() - startTime
+    echo(s"Random forest oob accuracy: ${result.oobError}, took ${duration/1000.0} s") 
     // build index for names
     val topImportantVariables = result.variableImportance.toSeq.sortBy(-_._2).take(nVariables)
     val topImportantVariableIndexes = topImportantVariables.map(_._1).toSet
