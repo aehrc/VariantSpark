@@ -9,4 +9,4 @@ DATA_INPUT_DIR=${DATA_DIR}/input
 
 export VS_ECHO_CMDLINE=YES
 
-variant-spark --spark --master yarn-client --num-executors 32 --executor-memory 4G --driver-memory 4G -- importance -if "${DATA_INPUT_DIR}/ALL.chr22.phase1_release_v3.20101123.snps_indels_svs.genotypes.vcf.bz2" -ff "${DATA_INPUT_DIR}/small-labels.csv" -fc 22_16051249 -v -t 20
+variant-spark --spark --master yarn-client --num-executors 32 --executor-memory 4G --driver-memory 4G -- importance -if "${DATA_INPUT_DIR}/ALL.chr22.phase1_release_v3.20101123.snps_indels_svs.genotypes.vcf.bz2" -ff "${DATA_INPUT_DIR}/chr22-labels.csv" -fc 22_16051249 -v -t 20

@@ -36,7 +36,7 @@ doc/publications/incob2014/images/mahout-logo.svg
 .cache-main
 .cache-test
 
-/target/
+target
 .tmpBin
 .cache-tests
 .ipynb_checkpoints
