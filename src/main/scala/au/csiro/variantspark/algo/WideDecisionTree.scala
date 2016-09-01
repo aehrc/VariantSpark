@@ -225,7 +225,10 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
 
   /**
    * Builds (recursively) the decision tree level by level
+   * TODO: Intrisinlgy noting is stopping me from building many trees as the same time using different initial splits ....
+   * that should even work withou much modifications (and significantly limit the communication required
    */
+  
   def buildSplit(indexedData: RDD[(Vector, Long)], subsets: List[SubsetInfo], br_splitter: Broadcast[ClassificationSplitter],treeLevel:Int): List[DecisionTreeNode] = {
       // for the current set find all candidate splits    
       logDebug(s"Building level ${treeLevel}, subsets: ${subsets}") 
