@@ -126,7 +126,6 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
       source.features().take(defaultPreviewSize).foreach(f=> verbose(s"${f.label}:${dumpList(f.values.toList, longPreviewSize)}"))
     }
     
-    val startTime = System.currentTimeMillis()
     echo(s"Training random forest - trees: ${nTrees}")  
     val startTime = System.currentTimeMillis()
     val rf = new WideRandomForest(RandomForestParams(oob=rfEstimateOob,
