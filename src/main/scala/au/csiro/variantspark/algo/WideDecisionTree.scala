@@ -44,9 +44,7 @@ case class VarSplitInfo(val variableIndex: Long, val splitPoint:Int, val gini:Do
 }
 
 
-case class ClassificationSplitter(val labels:Array[Int], mTryFactor:Double=1.0) extends Logging  with Prof {
-  
-  val nCategories = labels.max + 1
+case class ClassSplitter(val labels:Array[Int], val nCategories:Int) {
  /**
    * This would take a variable information (index and data) 
    * labels and the indexed representation of the current splits 
@@ -56,18 +54,16 @@ case class ClassificationSplitter(val labels:Array[Int], mTryFactor:Double=1.0) 
    * @param splits - the indexed representation of the current splits
    * @param splitIndex - the split to consider
 	*/
-
   //TODO (Consider): using null rather then option
   //TODO (Optimnize): detect constant label splits early
-  def findSplit(data:Vector, splitIndices:Array[Int]):Option[SplitInfo] = {
+  def findSplit(data:Array[Double], splitIndices:Array[Int]):SplitInfo = {
     // essentialy we need to find the best split for data and labels where splits[i] = splitIndex
     // would be nice perhaps if I couild easily subset my vectors    
     // TODO: make an explicit parameter (also can subset by current split) --> essentially could be unique variable values
     
     // TODO (Optimize): it make sense to use a range instead of set (especially for 0,1,2) datasets
     // Even though it man mean running more additions
-    val dataArray = data.toArray
-    val splitCandidates = splitIndices.map(dataArray(_).toInt).toSet        
+    val splitCandidates = splitIndices.map(data(_).toInt).toSet        
     //logDebug(s"split candidates: ${splitCandidates}")
     
     if (splitCandidates.size > 1) {
@@ -77,15 +73,22 @@ case class ClassificationSplitter(val labels:Array[Int], mTryFactor:Double=1.0) 
       // not do the same for each split candidate and find the minimum one
       splitCandidates.map({splitPoint  => 
         val splitLabelCounts = Array.fill(nCategories)(0)
-        splitIndices.foreach { i => if (dataArray(i).toInt <= splitPoint) splitLabelCounts(labels(i)) += 1 }
+        splitIndices.foreach { i => if (data(i).toInt <= splitPoint) splitLabelCounts(labels(i)) += 1 }
         val (leftGini, rightGini, splitGini) = Gini.splitGiniInpurity(splitLabelCounts,totalLabelCounts) 
         SplitInfo(splitPoint, splitGini, leftGini, rightGini)
-      }).reduceOption((t1,t2)=> if (t1.gini <= t2.gini) t1 else t2)      
-    } else None
-  } 
+      }).reduceOption((t1,t2)=> if (t1.gini <= t2.gini) t1 else t2).getOrElse(null)      
+    } else null
+  }   
+}
+
+case class ClassificationSplitter(val labels:Array[Int], mTryFactor:Double=1.0) extends Logging  with Prof {
+  
+  val nCategories = labels.max + 1
   
   def findSplits(data:Vector, splits:Array[Array[Int]])(implicit rng:RandomGenerator = new JDKRandomGenerator()):Array[SplitInfo] = {
-    splits.map(splitIndices =>  if (rng.nextDouble() <= mTryFactor) findSplit(data, splitIndices).getOrElse(null) else null)
+    //val splitter = new ClassSplitter(labels, nCategories)
+    val splitter = new JClassificationSplitter(labels, nCategories)
+    splits.map(splitIndices =>  if (rng.nextDouble() <= mTryFactor) splitter.findSplit(data.toArray, splitIndices) else null)
   }
   
   def findSplitsForVars(varData:Iterator[(Vector, Long)], splits:Array[Array[Int]])(implicit rng:RandomGenerator = new JDKRandomGenerator()):Iterator[Array[VarSplitInfo]] = {
