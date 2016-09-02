@@ -122,6 +122,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     }
     
     echo(s"Training random forest - trees: ${nTrees}")  
+    val startTime = System.currentTimeMillis()
     val rf = new WideRandomForest(RandomForestParams(oob=rfEstimateOob,
         nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction))
     val traningData = inputData.map{ case (f, i) => (f.values, i)}
@@ -137,9 +138,9 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     }
     val result  = rf.train(traningData, labels, nTrees)  
     
+    val duration = System.currentTimeMillis() - startTime
+    echo(s"Random forest oob accuracy: ${result.oobError}, took ${duration/1000.0} s")   
     
-    
-    echo(s"Random forest oob accuracy: ${result.oobError}") 
     // build index for names
     val topImportantVariables = result.variableImportance.toSeq.sortBy(-_._2).take(nVariables)
     val topImportantVariableIndexes = topImportantVariables.map(_._1).toSet
