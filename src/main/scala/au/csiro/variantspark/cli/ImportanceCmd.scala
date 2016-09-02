@@ -70,6 +70,11 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
   
   @Option(name="-ro", required=false, usage="RandomForest estimate oob" , aliases=Array("--rf-oob"))
   val rfEstimateOob:Boolean = false
+
+  @Option(name="-rbs", required=false, usage="RandomForest batch size (no of trees to build at the same time)" 
+      , aliases=Array("--rf-batch-size"))
+  val rfBatchSize:Int = -1
+
   
   // spark relareds
   @Option(name="-sp", required=false, usage="Spark parallelism", aliases=Array("--spark-par"))
@@ -136,8 +141,12 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
         echo(s"Finished tree: ${treeIndex}, current oobError: ${oobError}, time: ${elapsedTimeMs} ms")
       }
     }
-    val result  = rf.train(traningData, labels, nTrees)  
-    
+    val result = if (rfBatchSize > 0) {
+      echo(s"Running in batch mode with size (oob not available): ${rfBatchSize}")
+      rf.batchTrain(traningData, labels, nTrees, rfBatchSize)
+    } else {
+      rf.train(traningData, labels, nTrees)  
+    }
     
     val duration = System.currentTimeMillis() - startTime
     echo(s"Random forest oob accuracy: ${result.oobError}, took ${duration/1000.0} s") 

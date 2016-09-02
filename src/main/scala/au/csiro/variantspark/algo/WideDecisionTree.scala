@@ -235,8 +235,10 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
     new WideDecisionTreeModel(rootNode.head)
   }
 
-  
-   def batchTrain(data: RDD[(Vector, Long)], labels: Array[Int], nvarFraction: Double, sample:Seq[Sample]): Seq[WideDecisionTreeModel] = {
+  /**
+   * Trains all the trees for specified samples at the same time
+   */
+  def batchTrain(data: RDD[(Vector, Long)], labels: Array[Int], nvarFraction: Double, sample:Seq[Sample]): Seq[WideDecisionTreeModel] = {
     // TODO: not sure while this is need
     //TODO (OPTIMIZE): Perhpas is't better to use unique indexes and weights
     val splitter = ClassificationSplitter(labels, nvarFraction)
@@ -250,8 +252,6 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
     br_splitter.destroy()    
     rootNodes.map(new WideDecisionTreeModel(_))
   }
-
-  
   
   /**
    * Builds (recursively) the decision tree level by level

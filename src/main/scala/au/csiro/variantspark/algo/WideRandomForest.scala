@@ -124,4 +124,29 @@ class WideRandomForest(params:RandomForestParams=RandomForestParams(),modelBuild
     }.unzip
     WideRandomForestModel(trees.toList, nLabels, errors.toList)
   }
+  
+  /**
+   * TODO (Nice): Make a parameter rather then an extra method
+   * TODO (Func): Add OOB calculation
+   */
+  def batchTrain(indexedData: RDD[(Vector, Long)], labels: Array[Int], nTrees: Int, nBatchSize:Int)(implicit callback:WideRandomForestCallback = null): WideRandomForestModel = {
+    require(nBatchSize > 1)
+    require(nTrees > 0)
+    val nSamples = labels.length
+    val nVariables = indexedData.count().toInt
+    val nLabels = labels.max + 1  
+    logDebug(s"Data:  nSamples:${nSamples}, nVariables: ${nVariables}, nLabels:${nLabels}")
+    val actualParams = params.resolveDefaults(nSamples, nVariables) 
+    Option(callback).foreach(_.onParamsResolved(actualParams))
+    logDebug(s"Parameters: ${actualParams}")
+    logDebug(s"Batch Traning: ${nTrees} with batch size: ${nBatchSize}")
+   
+    val allSamples = Stream.fill(nTrees)(Sample.fraction(nSamples, actualParams.subsample, actualParams.bootstrap))
+    val builder = new WideDecisionTree()
+    val trees = allSamples.sliding(nBatchSize, nBatchSize)
+      .flatMap(samples => builder.batchTrain(indexedData, labels, actualParams.nTryFraction, samples.toList))
+    WideRandomForestModel(trees.toList, nLabels, List(Double.NaN))
+ }
+  
+  
 }
