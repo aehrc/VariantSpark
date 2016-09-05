@@ -41,6 +41,13 @@ case class VarSplitInfo(val variableIndex: Long, val splitPoint:Int, val gini:Do
         new SubsetInfo(subset.indices.filter(splitVarData(variableIndex)(_) > splitPoint), rightGini, labels, nCategories)
     )
   }
+
+  def split(data:Vector, labels:Array[Int], nCategories:Int)(subset:SubsetInfo):List[SubsetInfo] = {
+    List(
+        new SubsetInfo(subset.indices.filter(data(_) <= splitPoint), leftGini, labels, nCategories),
+        new SubsetInfo(subset.indices.filter(data(_) > splitPoint), rightGini, labels, nCategories)
+    )
+  }
 }
 
 
@@ -102,6 +109,11 @@ case class ClassificationSplitter(val labels:Array[Int], mTryFactor:Double=1.0) 
       Some(result).toIterator
     }
   }
+  
+  def buildSubsplits(varData:Iterator[(Vector, Long)], splits:Array[Array[Int]])  = {
+    
+  }
+  
 }
 
 
@@ -293,6 +305,32 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
             .unzip 
       profPoint("Filered splits")
             
+      // 
+      val xxx = withBrodcast(indexedData)(usefulSplits){ br_usefulSplits =>
+       
+        val l_usefulSplits = br_usefulSplits.value.zipWithIndex
+        val splitByVarIndex = l_usefulSplits.groupBy(_._1._1.variableIndex);
+        // this becomes really complex will try to simplify it later 
+        indexedData.mapPartitions { it => 
+          it.flatMap { case (v,i) => 
+            // esentially create all splits for this variable
+            val xc = splitByVarIndex.lift(i).map { splits => splits.map{ case ((splitInfo,subsetInfo), si) =>
+              (splitInfo.split(v, br_splitter.value.labels, br_splitter.value.nCategories)(subsetInfo).toArray, si)
+            }}
+            xc.getOrElse(Nil)
+          }
+        }.collect()
+      }
+      profPoint("Splitting collected")
+
+      val aNextLevelSplits = Array.fill[SubsetInfo](xxx.length*2)(null)
+      xxx.foreach { case (l,i) => 
+          aNextLevelSplits(2*i) = l(0)
+          aNextLevelSplits(2*i + 1) = l(1)
+      }
+ 			val nextLevelSubsets = aNextLevelSplits.toList
+      
+/*    
       // we need to collect the data for splitting variables so that we can calculate new subsets
       val usefulSplitsVarData = indexedData.collectAtIndexes(usefulSplits.map(_._1.variableIndex).toSet)
       profPoint("Splitting collected")
@@ -301,7 +339,7 @@ class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) ex
       val nextLevelSubsets = usefulSplits.flatMap({ case (splitInfo, subset) => 
         splitInfo.split(usefulSplitsVarData, br_splitter.value.labels, br_splitter.value.nCategories)(subset)
       }).toList
-     
+*/     
      logDebug(s"Next level splits: ${nextLevelSubsets}")
      profPoint("Splitting done")
      
