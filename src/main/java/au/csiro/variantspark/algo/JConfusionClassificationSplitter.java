@@ -12,16 +12,19 @@ import au.csiro.variantspark.metrics.Gini;
  * @author szu004
  *
  */
-public class JClassificationSplitter {
+public class JConfusionClassificationSplitter {
 	private final int[] leftSplitCounts = new int[2];
-	private final int[] rightSplitCounts = new int[2];
+	private final int[] rightSplitCounts = new int[2];	
+	private final int[][] confusion;
 	private final double[] leftRigtGini = new double[2];
 	private final int[] labels;
 	private final int nCategories;
+	private final int nLevels  = 3;
 		
-	public JClassificationSplitter(int[] labels, int nCategories) {
+	public JConfusionClassificationSplitter(int[] labels, int nCategories) {
 		this.labels = labels;
 		this.nCategories = nCategories;
+		confusion = new int[nLevels][nCategories];
 	}
 	
 	double gini(int[] counts) {
@@ -50,6 +53,20 @@ public class JClassificationSplitter {
 		}
 	 }
 	
+	int[] addEq(int[] a, int b[]) {
+		for(int i = 0 ; i < a.length; i++) {
+			a[i]+=b[i];
+		}
+		return a;
+	}
+
+	int[] subEq(int[] a, int b[]) {
+		for(int i = 0 ; i < a.length; i++) {
+			a[i]-=b[i];
+		}
+		return a;
+	}
+
 	// TODO (Add this only works for two classes !!!) 
 	double splitGini(int[] left, int[] right, double[] out) {
 		 int lt = left[0] + left[1];
@@ -69,37 +86,29 @@ public class JClassificationSplitter {
 	    // in this dataset
 	    // as 0 are most likely we will  do 0 as the initial pass
 
-	    long splitCandidateSet = 7L; 
-//		for(int i:splitIndices) {
-//			splitCandidateSet|=(1 << (int)data[i]);
-//		}
+	    for(int sp = 0; sp < confusion.length; sp++ ) {
+	    	Arrays.fill(confusion[sp],0);
+	    }
+	    
+	    for(int i:splitIndices) {
+	    	confusion[(int)data[i]][labels[i]]++;
+	    }
+		Arrays.fill(leftSplitCounts, 0);
+		Arrays.fill(rightSplitCounts, 0);	    
+	    for(int[] l: confusion) {
+	    	addEq(rightSplitCounts, l);
+	    }
 		
-		int sp  = 0;
-		while(splitCandidateSet != 0L) {
-			while (splitCandidateSet != 0L && (splitCandidateSet & 1) == 0) {
-				sp ++;
-				splitCandidateSet >>= 1;
-			}
-			splitCandidateSet >>= 1;
-			// only run if there is at least one more index to try in this subset
-			if (splitCandidateSet != 0L) {
-				Arrays.fill(leftSplitCounts, 0);
-				Arrays.fill(rightSplitCounts, 0);
-				for(int i:splitIndices) {
-					if ((int)data[i] <=sp) {
-						leftSplitCounts[labels[i]]++;
-					} else {
-						rightSplitCounts[labels[i]]++;					
-					}
-				}
-				double g = splitGini(leftSplitCounts, rightSplitCounts, leftRigtGini);
-				if (g < minGini ) {
-					result = new SplitInfo(sp, g, leftRigtGini[0], leftRigtGini[1]);
-					minGini = g;
-				}
-				sp++;
-			}
-		}
+	    // just try all for now
+	    for(int sp = 0 ; sp < nLevels - 1; sp++)  {
+	    	addEq(leftSplitCounts, confusion[sp]);
+	    	subEq(rightSplitCounts, confusion[sp]);
+			double g = splitGini(leftSplitCounts, rightSplitCounts, leftRigtGini);
+			if (g < minGini ) {
+				result = new SplitInfo(sp, g, leftRigtGini[0], leftRigtGini[1]);
+				minGini = g;
+			}	    	
+	    }	    
 		return result;
 	 }
 }

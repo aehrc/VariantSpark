@@ -87,7 +87,7 @@ case class ClassificationSplitter(val labels:Array[Int], mTryFactor:Double=1.0) 
   
   def findSplits(data:Vector, splits:Array[Array[Int]])(implicit rng:RandomGenerator = new JDKRandomGenerator()):Array[SplitInfo] = {
     //val splitter = new ClassSplitter(labels, nCategories)
-    val splitter = new JClassificationSplitter(labels, nCategories)
+    val splitter = new JConfusionClassificationSplitter(labels, nCategories)
     splits.map(splitIndices =>  if (rng.nextDouble() <= mTryFactor) splitter.findSplit(data.toArray, splitIndices) else null)
   }
   
