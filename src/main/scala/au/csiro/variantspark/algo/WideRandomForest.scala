@@ -15,6 +15,7 @@ import au.csiro.variantspark.utils.Projector
 import au.csiro.pbdava.ssparkle.common.utils.Timed._
 import au.csiro.variantspark.utils.Sample
 import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
+import au.csiro.variantspark.data.VariableType
 
 case class VotingAggregator(val nLabels:Int, val nSamples:Int) {
   lazy val votes = Array.fill(nSamples)(Array.fill(nLabels)(0))
@@ -86,13 +87,16 @@ trait WideRandomForestCallback {
 
 
 object WideRandomForest {
-  type ModelBuilder = (RDD[(Vector,Long)], Array[Int], Double, Sample) => PredictiveModelWithImportance
+  type ModelBuilder = (RDD[(Vector,Long)], VariableType, Array[Int], Double, Sample) => PredictiveModelWithImportance
   
-  def wideDecisionTreeBuilder(indexedData: RDD[(Vector, Long)], labels: Array[Int], nTryFraction: Double, sample:Sample) = new WideDecisionTree().run(indexedData, labels, nTryFraction, sample)
+  def wideDecisionTreeBuilder(indexedData: RDD[(Vector, Long)], dataType:VariableType, labels: Array[Int], nTryFraction: Double, sample:Sample) = new WideDecisionTree().run(indexedData, dataType, labels, nTryFraction, sample)
 }
 
 class WideRandomForest(params:RandomForestParams=RandomForestParams(),modelBuilder:WideRandomForest.ModelBuilder = WideRandomForest.wideDecisionTreeBuilder) extends Logging {
-  def train(indexedData: RDD[(Vector, Long)], labels: Array[Int], nTrees: Int)(implicit callback:WideRandomForestCallback = null): WideRandomForestModel = {
+  
+  // TODO: (Refactoring): When adding other types of variables make sure to include 
+  // some abstraction to represent data with description
+  def train(indexedData: RDD[(Vector, Long)],  dataType: VariableType,  labels: Array[Int], nTrees: Int)(implicit callback:WideRandomForestCallback = null): WideRandomForestModel = {
     val nSamples = labels.length
     val nVariables = indexedData.count().toInt
     val nLabels = labels.max + 1  
@@ -109,7 +113,7 @@ class WideRandomForest(params:RandomForestParams=RandomForestParams(),modelBuild
       time {
         //TODO: Make sure tree accepts sample a indexs not weights !!!
         val sample = Sample.fraction(nSamples, actualParams.subsample, actualParams.bootstrap)
-        val tree = modelBuilder(indexedData, labels, actualParams.nTryFraction, sample)
+        val tree = modelBuilder(indexedData, dataType, labels, actualParams.nTryFraction, sample)
         val oobError = oobAggregator.map { agg =>
           val oobIndexes = sample.indexesOut
           val oobPredictions = tree.predictIndexed(indexedData.project(Projector(oobIndexes.toArray)))
@@ -129,7 +133,7 @@ class WideRandomForest(params:RandomForestParams=RandomForestParams(),modelBuild
    * TODO (Nice): Make a parameter rather then an extra method
    * TODO (Func): Add OOB calculation
    */
-  def batchTrain(indexedData: RDD[(Vector, Long)], labels: Array[Int], nTrees: Int, nBatchSize:Int)(implicit callback:WideRandomForestCallback = null): WideRandomForestModel = {
+  def batchTrain(indexedData: RDD[(Vector, Long)], dataType: VariableType, labels: Array[Int], nTrees: Int, nBatchSize:Int)(implicit callback:WideRandomForestCallback = null): WideRandomForestModel = {
     require(nBatchSize > 1)
     require(nTrees > 0)
     val nSamples = labels.length
@@ -144,7 +148,7 @@ class WideRandomForest(params:RandomForestParams=RandomForestParams(),modelBuild
     val allSamples = Stream.fill(nTrees)(Sample.fraction(nSamples, actualParams.subsample, actualParams.bootstrap))
     val builder = new WideDecisionTree()
     val trees = allSamples.sliding(nBatchSize, nBatchSize)
-      .flatMap(samples => builder.batchTrain(indexedData, labels, actualParams.nTryFraction, samples.toList))
+      .flatMap(samples => builder.batchTrain(indexedData, dataType, labels, actualParams.nTryFraction, samples.toList))
     WideRandomForestModel(trees.toList, nLabels, List(Double.NaN))
  }
   

@@ -8,30 +8,9 @@ import org.apache.spark.mllib.linalg.Vectors
 import au.csiro.pbdava.ssparkle.common.utils.Timed
 import au.csiro.variantspark.algo.JClassificationSplitter
 import scala.collection.immutable.BitSet
-import au.csiro.variantspark.algo.FastClassSplitter
-import au.csiro.variantspark.algo.ClassSplitter
+import au.csiro.variantspark.algo.JConfusionClassificationSplitter
 
 class ClassificationSplitterPerfTest {
-  @Test
-  def testSingleSplitter() {
-    
-    val rg = new XorShift1024StarRandomGenerator(13)
-    val nLabels = 10000
-    val labels = Array.fill(nLabels)(Math.abs(rg.nextInt) % 2)
-    val sp = ClassSplitter(labels, 2)
-    val splitIndexes = Range(0, 1000).toArray
-    val data = Vectors.dense(Array.fill(nLabels)((Math.abs(rg.nextInt()) % 3).toDouble)).toArray
-    Timed.time {
-      for (i <- 0 until 50000) {     
-        sp.findSplit(data, splitIndexes)
-      }
-    }.report("Splitting")
-    Timed.time {
-      for (i <- 0 until 50000) {     
-        sp.findSplit(data, splitIndexes)
-      }
-    }.report("Splitting2")
-  }
   
   @Test
   def testJSingleSplitter() {
@@ -39,7 +18,7 @@ class ClassificationSplitterPerfTest {
     val rg = new XorShift1024StarRandomGenerator(13)
     val nLabels = 10000
     val labels = Array.fill(nLabels)(Math.abs(rg.nextInt) % 2)
-    val sp = new JClassificationSplitter(labels,2)
+    val sp = new JClassificationSplitter(labels,2, 3)
     val splitIndexes = Range(0, 10000).toArray
     val data = Array.fill(nLabels)((Math.abs(rg.nextInt()) % 3).toDouble)
     Timed.time {
@@ -56,7 +35,7 @@ class ClassificationSplitterPerfTest {
     for (i <- 0 until 50000) {     
         sp.findSplit(data, splitIndexes)
       }
-    }.report("Splitting2")
+    }.report("BasicSplitter")
   }
   
   @Test
@@ -65,56 +44,26 @@ class ClassificationSplitterPerfTest {
     val rg = new XorShift1024StarRandomGenerator(13)
     val nLabels = 10000
     val labels = Array.fill(nLabels)(Math.abs(rg.nextInt) % 2)
-    val sp = new FastClassSplitter()
+    val sp = new JConfusionClassificationSplitter(labels, 2, 3);
     val splitIndexes = Range(0, nLabels).toArray
-    val data = Array.fill(nLabels)((Math.abs(rg.nextInt()) % 3))
+    val data = Array.fill(nLabels)((Math.abs(rg.nextInt()) % 3).toDouble)
     Timed.time {
       for (i <- 0 until 50000) {     
-        sp.findSplit(data, splitIndexes, 2, labels)
+        sp.findSplit(data, splitIndexes)
       }
     }.report("Splitting")
     Timed.time {
       for (i <- 0 until 50000) {     
-        sp.findSplit(data, splitIndexes, 2, labels)
+        sp.findSplit(data, splitIndexes)
       }
     }.report("Splitting1")
         Timed.time {
     for (i <- 0 until 50000) {     
-        sp.findSplit(data, splitIndexes, 2, labels)
+        sp.findSplit(data, splitIndexes)
       }
-    }.report("Splitting2")
+    }.report("ConfusionSplitter")
   }
-  @Test
-  def testMultipleSplitter() {
-    implicit val rg = new XorShift1024StarRandomGenerator(13)
-    val nLabels = 10000
-    val labels = Array.fill(nLabels)(Math.abs(rg.nextInt) % 2)
-    val sp = ClassificationSplitter(labels, 1.0)
-    val splitIndexes = Range(0, nLabels).toArray
-    val data = Vectors.dense(Array.fill(nLabels)((Math.abs(rg.nextInt()) % 3).toDouble))
-    Timed.time {
-      for (i <- 0 until 1000) {     
-        sp.findSplits(data, Array.fill(10)(splitIndexes))
-      }
-    }.report("Splitting")
-  }
-  
-  @Test 
-  def testAdditions () {
-    var in = 0
-    val arr = Array.fill(1)(0)
-     Timed.time {
-        for (i <- 0 until 1000000) {     
-          arr(0) += 1
-        }
-      }.report("Array")   
-    Timed.time {
-        for (i <- 0 until 1000000) {     
-          in += 1
-        }
-      }.report("Variable")  
-   }
-  
+ 
   def findBitmapSplit(data:Array[BitSet], labels:Array[BitSet], split:BitSet) = {
     // assume enrtire set
     

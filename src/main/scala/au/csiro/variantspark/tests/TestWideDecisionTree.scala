@@ -10,6 +10,7 @@ import au.csiro.variantspark.utils.VectorRDDFunction._
 import au.csiro.variantspark.utils.CV
 import au.csiro.variantspark.algo.WideRandomForest
 import scala.Range
+import au.csiro.variantspark.data.BoundedOrdinal
 
 object TestWideDecisionTree extends SparkApp {
   conf.setAppName("VCF cluster")
@@ -57,8 +58,10 @@ object TestWideDecisionTree extends SparkApp {
     val test = data.count()
     println("Records to process: "+ test)
 */    
+    
+    val dataType = BoundedOrdinal(3)
     val rf = new WideRandomForest()
-    val result  = rf.train(trainSetWithIndex, trainLables, 20)
+    val result  = rf.train(trainSetWithIndex, dataType, trainLables, 20)
     //println(result)
     //result.printout()
     val variableImportnace = result.variableImportance
@@ -78,7 +81,7 @@ object TestWideDecisionTree extends SparkApp {
       val testLables = fold.projectArray(labels)   
      
       val rf = new WideRandomForest()
-      val result  = rf.train(trainSetWithIndex, trainLables, 20)
+      val result  = rf.train(trainSetWithIndex,dataType,  trainLables, 20)
       val testPredict = result.predict(testSet)
       val testError = Metrics.classificatoinError(testLables,testPredict)
       testError

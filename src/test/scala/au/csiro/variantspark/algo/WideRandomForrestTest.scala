@@ -13,6 +13,7 @@ import au.csiro.variantspark.test.SparkTest
 import scala.collection.JavaConversions._
 import au.csiro.variantspark.utils.Sample
 import scala.collection.mutable.MutableList
+import au.csiro.variantspark.data.UnboundedOrdinal
 
 class WideRandomForrestTest extends SparkTest {
   val nSamples  = 100
@@ -25,7 +26,7 @@ class WideRandomForrestTest extends SparkTest {
     val nTryFraction = 0.6
     val collector = new TreeDataCollector()
     val rf = new WideRandomForest(RandomForestParams(oob=false, nTryFraction = nTryFraction, bootstrap=true), modelBuilder = collector.collectData)
-    val model = rf.train(testData, labels, 10)
+    val model = rf.train(testData, UnboundedOrdinal, labels, 10)
     assertEquals("All trees in the model", collector.allTreest, model.trees)
     assertTrue("All trees trained on the same data", collector.allData.forall(_ == testData))
     assertTrue("All trees trained with expected nTryFactor", collector.allnTryFration.forall(_ == nTryFraction))
@@ -39,7 +40,7 @@ class WideRandomForrestTest extends SparkTest {
     val nTrees = 10
     val collector = new TreeDataCollector(Stream.continually(1).map(pl => TestPredictorWithImportance(Array.fill(nLabels)(pl), null)))   
     val rf = new WideRandomForest(RandomForestParams(oob=true, nTryFraction = nTryFraction, bootstrap=false, subsample = 0.5), modelBuilder = collector.collectData)
-    val model = rf.train(testData, labels, nTrees)
+    val model = rf.train(testData, UnboundedOrdinal, labels, nTrees)
     assertEquals("All trees in the model", collector.allTreest, model.trees)
     assertTrue("All trees trained on the same data", collector.allData.forall(_ == testData))
     assertTrue("All trees trained with expected nTryFactor", collector.allnTryFration.forall(_ == nTryFraction))

@@ -13,6 +13,7 @@ import org.apache.hadoop.fs.FileSystem
 
 import org.saddle.io._
 import org.saddle._
+import au.csiro.variantspark.data.BoundedOrdinal
 
 class WideDecisionTreeIntegratedTest extends SparkTest {
    
@@ -31,7 +32,9 @@ class WideDecisionTreeIntegratedTest extends SparkTest {
     val labels = labelSource.getLabels(featureSource.sampleNames)
     val inputData = featureSource.features().map(_.toVector.values).cache()
     val nVars = inputData.count
-    val model = new WideDecisionTree(DecisionTreeParams(maxDepth = maxDepth)).run(inputData, labels)
+    // max fife levels
+    val dataType = BoundedOrdinal(5)
+    val model = new WideDecisionTree(DecisionTreeParams(maxDepth = maxDepth)).run(inputData, dataType, labels)
     val prediction = model.predict(inputData)
 
     
@@ -89,7 +92,7 @@ class WideDecisionTreeIntegratedTest extends SparkTest {
     val labels = decisionTreeModel.predict(data)
     println(labels.toList)
     
-    val model = new WideDecisionTree().run(data, labels)
+    val model = new WideDecisionTree().run(data, BoundedOrdinal(3), labels)
     model.printout()
     
   }

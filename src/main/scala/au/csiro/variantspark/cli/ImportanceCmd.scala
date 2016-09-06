@@ -28,6 +28,7 @@ import au.csiro.variantspark.algo.WideRandomForestCallback
 import au.csiro.variantspark.utils.VectorRDDFunction._
 import au.csiro.variantspark.input.CsvFeatureSource
 import au.csiro.variantspark.algo.RandomForestParams
+import au.csiro.variantspark.data.BoundedOrdinal
 
 class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
@@ -75,7 +76,11 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
       , aliases=Array("--rf-batch-size"))
   val rfBatchSize:Int = -1
 
-  
+
+  @Option(name="-vo", required=false, usage="Variable type ordinal with this number of levels (def = 3)" 
+      , aliases=Array("--var-ordinal"))
+  val varOrdinalLevels:Int = 3;
+
   // spark relareds
   @Option(name="-sp", required=false, usage="Spark parallelism", aliases=Array("--spark-par"))
   val sparkPar = 0
@@ -120,7 +125,13 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     val variablePerview = inputData.map({case (f,i) => f.label}).take(defaultPreviewSize).toList
     
     echo(s"Loaded variables: ${dumpListHead(variablePerview, totalVariables)}")    
-
+    
+    // discover variabele type
+    // for now assume it's ordered factor with provided number of levels
+    echo(s"Assumed original variable with ${varOrdinalLevels} levles")
+    // TODO (Feature): Add autodiscovery
+    val dataType = BoundedOrdinal(varOrdinalLevels)
+    
     if (isVerbose) {
       verbose("Data preview:")
       source.features().take(defaultPreviewSize).foreach(f=> verbose(s"${f.label}:${dumpList(f.values.toList, longPreviewSize)}"))
@@ -143,9 +154,9 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     }
     val result = if (rfBatchSize > 0) {
       echo(s"Running in batch mode with size (oob not available): ${rfBatchSize}")
-      rf.batchTrain(traningData, labels, nTrees, rfBatchSize)
+      rf.batchTrain(traningData, dataType, labels, nTrees, rfBatchSize)
     } else {
-      rf.train(traningData, labels, nTrees)  
+      rf.train(traningData, dataType, labels, nTrees)  
     }
     
     val duration = System.currentTimeMillis() - startTime

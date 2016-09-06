@@ -3,19 +3,6 @@ package au.csiro.variantspark.metrics
 import au.csiro.variantspark.utils.FactorVariable
 import breeze.linalg.DenseVector
 
-object GiniBreeze
-{
-  def giniImpurityWithTotal(counts:DenseVector[Int]):(Double, Int) = {
-    val total = counts.sum
-    val d = counts.map(_.toDouble)
-    d/=total.toDouble
-    d:*=d
-    d*=(-1.0)
-    d+=1.0
-    (d.sum, total)
-  }
-}
-
 object Gini {
   def sqr(x: Double) = x * x
  

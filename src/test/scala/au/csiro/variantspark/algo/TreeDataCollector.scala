@@ -6,6 +6,7 @@ import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.rdd.RDD
 
  import au.csiro.variantspark.utils.Sample
+ import au.csiro.variantspark.data.VariableType
 
  class TreeDataCollector(treeStream:Stream[PredictiveModelWithImportance] = Stream.continually(TestPredictorWithImportance(null, null))) {  
   val allData = MutableList[RDD[(Vector, Long)]]()
@@ -15,7 +16,7 @@ import org.apache.spark.rdd.RDD
   val allTreest = MutableList[PredictiveModelWithImportance]()
   val treeIter = treeStream.toIterator
   
-  def collectData(indexedData: RDD[(Vector, Long)], labels: Array[Int], nTryFraction: Double, sample:Sample) = {
+  def collectData(indexedData: RDD[(Vector, Long)], dataType:VariableType, labels: Array[Int], nTryFraction: Double, sample:Sample) = {
     allData += indexedData
     allLabels += labels
     allnTryFration += nTryFraction

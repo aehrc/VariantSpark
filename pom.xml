@@ -143,6 +143,9 @@
 					<disableXmlReport>true</disableXmlReport>
 					<!-- If you have classpath issue like NoDefClassError,... -->
 					<!-- useManifestOnlyJar>false</useManifestOnlyJar -->
+		          <!--  excludes>
+		            <exclude>**/*PerfTest.*</exclude>
+		          </excludes-->
 				</configuration>
 			</plugin>
 
