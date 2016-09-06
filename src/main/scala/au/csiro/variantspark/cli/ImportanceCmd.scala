@@ -128,7 +128,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     
     // discover variabele type
     // for now assume it's ordered factor with provided number of levels
-    echo(s"Assumed original variable with ${varOrdinalLevels} levles")
+    echo(s"Assumed oridinal variable with ${varOrdinalLevels} levles")
     // TODO (Feature): Add autodiscovery
     val dataType = BoundedOrdinal(varOrdinalLevels)
     
