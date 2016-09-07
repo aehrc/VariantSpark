@@ -30,6 +30,7 @@ import au.csiro.variantspark.input.CsvFeatureSource
 import au.csiro.variantspark.algo.RandomForestParams
 import au.csiro.variantspark.data.BoundedOrdinal
 import au.csiro.pbdava.ssparkle.common.utils.Timer
+import au.csiro.variantspark.utils.defRng
 
 class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
@@ -75,14 +76,17 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
 
   @Option(name="-rbs", required=false, usage="RandomForest batch size (no of trees to build at the same time)" 
       , aliases=Array("--rf-batch-size"))
-  val rfBatchSize:Int = -1
-
+  val rfBatchSize:Int = 1
 
   @Option(name="-vo", required=false, usage="Variable type ordinal with this number of levels (def = 3)" 
       , aliases=Array("--var-ordinal"))
   val varOrdinalLevels:Int = 3;
 
-  // spark relareds
+  @Option(name="-s", required=false, usage="Random seed to use (default - random)", aliases=Array("--seed"))
+  val randomSeed: Long = defRng.nextLong
+
+  
+  // spark related
   @Option(name="-sp", required=false, usage="Spark parallelism", aliases=Array("--spark-par"))
   val sparkPar = 0
  
@@ -140,9 +144,10 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
       source.features().take(defaultPreviewSize).foreach(f=> verbose(s"${f.label}:${dumpList(f.values.toList, longPreviewSize)}"))
     }
     
-    echo(s"Training random forest - trees: ${nTrees}")  
+    echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")  
+    echo(s"Random seed is: ${randomSeed}")
     val treeBuildingTimer = Timer()
-    val rf = new WideRandomForest(RandomForestParams(oob=rfEstimateOob,
+    val rf = new WideRandomForest(RandomForestParams(oob=rfEstimateOob, seed = randomSeed,
         nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction))
     val traningData = inputData.map{ case (f, i) => (f.values, i)}
     
@@ -161,8 +166,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
         
       }
     }
-    val result = if (rfBatchSize > 0) {
-      echo(s"Running in batch mode with size (oob not available): ${rfBatchSize}")
+    val result = if (rfBatchSize > 1) {
       rf.batchTrain(traningData, dataType, labels, nTrees, rfBatchSize)
     } else {
       rf.train(traningData, dataType, labels, nTrees)  

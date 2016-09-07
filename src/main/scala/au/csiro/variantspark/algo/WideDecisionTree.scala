@@ -25,6 +25,7 @@ import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 import au.csiro.variantspark.data.VariableType
 import au.csiro.variantspark.data.BoundedOrdinal
 import au.csiro.variantspark.utils.defRng
+import org.apache.commons.lang3.builder.ToStringBuilder
 
 case class SubsetInfo(indices:Array[Int], impurity:Double, majorityLabel:Int) {
   def this(indices:Array[Int], impurity:Double, labels:Array[Int], nLabels:Int)  {
@@ -304,7 +305,10 @@ object WideDecisionTreeModel {
 case class DecisionTreeParams(
     val maxDepth:Int = Int.MaxValue, 
     val minNodeSize:Int = 1,
-    val seed:Long = defRng.nextLong )
+    val seed:Long = defRng.nextLong ) {
+
+  override def toString = ToStringBuilder.reflectionToString(this)
+}
 
 class WideDecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) extends Logging with Prof {
   

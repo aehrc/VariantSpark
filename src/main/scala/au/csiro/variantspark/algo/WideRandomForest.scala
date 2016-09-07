@@ -19,6 +19,7 @@ import au.csiro.variantspark.data.VariableType
 import org.apache.spark.ml.tree.DecisionTreeModel
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 import au.csiro.variantspark.utils.defRng
+import org.apache.commons.lang3.builder.ToStringBuilder
 
 case class VotingAggregator(val nLabels:Int, val nSamples:Int) {
   lazy val votes = Array.fill(nSamples)(Array.fill(nLabels)(0))
@@ -82,6 +83,7 @@ case class RandomForestParams(
         subsample = if (!subsample.isNaN) subsample else if (bootstrap) 1.0 else 0.666
     )
   }
+  override def toString = ToStringBuilder.reflectionToString(this)
 }
 
 trait WideRandomForestCallback {
@@ -175,8 +177,8 @@ class WideRandomForest(params:RandomForestParams=RandomForestParams(),
           }.getOrElse(List.fill(trees.size)(Double.NaN))
           trees.zip(oobError)
         }.withResultAndTime{ case (treesAndErrors, elapsedTime) =>
-          //logDebug(s"Tree: ${p} >> oobError: ${error}, time: ${elapsedTime}")
-          Option(callback).foreach(_.onTreeComplete(treesAndErrors.size, treesAndErrors.last._2, elapsedTime))
+          logDebug(s"Trees: ${treesAndErrors.size} >> oobError: ${treesAndErrors.size}, time: ${elapsedTime}")
+          Option(callback).foreach(_.onTreeComplete(treesAndErrors.size, treesAndErrors.size, elapsedTime))
         }.result
      }.toList.unzip
     WideRandomForestModel(trees.toList, nLabels, errors)
