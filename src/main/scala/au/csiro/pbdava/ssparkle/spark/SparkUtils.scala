@@ -9,7 +9,7 @@ object SparkUtils {
   
   
   
-  def withBrodcast[T, R](sc:SparkContext)(v:T)(f: Broadcast[T] => R)(implicit ev:ClassTag[T]) = {
+  def withBroadcast[T, R](sc:SparkContext)(v:T)(f: Broadcast[T] => R)(implicit ev:ClassTag[T]) = {
     val br = sc.broadcast(v)(ev)
     try {
       f(br)

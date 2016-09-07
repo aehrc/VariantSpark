@@ -166,7 +166,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     val topImportantVariables = result.variableImportance.toSeq.sortBy(-_._2).take(nVariables)
     val topImportantVariableIndexes = topImportantVariables.map(_._1).toSet
     
-    val index = SparkUtils.withBrodcast(sc)(topImportantVariableIndexes) { br_indexes => 
+    val index = SparkUtils.withBroadcast(sc)(topImportantVariableIndexes) { br_indexes => 
       inputData.filter(t => br_indexes.value.contains(t._2)).map({case (f,i) => (i, f.label)}).collectAsMap()
     }
     

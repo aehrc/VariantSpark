@@ -11,7 +11,7 @@ class VectorRDDFunction(val rdd:RDD[Vector]) extends AnyVal {
 class IndexedVectorRDDFunction(val rdd:RDD[(Vector, Long)]) extends AnyVal {
   def project(p:Projector):RDD[(Vector, Long)] = rdd.map(t => (p.projectVector(t._1),t._2))
   def size = rdd.first()._1.size
-  def collectAtIndexes(indexes:Set[Long]):Map[Long, Vector] = withBrodcast(rdd)(indexes) { br_indexes =>
+  def collectAtIndexes(indexes:Set[Long]):Map[Long, Vector] = withBroadcast(rdd)(indexes) { br_indexes =>
       rdd.filter({ case (data,variableIndex) => br_indexes.value.contains(variableIndex)})
         .map(_.swap)
         .collectAsMap().toMap
