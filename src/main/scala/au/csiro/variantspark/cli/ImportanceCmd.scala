@@ -82,9 +82,8 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
       , aliases=Array("--var-ordinal"))
   val varOrdinalLevels:Int = 3;
 
-  @Option(name="-s", required=false, usage="Random seed to use (default - random)", aliases=Array("--seed"))
+  @Option(name="-sr", required=false, usage="Random seed to use (default - random)", aliases=Array("--seed"))
   val randomSeed: Long = defRng.nextLong
-
   
   // spark related
   @Option(name="-sp", required=false, usage="Spark parallelism", aliases=Array("--spark-par"))
