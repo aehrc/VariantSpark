@@ -147,12 +147,18 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     val traningData = inputData.map{ case (f, i) => (f.values, i)}
     
     implicit val rfCallback = new WideRandomForestCallback() {
+      var totalTime = 0l
+      var totalTrees = 0
       override   def onParamsResolved(actualParams:RandomForestParams) {
         echo(s"RF Params: ${actualParams}")
         echo(s"RF Params mTry: ${(actualParams.nTryFraction * totalVariables).toLong}")
       }
-      override  def onTreeComplete(treeIndex:Int, oobError:Double, elapsedTimeMs:Long) {
-        echo(s"Finished tree: ${treeIndex}, current oobError: ${oobError}, time: ${elapsedTimeMs} ms")
+      override  def onTreeComplete(nTrees:Int, oobError:Double, elapsedTimeMs:Long) {
+        totalTime += elapsedTimeMs
+        totalTrees += nTrees
+        echo(s"Finished trees: ${totalTrees}, current oobError: ${oobError}, totalTime: ${totalTime/1000.0} s, avg timePerTree: ${totalTime/(1000.0*totalTrees)} s")
+        echo(s"Last build trees: ${nTrees}, time: ${elapsedTimeMs} ms, timePerTree: ${elapsedTimeMs/nTrees} ms")
+        
       }
     }
     val result = if (rfBatchSize > 0) {

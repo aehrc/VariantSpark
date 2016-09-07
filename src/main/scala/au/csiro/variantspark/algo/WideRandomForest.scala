@@ -83,7 +83,7 @@ case class RandomForestParams(
 
 trait WideRandomForestCallback {
   def onParamsResolved(actualParams:RandomForestParams) {}
-  def onTreeComplete(treeIndex:Int, oobError:Double, elapsedTimeMs:Long) {}
+  def onTreeComplete(nTrees:Int, oobError:Double, elapsedTimeMs:Long) {}
 }
 
 
@@ -124,7 +124,7 @@ class WideRandomForest(params:RandomForestParams=RandomForestParams(),modelBuild
         (tree, oobError)
       }.withResultAndTime{ case ((tree, error), elapsedTime) =>
         logDebug(s"Tree: ${p} >> oobError: ${error}, time: ${elapsedTime}")
-        Option(callback).foreach(_.onTreeComplete(p, error, elapsedTime))
+        Option(callback).foreach(_.onTreeComplete(1, error, elapsedTime))
       }.result
     }.unzip
     WideRandomForestModel(trees.toList, nLabels, errors.toList)
@@ -153,19 +153,23 @@ class WideRandomForest(params:RandomForestParams=RandomForestParams(),modelBuild
     val (trees, errors) = allSamples
       .sliding(nBatchSize, nBatchSize)
       .flatMap { samplesStream => 
-        val samples = samplesStream.toList
-        val trees = builder.batchTrain(indexedData, dataType, labels, actualParams.nTryFraction, samples)
-        
-        val oobError = oobAggregator.map { agg =>
-          val oobIndexes = samples.map(_.indexesOut.toArray)
-          val oobPredictions = WideDecisionTreeModel.batchPredict(indexedData, trees, oobIndexes)
-          oobPredictions.zip(oobIndexes).map { case(preds, oobIdx) =>
-              agg.addVote(preds, oobIdx)
-              Metrics.classificatoinError(labels, agg.predictions)
-          }
-        }.getOrElse(List.fill(trees.size)(Double.NaN))
-        Option(callback).foreach(_.onTreeComplete(1, oobError.last, 0))
-        trees.zip(oobError)
+        time {
+          val samples = samplesStream.toList
+          val trees = builder.batchTrain(indexedData, dataType, labels, actualParams.nTryFraction, samples)
+          
+          val oobError = oobAggregator.map { agg =>
+            val oobIndexes = samples.map(_.indexesOut.toArray)
+            val oobPredictions = WideDecisionTreeModel.batchPredict(indexedData, trees, oobIndexes)
+            oobPredictions.zip(oobIndexes).map { case(preds, oobIdx) =>
+                agg.addVote(preds, oobIdx)
+                Metrics.classificatoinError(labels, agg.predictions)
+            }
+          }.getOrElse(List.fill(trees.size)(Double.NaN))
+          trees.zip(oobError)
+        }.withResultAndTime{ case (treesAndErrors, elapsedTime) =>
+          //logDebug(s"Tree: ${p} >> oobError: ${error}, time: ${elapsedTime}")
+          Option(callback).foreach(_.onTreeComplete(treesAndErrors.size, treesAndErrors.last._2, elapsedTime))
+        }.result
      }.toList.unzip
     WideRandomForestModel(trees.toList, nLabels, errors)
  }
