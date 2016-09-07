@@ -216,6 +216,8 @@ case class SplitNode(override val majorityLabel: Int, override val size: Int,ove
     right.printout(level + 1)      
   }
   
+  def childFor(value:Double):DecisionTreeNode =  if (value <= splitPoint) left else right
+  
   // TODO (CHECK): Not sure but this can be the same as impurity reduction
   def impurityDelta  = impurityContribution - (left.impurityContribution + right.impurityContribution)
   def predict(variables: Map[Long, Vector])(sampleIndex:Int):Int = if (variables(splitVariableIndex)(sampleIndex) <= splitPoint) left.predict(variables)(sampleIndex) else right.predict(variables)(sampleIndex)
@@ -248,6 +250,62 @@ class WideDecisionTreeModel(val rootNode: DecisionTreeNode) extends PredictiveMo
   def impurity = rootNode.toStream.map(_.nodeImpurity).toList
   def variables = rootNode.splitsToStream.map(_.splitVariableIndex).toList
   def threshods = rootNode.splitsToStream.map(_.splitPoint).toList
+}
+
+
+object WideDecisionTreeModel {
+  
+  def resolveSplitNodes(indexedData: RDD[(Vector,Long)], splitNodes:List[(SplitNode, Int)]) = {
+    val varsAndIndexesToCollect = splitNodes.asInstanceOf[List[(SplitNode, Int)]].map { case (n,i) => (n.splitVariableIndex, i)}.zipWithIndex.toArray
+      // broadcast
+      val varValuesForSplits = withBroadcast(indexedData)(varsAndIndexesToCollect) { br_varsAndIndexesToCollect =>
+        indexedData.mapPartitions{ it => 
+          // group by variable index
+          val varsAndIndexesToCollectMap = br_varsAndIndexesToCollect.value.toList.groupBy(_._1._1)
+          it.flatMap { case (v,vi) =>
+            varsAndIndexesToCollectMap.getOrElse(vi, Nil).map { case (n,si) => (si, v(n._2)) }
+          }
+      }.collectAsMap
+    }
+    splitNodes.asInstanceOf[List[(SplitNode, Int)]].zipWithIndex.map{ case ((n,i),v) => (n.childFor(varValuesForSplits(v)), i)}  
+  }
+  
+  //
+  // predict same sample for all trees
+  // as the result though I would like to get predictions for each tree not just one so an int[nTrees][nIndexes]
+  def batchPredict(indexedData: RDD[(Vector,Long)], trees:Seq[WideDecisionTreeModel], indexes:Seq[Array[Int]]) = {
+    // samples are the same so can be broacasted
+    // maybe I can broadcast trees as well ...
+    // but in general i should iterate through levels and for each prediction point send out the variable that should be retrieved (and say -1 if none)
+    // then I wil get the entire vector I can decide the next point
+    
+    // use recursion to replace loop
+    def predict(nodesAndIndexes:List[((DecisionTreeNode, Int), Int)]):List[((LeafNode, Int), Int)] = {
+      val (leaves, splits) = nodesAndIndexes.partition(_._1._1.isLeaf)
+      if (splits.isEmpty) {
+        leaves.asInstanceOf[List[((LeafNode, Int), Int)]]
+      } else {        
+        val (bareSplits, splitIndexes) = splits.unzip
+        val transfomedSplits = resolveSplitNodes(indexedData, bareSplits.asInstanceOf[List[(SplitNode, Int)]]).zip(splitIndexes)
+        leaves.asInstanceOf[List[((LeafNode, Int), Int)]] ::: predict(transfomedSplits)
+      }
+    }
+    
+    val rootNodesAndIndexes = trees.map(_.rootNode).zip(indexes).flatMap { case (n,idx) => idx.map(i => (n,i)) }.zipWithIndex.toList
+    val leaveNodesAndIndexes = predict(rootNodesAndIndexes)
+    // somehow need to get to the original prediction
+    
+    val orderedPredictions = leaveNodesAndIndexes.sortBy(_._2).unzip._1.map(_._1.majorityLabel)
+    val orderedPredictionsIter = orderedPredictions.toIterator
+    
+    // how to merge it back now?
+    // well should be in the same order as original ??? ( NO - the order got corrupted in paritioning process)))
+    // so will need to preserve it and sort by or do something else but say it's presrved
+    //then I just need to fill the values with an iterator
+    
+    //hmm not to sure if map is sequential 
+    indexes.map(a => Array.fill(a.length)(orderedPredictionsIter.next()))
+  }
 }
 
 case class DecisionTreeParams(val maxDepth:Int = Int.MaxValue, val minNodeSize:Int = 1)

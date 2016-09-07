@@ -16,6 +16,7 @@ import au.csiro.pbdava.ssparkle.common.utils.Timed._
 import au.csiro.variantspark.utils.Sample
 import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
 import au.csiro.variantspark.data.VariableType
+import org.apache.spark.ml.tree.DecisionTreeModel
 
 case class VotingAggregator(val nLabels:Int, val nSamples:Int) {
   lazy val votes = Array.fill(nSamples)(Array.fill(nLabels)(0))
@@ -144,12 +145,29 @@ class WideRandomForest(params:RandomForestParams=RandomForestParams(),modelBuild
     Option(callback).foreach(_.onParamsResolved(actualParams))
     logDebug(s"Parameters: ${actualParams}")
     logDebug(s"Batch Traning: ${nTrees} with batch size: ${nBatchSize}")
-   
+    val oobAggregator = if (actualParams.oob) Option(new VotingAggregator(nLabels,nSamples)) else None   
+    
+    
     val allSamples = Stream.fill(nTrees)(Sample.fraction(nSamples, actualParams.subsample, actualParams.bootstrap))
     val builder = new WideDecisionTree()
-    val trees = allSamples.sliding(nBatchSize, nBatchSize)
-      .flatMap(samples => builder.batchTrain(indexedData, dataType, labels, actualParams.nTryFraction, samples.toList))
-    WideRandomForestModel(trees.toList, nLabels, List(Double.NaN))
+    val (trees, errors) = allSamples
+      .sliding(nBatchSize, nBatchSize)
+      .flatMap { samplesStream => 
+        val samples = samplesStream.toList
+        val trees = builder.batchTrain(indexedData, dataType, labels, actualParams.nTryFraction, samples)
+        
+        val oobError = oobAggregator.map { agg =>
+          val oobIndexes = samples.map(_.indexesOut.toArray)
+          val oobPredictions = WideDecisionTreeModel.batchPredict(indexedData, trees, oobIndexes)
+          oobPredictions.zip(oobIndexes).map { case(preds, oobIdx) =>
+              agg.addVote(preds, oobIdx)
+              Metrics.classificatoinError(labels, agg.predictions)
+          }
+        }.getOrElse(List.fill(trees.size)(Double.NaN))
+        Option(callback).foreach(_.onTreeComplete(1, oobError.last, 0))
+        trees.zip(oobError)
+     }.toList.unzip
+    WideRandomForestModel(trees.toList, nLabels, errors)
  }
   
   
