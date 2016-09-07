@@ -29,6 +29,7 @@ import au.csiro.variantspark.utils.VectorRDDFunction._
 import au.csiro.variantspark.input.CsvFeatureSource
 import au.csiro.variantspark.algo.RandomForestParams
 import au.csiro.variantspark.data.BoundedOrdinal
+import au.csiro.pbdava.ssparkle.common.utils.Timer
 
 class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
@@ -118,13 +119,15 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     val labels = labelSource.getLabels(source.sampleNames)
     echo(s"Loaded labels: ${dumpList(labels.toList)}")
     
+    
+    val dataLoadingTimer = Timer()
     echo(s"Loading features from: ${inputFile}")
     
     val inputData = source.features().map(_.toVector).zipWithIndex().cache()
     val totalVariables = inputData.count()
     val variablePerview = inputData.map({case (f,i) => f.label}).take(defaultPreviewSize).toList
-    
-    echo(s"Loaded variables: ${dumpListHead(variablePerview, totalVariables)}")    
+        
+    echo(s"Loaded variables: ${dumpListHead(variablePerview, totalVariables)}, took: ${dataLoadingTimer.durationInSec}")    
     
     // discover variabele type
     // for now assume it's ordered factor with provided number of levels
@@ -138,7 +141,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     }
     
     echo(s"Training random forest - trees: ${nTrees}")  
-    val startTime = System.currentTimeMillis()
+    val treeBuildingTimer = Timer()
     val rf = new WideRandomForest(RandomForestParams(oob=rfEstimateOob,
         nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction))
     val traningData = inputData.map{ case (f, i) => (f.values, i)}
@@ -159,9 +162,8 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
       rf.train(traningData, dataType, labels, nTrees)  
     }
     
-    val duration = System.currentTimeMillis() - startTime
-    echo(s"Random forest oob accuracy: ${result.oobError}, took ${duration/1000.0} s") 
-
+    echo(s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s") 
+    
     // build index for names
     val topImportantVariables = result.variableImportance.toSeq.sortBy(-_._2).take(nVariables)
     val topImportantVariableIndexes = topImportantVariables.map(_._1).toSet

@@ -49,7 +49,7 @@ class WideRandomForrestTest extends SparkTest {
     // as even trees predict all 0 and odd trees all 1
     assertEquals("Oob erros should always decrease", model.oobErrors.sortBy(-_), model.oobErrors)
     assertEquals("The first error should be 0.5", 0.5, model.oobErrors.head, 0)
-    assertEquals("The last error should be 0", 0, model.oobErrors.last, 0)
+    assertEquals("The last error should be 0", 0, model.oobErrors.last, 0.01)
     assertTrue("All trees trained with requested samples", collector.allSamples.forall(s => s.lenght == nSamples/2 && !s.indexesOut.isEmpty))    
   }
 
