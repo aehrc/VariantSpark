@@ -17,6 +17,8 @@ import au.csiro.variantspark.utils.Sample
 import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
 import au.csiro.variantspark.data.VariableType
 import org.apache.spark.ml.tree.DecisionTreeModel
+import it.unimi.dsi.util.XorShift1024StarRandomGenerator
+import au.csiro.variantspark.utils.defRng
 
 case class VotingAggregator(val nLabels:Int, val nSamples:Int) {
   lazy val votes = Array.fill(nSamples)(Array.fill(nLabels)(0))
@@ -69,7 +71,8 @@ case class RandomForestParams(
     oob:Boolean = true,
     nTryFraction:Double =  Double.NaN, 
     bootstrap:Boolean = true,
-    subsample:Double = Double.NaN
+    subsample:Double = Double.NaN, 
+    seed:Long =  defRng.nextLong
 ) {
   def resolveDefaults(nSamples:Int, nVariables:Int):RandomForestParams = {
     RandomForestParams(
@@ -93,7 +96,13 @@ object WideRandomForest {
   def wideDecisionTreeBuilder(indexedData: RDD[(Vector, Long)], dataType:VariableType, labels: Array[Int], nTryFraction: Double, sample:Sample) = new WideDecisionTree().run(indexedData, dataType, labels, nTryFraction, sample)
 }
 
-class WideRandomForest(params:RandomForestParams=RandomForestParams(),modelBuilder:WideRandomForest.ModelBuilder = WideRandomForest.wideDecisionTreeBuilder) extends Logging {
+class WideRandomForest(params:RandomForestParams=RandomForestParams(),
+      modelBuilder:WideRandomForest.ModelBuilder = WideRandomForest.wideDecisionTreeBuilder) extends Logging {
+  
+  // TODO (Design): This seems like an easiest solution but it make this class 
+  // to keep random state ... perhaps this could be externalised to the implicit random
+  
+  implicit lazy val rng = new XorShift1024StarRandomGenerator(params.seed)
   
   // TODO: (Refactoring): When adding other types of variables make sure to include 
   // some abstraction to represent data with description
@@ -147,9 +156,8 @@ class WideRandomForest(params:RandomForestParams=RandomForestParams(),modelBuild
     logDebug(s"Batch Traning: ${nTrees} with batch size: ${nBatchSize}")
     val oobAggregator = if (actualParams.oob) Option(new VotingAggregator(nLabels,nSamples)) else None   
     
-    
+    val builder = new WideDecisionTree(DecisionTreeParams(seed = rng.nextLong))    
     val allSamples = Stream.fill(nTrees)(Sample.fraction(nSamples, actualParams.subsample, actualParams.bootstrap))
-    val builder = new WideDecisionTree()
     val (trees, errors) = allSamples
       .sliding(nBatchSize, nBatchSize)
       .flatMap { samplesStream => 

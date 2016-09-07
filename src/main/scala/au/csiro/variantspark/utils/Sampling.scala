@@ -10,7 +10,6 @@ import org.apache.commons.math3.random.RandomGenerator
 import org.uncommons.maths.random.XORShiftRNG
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 
-
 class Sample(val nSize:Int, val indexes:Array[Int]) {
   def asWeights:Array[Int] = Array()
   def indexesIn:Set[Int] = indexes.toSet
@@ -21,7 +20,7 @@ class Sample(val nSize:Int, val indexes:Array[Int]) {
 
 object Sample {
   def all(nSize:Int) = new Sample(nSize, Range(0, nSize).toArray)
-  def fraction(nSize:Int, fraction:Double, withReplacement:Boolean = false) = new Sample(nSize, 
+  def fraction(nSize:Int, fraction:Double, withReplacement:Boolean = false)(implicit rng:RandomGenerator) = new Sample(nSize, 
       Sampling.subsampleFraction(nSize, fraction, withReplacement))
 }
 
@@ -30,19 +29,19 @@ object Sampling {
     /**
      * Get indexes that should be included in sample from array of this size
      */
-    def subsample(size:Int, sampleSize:Int, withReplacement:Boolean)(implicit rg:RandomGenerator = new XorShift1024StarRandomGenerator()):Array[Int] =  {
+    def subsample(size:Int, sampleSize:Int, withReplacement:Boolean)(implicit rg:RandomGenerator):Array[Int] =  {
       if (!withReplacement && sampleSize>size) throw new RuntimeException("Sample size greater then sample len")
       val rdg = new RandomDataGenerator(rg)
       return if (withReplacement) 
         Array.fill[Int](sampleSize)(rdg.nextInt(0,size-1)) else rdg.nextPermutation(size, sampleSize)
     }
     
-    def subsample(size:Int, sampleSize:Int):Array[Int] = subsample(size, sampleSize, false)
+    def subsample(size:Int, sampleSize:Int)(implicit rg:RandomGenerator):Array[Int] = subsample(size, sampleSize, false)
   
     /**
      * Get indexes that should be included in sample from array of this size
      */
-    def subsampleFraction(size:Int, fraction:Double, withReplacement:Boolean = false):Array[Int] = 
+    def subsampleFraction(size:Int, fraction:Double, withReplacement:Boolean = false)(implicit rg:RandomGenerator):Array[Int] = 
         subsample(size, if (fraction ==1.0) size else  math.round(size*fraction).toInt, withReplacement)
  
     def folds(size:Int, nFolds:Int):List[Array[Int]] = {

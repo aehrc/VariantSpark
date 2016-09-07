@@ -4,7 +4,7 @@ import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.commons.math3.random.RandomDataGenerator
 import org.apache.spark.rdd.RDD
-
+import au.csiro.variantspark.utils.defRng
 
 class Projector(indexSet: Set[Int], include: Boolean = true) extends Serializable {
 
@@ -28,7 +28,7 @@ object Projector {
   
   def apply(indexes:Array[Int], include:Boolean = true) = new Projector(indexes.toSet, include)
   
-  def subsample(v:Vector, fraction:Double):Projector = Projector(Sampling.subsampleFraction(v.size, fraction))
+  def subsample(v:Vector, fraction:Double):Projector = Projector(Sampling.subsampleFraction(v.size, fraction)(defRng))
 
   def split(v:Vector, fraction:Double):(Projector, Projector) = subsample(v, fraction).toPair
   

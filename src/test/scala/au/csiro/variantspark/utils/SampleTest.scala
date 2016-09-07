@@ -2,8 +2,11 @@ package au.csiro.variantspark.utils
 
 import org.junit.Assert._
 import org.junit.Test;
+import org.apache.commons.math3.random.JDKRandomGenerator
 
 class SampleTest {
+  implicit val rng = new JDKRandomGenerator()
+  
   @Test
   def testFullSampleWithReplacement() {
     val nSize = 100
