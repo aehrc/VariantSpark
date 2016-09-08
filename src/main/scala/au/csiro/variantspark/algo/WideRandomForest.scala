@@ -177,8 +177,8 @@ class WideRandomForest(params:RandomForestParams=RandomForestParams(),
           }.getOrElse(List.fill(trees.size)(Double.NaN))
           trees.zip(oobError)
         }.withResultAndTime{ case (treesAndErrors, elapsedTime) =>
-          logDebug(s"Trees: ${treesAndErrors.size} >> oobError: ${treesAndErrors.size}, time: ${elapsedTime}")
-          Option(callback).foreach(_.onTreeComplete(treesAndErrors.size, treesAndErrors.size, elapsedTime))
+          logDebug(s"Trees: ${treesAndErrors.size} >> oobError: ${treesAndErrors.last._2}, time: ${elapsedTime}")
+          Option(callback).foreach(_.onTreeComplete(treesAndErrors.size, treesAndErrors.last._2, elapsedTime))
         }.result
      }.toList.unzip
     WideRandomForestModel(trees.toList, nLabels, errors)
