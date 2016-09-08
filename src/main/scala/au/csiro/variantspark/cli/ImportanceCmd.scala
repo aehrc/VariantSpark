@@ -34,63 +34,63 @@ import au.csiro.variantspark.utils.defRng
 
 class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
-  @Option(name="-if", required=true, usage="This is input files", aliases=Array("--input-file"))
+  // input options
+  @Option(name="-if", required=true, usage="Path to input file or directory", aliases=Array("--input-file"))
   val inputFile:String = null
 
-  @Option(name="-it", required=false, usage="Input file type (vcf|csv) ", aliases=Array("--input-type"))
+  @Option(name="-it", required=false, usage="Input file type, one of: vcf, csv (def=vcf)", aliases=Array("--input-type"))
   val inputType:String = "vcf"
-
-  @Option(name="-ff", required=true, usage="Features file", aliases=Array("--feature-file"))
-  val featuresFile:String = null
-
-  @Option(name="-fc", required=true, usage="Feature column", aliases=Array("--feature-column"))
-  val featureColumn:String = null
   
-  @Option(name="-nv", required=false, usage="Number od variables to print", aliases=Array("--n-variables"))
-  val nVariables:Int = 20
-
-  @Option(name="-t", required=false, usage="Number of tree to build", aliases=Array("--n-trees") )
-  val nTrees:Int = 5
-
-  @Option(name="-of", required=false, usage="Output file", aliases=Array("--output-file") )
-  val outputFile:String = null
-
-  @Option(name="-c", required=false, usage="Compute and display pair-wise correlation for important variables", aliases=Array("--correlation") )
-  val computeCorrelation:Boolean = false
-
-  @Option(name="-ct", required=false, usage="Only display pairs with abs(correlation) greater then the threshold (def=0.6)", aliases=Array("--correlation-threshold") )
-  val correlationThreshold = 0.6
- 
-  @Option(name="-d", required=false, usage="Include important variables data"
-        , aliases=Array("--include-data") )
-  val includeData = false
- 
-  @Option(name="-rt", required=false, usage="RandomForest mTry" , aliases=Array("--rf-mtry"))
-  val rfMTry:Long = -1L
-  
-  @Option(name="-rtf", required=false, usage="RandomForest mTry fraction" , aliases=Array("--rf-mtry-fraction"))
-  val rfMTryFraction:Double = Double.NaN
-  
-  @Option(name="-ro", required=false, usage="RandomForest estimate oob" , aliases=Array("--rf-oob"))
-  val rfEstimateOob:Boolean = false
-
-  @Option(name="-rbs", required=false, usage="RandomForest batch size (no of trees to build at the same time)" 
-      , aliases=Array("--rf-batch-size"))
-  val rfBatchSize:Int = 1
-
-  @Option(name="-vo", required=false, usage="Variable type ordinal with this number of levels (def = 3)" 
-      , aliases=Array("--var-ordinal"))
+  @Option(name="-ivo", required=false, usage="Variable type ordinal with this number of levels (def = 3)" 
+      , aliases=Array("--input-var-ordinal"))
   val varOrdinalLevels:Int = 3;
 
-  @Option(name="-sr", required=false, usage="Random seed to use (default - random)", aliases=Array("--seed"))
+  @Option(name="-ff", required=true, usage="Path to feature file", aliases=Array("--feature-file"))
+  val featuresFile:String = null
+
+  @Option(name="-fc", required=true, usage="Name of the feature column", aliases=Array("--feature-column"))
+  val featureColumn:String = null
+  
+  
+  // output options
+  @Option(name="-of", required=false, usage="Path to output file (def = stdout)", aliases=Array("--output-file") )
+  val outputFile:String = null
+
+  @Option(name="-on", required=false, usage="The number of top important variabels to include in output (def=20)", 
+      aliases=Array("--output-n-variables"))
+  val nVariables:Int = 20
+ 
+  @Option(name="-od", required=false, usage="Include important variables data in output file (def=no)"
+        , aliases=Array("--output-include-data") )
+  val includeData = false
+
+  // random forrest options
+  
+  @Option(name="-rn", required=false, usage="RandomForest: number of trees to build (def=20)", aliases=Array("--rf-n-trees") )
+  val nTrees:Int = 20
+ 
+  @Option(name="-rmt", required=false, usage="RandomForest: mTry(def=sqrt(<num-vars>))" , aliases=Array("--rf-mtry"))
+  val rfMTry:Long = -1L
+  
+  @Option(name="-rmtf", required=false, usage="RandomForest: mTry fraction" , aliases=Array("--rf-mtry-fraction"))
+  val rfMTryFraction:Double = Double.NaN
+  
+  @Option(name="-ro", required=false, usage="RandomForest: estimate oob (def=no)" , aliases=Array("--rf-oob"))
+  val rfEstimateOob:Boolean = false
+
+  @Option(name="-rbs", required=false, usage="RandomForest: batch size (def=10))" 
+      , aliases=Array("--rf-batch-size"))
+  val rfBatchSize:Int = 10
+
+  @Option(name="-sr", required=false, usage="Random seed to use (def=<random>)", aliases=Array("--seed"))
   val randomSeed: Long = defRng.nextLong
   
   // spark related
-  @Option(name="-sp", required=false, usage="Spark parallelism", aliases=Array("--spark-par"))
+  @Option(name="-sp", required=false, usage="Spark parallelism (def=<default-spark-par>)", aliases=Array("--spark-par"))
   val sparkPar = 0
  
   @Override
-  def testArgs = Array("-if", "data/small.vcf", "-ff", "data/small-labels.csv", "-fc", "22_16051249", "-d")
+  def testArgs = Array("-if", "data/small.vcf", "-ff", "data/small-labels.csv", "-fc", "22_16051249", "-od")
   
   def loadVCF() = {
     echo(s"Loading header from VCF file: ${inputFile}")
@@ -188,18 +188,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
       varImportance.take(math.min(nVariables, defaultPreviewSize)).foreach({case(label, importance) => echo(s"${label}: ${importance}")})
     }
 
-      // TODO (Optimize): Only needed when data is reqruied
-      // compute correlation
-    val importntVariableData = traningData.collectAtIndexes(topImportantVariableIndexes) 
-    
-    if (computeCorrelation) {
-      // compute correlation
-      val cor = new PearsonsCorrelation()
-      val cors = for (i <-importntVariableData.keys; j <-importntVariableData.keys if i !=j) yield ((index(i),index(j)), cor.correlation(importntVariableData(i).toArray
-          , importntVariableData(j).toArray)) 
-      println("correlation")
-      cors.filter(t => Math.abs(t._2) > correlationThreshold).toList.sorted.foreach(println)  
-    }
+    val importntVariableData = if (includeData) traningData.collectAtIndexes(topImportantVariableIndexes) else null
     
     LoanUtils.withCloseable(if (outputFile != null ) CSVWriter.open(outputFile) else CSVWriter.open(ReusablePrintStream.stdout)) { writer =>
       val header = List("variable","importance") ::: (if (includeData) source.sampleNames else Nil)
