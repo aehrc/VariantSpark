@@ -80,7 +80,8 @@ case class RandomForestParams(
         oob = oob, 
         nTryFraction = if (!nTryFraction.isNaN) nTryFraction else Math.sqrt(nVariables.toDouble)/nVariables,
         bootstrap = bootstrap,
-        subsample = if (!subsample.isNaN) subsample else if (bootstrap) 1.0 else 0.666
+        subsample = if (!subsample.isNaN) subsample else if (bootstrap) 1.0 else 0.666, 
+        seed = seed
     )
   }
   override def toString = ToStringBuilder.reflectionToString(this)
