@@ -9,9 +9,10 @@ import org.apache.commons.math3.random.JDKRandomGenerator
 import breeze.linalg.DenseVector
 import org.apache.commons.math3.random.RandomGenerator
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
+import au.csiro.pbdava.ssparkle.spark.SparkUtils._
 
 class EfectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int, val noiseSigma:Double, 
-      effects:Map[Long,Double], seed:Long = 13L) extends LabelSource {
+      effects:Map[String,Double], seed:Long = 13L) extends LabelSource {
   
   
   def logistic(d:Double) = 1.0 / (1.0 + Math.exp(-d))
@@ -29,8 +30,11 @@ class EfectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int, val noiseS
     // N(0,noiseSigma).
     // let's assume the number of incluential factors is small
     // so
-    val influentialVariablesData = featureSource.features()
-      .map(_.toVector.values).zipWithIndex().collectAtIndexes(effects.keySet)
+    
+    val influentialVariablesData = withBroadcast(featureSource.features.sparkContext)(effects){ br_effects =>
+      featureSource.features.filter(f => br_effects.value.contains(f.label)).map(f => (f.label, f.toVector.values)).collectAsMap()
+    }
+          
     val gs = new GaussianRandomGenerator(rng)
     val globalNormalizer = DenseVector.fill(nSamples, zeroLevel.toDouble)
     val continousEffects = effects.foldLeft(DenseVector.fill[Double](nSamples)(gs.nextNormalizedDouble() *noiseSigma)) { case (a, (vi, e)) =>
@@ -39,12 +43,19 @@ class EfectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int, val noiseS
       additiveEffect*=2*e
       a+=additiveEffect
     }
-    continousEffects.map(c => if (logistic(c) >=rng.nextDouble()) 1 else 0).toArray
+    
+    //influentialVariablesData.foreach(println)
+    val probs = continousEffects.map(logistic)
+    //println(continousEffects)
+    //println(probs)
+    val classes = probs.map(c => if (rng.nextDouble() < c) 1 else 0)
+    //println(classes)    
+    classes.toArray
   }
   
 }
 
 
 object EfectLabelGenerator {
-  def apply(featureSource:FeatureSource)(zeroLevel:Int, noiseSigma:Double, effects:Map[Long,Double], seed:Long = 13L) = new EfectLabelGenerator(featureSource)(zeroLevel, noiseSigma, effects, seed)
+  def apply(featureSource:FeatureSource)(zeroLevel:Int, noiseSigma:Double, effects:Map[String,Double], seed:Long = 13L) = new EfectLabelGenerator(featureSource)(zeroLevel, noiseSigma, effects, seed)
 }

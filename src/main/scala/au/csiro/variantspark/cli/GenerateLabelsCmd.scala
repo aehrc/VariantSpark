@@ -66,7 +66,7 @@ class GenerateLabelsCmd extends ArgsApp with SparkApp with Echoable with Logging
   @Option(name="-gz", required=false, usage="Genertor zero level (def = <factor-levels>/2)", aliases=Array("--gen-zero-level"))
   val zeroLevel:Int = -1
  
-  @Option(name="-ge", required=false, usage="Genertor noise stddev (def=0.0)", aliases=Array("--gen-effect"))
+  @Option(name="-ge", required=false, usage="Generator effects <var-name>:<effect-size> (can be used may times)", aliases=Array("--gen-effect"))
   val effectsDef:ArrayList[String] = new ArrayList()
   
    // common options
@@ -88,7 +88,7 @@ class GenerateLabelsCmd extends ArgsApp with SparkApp with Echoable with Logging
     val actualZeroLevel = if (zeroLevel > 0) zeroLevel else varOrdinalLevels/2 
     echo(s"Generating a dichotomous response, zeroLevel: ${actualZeroLevel}, noiseSigma: ${noiseSigma}")
     
-    val effects = effectsDef.asScala.map(_.split(":")).map {case Array(v, e) => (v.toLong, e.toDouble)}.toMap
+    val effects = effectsDef.asScala.map(_.split(":")).map {case Array(v, e) => (v, e.toDouble)}.toMap
     echo(s"Effects: ${effects}")
     
     verbose(s"Random seed is: ${randomSeed}, sparkPar is: ${sparkPar}")
