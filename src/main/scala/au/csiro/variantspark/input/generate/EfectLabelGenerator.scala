@@ -10,9 +10,8 @@ import breeze.linalg.DenseVector
 import org.apache.commons.math3.random.RandomGenerator
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 
-case class EfectLabelGenerator(zeroLevel:Int, val noiseSigma:Double, 
-      effects:Map[Long,Double], featureSource:FeatureSource, seed:Long = 13L
-    ) extends LabelSource {
+class EfectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int, val noiseSigma:Double, 
+      effects:Map[Long,Double], seed:Long = 13L) extends LabelSource {
   
   
   def logistic(d:Double) = 1.0 / (1.0 + Math.exp(-d))
@@ -45,3 +44,7 @@ case class EfectLabelGenerator(zeroLevel:Int, val noiseSigma:Double,
   
 }
 
+
+object EfectLabelGenerator {
+  def apply(featureSource:FeatureSource)(zeroLevel:Int, noiseSigma:Double, effects:Map[Long,Double], seed:Long = 13L) = new EfectLabelGenerator(featureSource)(zeroLevel, noiseSigma, effects, seed)
+}

@@ -20,7 +20,7 @@ class WideRandomForestIntegratedTest extends SparkTest {
   def testFindsImportantVariablesInGeneratedDataset() {
     val seed = 17;
     val fg = OrdinalFeatureGenerator(nLevels = 3, nVariables = 1000, nSamples = 1000, seed = seed)
-    val lg = EfectLabelGenerator(1, 0, Map(2L->1.0, 5L->0.75, 7L->2.0), fg, seed = seed)
+    val lg = EfectLabelGenerator(fg)(1, 0, Map(2L->1.0, 5L->0.75, 7L->2.0), seed = seed)
     val labels = lg.getLabels(fg.sampleNames)
     val rf = new WideRandomForest()
     val data = fg.features().map(_.toVector.values).zipWithIndex.cache

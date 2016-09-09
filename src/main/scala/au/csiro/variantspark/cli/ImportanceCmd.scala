@@ -31,6 +31,7 @@ import au.csiro.variantspark.algo.RandomForestParams
 import au.csiro.variantspark.data.BoundedOrdinal
 import au.csiro.pbdava.ssparkle.common.utils.Timer
 import au.csiro.variantspark.utils.defRng
+import au.csiro.variantspark.input.ParquetFeatureSource
 
 class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
@@ -38,7 +39,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
   @Option(name="-if", required=true, usage="Path to input file or directory", aliases=Array("--input-file"))
   val inputFile:String = null
 
-  @Option(name="-it", required=false, usage="Input file type, one of: vcf, csv (def=vcf)", aliases=Array("--input-type"))
+  @Option(name="-it", required=false, usage="Input file type, one of: vcf, csv, parquet (def=vcf)", aliases=Array("--input-type"))
   val inputType:String = "vcf"
   
   @Option(name="-ivo", required=false, usage="Variable type ordinal with this number of levels (def = 3)" 
@@ -105,6 +106,11 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     CsvFeatureSource(sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
   }
   
+  def loadParquet() = {
+    echo(s"Loading parquet file: ${inputFile}")
+    ParquetFeatureSource(inputFile)
+  }
+  
   @Override
   def run():Unit = {
     implicit val fs = FileSystem.get(sc.hadoopConfiguration)      
@@ -112,7 +118,13 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
     echo(s"Finding  ${nVariables}  most important features using random forest")
 
-    val fileLoader = if ("csv".equals(inputType)) loadCSV _ else loadVCF _
+    // TODO (Refactoring): Make a class
+    // TODO (Func): add auto detection based on name
+    val fileLoader = inputType match {
+      case "csv" =>  loadCSV _
+      case "parquet" => loadParquet _ 
+      case "vcf" => loadVCF _
+    }
     val source = fileLoader()
     
     echo(s"Loaded rows: ${dumpList(source.sampleNames)}")
