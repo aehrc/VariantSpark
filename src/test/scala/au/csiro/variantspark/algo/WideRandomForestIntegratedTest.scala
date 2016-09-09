@@ -9,7 +9,7 @@ import org.saddle.io._
 import org.saddle._
 import org.saddle.io.CsvImplicits._
 import au.csiro.variantspark.data.BoundedOrdinal
-import au.csiro.variantspark.input.generate.OrdinalFeatureSource
+import au.csiro.variantspark.input.generate.OrdinalFeatureGenerator
 import au.csiro.variantspark.input.generate.EfectLabelGenerator
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 
@@ -19,7 +19,7 @@ class WideRandomForestIntegratedTest extends SparkTest {
   @Test
   def testFindsImportantVariablesInGeneratedDataset() {
     val seed = 17;
-    val fg = OrdinalFeatureSource(nLevels = 3, nVariables = 1000, nSamples = 1000, seed = seed)
+    val fg = OrdinalFeatureGenerator(nLevels = 3, nVariables = 1000, nSamples = 1000, seed = seed)
     val lg = EfectLabelGenerator(1, 0, Map(2L->1.0, 5L->0.75, 7L->2.0), fg, seed = seed)
     val labels = lg.getLabels(fg.sampleNames)
     val rf = new WideRandomForest()

@@ -7,17 +7,18 @@ import org.apache.spark.SparkContext
 import au.csiro.variantspark.utils.Sampling
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 
-case class OrdinalFeatureSource(val nLevels:Int, val nVariables:Int, 
-      val nSamples:Int, val seed: Long = 13L)(implicit sc:SparkContext) extends FeatureSource {
+case class OrdinalFeatureGenerator(val nLevels:Int, val nVariables:Long, 
+      val nSamples:Int, val seed: Long = 13L, val sparkPar:Int = 0)(implicit sc:SparkContext) extends FeatureSource {
     
   def features(): RDD[Feature]  = {
     val nLevels = this.nLevels
     val nSamples = this.nSamples
     val seed = this.seed
-    sc.parallelize(Range(0, nVariables).toList)
+    //TODO (Feature): Honor parallelism
+    sc.range(0L, nVariables, numSlices = if (sparkPar > 0) sparkPar else sc.defaultParallelism)
       .mapPartitionsWithIndex { case (pi, iter) =>
         implicit val rf = new XorShift1024StarRandomGenerator(pi ^ seed)
-        iter.map(i => Feature("v_" + i, Sampling.subsample(nLevels, nSamples, true)))
+        iter.map(i => Feature("v_" + i, Sampling.subsample(nLevels, nSamples, true).map(_.toByte)))
       }
   }
   def sampleNames: List[String] =  Range(0,nSamples).map("s_"+_).toList 

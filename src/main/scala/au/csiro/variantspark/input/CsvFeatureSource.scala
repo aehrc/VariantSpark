@@ -23,7 +23,7 @@ case class CsvFeatureSource(data:RDD[String], csvFormat:CSVFormat = DefaultCSVFo
     data.mapPartitions { it =>
        val header = local_br_header.value
        val csvParser = new CSVParser(csvFormat)
-       it.filter(!_.equals(header)).map(csvParser.parseLine(_).get).map(l => Feature(l.head, l.tail.map(_.toInt).toArray))
+       it.filter(!_.equals(header)).map(csvParser.parseLine(_).get).map(l => Feature(l.head, l.tail.map(_.toByte).toArray))
     }
   }
 }

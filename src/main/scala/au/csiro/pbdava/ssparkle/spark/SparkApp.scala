@@ -22,7 +22,7 @@ trait SparkApp extends Logging {
     //.set("spark.yarn.executor.memoryOverhead", "2048")
     //.set("spark.driver.maxResultSize","2048")
     //.set("spark.default.parallelism", "256")
-  lazy val sc = {
+  implicit lazy val sc = {
     logDebug("Spark conf: " + conf.toDebugString)
     new SparkContext(conf)
   }
