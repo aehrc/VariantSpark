@@ -167,7 +167,6 @@ class WideRandomForest(params:RandomForestParams=RandomForestParams(),
         time {
           val samples = samplesStream.toList
           val trees = builder.batchTrain(indexedData, dataType, labels, actualParams.nTryFraction, samples)
-          
           val oobError = oobAggregator.map { agg =>
             val oobIndexes = samples.map(_.indexesOut.toArray)
             val oobPredictions = WideDecisionTreeModel.batchPredict(indexedData, trees, oobIndexes)

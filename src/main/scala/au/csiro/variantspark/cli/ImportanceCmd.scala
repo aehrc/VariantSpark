@@ -79,6 +79,12 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
   @Option(name="-ro", required=false, usage="RandomForest: estimate oob (def=no)" , aliases=Array("--rf-oob"))
   val rfEstimateOob:Boolean = false
 
+  @Option(name="-rsf", required=false, usage="RandomForest: sample with no replacement (def=1.0 for bootsrap  else 0.6666)" , aliases=Array("--rf-subsample-fraction"))
+  val rfSubsampleFraction:Double = Double.NaN
+  
+  @Option(name="-rsn", required=false, usage="RandomForest: sample with no replacement (def=false -- bootstrap)" , aliases=Array("--rf-sample-no-replacement"))
+  val rfSampleNoReplacement:Boolean = false
+
   @Option(name="-rbs", required=false, usage="RandomForest: batch size (def=10))" 
       , aliases=Array("--rf-batch-size"))
   val rfBatchSize:Int = 10
@@ -158,7 +164,8 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")  
     echo(s"Random seed is: ${randomSeed}")
     val treeBuildingTimer = Timer()
-    val rf = new WideRandomForest(RandomForestParams(oob=rfEstimateOob, seed = randomSeed,
+    val rf = new WideRandomForest(RandomForestParams(oob=rfEstimateOob, seed = randomSeed, bootstrap = !rfSampleNoReplacement, 
+        subsample = rfSubsampleFraction,
         nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction))
     val traningData = inputData.map{ case (f, i) => (f.values, i)}
     

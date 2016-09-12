@@ -1,15 +1,13 @@
 package au.csiro.variantspark.input.generate
 
-import au.csiro.variantspark.input.LabelSource
-import au.csiro.variantspark.input.FeatureSource
-import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
-import au.csiro.variantspark.utils.VectorRDDFunction._
 import org.apache.commons.math3.random.GaussianRandomGenerator
-import org.apache.commons.math3.random.JDKRandomGenerator
+import org.apache.spark.rdd.RDD.rddToPairRDDFunctions
+
+import au.csiro.pbdava.ssparkle.spark.SparkUtils.withBroadcast
+import au.csiro.variantspark.input.FeatureSource
+import au.csiro.variantspark.input.LabelSource
 import breeze.linalg.DenseVector
-import org.apache.commons.math3.random.RandomGenerator
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
-import au.csiro.pbdava.ssparkle.spark.SparkUtils._
 
 class EfectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int, val noiseSigma:Double, 
       effects:Map[String,Double], seed:Long = 13L) extends LabelSource {
@@ -50,7 +48,12 @@ class EfectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int, val noiseS
     //println(probs)
     val classes = probs.map(c => if (rng.nextDouble() < c) 1 else 0)
     //println(classes)    
+    // print out correlation of variables
+    //val output = classes.toArray.map(_.toDouble)
+    //val correlationCalc = new PearsonsCorrelation()
+    //effects.map { case (v,e) => (v, correlationCalc.correlation(output, influentialVariablesData(v).toArray)) }.foreach(println)    
     classes.toArray
+    
   }
   
 }

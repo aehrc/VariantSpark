@@ -80,7 +80,10 @@ case class VariableSplitter(val dataType: VariableType, val labels:Array[Int], m
   def findSplitsForVars(varData:Iterator[(Vector, Long)], splits:Array[SubsetInfo])(implicit rng:RandomGenerator):Iterator[Array[VarSplitInfo]] = {
     profIt("Local: splitting") {
       val result = varData
-        .map(vi => findSplits(vi._1, splits).map(si => if (si != null) VarSplitInfo(vi._2, si) else null).toArray)
+        .map{vi => 
+          val thisVarSplits = findSplits(vi._1, splits)
+          thisVarSplits.map(si => if (si != null) VarSplitInfo(vi._2, si) else null).toArray
+        }
         .foldLeft(Array.fill[VarSplitInfo](splits.length)(null))(WideDecisionTree.merge)  
       // the fold above can be done by spark 
       // but this help to optimize for performance
@@ -188,6 +191,9 @@ case class LeafNode(override val majorityLabel: Int,override val  size: Int,over
     val nodeType = "leaf"
     println(s"${nodeType}[${majorityLabel}, ${size}, ${nodeImpurity}]")
   }
+  
+  override def toString = s"leaf[${majorityLabel}, ${size}, ${nodeImpurity}]" 
+  
   def predict(variables: Map[Long, Vector])(sampleIndex:Int):Int = majorityLabel
   def toStream:Stream[DecisionTreeNode] = this #:: Stream.empty
 }
@@ -209,6 +215,7 @@ case class SplitNode(override val majorityLabel: Int, override val size: Int,ove
     left.printout(level + 1)
     right.printout(level + 1)      
   }
+  override def toString = s"split[${splitVariableIndex}, ${splitPoint}, ${majorityLabel}, ${size}, ${impurityReduction}, ${nodeImpurity}]" 
   
   def childFor(value:Double):DecisionTreeNode =  if (value <= splitPoint) left else right
   
@@ -236,6 +243,20 @@ class WideDecisionTreeModel(val rootNode: DecisionTreeNode) extends PredictiveMo
     rootNode.printout(0)
   }
 
+  def printoutByLevel() {
+    def printLevel(levelNodes:Seq[DecisionTreeNode]) {
+      if (!levelNodes.isEmpty) {
+        println(levelNodes.mkString(" "))
+        printLevel(levelNodes.flatMap( _ match {
+          case t: SplitNode => List(t.left, t.right)
+          case _ => Nil
+        }))        
+      }
+    }
+    printLevel(Seq(rootNode))
+  }
+  
+  
   def variableImportanceAsFastMap: Long2DoubleOpenHashMap = rootNode.splitsToStream.
     foldLeft(new Long2DoubleOpenHashMap()){ case (m, splitNode) => 
       m.increment(splitNode.splitVariableIndex, splitNode.impurityDelta)
