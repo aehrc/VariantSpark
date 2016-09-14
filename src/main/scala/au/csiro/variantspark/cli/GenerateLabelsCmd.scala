@@ -60,10 +60,16 @@ class GenerateLabelsCmd extends ArgsApp with SparkApp with Echoable with Logging
   val featureColumn:String = null
   
   // generator options
-  @Option(name="-gs", required=false, usage="Genertor noise stddev (def=0.0)", aliases=Array("--gen-noise-sigma"))
+  @Option(name="-gs", required=false, usage="Generator effect noise stddev (def=0.0)", aliases=Array("--gen-noise-sigma"))
   val noiseSigma:Double = 0.0
+
+  @Option(name="-gm", required=false, usage="Generator effect noise man (def=0.0)", aliases=Array("--gen-noise-mean"))
+  val noiseMean:Double = 0.0
+
+  @Option(name="-gvf", required=false, usage="Generator fraction of noise variables (def=0.0)", aliases=Array("--gen-noise-fraction"))
+  val noiseVarFraction:Double = 0.0
   
-  @Option(name="-gz", required=false, usage="Genertor zero level (def = <factor-levels>/2)", aliases=Array("--gen-zero-level"))
+  @Option(name="-gz", required=false, usage="Generator zero level (def = <factor-levels>/2)", aliases=Array("--gen-zero-level"))
   val zeroLevel:Int = -1
  
   @Option(name="-ge", required=false, usage="Generator effects <var-name>:<effect-size> (can be used may times)", aliases=Array("--gen-effect"))
@@ -79,7 +85,8 @@ class GenerateLabelsCmd extends ArgsApp with SparkApp with Echoable with Logging
   val sparkPar = 0
  
   @Override
-  def testArgs = Array("-if", "target/getds.parquet", "-sp", "4", "-ff", "target/features.csv", "-fc", "resp", "-ge", "0:1.0", "-ge", "1:2.0")
+  def testArgs = Array("-if", "target/getds.parquet", "-sp", "4", "-ff", "target/features.csv", "-fc", "resp", "-ge", "0:1.0", "-ge", "1:2.0",
+      "-gm",  "0.01",  "-gvf",  "0.001",  "-gs", "-0.01")
     
   @Override
   def run():Unit = {
@@ -97,10 +104,14 @@ class GenerateLabelsCmd extends ArgsApp with SparkApp with Echoable with Logging
     val featureSource = new ParquetFeatureSource(inputFile)
     echo(s"Loaded rows: ${dumpList(featureSource.sampleNames)}")    
     
-    val generator = EfectLabelGenerator(featureSource)(zeroLevel = actualZeroLevel, noiseSigma = noiseSigma, effects = effects, seed = randomSeed)
+    val generator = EfectLabelGenerator(featureSource)(zeroLevel = actualZeroLevel, effects = effects, noiseEffectSigma = noiseSigma, noiseEffectMean = noiseMean, noiseVarFraction = noiseVarFraction, 
+        seed = randomSeed)
     echo(s"Saving feature output to: ${featuresFile}, column: ${featureColumn}")    
     
     val labels = generator.getLabels(featureSource.sampleNames)
+    
+    echo(s"Combined noise mean: ${generator.noiseMean} , sigma: ${generator.noiseSigma}")
+    echo(s"Noise variables: ${generator.noiseEffects}")
     //TODO (Refactoring): Refactor to a FeatureSink
     //TODO (Func): Use remote filesystem
     LoanUtils.withCloseable(CSVWriter.open(new File(featuresFile))) { writer =>
