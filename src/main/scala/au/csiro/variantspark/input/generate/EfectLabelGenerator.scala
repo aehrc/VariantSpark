@@ -10,6 +10,8 @@ import breeze.linalg.DenseVector
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 import breeze.linalg.operators.DenseVector_GenericOps
 import org.apache.spark.Logging
+import breeze.stats.meanAndVariance
+import breeze.stats.MeanAndVariance
 
 /**
  * Generate a dichotomous response 
@@ -48,6 +50,8 @@ class EfectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
     r
   }
 
+  // TODO: (Refactoring) make it a lazy val
+  var continousStats:MeanAndVariance = null
   
   def getLabels(labels:Seq[String]):Array[Int] = {
     val nSamples = labels.size
@@ -55,7 +59,6 @@ class EfectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
     val allEffects =  effects ++ noiseEffects
     logDebug(s"Variable effects: ${effects}")
     logDebug(s"Noise effects: ${noiseEffects}")
-    
 
     val zeroLevelValue = zeroLevel.toDouble
     val continousResponse = withBroadcast(featureSource.features.sparkContext)(allEffects){ br_effects =>
@@ -65,7 +68,9 @@ class EfectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
        }.fold(DenseVector.zeros[Double](nSamples))(_+=_)
     }
     
-    logDebug(s"Continuous response: ${noiseEffects}")
+    continousStats = meanAndVariance(continousResponse)
+    logDebug(s"Continuous mav: ${continousStats}")
+    logDebug(s"Continuous response: ${continousResponse}")
     
     val classProbabilities = continousResponse.map(logistic)
     

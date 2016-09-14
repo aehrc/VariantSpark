@@ -85,8 +85,10 @@ class GenerateLabelsCmd extends ArgsApp with SparkApp with Echoable with Logging
   val sparkPar = 0
  
   @Override
-  def testArgs = Array("-if", "target/getds.parquet", "-sp", "4", "-ff", "target/features.csv", "-fc", "resp", "-ge", "0:1.0", "-ge", "1:2.0",
-      "-gm",  "0.01",  "-gvf",  "0.001",  "-gs", "-0.01")
+  def testArgs = Array("-if", "target/getds.parquet", "-sp", "4", "-ff", "target/features.csv", "-fc", "resp", "-sr", "133", "-v",
+      "-ge", "v_0:1.0", "-ge", "v_1:1.0"
+      ,"-gm",  "0.1",  "-gvf",  "0.01",  "-gs", "0"
+      )
     
   @Override
   def run():Unit = {
@@ -110,8 +112,16 @@ class GenerateLabelsCmd extends ArgsApp with SparkApp with Echoable with Logging
     
     val labels = generator.getLabels(featureSource.sampleNames)
     
-    echo(s"Combined noise mean: ${generator.noiseMean} , sigma: ${generator.noiseSigma}")
-    echo(s"Noise variables: ${generator.noiseEffects}")
+    echo(s"Continous response mean: ${generator.continousStats.mean} , total variance: ${generator.continousStats.variance}")
+    if (isEcho) {
+      effects.toStream.sortBy(_._1).map { case (v, e) => 
+         // 2/3 * (2e) ^ 2 == E(X^2) ; E(X)^2 == 0
+         val varVariance = 8.0 / 3.0 * e * e
+         s"${v} -> e=${e},  v=${varVariance}, R2=${varVariance/generator.continousStats.variance}"
+      }.foreach(println)
+    }
+    
+    verbose(s"Noise variables: ${generator.noiseEffects}")
     //TODO (Refactoring): Refactor to a FeatureSink
     //TODO (Func): Use remote filesystem
     LoanUtils.withCloseable(CSVWriter.open(new File(featuresFile))) { writer =>
