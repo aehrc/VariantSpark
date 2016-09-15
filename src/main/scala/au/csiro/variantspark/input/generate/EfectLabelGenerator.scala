@@ -50,8 +50,9 @@ class EfectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
     r
   }
 
-  // TODO: (Refactoring) make it a lazy val
+  // TODO: (Refactoring) make it a lazy vals
   var continousStats:MeanAndVariance = null
+  var continousResponse:DenseVector[Double] = null
   
   def getLabels(labels:Seq[String]):Array[Int] = {
     val nSamples = labels.size
@@ -61,7 +62,7 @@ class EfectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
     logDebug(s"Noise effects: ${noiseEffects}")
 
     val zeroLevelValue = zeroLevel.toDouble
-    val continousResponse = withBroadcast(featureSource.features.sparkContext)(allEffects){ br_effects =>
+    continousResponse = withBroadcast(featureSource.features.sparkContext)(allEffects){ br_effects =>
        featureSource.features.filter(f => br_effects.value.contains(f.label)).mapPartitions {it => 
          val normalizer = DenseVector.fill(nSamples)(zeroLevelValue)
          it.map(f => (DenseVector(f.toVector.values.toArray)-=normalizer) *= (2 * br_effects.value(f.label)))

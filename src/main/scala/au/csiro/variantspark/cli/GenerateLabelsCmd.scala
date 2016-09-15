@@ -56,8 +56,14 @@ class GenerateLabelsCmd extends ArgsApp with SparkApp with Echoable with Logging
   @Option(name = "-ff", required = true, usage = "Path to feature file", aliases = Array("--feature-file"))
   val featuresFile: String = null
 
-  @Option(name = "-fc", required = true, usage = "Name of the feature column", aliases = Array("--feature-column"))
+  @Option(name = "-fc", required = true, usage = "Name of the dichotomous response column" , aliases = Array("--feature-column"))
   val featureColumn: String = null
+
+  @Option(name = "-fcc", required = false, usage = "Name of the continous response column(def=None)", aliases = Array("--feature-continous-column"))
+  val featureContinousColumn: String = null
+
+  @Option(name = "-fiv", required = false, usage = "Include effect variable data", aliases = Array("--feature-include-variables"))
+  val includeEffectVarData: Boolean = false
 
   // generator options
   @Option(name = "-gs", required = false, usage = "Generator effect noise stddev (def=0.0)", aliases = Array("--gen-noise-sigma"))
@@ -94,7 +100,7 @@ class GenerateLabelsCmd extends ArgsApp with SparkApp with Echoable with Logging
   val sparkPar = 0
 
   @Override
-  def testArgs = Array("-if", "target/getds.parquet", "-sp", "4", "-ff", "target/features.csv", "-fc", "resp", "-sr", "133", "-v", "-on",
+  def testArgs = Array("-if", "target/getds.parquet", "-sp", "4", "-ff", "target/features.csv", "-fc", "resp", "-sr", "133", "-v", "-on", "-fcc", "resp_cont", "-fiv", 
     "-ge", "v_0:1.0", "-ge", "v_1:1.0", "-gm", "0.1", "-gvf", "0.01", "-gs", "0")
 
   @Override
@@ -135,9 +141,18 @@ class GenerateLabelsCmd extends ArgsApp with SparkApp with Echoable with Logging
     }
     //TODO (Refactoring): Refactor to a FeatureSink
     //TODO (Func): Use remote filesystem
+    //TODO (Refactoring): Consider data feame
+    
+    val effectVarData = if (includeEffectVarData) {
+      SparkUtils.withBroadcast(sc)(effects) { br_effects =>
+        featureSource.features.filter(f => br_effects.value.contains(f.label)).map(f => (f.label, f.values)).collectAsMap()
+      }
+    } else Map.empty
+    
     LoanUtils.withCloseable(CSVWriter.open(new File(featuresFile))) { writer =>
-      writer.writeRow(List("", featureColumn))
-      writer.writeAll(featureSource.sampleNames.zip(labels).map(_.productIterator.toSeq))
+      writer.writeRow(List("", featureColumn) ::: (if (featureContinousColumn!=null) List(featureContinousColumn) else Nil) ::: effectVarData.toList.map(_._1))
+      val outputColumns = List(featureSource.sampleNames, labels.toList) ::: (if (featureContinousColumn!=null) List(generator.continousResponse.data.toList) else Nil) ::: effectVarData.toList.map(_._2.toList)
+      writer.writeAll(outputColumns.transpose)
     }
   }
 
