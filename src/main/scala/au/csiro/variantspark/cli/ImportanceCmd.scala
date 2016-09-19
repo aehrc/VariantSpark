@@ -24,7 +24,7 @@ import au.csiro.variantspark.algo.WideDecisionTree
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation
 import au.csiro.pbdava.ssparkle.spark.SparkUtils
 import au.csiro.pbdava.ssparkle.common.utils.ReusablePrintStream
-import au.csiro.variantspark.algo.WideRandomForestCallback
+import au.csiro.variantspark.algo.RandomForestCallback
 import au.csiro.variantspark.utils.VectorRDDFunction._
 import au.csiro.variantspark.input.CsvFeatureSource
 import au.csiro.variantspark.algo.RandomForestParams
@@ -169,7 +169,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
         nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction))
     val traningData = inputData.map{ case (f, i) => (f.values, i)}
     
-    implicit val rfCallback = new WideRandomForestCallback() {
+    implicit val rfCallback = new RandomForestCallback() {
       var totalTime = 0l
       var totalTrees = 0
       override   def onParamsResolved(actualParams:RandomForestParams) {
@@ -184,11 +184,11 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
         
       }
     }
-    val result = if (rfBatchSize > 1) {
-      rf.batchTrain(traningData, dataType, labels, nTrees, rfBatchSize)
-    } else {
-      rf.train(traningData, dataType, labels, nTrees)  
-    }
+    //val result = if (rfBatchSize > 1) {
+    val result = rf.batchTrain(traningData, dataType, labels, nTrees, rfBatchSize)
+    //} else {
+      //rf.train(traningData, dataType, labels, nTrees)  
+    //}
     
     echo(s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s") 
     

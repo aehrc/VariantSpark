@@ -12,7 +12,7 @@ abstract class ClassificattionSplitterTest extends Logging {
  
   @Test
   def testEmptySplit() {
-    val splitInfo = splitter(Array(1)).findSplit(Vectors.dense(0.0).toArray, Array())
+    val splitInfo = splitter(Array(1)).findSplit(Vectors.dense(0.0).toArray, Array[Int]())
     assertNull(splitInfo)
   }
   

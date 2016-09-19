@@ -29,8 +29,8 @@ import scala.reflect.ClassTag
 
 
 trait CanSplit[V] extends CanSize[V] {
-  def toArray(v:V):Array[Double]
-  def at(i:Int, v:V):Int
+  def split(v:V, splitter: ClassificationSplitter, indices:Array[Int]):SplitInfo
+  def at(v:V)(i:Int):Int
 }
 
 case class SubsetInfo(indices:Array[Int], impurity:Double, majorityLabel:Int) {
@@ -47,15 +47,15 @@ case class VarSplitInfo(val variableIndex: Long, val splitPoint:Int, val gini:Do
   
   def split[V](splitVarData:Map[Long, V], labels:Array[Int], nCategories:Int)(subset:SubsetInfo)(implicit canSplit:CanSplit[V]):List[SubsetInfo] = {
     List(
-        new SubsetInfo(subset.indices.filter(canSplit.at(_, splitVarData(variableIndex)) <= splitPoint), leftGini, labels, nCategories),
-        new SubsetInfo(subset.indices.filter(canSplit.at(_, splitVarData(variableIndex)) > splitPoint), rightGini, labels, nCategories)
+        new SubsetInfo(subset.indices.filter(canSplit.at(splitVarData(variableIndex))(_) <= splitPoint), leftGini, labels, nCategories),
+        new SubsetInfo(subset.indices.filter(canSplit.at(splitVarData(variableIndex))(_) > splitPoint), rightGini, labels, nCategories)
     )
   }
 
   def split[V](data:V, labels:Array[Int], nCategories:Int)(subset:SubsetInfo)(implicit canSplit:CanSplit[V]):(SubsetInfo, SubsetInfo) = {
     (
-        new SubsetInfo(subset.indices.filter(canSplit.at(_, data) <= splitPoint), leftGini, labels, nCategories),
-        new SubsetInfo(subset.indices.filter(canSplit.at(_, data) > splitPoint), rightGini, labels, nCategories)
+        new SubsetInfo(subset.indices.filter(canSplit.at(data)(_) <= splitPoint), leftGini, labels, nCategories),
+        new SubsetInfo(subset.indices.filter(canSplit.at(data)(_) > splitPoint), rightGini, labels, nCategories)
     )
   }
 }
@@ -78,7 +78,7 @@ case class VariableSplitter[V](val dataType: VariableType, val labels:Array[Int]
     splits.map { subsetInfo =>  
       if (rng.nextDouble() <= mTryFactor) { 
         //TODO (CanSplit): use a better method
-        val splitInfo = splitter.findSplit(canSplit.toArray(data), subsetInfo.indices)
+        val splitInfo = canSplit.split(data, splitter, subsetInfo.indices)
         if (splitInfo != null && splitInfo.gini < subsetInfo.impurity) splitInfo else null
       } else null 
     }
@@ -244,7 +244,7 @@ class DecisionTreeModel[V](val rootNode: DecisionTreeNode)(implicit canSplit:Can
   
   def predictIndexed(indexedData: RDD[(V,Long)])(implicit ct:ClassTag[V]): Array[Int] = {
     val treeVariableData =  indexedData.collectAtIndexes(splitVariableIndexes)
-    Range(0, indexedData.size).map(i => rootNode.traverse(s => canSplit.at(i, treeVariableData(s.splitVariableIndex)) <= s.splitPoint).majorityLabel).toArray
+    Range(0, indexedData.size).map(i => rootNode.traverse(s => canSplit.at(treeVariableData(s.splitVariableIndex))(i) <= s.splitPoint).majorityLabel).toArray
   }
 
   def printout() {
@@ -286,7 +286,7 @@ object DecisionTreeModel {
           // group by variable index
           val varsAndIndexesToCollectMap = br_varsAndIndexesToCollect.value.toList.groupBy(_._1._1)
           it.flatMap { case (v,vi) =>
-            varsAndIndexesToCollectMap.getOrElse(vi, Nil).map { case (n,si) => (si, canSplit.at(n._2, v)) }
+            varsAndIndexesToCollectMap.getOrElse(vi, Nil).map { case (n,si) => (si, canSplit.at(v)(n._2)) }
           }
       }.collectAsMap
     }
@@ -296,7 +296,7 @@ object DecisionTreeModel {
   //
   // predict same sample for all trees
   // as the result though I would like to get predictions for each tree not just one so an int[nTrees][nIndexes]
-  def batchPredict[V](indexedData: RDD[(V,Long)], trees:Seq[WideDecisionTreeModel], indexes:Seq[Array[Int]])(implicit canSplit:CanSplit[V]) = {
+  def batchPredict[V](indexedData: RDD[(V,Long)], trees:Seq[DecisionTreeModel[V]], indexes:Seq[Array[Int]])(implicit canSplit:CanSplit[V]) = {
     // samples are the same so can be broacasted
     // maybe I can broadcast trees as well ...
     // but in general i should iterate through levels and for each prediction point send out the variable that should be retrieved (and say -1 if none)

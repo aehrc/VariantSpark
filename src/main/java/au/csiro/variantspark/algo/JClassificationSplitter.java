@@ -2,7 +2,6 @@ package au.csiro.variantspark.algo;
 
 import java.util.Arrays;
 
-
 /**
  * Fast gini based splitter.
  * NOT MULITHEADED !!! (Caches state to avoid heap allocations)
@@ -32,6 +31,8 @@ public class JClassificationSplitter implements ClassificationSplitter {
 		this.rightSplitCounts = new int[nCategories];
 		this.nLevels = nLevels;
 	}
+	
+	
 	
 	@Override
 	public SplitInfo findSplit(double[] data,int[] splitIndices) {	
@@ -70,5 +71,15 @@ public class JClassificationSplitter implements ClassificationSplitter {
 			}
 		}
 		return maxLevel+1;
+	}
+
+	@Override
+	public SplitInfo findSplit(int[] data, int[] splitIndices) {
+		throw new RuntimeException("Not implemented yet");
+	}
+
+	@Override
+	public SplitInfo findSplit(byte[] data, int[] splitIndices) {
+		throw new RuntimeException("Not implemented yet");
 	}
 }

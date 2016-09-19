@@ -61,7 +61,7 @@ object TestWideDecisionTree extends SparkApp {
     
     val dataType = BoundedOrdinal(3)
     val rf = new WideRandomForest()
-    val result  = rf.train(trainSetWithIndex, dataType, trainLables, 20)
+    val result  = rf.batchTrain(trainSetWithIndex, dataType, trainLables, 20, 10)
     //println(result)
     //result.printout()
     val variableImportnace = result.variableImportance
@@ -81,7 +81,7 @@ object TestWideDecisionTree extends SparkApp {
       val testLables = fold.projectArray(labels)   
      
       val rf = new WideRandomForest()
-      val result  = rf.train(trainSetWithIndex,dataType,  trainLables, 20)
+      val result  = rf.batchTrain(trainSetWithIndex,dataType,  trainLables, 20, 10)
       val testPredict = result.predict(testSet)
       val testError = Metrics.classificatoinError(testLables,testPredict)
       testError

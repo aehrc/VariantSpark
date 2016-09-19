@@ -5,7 +5,11 @@ import org.apache.spark.mllib.linalg.Vector
 package object algo {
   
   implicit val canSplitVector = new CanSplitVector
+  implicit val canSplitArrayOfBytes = new CanSplitArrayByte
   
   type WideDecisionTree = DecisionTree[Vector]
   type WideDecisionTreeModel = DecisionTreeModel[Vector]
+  
+  type WideRandomForest = RandomForest[Vector]
+  type WideRandomForestModel = RandomForestModel[Vector]
 }

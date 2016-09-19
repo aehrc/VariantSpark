@@ -24,7 +24,7 @@ import au.csiro.variantspark.algo.WideDecisionTree
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation
 import au.csiro.pbdava.ssparkle.spark.SparkUtils
 import au.csiro.pbdava.ssparkle.common.utils.ReusablePrintStream
-import au.csiro.variantspark.algo.WideRandomForestCallback
+import au.csiro.variantspark.algo.RandomForestCallback
 import au.csiro.variantspark.utils.VectorRDDFunction._
 import au.csiro.variantspark.input.CsvFeatureSource
 import au.csiro.variantspark.algo.RandomForestParams
