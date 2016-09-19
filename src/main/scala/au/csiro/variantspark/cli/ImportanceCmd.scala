@@ -9,7 +9,6 @@ import collection.JavaConverters._
 import au.csiro.variantspark.input.VCFSource
 import au.csiro.variantspark.input.VCFFeatureSource
 import au.csiro.variantspark.input.HashingLabelSource
-import au.csiro.variantspark.algo.WideRandomForest
 import org.apache.spark.mllib.linalg.Vectors
 import au.csiro.variantspark.input.CsvLabelSource
 import au.csiro.variantspark.cmd.Echoable
@@ -32,6 +31,8 @@ import au.csiro.variantspark.data.BoundedOrdinal
 import au.csiro.pbdava.ssparkle.common.utils.Timer
 import au.csiro.variantspark.utils.defRng
 import au.csiro.variantspark.input.ParquetFeatureSource
+import au.csiro.variantspark.algo.ByteRandomForest
+import au.csiro.variantspark.utils.IndexedRDDFunction._
 
 class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
@@ -144,7 +145,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     val dataLoadingTimer = Timer()
     echo(s"Loading features from: ${inputFile}")
     
-    val inputData = source.features().map(_.toVector).zipWithIndex().cache()
+    val inputData = source.features().zipWithIndex().cache()
     val totalVariables = inputData.count()
     val variablePerview = inputData.map({case (f,i) => f.label}).take(defaultPreviewSize).toList
         
@@ -164,7 +165,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")  
     echo(s"Random seed is: ${randomSeed}")
     val treeBuildingTimer = Timer()
-    val rf = new WideRandomForest(RandomForestParams(oob=rfEstimateOob, seed = randomSeed, bootstrap = !rfSampleNoReplacement, 
+    val rf = new ByteRandomForest(RandomForestParams(oob=rfEstimateOob, seed = randomSeed, bootstrap = !rfSampleNoReplacement, 
         subsample = rfSubsampleFraction,
         nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction))
     val traningData = inputData.map{ case (f, i) => (f.values, i)}

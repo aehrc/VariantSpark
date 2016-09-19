@@ -12,4 +12,9 @@ package object algo {
   
   type WideRandomForest = RandomForest[Vector]
   type WideRandomForestModel = RandomForestModel[Vector]
+  
+  type ByteRandomForestModel = RandomForestModel[Array[Byte]]
+  type ByteRandomForest = RandomForest[Array[Byte]]
+  
+  
 }
