@@ -16,10 +16,12 @@ import au.csiro.pbdava.ssparkle.common.utils.Timed._
 import au.csiro.variantspark.utils.Sample
 import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
 import au.csiro.variantspark.data.VariableType
-import org.apache.spark.ml.tree.DecisionTreeModel
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 import au.csiro.variantspark.utils.defRng
 import org.apache.commons.lang3.builder.ToStringBuilder
+
+import au.csiro.variantspark.algo._
+
 
 case class VotingAggregator(val nLabels:Int, val nSamples:Int) {
   lazy val votes = Array.fill(nSamples)(Array.fill(nLabels)(0))
@@ -38,7 +40,7 @@ case class VotingAggregator(val nLabels:Int, val nSamples:Int) {
   def predictions = votes.map(_.zipWithIndex.maxBy(_._1)._2)
 }
 
-case class WideRandomForestModel(val trees: List[PredictiveModelWithImportance], val labelCount:Int, oobErrors:List[Double] = List.empty) {
+case class WideRandomForestModel(val trees: List[PredictiveModelWithImportance[Vector]], val labelCount:Int, oobErrors:List[Double] = List.empty) {
   
   def oobError:Double = oobErrors.last
   
@@ -94,7 +96,7 @@ trait WideRandomForestCallback {
 
 
 object WideRandomForest {
-  type ModelBuilder = (RDD[(Vector,Long)], VariableType, Array[Int], Double, Sample) => PredictiveModelWithImportance
+  type ModelBuilder = (RDD[(Vector,Long)], VariableType, Array[Int], Double, Sample) => PredictiveModelWithImportance[Vector]
   
   def wideDecisionTreeBuilder(indexedData: RDD[(Vector, Long)], dataType:VariableType, labels: Array[Int], nTryFraction: Double, sample:Sample) = new WideDecisionTree().run(indexedData, dataType, labels, nTryFraction, sample)
 }
@@ -169,7 +171,7 @@ class WideRandomForest(params:RandomForestParams=RandomForestParams(),
           val trees = builder.batchTrain(indexedData, dataType, labels, actualParams.nTryFraction, samples)
           val oobError = oobAggregator.map { agg =>
             val oobIndexes = samples.map(_.indexesOut.toArray)
-            val oobPredictions = WideDecisionTreeModel.batchPredict(indexedData, trees, oobIndexes)
+            val oobPredictions = DecisionTreeModel.batchPredict(indexedData, trees, oobIndexes)
             oobPredictions.zip(oobIndexes).map { case(preds, oobIdx) =>
                 agg.addVote(preds, oobIdx)
                 Metrics.classificatoinError(labels, agg.predictions)
