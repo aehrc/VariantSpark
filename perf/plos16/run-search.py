@@ -19,6 +19,14 @@ DEF_SPARK_OPTIONS = {
  '--driver-memory':'4G'
 }
 
+
+BIG_SPARK_OPTIONS = {
+ '--master':'yarn-client', 
+ '--num-executors':'128', 
+ '--executor-memory':'6G', 
+ '--driver-memory':'6G'
+}
+
 @click.group()
 @click.option('--local', required = False, is_flag=True)
 @click.pass_context
@@ -79,7 +87,46 @@ def gen_labels(data_dir, **kwargs):
         run_gen_labels(data_dir = data_dir, **args)
 
 
+def run_importance(data_dir, nvars, nsamples, mtry, times, ntree='100'):
+    run_variant_spark('importance', {
+                '--feature-column':'resp',
+                '--feature-file': path.join(data_dir, "labels_s%s_v%s.csv" %(nsamples, nvars)),
+                '--rf-mtry-fraction':mtry,
+                '--rf-n-trees':ntree,
+                '--rf-batch-size':'50',
+                '--rf-oob':'',
+                '--spark-par':'256',
+                '--seed':'13',
+                '-v':'',
+                '--input-type':'parquet',
+                '--input-file':path.join(data_dir, "data_s%s_v%s.parquet" %(nsamples, nvars))
+                }, output = path.join(data_dir, "importance_s%s_v%s_m%s_t%s.%s.out" %(nsamples, nvars, mtry, ntree, times)), 
+            spark_args = BIG_SPARK_OPTIONS)
 
+
+
+class BasedIntParamType(click.ParamType):
+    name = 'integer'
+
+    def convert(self, value, param, ctx):
+        try:
+            return range(0, int(value))
+        except ValueError:
+            self.fail('%s is not a valid integer' % value, param, ctx)
+
+BASED_INT = BasedIntParamType()
+
+
+@cmd.command()
+@click.option('--nvars', '-v', multiple=True, required = True)
+@click.option('--nsamples', '-s', multiple=True, required = True)
+@click.option('--mtry', '-m', multiple=True, required = True)
+@click.option('--times', required = False, default='1', type=BASED_INT)
+@click.option('--data-dir', required = True)
+def importance(data_dir, **kwargs):
+    search_grid = ParameterGrid(kwargs)
+    for args in search_grid:
+        run_importance(data_dir = data_dir, **args)
 
 
 if __name__ == '__main__':
