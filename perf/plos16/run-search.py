@@ -14,7 +14,7 @@ BASE_DIR=path.abspath(path.join(path.dirname(__file__),'../..'))
 
 DEF_SPARK_OPTIONS = {
  '--master':'yarn-client', 
- '--num-executors':'32', 
+ '--num-executors':'64', 
  '--executor-memory':'4G', 
  '--driver-memory':'4G'
 }
