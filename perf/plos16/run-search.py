@@ -57,12 +57,29 @@ def gen_data(output_dir, **kwargs):
     for args in search_grid:
         run_gen_data(output_dir = output_dir, **args)
 
+def run_gen_labels(data_dir, nvars, nsamples):
+    run_variant_spark('gen-labels', {
+                '--feature-column':'resp',
+                '--feature-continous-column':'resp_cont',
+                '--feature-file': path.join(data_dir, "labels_s%s_v%s.csv" %(nsamples, nvars)),
+                '-ge':'v_10:0.85', '-ge':'v_100:0.9', '-ge':'v_1000:1.1', '-ge':'v_10000:1.0', '-ge':'v_100000:1.15',
+                '--spark-par':'256',
+                '--seed':'13',
+                '--input-file':path.join(data_dir, "data_s%s_v%s.parquet" %(nsamples, nvars))
+                }, output = path.join(data_dir, "labels_s%s_v%s.out" %(nsamples, nvars)))
+
+
 @cmd.command()
-@click.option('--input', '-i', multiple=True)
-def hello(input):
-    search_grid = ParameterGrid({'samples': [1000, 5000, 10000], 'variables':[ 100000, 200000000]})
-    print(list(search_grid))
-    print(input)
+@click.option('--nvars', '-v', multiple=True, required = True)
+@click.option('--nsamples', '-s', multiple=True, required = True)
+@click.option('--data-dir', required = True)
+def gen_labels(data_dir, **kwargs):
+    search_grid = ParameterGrid(kwargs)
+    for args in search_grid:
+        run_gen_labels(data_dir = data_dir, **args)
+
+
+
 
 
 if __name__ == '__main__':
