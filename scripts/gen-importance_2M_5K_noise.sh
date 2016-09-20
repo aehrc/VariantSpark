@@ -12,5 +12,7 @@ GEN_DIR=${FLUSH_DIR}/gen
 variant-spark --spark --master yarn-client --num-executors 128 --executor-memory 6G --driver-memory 8G \
  --conf spark.locality.wait=30s \
  --conf spark.serializer=org.apache.spark.serializer.KryoSerializer  --  \
- importance -if "${GEN_DIR}/synthetic_5M_10K_3.parquet" -it parquet -ff "${GEN_DIR}/synthetic_5M_10K_3-labels.csv" -fc resp -v -sp 256 -rn 100 -rmt 100000 -rbs 20 
+ importance -if "${GEN_DIR}/synthetic_2M_5K_3.parquet" -it parquet -ff "${GEN_DIR}/synthetic_2M_5K_3_noise-labels.csv" -on 100 -od -of "${GEN_DIR}/synthetic_2M_5K_3_noise-imortance.csv" -fc resp -v -sp 256 -rn 5000 -rmt 40000 -rbs 50  -sr 13 -ro
+
+
 

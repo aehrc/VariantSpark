@@ -11,6 +11,6 @@ GEN_DIR=${FLUSH_DIR}/gen
 hadoop fs -mkdir -p ${GEN_DIR}
 
 variant-spark --spark --master yarn-client --num-executors 32 --executor-memory 4G --driver-memory 4G -- \
- gen-features -of ${GEN_DIR}/synthetic_5M_10K_3.parquet -sp 256 -sr 13 -v -gv 5000000 -gs 10000 -gl 3 "$@"
+ gen-features -of ${GEN_DIR}/synthetic_2M_5K_3.parquet -sp 256 -sr 13 -v -gv 2000000 -gs 5000 -gl 3 "$@"
 
 
