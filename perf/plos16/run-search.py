@@ -87,7 +87,9 @@ def gen_labels(data_dir, **kwargs):
         run_gen_labels(data_dir = data_dir, **args)
 
 
-def run_importance(data_dir, nvars, nsamples, mtry, times, ntree='100'):
+def run_importance(data_dir, nvars, nsamples, mtry, times, cores, ntree='100'):
+    spark_args = dict(BIG_SPARK_OPTIONS)
+    spark_args['--num-executors'] = cores
     run_variant_spark('importance', {
                 '--feature-column':'resp',
                 '--feature-file': path.join(data_dir, "labels_s%s_v%s.csv" %(nsamples, nvars)),
@@ -100,8 +102,8 @@ def run_importance(data_dir, nvars, nsamples, mtry, times, ntree='100'):
                 '-v':'',
                 '--input-type':'parquet',
                 '--input-file':path.join(data_dir, "data_s%s_v%s.parquet" %(nsamples, nvars))
-                }, output = path.join(data_dir, "importance_s%s_v%s_m%s_t%s.%s.out" %(nsamples, nvars, mtry, ntree, times)), 
-            spark_args = BIG_SPARK_OPTIONS)
+                }, output = path.join(data_dir, "importance_s%s_v%s_m%s_t%s_c%s.%s.out" %(nsamples, nvars, mtry, ntree, cores, times)), 
+            spark_args = spark_args)
 
 
 
@@ -121,6 +123,7 @@ BASED_INT = BasedIntParamType()
 @click.option('--nvars', '-v', multiple=True, required = True)
 @click.option('--nsamples', '-s', multiple=True, required = True)
 @click.option('--mtry', '-m', multiple=True, required = True)
+@click.option('--cores', '-c', multiple=True, required = True)
 @click.option('--times', required = False, default='1', type=BASED_INT)
 @click.option('--data-dir', required = True)
 def importance(data_dir, **kwargs):
