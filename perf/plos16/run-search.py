@@ -24,7 +24,8 @@ BIG_SPARK_OPTIONS = {
  '--master':'yarn-client', 
  '--num-executors':'128', 
  '--executor-memory':'6G', 
- '--driver-memory':'6G'
+ '--driver-memory':'6G',
+ '--conf spark.locality.wait=30s --conf spark.serializer=org.apache.spark.serializer.KryoSerializer':'' 
 }
 
 @click.group()
