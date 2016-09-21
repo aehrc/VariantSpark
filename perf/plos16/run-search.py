@@ -9,6 +9,9 @@ from sklearn.grid_search import ParameterGrid
 from os import path
 import subprocess
 import shlex
+import glob
+import re
+import csv
 
 BASE_DIR=path.abspath(path.join(path.dirname(__file__),'../..'))
 
@@ -131,6 +134,33 @@ def importance(data_dir, **kwargs):
     for args in search_grid:
         run_importance(data_dir = data_dir, **args)
 
+
+#Random forest oob accuracy: 0.185, took: 2252.896 s
+
+RESULT_REGEX = re.compile(".*: ([\.0-9]+).*: ([\.0-9]+).*")
+PARAMS_REGEX = re.compile(".*_s([\.0-9]+)_v([\.0-9]+)_m([\.0-9]+)_t([\.0-9]+)_c([\.0-9]+)\.([\.0-9]+)\.out")
+
+@cmd.command()
+@click.option('--data-dir', required = True)
+@click.option('--output', required = True)
+def extract(data_dir, output, **kwargs):
+    def do(filename):
+        params_match = PARAMS_REGEX.match(path.basename(filename))
+        if not params_match:
+            return None
+        
+        with open(filename,'r') as f:
+            result = filter(lambda s:s.startswith("Random forest oob accuracy:"), f.readlines())
+            #print(result)
+            return list(params_match.groups()) + list(RESULT_REGEX.match(result[0]).groups()) if result else None
+            
+    pattern = "importance*.out"
+    with open(output, 'w') as csvfile:
+        csvwriter = csv.writer(csvfile)
+        csvwriter.writerow(['nsamples', 'nvars', 'mtry', 'ntrees', 'ncores', 'count', 'oob', 'duration'])
+        for row in filter(None, map(do, glob.iglob(path.join(data_dir, pattern)))):
+            print(row)
+            csvwriter.writerow(row)
 
 if __name__ == '__main__':
     cmd(obj={})
