@@ -145,7 +145,8 @@ PARAMS_REGEX = re.compile(".*_s([\.0-9]+)_v([\.0-9]+)_m([\.0-9]+)_t([\.0-9]+)_c(
 @cmd.command()
 @click.option('--data-dir', required = True)
 @click.option('--output', required = True)
-def extract(data_dir, output, **kwargs):
+@click.option('--prefix', required = False, default='')
+def extract(data_dir, output, prefix, **kwargs):
     def do(filename):
         params_match = PARAMS_REGEX.match(path.basename(filename))
         if not params_match:
@@ -156,7 +157,7 @@ def extract(data_dir, output, **kwargs):
             #print(result)
             return list(params_match.groups()) + list(RESULT_REGEX.match(result[0]).groups()) if result else None
             
-    pattern = "importance*.out"
+    pattern = prefix + "importance*.out"
     with open(output, 'w') as csvfile:
         csvwriter = csv.writer(csvfile)
         csvwriter.writerow(['nsamples', 'nvars', 'mtry', 'ntrees', 'ncores', 'count', 'oob', 'duration'])

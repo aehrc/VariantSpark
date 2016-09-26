@@ -25,6 +25,27 @@ import au.csiro.variantspark.algo._
 import scala.reflect.ClassTag
 
 
+
+trait VarImportanceNormalizer {
+  def normalize(varImportance:Map[Long,Double]):Map[Long, Double]
+}
+
+case object IdentityVarImportanceNormalizer extends VarImportanceNormalizer {
+  override def normalize(varImportance:Map[Long,Double]):Map[Long, Double] = varImportance
+}
+
+
+class StandardImportanceNormalizer(val scale:Double) extends VarImportanceNormalizer {
+  override def normalize(varImportance:Map[Long,Double]):Map[Long, Double] = {
+    val total = varImportance.values.sum  * scale
+    varImportance.mapValues(_/total)
+  }
+}
+
+case object To100ImportanceNormalizer extends StandardImportanceNormalizer(100.0) 
+case object ToOneImportanceNormalizer extends StandardImportanceNormalizer(1.0) 
+
+
 case class VotingAggregator(val nLabels:Int, val nSamples:Int) {
   lazy val votes = Array.fill(nSamples)(Array.fill(nLabels)(0))
   
@@ -54,6 +75,8 @@ case class RandomForestModel[V](val trees: List[PredictiveModelWithImportance[V]
     }
   }
 
+  def normalizedVariableImportance(norm:VarImportanceNormalizer = To100ImportanceNormalizer): Map[Long, Double] = norm.normalize(variableImportance)
+  
   def variableImportance: Map[Long, Double] = {   
     // average the importance of each variable over all trees
     // if a variable is not used in a tree it's importance for this tree is assumed to be 0

@@ -194,7 +194,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     echo(s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s") 
     
     // build index for names
-    val topImportantVariables = result.variableImportance.toSeq.sortBy(-_._2).take(nVariables)
+    val topImportantVariables = result.normalizedVariableImportance().toSeq.sortBy(-_._2).take(nVariables)
     val topImportantVariableIndexes = topImportantVariables.map(_._1).toSet
     
     val index = SparkUtils.withBroadcast(sc)(topImportantVariableIndexes) { br_indexes => 
