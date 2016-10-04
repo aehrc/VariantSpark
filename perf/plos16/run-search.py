@@ -12,6 +12,7 @@ import shlex
 import glob
 import re
 import csv
+import itertools
 
 BASE_DIR=path.abspath(path.join(path.dirname(__file__),'../..'))
 
@@ -164,6 +165,30 @@ def extract(data_dir, output, prefix, **kwargs):
         for row in filter(None, map(do, glob.iglob(path.join(data_dir, pattern)))):
             print(row)
             csvwriter.writerow(row)
+
+@cmd.command()
+@click.option('--data-dir', required = True)
+@click.option('--output', required = True)
+@click.option('--prefix', required = False, default='')
+def extract_importance(data_dir, output, prefix, **kwargs):
+    def do(filename):
+        params_match = PARAMS_REGEX.match(path.basename(filename))
+        if not params_match:
+            return None
+        
+        with open(filename,'r') as f:
+            lines = f.readlines()
+        it = itertools.islice(itertools.dropwhile(lambda s:not s.startswith("variable,importance"), iter(lines)), 1, None)
+        return list(map(lambda s: list(params_match.groups()) +  s.strip().split(','),it))
+            
+    pattern = prefix + "importance*.out"
+    with open(output, 'w') as csvfile:
+        csvwriter = csv.writer(csvfile)
+        csvwriter.writerow(['nsamples', 'nvars', 'mtry', 'ntrees', 'ncores', 'count', 'variable', 'importance'])
+        for row in itertools.chain(*map(do, glob.iglob(path.join(data_dir, pattern)))):
+            print(row)
+            csvwriter.writerow(row)
+
 
 if __name__ == '__main__':
     cmd(obj={})
