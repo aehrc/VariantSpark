@@ -3,11 +3,14 @@
 PWD=$(cd `dirname "$0"`/..; pwd)
 PATH=${PATH}:${PWD}
 
-DATA_ROOT=${VS_DATA_DIR:-.}
-DATA_DIR=${DATA_ROOT}/variant-spark-data
-DATA_INPUT_DIR=${DATA_DIR}/input
-
 export VS_ECHO_CMDLINE=YES
 
-variant-spark --spark --master yarn-client --num-executors 32 --executor-memory 4G --driver-memory 4G -- importance -if "/data/szu004/synthetic_10000_100_3.parquet" -it parquet -ff "/data/szu004/synthetic_10000_100_3-labels.csv" -fc resp -v -sp 32 -rn 1000 -rmt 20000 -rbs 50 
+FLUSH_ROOT=${VS_FLUSH_DIR:-.}
+FLUSH_DIR=${FLUSH_ROOT}/variant-spark-flush
+GEN_DIR=${FLUSH_DIR}/gen
+
+variant-spark --spark --master yarn-client --num-executors 128 --executor-memory 6G --driver-memory 8G \
+ --conf spark.locality.wait=30s \
+ --conf spark.serializer=org.apache.spark.serializer.KryoSerializer  --  \
+ importance -if "${GEN_DIR}/synthetic_5M_10K_3.parquet" -it parquet -ff "${GEN_DIR}/synthetic_5M_10K_3-labels.csv" -fc resp -v -sp 256 -rn 100 -rmt 100000 -rbs 20 
 
