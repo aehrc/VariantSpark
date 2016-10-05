@@ -22,6 +22,7 @@
 		<encoding>UTF-8</encoding>
 		<scala.tools.version>2.10</scala.tools.version>
 		<scala.version>2.10.4</scala.version>
+		<spark.version>1.6.1</spark.version>
 		<!--skipTests>true</skipTests-->
 	</properties>
 	<dependencies>
@@ -34,7 +35,7 @@
 		<dependency>
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-core_2.10</artifactId>
-			<version>1.6.1</version>
+			<version>${spark.version}</version>
 			<scope>provided</scope>
 			<exclusions>
 				<exclusion>
@@ -46,7 +47,7 @@
 		<dependency>
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-mllib_2.10</artifactId>
-			<version>1.6.1</version>
+			<version>${spark.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -236,6 +237,30 @@
 		</pluginManagement>
 	</build>
 	<profiles>
+		<profile>
+			<id>cdh5</id>
+			<activation>
+				<activeByDefault>false</activeByDefault>
+			</activation>
+			<repositories>
+				<repository>
+					<id>cloudera</id>
+					<url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
+				</repository>
+			</repositories>		
+			<properties>
+				<spark.version>1.6.0-cdh5.8.2</spark.version>
+			</properties>
+			<dependencies>
+				<!-- https://mvnrepository.com/artifact/org.xerial.snappy/snappy-java -->
+				<dependency>
+				    <groupId>org.xerial.snappy</groupId>
+				    <artifactId>snappy-java</artifactId>
+				    <version>1.1.2.6</version>
+					<scope>provided</scope>
+				</dependency>
+			</dependencies>
+		</profile>	
 		<profile>
 			<id>no-perf</id>
 			<activation>
