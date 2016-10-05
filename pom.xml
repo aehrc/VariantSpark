@@ -264,7 +264,9 @@
 		<profile>
 			<id>no-perf</id>
 			<activation>
-				<activeByDefault>true</activeByDefault>
+				<property>
+					<name>!run.perf</name>
+				</property>
 			</activation>
 			<build>
 				<plugins>
