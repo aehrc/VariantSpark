@@ -11,6 +11,8 @@ import au.csiro.variantspark.utils.CV
 import au.csiro.variantspark.algo.WideRandomForest
 import scala.Range
 import au.csiro.variantspark.data.BoundedOrdinal
+import au.csiro.variantspark.algo.RandomForestParams
+import au.csiro.variantspark.algo.RandomForest
 
 object TestWideDecisionTree extends SparkApp {
   conf.setAppName("VCF cluster")
@@ -61,6 +63,7 @@ object TestWideDecisionTree extends SparkApp {
     
     val dataType = BoundedOrdinal(3)
     val rf = new WideRandomForest()
+    
     val result  = rf.batchTrain(trainSetWithIndex, dataType, trainLables, 20, 10)
     //println(result)
     //result.printout()

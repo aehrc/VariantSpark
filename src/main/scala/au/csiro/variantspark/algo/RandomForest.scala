@@ -120,62 +120,50 @@ trait RandomForestCallback {
 }
 
 
-object RandomForest {
-  type ModelBuilder[V] = (RDD[(V,Long)], VariableType, Array[Int], Double, Sample) => PredictiveModelWithImportance[Vector]
+// TODO: This not nice but at this point in do  not care
+// Not nice because I need a type cast
+trait BatchTreeModel[V] {
+  def batchTrain(indexedData: RDD[(V, Long)], dataType:VariableType, labels: Array[Int], nTryFraction: Double, samples:Seq[Sample]): Seq[PredictiveModelWithImportance[V]]
+  def batchPredict(indexedData: RDD[(V, Long)], models: Seq[PredictiveModelWithImportance[V]], indexes:Seq[Array[Int]]): Seq[Array[Int]]
   
-  def wideDecisionTreeBuilder[V](indexedData: RDD[(V, Long)], dataType:VariableType, labels: Array[Int], nTryFraction: Double, sample:Sample)(implicit canSplit:CanSplit[V]) = new DecisionTree[V]().run(indexedData, dataType, labels, nTryFraction, sample)
+}
+
+object RandomForest {
+  type ModelBuilderFactory[V] = (DecisionTreeParams, CanSplit[V]) => BatchTreeModel[V]
+  
+  def wideDecisionTreeBuilder[V](params:DecisionTreeParams, canSplit:CanSplit[V]): BatchTreeModel[V] = {
+    val decisionTree = new DecisionTree[V](params)(canSplit)
+    new BatchTreeModel[V]() {
+      override def batchTrain(indexedData: RDD[(V, Long)], dataType:VariableType, labels: Array[Int], nTryFraction: Double, samples:Seq[Sample]) = decisionTree.batchTrain(indexedData, dataType, labels, nTryFraction, samples)
+      override def batchPredict(indexedData: RDD[(V, Long)], models: Seq[PredictiveModelWithImportance[V]], indexes:Seq[Array[Int]]) = DecisionTreeModel.batchPredict(indexedData,
+              models.asInstanceOf[Seq[DecisionTreeModel[V]]], indexes)(canSplit)
+    }
+  }
+  
+  val defaultBatchSize = 10
 }
 
 class RandomForest[V](params:RandomForestParams=RandomForestParams()
-      //,modelBuilder:WideRandomForest.ModelBuilder[V] = WideRandomForest.wideDecisionTreeBuilder
+      ,modelBuilderFactory:RandomForest.ModelBuilderFactory[V] = RandomForest.wideDecisionTreeBuilder[V] _
       )(implicit canSplit:CanSplit[V]) extends Logging {
   
   // TODO (Design): This seems like an easiest solution but it make this class 
   // to keep random state ... perhaps this could be externalised to the implicit random
+
+
   
   implicit lazy val rng = new XorShift1024StarRandomGenerator(params.seed)
   
-  // TODO: (Refactoring): When adding other types of variables make sure to include 
-  // some abstraction to represent data with description
-//  def train(indexedData: RDD[(V, Long)],  dataType: VariableType,  labels: Array[Int], nTrees: Int)(implicit callback:WideRandomForestCallback = null): WideRandomForestModel[V] = {
-//    val nSamples = labels.length
-//    val nVariables = indexedData.count().toInt
-//    val nLabels = labels.max + 1  
-//    logDebug(s"Data:  nSamples:${nSamples}, nVariables: ${nVariables}, nLabels:${nLabels}")
-//   
-//    val actualParams = params.resolveDefaults(nSamples, nVariables) 
-//    Option(callback).foreach(_.onParamsResolved(actualParams))
-//    logDebug(s"Parameters: ${actualParams}")
-//   
-//    val oobAggregator = if (actualParams.oob) Option(new VotingAggregator(nLabels,nSamples)) else None
-//    
-//    val (trees, errors) = Range(0, nTrees).map { p =>
-//      logDebug(s"Building tree: $p")
-//      time {
-//        //TODO: Make sure tree accepts sample a indexs not weights !!!
-//        val sample = Sample.fraction(nSamples, actualParams.subsample, actualParams.bootstrap)
-//        val tree = modelBuilder(indexedData, dataType, labels, actualParams.nTryFraction, sample)
-//        val oobError = oobAggregator.map { agg =>
-//          val oobIndexes = sample.indexesOut
-//          val oobPredictions = tree.predictIndexed(indexedData.project(Projector(oobIndexes.toArray)))
-//          agg.addVote(oobPredictions, oobIndexes)
-//          Metrics.classificatoinError(labels, agg.predictions)
-//        }.getOrElse(Double.NaN)
-//        (tree, oobError)
-//      }.withResultAndTime{ case ((tree, error), elapsedTime) =>
-//        logDebug(s"Tree: ${p} >> oobError: ${error}, time: ${elapsedTime}")
-//        Option(callback).foreach(_.onTreeComplete(1, error, elapsedTime))
-//      }.result
-//    }.unzip
-//    WideRandomForestModel(trees.toList, nLabels, errors.toList)
-//  }
+  
+  def train(indexedData: RDD[(V, Long)],  dataType: VariableType,  labels: Array[Int], nTrees: Int)(implicit callback:RandomForestCallback = null): RandomForestModel[V] = 
+       batchTrain(indexedData, dataType, labels, nTrees, RandomForest.defaultBatchSize)
   
   /**
    * TODO (Nice): Make a parameter rather then an extra method
    * TODO (Func): Add OOB calculation
    */
   def batchTrain(indexedData: RDD[(V, Long)], dataType: VariableType, labels: Array[Int], nTrees: Int, nBatchSize:Int)(implicit callback:RandomForestCallback = null): RandomForestModel[V] = {
-    require(nBatchSize >= 1)
+    require(nBatchSize > 0)
     require(nTrees > 0)
     val nSamples = labels.length
     val nVariables = indexedData.count().toInt
@@ -187,7 +175,7 @@ class RandomForest[V](params:RandomForestParams=RandomForestParams()
     logDebug(s"Batch Traning: ${nTrees} with batch size: ${nBatchSize}")
     val oobAggregator = if (actualParams.oob) Option(new VotingAggregator(nLabels,nSamples)) else None   
     
-    val builder = new DecisionTree[V](DecisionTreeParams(seed = rng.nextLong))    
+    val builder = modelBuilderFactory(DecisionTreeParams(seed = rng.nextLong), canSplit)    
     val allSamples = Stream.fill(nTrees)(Sample.fraction(nSamples, actualParams.subsample, actualParams.bootstrap))
     val (trees, errors) = allSamples
       .sliding(nBatchSize, nBatchSize)
@@ -197,7 +185,7 @@ class RandomForest[V](params:RandomForestParams=RandomForestParams()
           val trees = builder.batchTrain(indexedData, dataType, labels, actualParams.nTryFraction, samples)
           val oobError = oobAggregator.map { agg =>
             val oobIndexes = samples.map(_.indexesOut.toArray)
-            val oobPredictions = DecisionTreeModel.batchPredict(indexedData, trees, oobIndexes)
+            val oobPredictions = builder.batchPredict(indexedData, trees, oobIndexes)
             oobPredictions.zip(oobIndexes).map { case(preds, oobIdx) =>
                 agg.addVote(preds, oobIdx)
                 Metrics.classificatoinError(labels, agg.predictions)
