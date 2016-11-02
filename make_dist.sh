@@ -2,7 +2,7 @@
 
 PWD=$(cd `dirname "$0"`; pwd)
 
-#mvn clean install
+mvn clean install
 
 
 DIST_JAR=$(echo target/variant-spark-*-all.jar)
