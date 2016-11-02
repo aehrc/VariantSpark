@@ -124,8 +124,7 @@ trait RandomForestCallback {
 // Not nice because I need a type cast
 trait BatchTreeModel[V] {
   def batchTrain(indexedData: RDD[(V, Long)], dataType:VariableType, labels: Array[Int], nTryFraction: Double, samples:Seq[Sample]): Seq[PredictiveModelWithImportance[V]]
-  def batchPredict(indexedData: RDD[(V, Long)], models: Seq[PredictiveModelWithImportance[V]], indexes:Seq[Array[Int]]): Seq[Array[Int]]
-  
+  def batchPredict(indexedData: RDD[(V, Long)], models: Seq[PredictiveModelWithImportance[V]], indexes:Seq[Array[Int]]): Seq[Array[Int]]  
 }
 
 object RandomForest {
@@ -177,27 +176,27 @@ class RandomForest[V](params:RandomForestParams=RandomForestParams()
     
     val builder = modelBuilderFactory(DecisionTreeParams(seed = rng.nextLong), canSplit)    
     val allSamples = Stream.fill(nTrees)(Sample.fraction(nSamples, actualParams.subsample, actualParams.bootstrap))
-    val (trees, errors) = allSamples
+    val (allTrees, errors) = allSamples
       .sliding(nBatchSize, nBatchSize)
       .flatMap { samplesStream => 
         time {
           val samples = samplesStream.toList
-          val trees = builder.batchTrain(indexedData, dataType, labels, actualParams.nTryFraction, samples)
+          val predictors = builder.batchTrain(indexedData, dataType, labels, actualParams.nTryFraction, samples)
           val oobError = oobAggregator.map { agg =>
             val oobIndexes = samples.map(_.indexesOut.toArray)
-            val oobPredictions = builder.batchPredict(indexedData, trees, oobIndexes)
+            val oobPredictions = builder.batchPredict(indexedData, predictors, oobIndexes)
             oobPredictions.zip(oobIndexes).map { case(preds, oobIdx) =>
                 agg.addVote(preds, oobIdx)
                 Metrics.classificatoinError(labels, agg.predictions)
             }
-          }.getOrElse(List.fill(trees.size)(Double.NaN))
-          trees.zip(oobError)
+          }.getOrElse(List.fill(predictors.size)(Double.NaN))
+          predictors.zip(oobError)
         }.withResultAndTime{ case (treesAndErrors, elapsedTime) =>
           logDebug(s"Trees: ${treesAndErrors.size} >> oobError: ${treesAndErrors.last._2}, time: ${elapsedTime}")
           Option(callback).foreach(_.onTreeComplete(treesAndErrors.size, treesAndErrors.last._2, elapsedTime))
         }.result
      }.toList.unzip
-    RandomForestModel(trees.toList, nLabels, errors)
+    RandomForestModel(allTrees.toList, nLabels, errors)
  }
   
   
