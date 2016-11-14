@@ -68,7 +68,7 @@ runs variable importance command on a small sample of the chromosome 22 vcf file
 
 The full size examples require a cluster environment (the scripts are configured to work with Spark on YARN).
 
-The data required for the examples can be obtained from: [https://github.com/csirobigdata/variant-spark-data](https://github.com/csirobigdata/variant-spark-data)
+The data required for the examples can be obtained from: [https://bitbucket.csiro.au/projects/PBDAV/repos/variant-spark-data](https://bitbucket.csiro.au/projects/PBDAV/repos/variant-spark-data)
 
 This repository uses the git Large File Support extension, which needs to be installed first (see: [https://git-lfs.github.com/](https://git-lfs.github.com/))
 
