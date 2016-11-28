@@ -52,11 +52,14 @@ class NoisyEfectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
     
     // based on the variablity of the base respone we can caculate the sigma of the desired noise level    
     val actualNoiseVar = baseContinousStats.variance * (1 - fractionVarianceExplained) / fractionVarianceExplained
+    logDebug(s"Signal varinace: ${baseContinousStats.variance}, fractio to explain: ${fractionVarianceExplained}")
     logDebug(s"Actual noise variance: ${actualNoiseVar}")
     
     val actualNoiseSigma = Math.sqrt(actualNoiseVar)    
     val noise = DenseVector.fill(nSamples)(rng.nextGaussian() * actualNoiseSigma)
+    logDebug(s"Noise: ${noise}")
     noisyContinuousResponse = baseContinuousResponse + noise
+    logDebug(s"noisyContinuousResponse: ${noisyContinuousResponse}")
     
     noisyContinousStats  = meanAndVariance(noisyContinuousResponse)
     logDebug(s"Actual noisy response stats: ${noisyContinousStats}")

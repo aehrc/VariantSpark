@@ -70,7 +70,7 @@ class GenerateLabelsNoiseCmd extends ArgsApp with SparkApp with Echoable with Lo
   val fracVarExplained: Double = 0.2
 
   @Option(name = "-gct", required = false, usage = "Generator class threshold precentile (def=0.750", aliases = Array("--gen-class-threshold"))
-  val classThresholdPrecentile: Double = 0.0
+  val classThresholdPrecentile: Double = 0.75
 
   @Option(name = "-gz", required = false, usage = "Generator zero level (def = <factor-levels>/2)", aliases = Array("--gen-zero-level"))
   val zeroLevel: Int = -1
