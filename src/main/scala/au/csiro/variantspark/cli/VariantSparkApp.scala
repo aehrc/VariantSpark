@@ -10,6 +10,7 @@ class VariantSparkApp extends MultiCmdApp {
   registerClass("importance", classOf[ImportanceCmd])  
   registerClass("gen-features", classOf[GenerateFeaturesCmd])  
   registerClass("gen-labels", classOf[GenerateLabelsCmd])  
+  registerClass("gen-labels-with-noise", classOf[GenerateLabelsNoiseCmd])  
   registerClass("convert", classOf[ConvertCmd])  
 }
 
