@@ -26,6 +26,7 @@ import au.csiro.variantspark.utils.defRng
 import org.apache.commons.lang3.builder.ToStringBuilder
 import au.csiro.variantspark.utils.CanSize
 import scala.reflect.ClassTag
+import org.apache.spark.TaskContext
 
 
 trait CanSplit[V] extends CanSize[V] {
@@ -91,10 +92,11 @@ case class VariableSplitter[V](val dataType: VariableType, val labels:Array[Int]
           val thisVarSplits = findSplits(vi._1, splits)
           thisVarSplits.map(si => if (si != null) VarSplitInfo(vi._2, si) else null).toArray
         }
-        .foldLeft(Array.fill[VarSplitInfo](splits.length)(null))(DecisionTree.merge)  
+      //  .foldLeft(Array.fill[VarSplitInfo](splits.length)(null))(DecisionTree.merge)  
       // the fold above can be done by spark 
       // but this help to optimize for performance
-      Some(result).toIterator
+      //Some(result).toIterator
+      result
     }
   }
   
@@ -121,6 +123,33 @@ case class VariableSplitter[V](val dataType: VariableType, val labels:Array[Int]
  * - the split will result in nodes that are too small???
  */
 
+case class DeterministicMerger() {
+  def merge(a1:Array[VarSplitInfo], a2:Array[VarSplitInfo]) = {
+    // TODO: this seem to introduce bias towards low index variables which may make them appear 
+    // more important than they actually are
+    // in oder to avoid that in case of gini equaliy a random variable should be selected
+    def mergeSplitInfo(s1:VarSplitInfo, s2:VarSplitInfo) = {
+      if (s1 == null) s2 else if (s2 == null) s1 else if (s1.gini < s2.gini) s1 else if (s2.gini < s1.gini) s2 else if (s1.variableIndex < s2.variableIndex) s1 else s2
+    }
+    Range(0,a1.length).foreach(i=> a1(i) = mergeSplitInfo(a1(i), a2(i)))
+    a1
+  }
+}
+
+case class RandomizingMerger(seed:Long) {
+  
+  lazy val rnd  = new  XorShift1024StarRandomGenerator(seed ^ TaskContext.getPartitionId())
+  def merge(a1:Array[VarSplitInfo], a2:Array[VarSplitInfo]) = {
+    // TODO: this seem to introduce bias towards low index variables which may make them appear 
+    // more important than they actually are
+    // in oder to avoid that in case of gini equaliy a random variable should be selected
+    def mergeSplitInfo(s1:VarSplitInfo, s2:VarSplitInfo) = {
+      if (s1 == null) s2 else if (s2 == null) s1 else if (s1.gini < s2.gini) s1 else if (s2.gini < s1.gini) s2 else if (rnd.nextBoolean()) s1 else s2
+    }
+    Range(0,a1.length).foreach(i=> a1(i) = mergeSplitInfo(a1(i), a2(i)))
+    a1
+  }
+}
 
 object DecisionTree extends Logging  with Prof {
   
@@ -138,16 +167,19 @@ object DecisionTree extends Logging  with Prof {
   // but the whole thing is essentially an aggrefation on a map trying to find the best variable for each of the splits
   // in the list (they represents best splits a tree level)
   
-  def merge(a1:Array[VarSplitInfo], a2:Array[VarSplitInfo]) = {
-    def mergeSplitInfo(s1:VarSplitInfo, s2:VarSplitInfo) = {
-      if (s1 == null) s2 else if (s2 == null) s1 else if (s1.gini < s2.gini) s1 else if (s2.gini < s1.gini) s2 else if (s1.variableIndex < s2.variableIndex) s1 else s2
-    }
-    Range(0,a1.length).foreach(i=> a1(i) = mergeSplitInfo(a1(i), a2(i)))
-    a1
-  }
+//  def merge(a1:Array[VarSplitInfo], a2:Array[VarSplitInfo]) = {
+//    // TODO: this seem to introduce bias towards low index variables which may make them appear 
+//    // more important than they actually are
+//    // in oder to avoid that in case of gini equaliy a random variable should be selected
+//    def mergeSplitInfo(s1:VarSplitInfo, s2:VarSplitInfo) = {
+//      if (s1 == null) s2 else if (s2 == null) s1 else if (s1.gini < s2.gini) s1 else if (s2.gini < s1.gini) s2 else if (s1.variableIndex < s2.variableIndex) s1 else s2
+//    }
+//    Range(0,a1.length).foreach(i=> a1(i) = mergeSplitInfo(a1(i), a2(i)))
+//    a1
+//  }
   
-  def findSplitsForVariable[V](br_splits:Broadcast[Array[SubsetInfo]], br_splitter:Broadcast[VariableSplitter[V]])
-      (varData:Iterator[(V, Long)])  =  br_splitter.value.findSplitsForVars(varData, br_splits.value)(new XorShift1024StarRandomGenerator())
+//  def findSplitsForVariable[V](br_splits:Broadcast[Array[SubsetInfo]], br_splitter:Broadcast[VariableSplitter[V]])
+//      (varData:Iterator[(V, Long)])  =  br_splitter.value.findSplitsForVars(varData, br_splits.value)(new XorShift1024StarRandomGenerator())
   
       
   def splitSubsets[V](indexedData: RDD[(V, Long)], bestSplits:Array[VarSplitInfo], br_subsets:Broadcast[Array[SubsetInfo]], br_splitter:Broadcast[VariableSplitter[V]]) = {
@@ -170,11 +202,12 @@ object DecisionTree extends Logging  with Prof {
   def findBestSplits[V](indexedData: RDD[(V, Long)], br_splits:Broadcast[Array[SubsetInfo]], br_splitter:Broadcast[VariableSplitter[V]])
         (implicit rng:RandomGenerator) =  {
     val seed = rng.nextLong()
+    val merger = RandomizingMerger(seed)
     profIt("REM: findBestSplits") { 
       indexedData
         .mapPartitionsWithIndex { case (pi, it) =>
           br_splitter.value.findSplitsForVars(it, br_splits.value)(new XorShift1024StarRandomGenerator(seed ^ pi))
-        }.fold(Array.fill(br_splits.value.length)(null))(DecisionTree.merge)  
+        }.fold(Array.fill(br_splits.value.length)(null))(merger.merge)  
     }
   }
 }
