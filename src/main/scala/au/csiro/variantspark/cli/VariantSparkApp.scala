@@ -8,6 +8,7 @@ class VariantSparkApp extends MultiCmdApp {
   registerClass("test", classOf[TestCmd])  
   registerClass("filter", classOf[FilterCmd])  
   registerClass("importance", classOf[ImportanceCmd])  
+  registerClass("importance-ca", classOf[CochranArmanCmd])  
   registerClass("gen-features", classOf[GenerateFeaturesCmd])  
   registerClass("gen-labels", classOf[GenerateLabelsCmd])  
   registerClass("gen-labels-with-noise", classOf[GenerateLabelsNoiseCmd])  
