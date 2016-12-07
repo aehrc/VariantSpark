@@ -66,7 +66,42 @@ object VarSplitInfo {
   def apply(variableIndex:Long, split:SplitInfo):VarSplitInfo  = apply(variableIndex, split.splitPoint, split.gini, split.leftGini, split.rightGini)
 }
 
-case class VariableSplitter[V](val dataType: VariableType, val labels:Array[Int], mTryFactor:Double=1.0)(implicit canSplit:CanSplit[V]) extends Logging  with Prof {
+
+
+trait Merger {
+  def merge(a1:Array[VarSplitInfo], a2:Array[VarSplitInfo]):  Array[VarSplitInfo]
+}
+
+case class DeterministicMerger() extends Merger {
+  def merge(a1:Array[VarSplitInfo], a2:Array[VarSplitInfo]) = {
+    // TODO: this seem to introduce bias towards low index variables which may make them appear 
+    // more important than they actually are
+    // in oder to avoid that in case of gini equaliy a random variable should be selected
+    def mergeSplitInfo(s1:VarSplitInfo, s2:VarSplitInfo) = {
+      if (s1 == null) s2 else if (s2 == null) s1 else if (s1.gini < s2.gini) s1 else if (s2.gini < s1.gini) s2 else if (s1.variableIndex < s2.variableIndex) s1 else s2
+    }
+    Range(0,a1.length).foreach(i=> a1(i) = mergeSplitInfo(a1(i), a2(i)))
+    a1
+  }
+}
+
+case class RandomizingMerger(seed:Long) extends Merger {
+  
+  lazy val rnd  = new  XorShift1024StarRandomGenerator(seed ^ TaskContext.getPartitionId())
+  def merge(a1:Array[VarSplitInfo], a2:Array[VarSplitInfo]) = {
+    // TODO: this seem to introduce bias towards low index variables which may make them appear 
+    // more important than they actually are
+    // in oder to avoid that in case of gini equaliy a random variable should be selected
+    def mergeSplitInfo(s1:VarSplitInfo, s2:VarSplitInfo) = {
+      if (s1 == null) s2 else if (s2 == null) s1 else if (s1.gini < s2.gini) s1 else if (s2.gini < s1.gini) s2 else if (rnd.nextBoolean()) s1 else s2
+    }
+    Range(0,a1.length).foreach(i=> a1(i) = mergeSplitInfo(a1(i), a2(i)))
+    a1
+  }
+}
+
+
+case class VariableSplitter[V](val dataType: VariableType, val labels:Array[Int], mTryFactor:Double=1.0, val randomizeEquality:Boolean = false)(implicit canSplit:CanSplit[V]) extends Logging  with Prof {
   
   val nCategories = labels.max + 1
   
@@ -110,6 +145,8 @@ case class VariableSplitter[V](val dataType: VariableType, val labels:Array[Int]
      }    
   }
   
+  def createMerger(seed:Long):Merger = if (randomizeEquality) RandomizingMerger(seed) else DeterministicMerger()
+  
 }
 
 
@@ -122,34 +159,6 @@ case class VariableSplitter[V](val dataType: VariableType, val labels:Array[Int]
  * - the split does not improve gini
  * - the split will result in nodes that are too small???
  */
-
-case class DeterministicMerger() {
-  def merge(a1:Array[VarSplitInfo], a2:Array[VarSplitInfo]) = {
-    // TODO: this seem to introduce bias towards low index variables which may make them appear 
-    // more important than they actually are
-    // in oder to avoid that in case of gini equaliy a random variable should be selected
-    def mergeSplitInfo(s1:VarSplitInfo, s2:VarSplitInfo) = {
-      if (s1 == null) s2 else if (s2 == null) s1 else if (s1.gini < s2.gini) s1 else if (s2.gini < s1.gini) s2 else if (s1.variableIndex < s2.variableIndex) s1 else s2
-    }
-    Range(0,a1.length).foreach(i=> a1(i) = mergeSplitInfo(a1(i), a2(i)))
-    a1
-  }
-}
-
-case class RandomizingMerger(seed:Long) {
-  
-  lazy val rnd  = new  XorShift1024StarRandomGenerator(seed ^ TaskContext.getPartitionId())
-  def merge(a1:Array[VarSplitInfo], a2:Array[VarSplitInfo]) = {
-    // TODO: this seem to introduce bias towards low index variables which may make them appear 
-    // more important than they actually are
-    // in oder to avoid that in case of gini equaliy a random variable should be selected
-    def mergeSplitInfo(s1:VarSplitInfo, s2:VarSplitInfo) = {
-      if (s1 == null) s2 else if (s2 == null) s1 else if (s1.gini < s2.gini) s1 else if (s2.gini < s1.gini) s2 else if (rnd.nextBoolean()) s1 else s2
-    }
-    Range(0,a1.length).foreach(i=> a1(i) = mergeSplitInfo(a1(i), a2(i)))
-    a1
-  }
-}
 
 object DecisionTree extends Logging  with Prof {
   
@@ -202,7 +211,7 @@ object DecisionTree extends Logging  with Prof {
   def findBestSplits[V](indexedData: RDD[(V, Long)], br_splits:Broadcast[Array[SubsetInfo]], br_splitter:Broadcast[VariableSplitter[V]])
         (implicit rng:RandomGenerator) =  {
     val seed = rng.nextLong()
-    val merger = RandomizingMerger(seed)
+    val merger = br_splitter.value.createMerger(seed)
     profIt("REM: findBestSplits") { 
       indexedData
         .mapPartitionsWithIndex { case (pi, it) =>
@@ -367,7 +376,8 @@ object DecisionTreeModel {
 case class DecisionTreeParams(
     val maxDepth:Int = Int.MaxValue, 
     val minNodeSize:Int = 1,
-    val seed:Long = defRng.nextLong ) {
+    val seed:Long = defRng.nextLong, 
+    val randomizeEquality:Boolean = false) {
 
   override def toString = ToStringBuilder.reflectionToString(this)
 }
@@ -389,7 +399,7 @@ class DecisionTree[V](val params: DecisionTreeParams = DecisionTreeParams())(imp
   def batchTrain(indexedData: RDD[(V, Long)], dataType: VariableType, 
       labels: Array[Int], nvarFraction: Double, sample:Seq[Sample]): Seq[DecisionTreeModel[V]] = {
     //TODO (OPTIMIZE): Perhpas is't better to use unique indexes and weights
-    val splitter = VariableSplitter[V](dataType, labels, nvarFraction)
+    val splitter = VariableSplitter[V](dataType, labels, nvarFraction, randomizeEquality = params.randomizeEquality)
     val subsets = sample.map { s => 
       val currentSet =  s.indexesIn.toArray
       val (totalGini, totalLabel) = Gini.giniImpurity(currentSet, labels, splitter.nCategories)

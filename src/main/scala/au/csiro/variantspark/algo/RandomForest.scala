@@ -100,6 +100,7 @@ case class RandomForestParams(
     nTryFraction:Double =  Double.NaN, 
     bootstrap:Boolean = true,
     subsample:Double = Double.NaN, 
+    randomizeEquality:Boolean = false,
     seed:Long =  defRng.nextLong
 ) {
   def resolveDefaults(nSamples:Int, nVariables:Int):RandomForestParams = {
@@ -107,7 +108,8 @@ case class RandomForestParams(
         oob = oob, 
         nTryFraction = if (!nTryFraction.isNaN) nTryFraction else Math.sqrt(nVariables.toDouble)/nVariables,
         bootstrap = bootstrap,
-        subsample = if (!subsample.isNaN) subsample else if (bootstrap) 1.0 else 0.666, 
+        subsample = if (!subsample.isNaN) subsample else if (bootstrap) 1.0 else 0.666,
+        randomizeEquality  = randomizeEquality, 
         seed = seed
     )
   }
@@ -174,7 +176,7 @@ class RandomForest[V](params:RandomForestParams=RandomForestParams()
     logDebug(s"Batch Traning: ${nTrees} with batch size: ${nBatchSize}")
     val oobAggregator = if (actualParams.oob) Option(new VotingAggregator(nLabels,nSamples)) else None   
     
-    val builder = modelBuilderFactory(DecisionTreeParams(seed = rng.nextLong), canSplit)    
+    val builder = modelBuilderFactory(DecisionTreeParams(seed = rng.nextLong, randomizeEquality = actualParams.randomizeEquality), canSplit)    
     val allSamples = Stream.fill(nTrees)(Sample.fraction(nSamples, actualParams.subsample, actualParams.bootstrap))
     val (allTrees, errors) = allSamples
       .sliding(nBatchSize, nBatchSize)

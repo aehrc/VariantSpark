@@ -10,7 +10,6 @@ class CochranArmitageTestCalculator(val labels:Array[Int], val weights:Array[Dou
   def pScore(values:Array[Byte]):Double  = {
     
     require(values.length == labels.length)
-    //println("Labels: " + labels.max + ": " + labels.toList)
     require(labels.max < 2 )
     val inputClassesNo  = values.max  + 1
     require(inputClassesNo <= weights.length)
