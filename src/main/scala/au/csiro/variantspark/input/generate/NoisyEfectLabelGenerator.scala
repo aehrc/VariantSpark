@@ -37,7 +37,7 @@ class NoisyEfectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
   
   def foldAdditive(nSamples:Int,rdd:RDD[DenseVector[Double]]) = rdd.fold(DenseVector.zeros[Double](nSamples))(_+=_)
   def foldMulitiplicative(nSamples:Int,rdd:RDD[DenseVector[Double]]) = {
-    rdd.map(v => v.map(d => if (d != 0.0) 1.0 else d)).fold(DenseVector.ones[Double](nSamples))(_*=_)
+    rdd.map(v => v.map(d => if (d == 0.0) 1.0 else d)).fold(DenseVector.ones[Double](nSamples))(_*=_)
   }
   
   def getLabels(labels:Seq[String]):Array[Int] = {
