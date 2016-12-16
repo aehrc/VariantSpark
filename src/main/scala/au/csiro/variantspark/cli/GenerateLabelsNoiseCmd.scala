@@ -75,6 +75,10 @@ class GenerateLabelsNoiseCmd extends ArgsApp with SparkApp with Echoable with Lo
   @Option(name = "-gz", required = false, usage = "Generator zero level (def = <factor-levels>/2)", aliases = Array("--gen-zero-level"))
   val zeroLevel: Int = -1
 
+  @Option(name = "-gm", required = false, usage = "Multiply effect contributions", aliases = Array("--gen-multiplicative-effect"))
+  val multiplicativeEffects: Boolean = false
+  
+  
   @Option(name = "-ge", required = false, usage = "Generator effects <var-name>:<effect-size> (can be used may times)", aliases = Array("--gen-effect"))
   val effectsDef: ArrayList[String] = new ArrayList()
 
@@ -107,7 +111,9 @@ class GenerateLabelsNoiseCmd extends ArgsApp with SparkApp with Echoable with Lo
     val featureSource = new ParquetFeatureSource(inputFile)
     echo(s"Loaded rows: ${dumpList(featureSource.sampleNames)}")
 
-    val generator = NoisyEfectLabelGenerator(featureSource)(zeroLevel = actualZeroLevel, effects = effects, fractionVarianceExplained = fracVarExplained, classThresholdPrecentile = classThresholdPrecentile, 
+    val generator = NoisyEfectLabelGenerator(featureSource)(zeroLevel = actualZeroLevel, effects = effects, 
+      fractionVarianceExplained = fracVarExplained, classThresholdPrecentile = classThresholdPrecentile, 
+      multiplicative = multiplicativeEffects, 
       seed = randomSeed)
     echo(s"Saving feature output to: ${featuresFile}, column: ${featureColumn}")
 

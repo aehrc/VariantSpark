@@ -13,12 +13,15 @@ import org.apache.spark.Logging
 import breeze.stats.meanAndVariance
 import breeze.stats.MeanAndVariance
 import breeze.stats.DescriptiveStats
+import org.apache.spark.rdd.RDD
 
 /**
  * Generate a dichotomous response 
  */
 class NoisyEfectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int, 
-      effects:Map[String,Double],  val fractionVarianceExplained:Double, val classThresholdPrecentile:Double = 0.75, seed:Long = 13L) extends LabelSource with Logging {
+      effects:Map[String,Double],  
+      val fractionVarianceExplained:Double, val classThresholdPrecentile:Double = 0.75, val multiplicative:Boolean = false,
+      seed:Long = 13L) extends LabelSource with Logging {
   
   def logistic(d:Double) = 1.0 / (1.0 + Math.exp(-d))
  
@@ -31,6 +34,12 @@ class NoisyEfectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
   var noisyContinuousResponse:DenseVector[Double]  = null
   var noisyContinousStats:MeanAndVariance = null
   
+  
+  def foldAdditive(nSamples:Int,rdd:RDD[DenseVector[Double]]) = rdd.fold(DenseVector.zeros[Double](nSamples))(_+=_)
+  def foldMulitiplicative(nSamples:Int,rdd:RDD[DenseVector[Double]]) = {
+    rdd.map(v => v.map(d => if (d != 0.0) 1.0 else d)).fold(DenseVector.ones[Double](nSamples))(_*=_)
+  }
+  
   def getLabels(labels:Seq[String]):Array[Int] = {
 
  
@@ -38,10 +47,11 @@ class NoisyEfectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
     val nSamples = labels.size
     
     baseContinuousResponse = withBroadcast(featureSource.features.sparkContext)(effects){ br_effects =>
-       featureSource.features.filter(f => br_effects.value.contains(f.label)).mapPartitions {it => 
+       val rdd = featureSource.features.filter(f => br_effects.value.contains(f.label)).mapPartitions {it => 
          val normalizer = DenseVector.fill(nSamples)(zeroLevelValue)
          it.map(f => (DenseVector(f.toVector.values.toArray)-=normalizer) *= (br_effects.value(f.label)))
-       }.fold(DenseVector.zeros[Double](nSamples))(_+=_)
+       }
+       if (multiplicative) foldMulitiplicative(nSamples, rdd) else foldAdditive(nSamples, rdd)
     }
     
     logDebug(s"Continuous response: ${baseContinuousResponse}")
@@ -81,5 +91,7 @@ class NoisyEfectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
 
 object NoisyEfectLabelGenerator {
   def apply(featureSource:FeatureSource)(zeroLevel:Int, 
-      effects:Map[String,Double], fractionVarianceExplained:Double, classThresholdPrecentile:Double = 0.75 , seed:Long = 13L) = new NoisyEfectLabelGenerator(featureSource)(zeroLevel, effects, fractionVarianceExplained, classThresholdPrecentile, seed)
+      effects:Map[String,Double], fractionVarianceExplained:Double, classThresholdPrecentile:Double = 0.75 ,
+        multiplicative:Boolean = false, seed:Long = 13L) = 
+          new NoisyEfectLabelGenerator(featureSource)(zeroLevel, effects, fractionVarianceExplained, classThresholdPrecentile, multiplicative, seed)
 }
