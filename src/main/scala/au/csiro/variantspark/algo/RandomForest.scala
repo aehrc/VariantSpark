@@ -23,6 +23,7 @@ import au.csiro.variantspark.utils.IndexedRDDFunction._
 
 import au.csiro.variantspark.algo._
 import scala.reflect.ClassTag
+import it.unimi.dsi.fastutil.ints.Int2IntMap
 
 
 
@@ -63,7 +64,17 @@ case class VotingAggregator(val nLabels:Int, val nSamples:Int) {
   def predictions = votes.map(_.zipWithIndex.maxBy(_._1)._2)
 }
 
-case class RandomForestModel[V](val trees: List[PredictiveModelWithImportance[V]], val labelCount:Int, oobErrors:List[Double] = List.empty)(implicit canSplit:CanSplit[V]) {
+
+@SerialVersionUID(2l)
+case class RandomForestMember[V](val predictor:PredictiveModelWithImportance[V], 
+    val oobIndexs:Array[Int] = null, val oobPred:Array[Int] = null) {
+}
+
+@SerialVersionUID(2l)
+case class RandomForestModel[V](val members: List[RandomForestMember[V]], val labelCount:Int, val oobErrors:List[Double] = List.empty)(implicit canSplit:CanSplit[V]) {
+  
+  def size = members.size
+  def trees = members.map(_.predictor)
   
   def oobError:Double = oobErrors.last
   
@@ -81,7 +92,7 @@ case class RandomForestModel[V](val trees: List[PredictiveModelWithImportance[V]
     // average the importance of each variable over all trees
     // if a variable is not used in a tree it's importance for this tree is assumed to be 0
     trees.map(_.variableImportanceAsFastMap).foldLeft(new Long2DoubleOpenHashMap())(_.addAll(_))
-      .asScala.mapValues(_/trees.size)
+      .asScala.mapValues(_/size)
   }
   
   def predict(data: RDD[V])(implicit ct:ClassTag[V]): Array[Int] = predictIndexed(data.zipWithIndex())
@@ -184,15 +195,18 @@ class RandomForest[V](params:RandomForestParams=RandomForestParams()
         time {
           val samples = samplesStream.toList
           val predictors = builder.batchTrain(indexedData, dataType, labels, actualParams.nTryFraction, samples)
-          val oobError = oobAggregator.map { agg =>
+          val members = if (actualParams.oob) {
             val oobIndexes = samples.map(_.indexesOut.toArray)
             val oobPredictions = builder.batchPredict(indexedData, predictors, oobIndexes)
-            oobPredictions.zip(oobIndexes).map { case(preds, oobIdx) =>
-                agg.addVote(preds, oobIdx)
+            predictors.zip(oobIndexes.zip(oobPredictions)).map { case (t, (i,p)) => RandomForestMember(t,i,p)}
+          } else predictors.map(RandomForestMember(_))
+          val oobError = oobAggregator.map { agg =>
+            members.map { m =>
+                agg.addVote(m.oobPred, m.oobIndexs)
                 Metrics.classificatoinError(labels, agg.predictions)
             }
           }.getOrElse(List.fill(predictors.size)(Double.NaN))
-          predictors.zip(oobError)
+          members.zip(oobError)
         }.withResultAndTime{ case (treesAndErrors, elapsedTime) =>
           logDebug(s"Trees: ${treesAndErrors.size} >> oobError: ${treesAndErrors.last._2}, time: ${elapsedTime}")
           Option(callback).foreach(_.onTreeComplete(treesAndErrors.size, treesAndErrors.last._2, elapsedTime))

@@ -33,6 +33,8 @@ import au.csiro.variantspark.utils.defRng
 import au.csiro.variantspark.input.ParquetFeatureSource
 import au.csiro.variantspark.algo.ByteRandomForest
 import au.csiro.variantspark.utils.IndexedRDDFunction._
+import java.io.ObjectOutputStream
+import java.io.FileOutputStream
 
 class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
@@ -65,6 +67,9 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
   @Option(name="-od", required=false, usage="Include important variables data in output file (def=no)"
         , aliases=Array("--output-include-data") )
   val includeData = false
+    
+  @Option(name="-om", required=false, usage="Path to model file", aliases=Array("--model-file"))
+  val modelFile:String = null
 
   // random forrest options
   
@@ -103,7 +108,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
   val sparkPar = 0
  
   @Override
-  def testArgs = Array("-if", "data/small.vcf", "-ff", "data/small-labels.csv", "-fc", "22_16051249", "-od")
+  def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ro", "-om", "target/ch22-model.ser" )
   
   def loadVCF() = {
     echo(s"Loading header from VCF file: ${inputFile}")
@@ -197,6 +202,14 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     //}
     
     echo(s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s") 
+    echo(s"Errors: ${result.oobErrors}")
+    
+    
+    if (modelFile != null) {
+      LoanUtils.withCloseable(new ObjectOutputStream(new FileOutputStream(modelFile))) { objectOut =>
+        objectOut.writeObject(result)
+      }
+    }
     
     // build index for names
     val topImportantVariables = result.normalizedVariableImportance().toSeq.sortBy(-_._2).take(nVariables)

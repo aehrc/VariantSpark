@@ -221,7 +221,8 @@ object DecisionTree extends Logging  with Prof {
   }
 }
 
-abstract class DecisionTreeNode(val majorityLabel: Int, val size: Int, val nodeImpurity: Double) {
+@SerialVersionUID(1l)
+abstract class DecisionTreeNode(val majorityLabel: Int, val size: Int, val nodeImpurity: Double) extends Serializable {
   def isLeaf:Boolean
   
   def printout(level: Int) 
@@ -235,6 +236,7 @@ abstract class DecisionTreeNode(val majorityLabel: Int, val size: Int, val nodeI
   def leafsToStream:Stream[LeafNode]  = toStream.filter(_.isLeaf).asInstanceOf[Stream[LeafNode]]
 }
 
+@SerialVersionUID(1l)
 case class LeafNode(override val majorityLabel: Int,override val  size: Int,override val  nodeImpurity: Double) extends DecisionTreeNode(majorityLabel,size,nodeImpurity) {  
   val isLeaf = true
 
@@ -253,7 +255,7 @@ object LeafNode {
   def apply(subset:SubsetInfo):LeafNode = apply(subset.majorityLabel, subset.lenght, subset.impurity)
 }
 
-
+@SerialVersionUID(1l)
 case class SplitNode(override val majorityLabel: Int, override val size: Int,override val  nodeImpurity: Double, splitVariableIndex: Long, splitPoint: Double,
     impurityReduction: Double,left: DecisionTreeNode, right: DecisionTreeNode) extends DecisionTreeNode(majorityLabel,size,nodeImpurity) {
   
@@ -280,7 +282,8 @@ object SplitNode {
                  ,split.variableIndex, split.splitPoint, subset.impurity - split.gini, left, right)
 }
 
-class DecisionTreeModel[V](val rootNode: DecisionTreeNode)(implicit canSplit:CanSplit[V]) extends PredictiveModelWithImportance[V] with  Logging {
+@SerialVersionUID(1l)
+class DecisionTreeModel[V](val rootNode: DecisionTreeNode)(implicit canSplit:CanSplit[V]) extends PredictiveModelWithImportance[V] with  Logging with Serializable {
   
   def splitVariableIndexes = rootNode.splitsToStream.map(_.splitVariableIndex).toSet
   

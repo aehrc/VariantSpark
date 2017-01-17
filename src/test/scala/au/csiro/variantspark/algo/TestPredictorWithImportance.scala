@@ -9,4 +9,5 @@ case class TestPredictorWithImportance(val predictions:Array[Int], val importanc
   def predictIndexed(data: RDD[(Vector,Long)])(implicit ct:ClassTag[Vector]): Array[Int]  = predictions
   def variableImportanceAsFastMap: Long2DoubleOpenHashMap = importance
   def printout() {}
+  implicit def toMember = RandomForestMember(this)
 }

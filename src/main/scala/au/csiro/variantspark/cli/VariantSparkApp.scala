@@ -13,6 +13,7 @@ class VariantSparkApp extends MultiCmdApp {
   registerClass("gen-labels", classOf[GenerateLabelsCmd])  
   registerClass("gen-labels-with-noise", classOf[GenerateLabelsNoiseCmd])  
   registerClass("convert", classOf[ConvertCmd])  
+  registerClass("analyze-rf", classOf[AnalyzeRFCmd])  
 }
 
 object VariantSparkApp {
