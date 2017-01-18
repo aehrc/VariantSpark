@@ -202,9 +202,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     //}
     
     echo(s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s") 
-    echo(s"Errors: ${result.oobErrors}")
-    
-    
+        
     if (modelFile != null) {
       LoanUtils.withCloseable(new ObjectOutputStream(new FileOutputStream(modelFile))) { objectOut =>
         objectOut.writeObject(result)

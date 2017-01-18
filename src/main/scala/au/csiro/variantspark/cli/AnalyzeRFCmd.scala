@@ -22,6 +22,7 @@ import com.github.tototoshi.csv.CSVWriter
 import au.csiro.variantspark.algo.RandomForestModel
 import au.csiro.variantspark.cli.args.FeatureSourceArgs
 import au.csiro.pbdava.ssparkle.spark.SparkUtils
+import org.apache.spark.serializer.JavaSerializer
 
 class AnalyzeRFCmd extends ArgsApp with FeatureSourceArgs with Logging with TestArgs {
 
@@ -56,10 +57,17 @@ class AnalyzeRFCmd extends ArgsApp with FeatureSourceArgs with Logging with Test
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
     echo(s"Analyzing random forrest model")
     
-    val rfModel  = LoanUtils.withCloseable(new ObjectInputStream(new FileInputStream(inputModel))) { objIn =>
-      objIn.readObject().asInstanceOf[RandomForestModel[_]]
+    
+    //NOTE: There is some wirdness going on here with the classloaded
+    //So I am using the Spark JavaSerializer to the the rihght one
+    val javaSerializer = new JavaSerializer(conf)
+    val si = javaSerializer.newInstance()
+    
+    val rfModel  = LoanUtils.withCloseable(new FileInputStream(inputModel)) { in =>
+      si.deserializeStream(in).readObject().asInstanceOf[RandomForestModel[_]]
     }  
-    echo(s"Model: ${rfModel}") 
+    
+    echo(s"Loaded model of size: ${rfModel.size}") 
   
     if (outputOobError != null) {
       echo(s"Writing oob errors to : ${outputOobError}") 
