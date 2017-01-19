@@ -23,12 +23,17 @@ import au.csiro.variantspark.algo.RandomForestModel
 import au.csiro.variantspark.cli.args.FeatureSourceArgs
 import au.csiro.pbdava.ssparkle.spark.SparkUtils
 import org.apache.spark.serializer.JavaSerializer
+import au.csiro.variantspark.cli.args.SparkArgs
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap
 
-class AnalyzeRFCmd extends ArgsApp with FeatureSourceArgs with Logging with TestArgs {
+class AnalyzeRFCmd extends ArgsApp with SparkArgs with Echoable with Logging with TestArgs {
 
   // input options
   @Option(name="-im", required=true, usage="Path to input model", aliases=Array("--input-model"))
   val inputModel:String = null
+
+  @Option(name="-ii", required=false, usage="Path to input variabel index file", aliases=Array("--input-idnex"))
+  val inputIndex:String = null
 
   @Option(name="-ob", required=false, usage="Path to output importance", aliases=Array("--output-oob"))
   val outputOobError:String = null
@@ -46,12 +51,17 @@ class AnalyzeRFCmd extends ArgsApp with FeatureSourceArgs with Logging with Test
   val outputTopImportanceNumber:Int = 100
 
   @Override
-  def testArgs = Array("-if", "data/chr22_1000.vcf", "-im", "target/ch22-model.ser", 
+  def testArgs = Array("-ii", "target/ch22-idx.ser", "-im", "target/ch22-model.ser", 
       "-ob", "target/ch22-oob.csv",
       "-obt", "target/ch22-oob-tree.csv",
       "-oi", "target/ch22-imp.csv", 
       "-oti", "target/ch22-top-imp.csv")
       
+      
+  lazy val variableIndex = LoanUtils.withCloseable(new ObjectInputStream(new FileInputStream(inputIndex))) { objIn =>
+      objIn.readObject().asInstanceOf[Long2ObjectOpenHashMap[String]]
+  }  
+   
   @Override
   def run():Unit = {
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
@@ -77,15 +87,15 @@ class AnalyzeRFCmd extends ArgsApp with FeatureSourceArgs with Logging with Test
       }
     }  
 
-    if (outputOobPerTree != null) {
-      echo(s"Writing per tree oob : ${outputOobPerTree}") 
-      val samples = source.sampleNames
-      LoanUtils.withCloseable(CSVWriter.open(outputOobPerTree)) { writer =>
-        writer.writeRow(samples)
-        rfModel.members.map(m => m.oobIndexs.zip(m.oobPred).toMap)
-          .map(m => Range(0,samples.size).map(i => m.getOrElse(i, null))).foreach(writer.writeRow)
-      }
-    }
+//    if (outputOobPerTree != null) {
+//      echo(s"Writing per tree oob : ${outputOobPerTree}") 
+//      val samples = source.sampleNames
+//      LoanUtils.withCloseable(CSVWriter.open(outputOobPerTree)) { writer =>
+//        writer.writeRow(samples)
+//        rfModel.members.map(m => m.oobIndexs.zip(m.oobPred).toMap)
+//          .map(m => Range(0,samples.size).map(i => m.getOrElse(i, null))).foreach(writer.writeRow)
+//      }
+//    }
     
     if (outputImportance != null) {
       echo(s"Writing per tree importance to: ${outputImportance}") 
@@ -97,13 +107,9 @@ class AnalyzeRFCmd extends ArgsApp with FeatureSourceArgs with Logging with Test
     if (outputTopImportance != null) {
       echo(s"Writing top  per tree importance to: ${outputTopImportance}") 
       val topImportantVariables = rfModel.normalizedVariableImportance().toSeq.sortBy(-_._2).take(outputTopImportanceNumber).map(_._1).sorted
-      val index = SparkUtils.withBroadcast(sc)(topImportantVariables.toSet) { br_indexes => 
-        source.features().zipWithIndex().filter(t => br_indexes.value.contains(t._2)).map({case (f,i) => (i, f.label)}).collectAsMap()
-      }  
-      //TODO: Need to add mapping to the original names
       
       LoanUtils.withCloseable(CSVWriter.open(outputTopImportance)) { writer =>
-        writer.writeRow(topImportantVariables.map(index.apply))
+        writer.writeRow(topImportantVariables.map(variableIndex.get))
         rfModel.trees.map(_.variableImportance()).map(vi => topImportantVariables.map(i => vi.getOrElse(i, null))).foreach(writer.writeRow)
       }
     }  
