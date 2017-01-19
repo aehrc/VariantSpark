@@ -68,7 +68,7 @@ class BuildVarIndexCmd extends ArgsApp with FeatureSourceArgs with Logging with 
     
     echo(s"Saving index of ${index.size()} variables to: ${outputIndex}")
     LoanUtils.withCloseable(new ObjectOutputStream(new FileOutputStream(outputIndex))) { objectOut =>
-        objectOut.writeObject()
+        objectOut.writeObject(index)
     }
   }  
 }
