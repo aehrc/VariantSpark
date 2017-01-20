@@ -25,8 +25,9 @@ import au.csiro.pbdava.ssparkle.spark.SparkUtils
 import org.apache.spark.serializer.JavaSerializer
 import au.csiro.variantspark.cli.args.SparkArgs
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap
+import au.csiro.variantspark.cli.args.LabelSourceArgs
 
-class AnalyzeRFCmd extends ArgsApp with SparkArgs with Echoable with Logging with TestArgs {
+class AnalyzeRFCmd extends ArgsApp with FeatureSourceArgs with Echoable with Logging with TestArgs {
 
   // input options
   @Option(name="-im", required=true, usage="Path to input model", aliases=Array("--input-model"))
@@ -52,6 +53,7 @@ class AnalyzeRFCmd extends ArgsApp with SparkArgs with Echoable with Logging wit
 
   @Override
   def testArgs = Array("-ii", "target/ch22-idx.ser", "-im", "target/ch22-model.ser", 
+      "-if", "data/chr22_1000.vcf",
       "-ob", "target/ch22-oob.csv",
       "-obt", "target/ch22-oob-tree.csv",
       "-oi", "target/ch22-imp.csv", 
@@ -87,15 +89,15 @@ class AnalyzeRFCmd extends ArgsApp with SparkArgs with Echoable with Logging wit
       }
     }  
 
-//    if (outputOobPerTree != null) {
-//      echo(s"Writing per tree oob : ${outputOobPerTree}") 
-//      val samples = source.sampleNames
-//      LoanUtils.withCloseable(CSVWriter.open(outputOobPerTree)) { writer =>
-//        writer.writeRow(samples)
-//        rfModel.members.map(m => m.oobIndexs.zip(m.oobPred).toMap)
-//          .map(m => Range(0,samples.size).map(i => m.getOrElse(i, null))).foreach(writer.writeRow)
-//      }
-//    }
+    if (outputOobPerTree != null) {
+      echo(s"Writing per tree oob : ${outputOobPerTree}") 
+      val samples = featureSource.sampleNames
+      LoanUtils.withCloseable(CSVWriter.open(outputOobPerTree)) { writer =>
+        writer.writeRow(samples)
+        rfModel.members.map(m => m.oobIndexs.zip(m.oobPred).toMap)
+          .map(m => Range(0,samples.size).map(i => m.getOrElse(i, null))).foreach(writer.writeRow)
+      }
+    }
     
     if (outputImportance != null) {
       echo(s"Writing per tree importance to: ${outputImportance}") 

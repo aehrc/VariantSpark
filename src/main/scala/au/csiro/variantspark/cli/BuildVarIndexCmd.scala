@@ -62,7 +62,7 @@ class BuildVarIndexCmd extends ArgsApp with FeatureSourceArgs with Logging with 
     echo(s"Building full variable index")
     
     val indexAccumulator = sc.accumulable(new Long2ObjectOpenHashMap[String]())(IndexAccumulator)
-    source.features().zipWithIndex().map(t => (t._2, t._1.label)).foreach(indexAccumulator.add(_))
+    featureSource.features().zipWithIndex().map(t => (t._2, t._1.label)).foreach(indexAccumulator.add(_))
     
     val index = indexAccumulator.value
     

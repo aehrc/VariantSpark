@@ -9,8 +9,9 @@ import au.csiro.variantspark.input.ParquetFeatureSource
 
 
 trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
+  
   // input options
-  @Option(name="-if", required=true, usage="Path to input file or directory", aliases=Array("--input-file"))
+  @Option(name="-if", required=false, usage="Path to input file or directory", aliases=Array("--input-file"))
   val inputFile:String = null
 
   @Option(name="-it", required=false, usage="Input file type, one of: vcf, csv, parquet (def=vcf)", aliases=Array("--input-type"))
@@ -34,7 +35,7 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
     ParquetFeatureSource(inputFile)
   }
   
-  lazy val source = {
+  lazy val featureSource = {
       val fileLoader = inputType match {
       case "csv" =>  loadCSV _
       case "parquet" => loadParquet _ 
