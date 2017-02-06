@@ -50,7 +50,7 @@ Please, note that `--spark` needs to be the first argument of `variant-spark`
 
 You can also run variant-spark in the `--local` mode. In this mode variant-spark will ignore any Hadoop or Spark configuration files and run in the local mode for both Hadooop and Spark. In particular in this mode all file paths are interpreted as local file system paths. Also any parameters passed after `--local` and before `--` are ignored. For example:
 
-	./variant-spark --local -- importance data/small.vcf -ff data/small-labels.csv -fc 22_16051249 -v -t 5
+	./variant-spark --local -- importance  -if data/chr22_1000.vcf -ff data/chr22-labels.csv -fc 22_16051249 -v -rn 500 -rbs 20 -ro
 
 Note: The difference between running in `--local` mode and in `--spark` with `local` master is that in the latter case Spark uses the hadoop filesystem configuration and the input files need to be copied to this filesystem (e.g. HDFS) 
 
