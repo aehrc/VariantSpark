@@ -37,15 +37,9 @@ import au.csiro.variantspark.input.ParquetFeatureSource
 import au.csiro.variantspark.input.generate.EfectLabelGenerator
 import java.io.File
 import java.util.ArrayList
+import au.csiro.variantspark.cli.args.FeatureSourceArgs
 
-class ConvertCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
-
-  // input options
-  @Option(name="-if", required=true, usage="Path to input file or directory", aliases=Array("--input-file"))
-  val inputFile:String = null
-
-  @Option(name="-it", required=false, usage="Input file type, one of: vcf, csv (def=parquet)", aliases=Array("--input-type"))
-  val inputType:String = "parquet"
+class ConvertCmd extends ArgsApp with FeatureSourceArgs with Echoable with Logging with TestArgs {
 
  // output options
   @Option(name="-of", required=true, usage="Path to output file", aliases=Array("--output-file") )
@@ -53,11 +47,7 @@ class ConvertCmd extends ArgsApp with SparkApp with Echoable with Logging with T
   
   @Option(name="-ot", required=false, usage="Input file type, one of: vcf, csv (def=vcf)", aliases=Array("--output-type") )
   val outputType:String = null  
-  
-  // spark related
-  @Option(name="-sp", required=false, usage="Spark parallelism (def=<default-spark-par>)", aliases=Array("--spark-par"))
-  val sparkPar = 0
- 
+   
   @Override
   def testArgs = Array("-if", "target/getds.parquet", "-sp", "4", "-of", "target/getds.csv")
     
@@ -68,7 +58,6 @@ class ConvertCmd extends ArgsApp with SparkApp with Echoable with Logging with T
     echo(s"Converting from: ${inputType} to: ${outputType}")
     
     echo(s"Loading parquet file: ${inputFile}")
-    val featureSource = new ParquetFeatureSource(inputFile)
     echo(s"Loaded rows: ${dumpList(featureSource.sampleNames)}")  
     
     val sink = CSVFeatureSink(outputFile)
