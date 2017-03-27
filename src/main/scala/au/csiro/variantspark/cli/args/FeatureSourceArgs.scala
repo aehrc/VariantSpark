@@ -6,6 +6,7 @@ import au.csiro.variantspark.input.VCFSource
 import au.csiro.variantspark.input.VCFFeatureSource
 import au.csiro.variantspark.input.CsvFeatureSource
 import au.csiro.variantspark.input.ParquetFeatureSource
+import au.csiro.variantspark.cmd.EchoUtils._
 
 
 trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
@@ -44,4 +45,11 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
     fileLoader()
   }
  
+  def echoDataPreview() {
+    if (isVerbose) {
+      verbose("Data preview:")
+      featureSource.features().take(defaultPreviewSize).foreach(f=> verbose(s"${f.label}:${dumpList(f.values.toList, longPreviewSize)}"))
+    }  
+  }
+  
 }

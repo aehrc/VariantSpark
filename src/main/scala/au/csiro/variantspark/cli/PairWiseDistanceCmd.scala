@@ -26,15 +26,15 @@ class PairWiseDistanceCmd extends ArgsApp with FeatureSourceArgs with Logging wi
 
   @Override
   def testArgs = Array("-if", "data/chr22_1000.vcf", 
-      "-of", "target/ch22-disc.csv"
+      "-of", "target/ch22-disc.csv", "-v"
       )
       
   @Override
   def run():Unit = {
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
     echo(s"Calculating pair wise distance")
-    
-    val data = featureSource.features().map(_.values)    
+    val data = featureSource.features().map(_.values)
+    echoDataPreview()
     val noOfSamples = data.first.length
     val resultAsMatrix = PairwiseDistance.lowerTraingToMatrix(PairwiseDistance().compute(data), noOfSamples)        
     val sampleNames = featureSource.sampleNames
