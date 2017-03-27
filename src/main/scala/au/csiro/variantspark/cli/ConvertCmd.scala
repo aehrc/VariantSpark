@@ -38,6 +38,7 @@ import au.csiro.variantspark.input.generate.EfectLabelGenerator
 import java.io.File
 import java.util.ArrayList
 import au.csiro.variantspark.cli.args.FeatureSourceArgs
+import au.csiro.variantspark.output.CSVFeatureSink2
 
 class ConvertCmd extends ArgsApp with FeatureSourceArgs with Echoable with Logging with TestArgs {
 
@@ -49,7 +50,7 @@ class ConvertCmd extends ArgsApp with FeatureSourceArgs with Echoable with Loggi
   val outputType:String = null  
    
   @Override
-  def testArgs = Array("-if", "target/getds.parquet", "-sp", "4", "-of", "target/getds.csv")
+  def testArgs = Array("-if", "data/chr22_1000.vcf", "-it", "vcf", "-sp", "4", "-of", "target/getds.csv")
     
   @Override
   def run():Unit = {
@@ -60,7 +61,7 @@ class ConvertCmd extends ArgsApp with FeatureSourceArgs with Echoable with Loggi
     echo(s"Loading parquet file: ${inputFile}")
     echo(s"Loaded rows: ${dumpList(featureSource.sampleNames)}")  
     
-    val sink = CSVFeatureSink(outputFile)
+    val sink = CSVFeatureSink2(outputFile)
     sink.save(featureSource)
   }    
 }
