@@ -35,6 +35,7 @@ import au.csiro.variantspark.algo.ByteRandomForest
 import au.csiro.variantspark.utils.IndexedRDDFunction._
 import java.io.ObjectOutputStream
 import java.io.FileOutputStream
+import org.apache.hadoop.conf.Configuration
 
 class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
@@ -130,7 +131,10 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
   
   @Override
   def run():Unit = {
-    implicit val fs = FileSystem.get(sc.hadoopConfiguration)      
+    implicit val fs = FileSystem.get(sc.hadoopConfiguration)  
+    implicit val hadoopConf:Configuration = sc.hadoopConfiguration
+    
+    
     logDebug(s"Runing with filesystem: ${fs}, home: ${fs.getHomeDirectory}")
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
     echo(s"Finding  ${nVariables}  most important features using random forest")

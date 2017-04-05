@@ -18,6 +18,8 @@ import au.csiro.variantspark.data.BoundedOrdinal
 class WideDecisionTreeIntegratedTest extends SparkTest {
    
   implicit val fss = FileSystem.get(sc.hadoopConfiguration)
+  implicit val hadoopConf = sc.hadoopConfiguration
+
     //TODO (Should be moved to the test - but for some reason was null then ...)
   
   /**

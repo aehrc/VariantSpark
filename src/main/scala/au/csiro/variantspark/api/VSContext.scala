@@ -13,6 +13,7 @@ import org.apache.spark.sql.SQLContext
 class VSContext(val sc:SparkContext, val sqlContext:SQLContext, val sparkPar:Int=0) {
 
   implicit val fs = FileSystem.get(sc.hadoopConfiguration)
+  implicit val hadoopConf = sc.hadoopConfiguration
   
   def featureSource(inputFile:String, inputType:String = null): FeatureSource = {
     val vcfSource = VCFSource(sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))

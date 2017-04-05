@@ -16,7 +16,7 @@ trait LabelSourceArgs extends SparkArgs with Echoable {
 
   
   lazy val labelSource = {
-    implicit val fs = FileSystem.get(sc.hadoopConfiguration)      
+    implicit val hadoopConf = sc.hadoopConfiguration
     echo(s"Loading labels from: ${featuresFile}, column: ${featureColumn}")
     new CsvLabelSource(featuresFile, featureColumn)
   }

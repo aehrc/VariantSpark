@@ -97,6 +97,8 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
   @Override
   def run():Unit = {
     implicit val fs = FileSystem.get(sc.hadoopConfiguration)      
+    implicit val hadoopConf = sc.hadoopConfiguration
+    
     logDebug(s"Runing with filesystem: ${fs}, home: ${fs.getHomeDirectory}")
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
     echo(s"Finding  ${nVariables}  most important features using random forest")
