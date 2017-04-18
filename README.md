@@ -28,7 +28,7 @@ In order to build the binaries use:
 	
 ### Running
 
-variant-spark requires an existing spark 1.6+ installation (either a local one or a cluster one).
+variant-spark requires an existing spark 2.1+ installation (either a local one or a cluster one).
 
 To run variant-spark use:
 
