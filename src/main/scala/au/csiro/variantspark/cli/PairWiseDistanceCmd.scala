@@ -5,7 +5,7 @@ import java.io.File
 import scala.Range
 
 import org.apache.commons.lang3.builder.ToStringBuilder
-import org.apache.spark.Logging
+import au.csiro.pbdava.ssparkle.common.utils.Logging
 import org.apache.spark.annotation.Private
 import org.kohsuke.args4j.Option
 

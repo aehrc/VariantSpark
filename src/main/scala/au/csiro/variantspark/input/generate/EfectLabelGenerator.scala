@@ -9,7 +9,7 @@ import au.csiro.variantspark.input.LabelSource
 import breeze.linalg.DenseVector
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 import breeze.linalg.operators.DenseVector_GenericOps
-import org.apache.spark.Logging
+import au.csiro.pbdava.ssparkle.common.utils.Logging
 import breeze.stats.meanAndVariance
 import breeze.stats.MeanAndVariance
 

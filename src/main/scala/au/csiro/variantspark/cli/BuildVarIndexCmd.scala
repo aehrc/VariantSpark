@@ -6,7 +6,7 @@ import java.io.ObjectInputStream
 import scala.collection.JavaConverters._
 
 import org.apache.commons.lang3.builder.ToStringBuilder
-import org.apache.spark.Logging
+import au.csiro.pbdava.ssparkle.common.utils.Logging
 import org.kohsuke.args4j.Option
 
 import au.csiro.pbdava.ssparkle.common.arg4j.AppRunner

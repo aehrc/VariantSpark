@@ -13,7 +13,7 @@ import au.csiro.variantspark.algo.WideRandomForest
 import org.apache.spark.mllib.linalg.Vectors
 import au.csiro.variantspark.input.CsvLabelSource
 import au.csiro.variantspark.cmd.Echoable
-import org.apache.spark.Logging
+import au.csiro.pbdava.ssparkle.common.utils.Logging
 import org.apache.commons.lang3.builder.ToStringBuilder
 import au.csiro.variantspark.cmd.EchoUtils._
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils

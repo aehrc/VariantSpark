@@ -9,7 +9,7 @@ import org.apache.spark.rdd.RDD
 import au.csiro.variantspark.metrics.Metrics
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap
-import org.apache.spark.Logging
+import au.csiro.pbdava.ssparkle.common.utils.Logging
 import au.csiro.variantspark.utils.RDDProjections._
 import au.csiro.variantspark.utils.Projector
 import au.csiro.pbdava.ssparkle.common.utils.Timed._

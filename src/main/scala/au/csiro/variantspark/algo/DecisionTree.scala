@@ -8,7 +8,7 @@ import org.apache.spark.rdd.RDD.rddToPairRDDFunctions
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
 import scala.collection.mutable.MutableList
 import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.Logging
+import au.csiro.pbdava.ssparkle.common.utils.Logging
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import au.csiro.pbdava.ssparkle.spark.SparkUtils._
 import au.csiro.variantspark.metrics.Gini

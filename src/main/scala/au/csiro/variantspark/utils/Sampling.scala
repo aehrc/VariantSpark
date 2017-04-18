@@ -7,7 +7,6 @@ import org.apache.commons.math3.random.RandomDataGenerator
 import org.apache.spark.rdd.RDD
 import org.apache.commons.math3.random.RandomGeneratorFactory
 import org.apache.commons.math3.random.RandomGenerator
-import org.uncommons.maths.random.XORShiftRNG
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 
 class Sample(val nSize:Int, val indexes:Array[Int]) {

@@ -1,7 +1,5 @@
 package au.csiro.pbdava.ssparkle.common.utils
 
-import org.apache.spark.Logging
-
 trait Prof extends Logging {
   
   lazy val profEnable:Boolean = System.getProperty("sparkle.prof", "false").toBoolean
