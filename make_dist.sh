@@ -2,21 +2,23 @@
 
 PWD=$(cd `dirname "$0"`; pwd)
 
-mvn clean install
+if [[ $# -gt 0 ]]; then
+    mvn "$@"
+fi
 
+DIST_JAR=$(echo target/variant-spark_*-all.jar)
 
-DIST_JAR=$(echo target/variant-spark-*-all.jar)
-
-if [[ "${DIST_JAR}" =~ .*variant-spark-(.*)-all.jar ]]; then
+if [[ "${DIST_JAR}" =~ .*variant-spark_(.*)-all.jar ]]; then
 	DIST_VERSION="${BASH_REMATCH[1]}"
 else
 	echo "Cannot determine the version from the jar:  ${DIST_JAR}"
 	exit 1
 fi
 
-DIST_NAME="variant-spark-${DIST_VERSION}"
+DIST_NAME="variant-spark_${DIST_VERSION}"
 
 echo "Builing distribution for version: ${DIST_VERSION}"
+echo "Dist jar: ${DIST_JAR}"
 
 DIST_DIR="target/dist/${DIST_NAME}"
 
@@ -27,7 +29,7 @@ mkdir -p ${DIST_DIR}/lib
 cp LICENSE README.md THIRDPARTY ${DIST_DIR}
 
 cp variant-spark ${DIST_DIR}/variant-spark
-cp target/variant-spark-0.0.1-SNAPSHOT-all.jar  ${DIST_DIR}/lib
+cp ${DIST_JAR}  ${DIST_DIR}/lib
 cp -r data/ ${DIST_DIR}/data/
 cp -r scripts ${DIST_DIR}/scripts/
 cp -r conf ${DIST_DIR}/conf/
