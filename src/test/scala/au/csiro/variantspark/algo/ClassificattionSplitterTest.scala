@@ -4,7 +4,7 @@ package au.csiro.variantspark.algo
 import org.junit.Assert._
 import org.junit.Test;
 import org.apache.spark.mllib.linalg.Vectors
-import org.apache.spark.Logging
+import au.csiro.pbdava.ssparkle.common.utils.Logging
 
 abstract class ClassificattionSplitterTest extends Logging {
     

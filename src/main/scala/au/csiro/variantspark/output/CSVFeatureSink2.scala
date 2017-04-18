@@ -12,7 +12,7 @@ case class CSVFeatureSink2(val fileName:String) extends FeatureSink {
   
   def save(fs:FeatureSource)  {
     val header = ("" :: fs.sampleNames).mkString(",")
-    fs.features().map( f => (f.label :: f.values.map(_.toString).toList).mkString(",")).mapPartitionsWithSplit({ case (i, it) =>
+    fs.features().map( f => (f.label :: f.values.map(_.toString).toList).mkString(",")).mapPartitionsWithIndex({ case (i, it) =>
       if (i > 0) it else Some(header).iterator ++ it
     }).coalesce(1, true).saveAsTextFile(fileName)
   }  

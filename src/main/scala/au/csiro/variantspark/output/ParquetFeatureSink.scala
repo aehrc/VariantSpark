@@ -16,7 +16,7 @@ class ParquetFeatureSink(val outputPath:String) extends FeatureSink {
      val sqlContext = new org.apache.spark.sql.SQLContext(features.sparkContext)
      // this is used to implicitly convert an RDD to a DataFrame.
      import sqlContext.implicits._    
-     features.toDF.save(outputPath, SaveMode.Overwrite)
+     features.toDF.write.mode(SaveMode.Overwrite).save(outputPath)
      // now save the column names to an extra file 
      val fs = FileSystem.get(features.sparkContext.hadoopConfiguration)
      // just serialize out the object
