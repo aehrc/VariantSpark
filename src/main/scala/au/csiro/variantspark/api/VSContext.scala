@@ -8,10 +8,14 @@ import org.apache.spark.SparkConf
 import au.csiro.variantspark.input.CsvLabelSource
 import org.apache.hadoop.fs.FileSystem
 import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.SparkSession
 
 
-class VSContext(val sc:SparkContext, val sqlContext:SQLContext, val sparkPar:Int=0) {
+class VSContext(val spark:SparkSession, val sparkPar:Int=0) {
 
+  val sc = spark.sparkContext
+  val sqlContext = spark.sqlContext
+  
   implicit val fs = FileSystem.get(sc.hadoopConfiguration)
   implicit val hadoopConf = sc.hadoopConfiguration
   
@@ -26,5 +30,5 @@ class VSContext(val sc:SparkContext, val sqlContext:SQLContext, val sparkPar:Int
 }
 
 object VSContext {
-  def apply(sqlContext:SQLContext) = new VSContext(sqlContext.sparkContext, sqlContext)
+  def apply(spark:SparkSession) = new VSContext(spark)
 }

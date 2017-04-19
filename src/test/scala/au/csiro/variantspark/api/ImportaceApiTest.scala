@@ -10,8 +10,8 @@ class ImportaceApiTest extends SparkTest {
   @Test
   def testCreateContext() {
     
-    val sqlContext = new SQLContext(sc)    
-    implicit val vsContext = VSContext(sqlContext)
+    //TODO[TEST]: Remove printing and add assertions.
+    implicit val vsContext = VSContext(spark)
     val fs = vsContext.featureSource("data/chr22_1000.vcf")
     println(fs.sampleNames)
     val ls  = vsContext.labelSource("data/chr22-labels.csv", "22_16050408")
@@ -23,7 +23,7 @@ class ImportaceApiTest extends SparkTest {
     importanceDF.cache()
     println(importanceDF.count())
     importanceDF.registerTempTable("importance")
-    sqlContext.sql("SELECT * FROM importance ORDER BY importance DESC limit 10").collect().foreach(println _)
+    spark.sql("SELECT * FROM importance ORDER BY importance DESC limit 10").collect().foreach(println _)
     
   }
 }

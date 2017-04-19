@@ -4,6 +4,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SQLContext
 import au.csiro.pbdava.ssparkle.common.utils.Logging
+import org.apache.spark.sql.SparkSession
 
 //import org.bdgenomics.adam.rdd.ADAMContext
 
@@ -17,14 +18,15 @@ trait SparkApp extends Logging {
         .setAppName(getClass().getSimpleName)
       if (conf.contains("spark.master")) conf else conf.setMaster(defaultMasterUrl) 
     } 
-    //.set("spark.shuffle.memoryFraction", "0.2")
-    //.set("spark.storage.memoryFraction", "0.4")
-    //.set("spark.yarn.executor.memoryOverhead", "2048")
-    //.set("spark.driver.maxResultSize","2048")
-    //.set("spark.default.parallelism", "256")
-  implicit lazy val sc = {
+
+  implicit lazy val spark = {
     logDebug("Spark conf: " + conf.toDebugString)
-    new SparkContext(conf)
+    SparkSession.builder.config(conf).getOrCreate()
   }
-  lazy val sqlContext = new SQLContext(sc)
+  
+  @deprecated
+  implicit lazy val sc = spark.sparkContext
+  
+  @deprecated
+  lazy val sqlContext = spark.sqlContext
 }
