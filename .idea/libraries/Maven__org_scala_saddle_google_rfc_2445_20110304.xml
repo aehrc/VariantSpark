@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: org.scala-saddle:google-rfc-2445:20110304">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/scala-saddle/google-rfc-2445/20110304/google-rfc-2445-20110304.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/org/scala-saddle/google-rfc-2445/20110304/google-rfc-2445-20110304-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/scala-saddle/google-rfc-2445/20110304/google-rfc-2445-20110304-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
