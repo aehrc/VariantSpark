@@ -12,11 +12,8 @@ object WideKMeans {
 }
 
 class WideKMeans(kk:Int, kiter:Int) {
-  
-  // the general ideas it to use kmeans on wide representation
-  
-  // return cluster centers as RDD[Vector]
-  
+
+  /** return cluster centers as RDD[Vector]*/
   def run(data: RDD[Vector]):RDD[Vector] = {
     
     val k = kk
@@ -51,7 +48,6 @@ class WideKMeans(kk:Int, kiter:Int) {
             } // just sum them together
         )
       .map(v => v.zipWithIndex.min._2) // should be find the index of min distance
-      // 
       
       val clusterSizes = Array.fill(k)(0)
       clusterAssignment.foreach(c=> clusterSizes(c) += 1)
@@ -74,8 +70,9 @@ class WideKMeans(kk:Int, kiter:Int) {
     }
     clusterCentres
   }
-  
-  def assignClusters(data:RDD[Vector], clusterCentres:RDD[Vector]):Array[Int] = {
+
+/** Assign Clusters using vectors*/
+  def assignClusters(data:RDD[Vector], clusterCentres:RDD[Vector]): Array[Int] = {
      val dims = data.first().size
      val k = clusterCentres.first().size
      val clusterAssignment = data.zip(clusterCentres)
