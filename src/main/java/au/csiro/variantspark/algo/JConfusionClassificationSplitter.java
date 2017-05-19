@@ -2,7 +2,6 @@ package au.csiro.variantspark.algo;
 
 import java.util.Arrays;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 
 /**
  * Fast gini based splitter. NOT MULITHEADED !!! (Caches state to avoid heap
@@ -45,7 +44,7 @@ public class JConfusionClassificationSplitter implements ClassificationSplitter 
 	public SplitInfo findSplit(int[] data, int[] splitIndices) {
 		return dofindSplit(splitIndices, (idx, conf) -> {
 			for (int i : idx) {
-				conf[(int) data[i]][labels[i]]++;
+				conf[data[i]][labels[i]]++;
 			}
 		});
 	}

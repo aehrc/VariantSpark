@@ -29,10 +29,10 @@ class NoisyEfectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
   
   
   // TODO: (Refactoring) make it a lazy vals
-  var baseContinuousResponse:DenseVector[Double]  = null
-  var baseContinousStats:MeanAndVariance = null
-  var noisyContinuousResponse:DenseVector[Double]  = null
-  var noisyContinousStats:MeanAndVariance = null
+  var baseContinuousResponse:DenseVector[Double]  = _
+  var baseContinousStats:MeanAndVariance = _
+  var noisyContinuousResponse:DenseVector[Double]  = _
+  var noisyContinousStats:MeanAndVariance = _
   
   
   def foldAdditive(nSamples:Int,rdd:RDD[DenseVector[Double]]) = rdd.fold(DenseVector.zeros[Double](nSamples))(_+=_)

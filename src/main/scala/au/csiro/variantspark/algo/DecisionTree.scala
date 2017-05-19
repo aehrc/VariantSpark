@@ -172,7 +172,8 @@ object DecisionTree extends Logging  with Prof {
    * @param splits - the indexed representation of the current splits
    * @param splitRange - the range of splits to consider
    * @param mTryFraction - the fraction of splits to apply this variable to
-   */  
+   */
+  //noinspection ScalaDocUnknownParameter,ScalaDocUnknownParameter,ScalaDocUnknownParameter,ScalaDocUnknownParameter,ScalaDocUnknownParameter
   // but the whole thing is essentially an aggrefation on a map trying to find the best variable for each of the splits
   // in the list (they represents best splits a tree level)
   

@@ -60,7 +60,8 @@ public class CochranArmitageTest {
 	 * @param weight
 	 * @return
 	 */
-	double t(int N1[], int N2[], double weight[]) {
+    @SuppressWarnings("JavaDoc")
+    double t(int N1[], int N2[], double weight[]) {
 		int R1 = 0, R2 = 0;
 		int k = N1.length;
 
@@ -91,7 +92,8 @@ public class CochranArmitageTest {
 	 * 
 	 * @return
 	 */
-	public double test(int N1[], int N2[], double weight[]) {
+	@SuppressWarnings("JavaDoc")
+    public double test(int N1[], int N2[], double weight[]) {
 		// Sanity checks
 		if (N1.length != N2.length) throw new RuntimeException("Row length do not match: " + N1.length + " != " + N2.length);
 		if (N1.length != weight.length) throw new RuntimeException("Weight length does not match data rows length: " + N1.length + " != " + weight.length);
@@ -110,7 +112,8 @@ public class CochranArmitageTest {
 	 * @param weight
 	 * @return
 	 */
-	double var(int N1[], int N2[], double weight[]) {
+    @SuppressWarnings("JavaDoc")
+    double var(int N1[], int N2[], double weight[]) {
 		int k = N1.length;
 
 		// Calculate R1 and R2

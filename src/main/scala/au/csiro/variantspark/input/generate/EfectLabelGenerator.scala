@@ -51,8 +51,8 @@ class EfectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
   }
 
   // TODO: (Refactoring) make it a lazy vals
-  var continousStats:MeanAndVariance = null
-  var continousResponse:DenseVector[Double] = null
+  var continousStats:MeanAndVariance = _
+  var continousResponse:DenseVector[Double] = _
   
   def getLabels(labels:Seq[String]):Array[Int] = {
     val nSamples = labels.size

@@ -1,5 +1,6 @@
 package au.csiro.variantspark.algo;
 
+@SuppressWarnings("JavaDoc")
 public final class FastGini {
 
 	private FastGini() {}

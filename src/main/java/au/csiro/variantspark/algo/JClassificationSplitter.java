@@ -9,6 +9,7 @@ import java.util.Arrays;
  * @author szu004
  *
  */
+@SuppressWarnings("JavaDoc")
 public class JClassificationSplitter implements ClassificationSplitter {
 	private final int[] leftSplitCounts;
 	private final int[] rightSplitCounts;

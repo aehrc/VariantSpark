@@ -2,8 +2,6 @@ package au.csiro.variantspark.algo;
 
 import java.util.Arrays;
 
-import au.csiro.variantspark.metrics.Gini;
-
 
 /**
  * Fast gini based splitter.
