@@ -132,9 +132,7 @@ trait RandomForestCallback {
   def onTreeComplete(nTrees:Int, oobError:Double, elapsedTimeMs:Long) {}
 }
 
-
-// TODO: This not nice but at this point in do  not care
-// Not nice because I need a type cast
+// TODO (Design): Avoid using type cast change design
 trait BatchTreeModel[V] {
   def batchTrain(indexedData: RDD[(V, Long)], dataType:VariableType, labels: Array[Int], nTryFraction: Double, samples:Seq[Sample]): Seq[PredictiveModelWithImportance[V]]
   def batchPredict(indexedData: RDD[(V, Long)], models: Seq[PredictiveModelWithImportance[V]], indexes:Seq[Array[Int]]): Seq[Array[Int]]  

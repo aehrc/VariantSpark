@@ -9,5 +9,5 @@ import au.csiro.variantspark.test.SparkTest
 import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
 
 class WideDecisionTreeTest {
-  
+
 }

@@ -14,17 +14,17 @@ import scala.collection.JavaConversions._
 
 class WideRadomForrestModelTest extends SparkTest {
   val nLabels = 4
-  val nSamples  = 2
+  val nSamples = 2
   val testData = sc.parallelize(List(Vectors.zeros(nSamples)))
 
-  @Test  
+  @Test
   def whenManyPredictorsThenAveragesImportnace() {
-    val importances = List(Map(1l -> 1.0, 2l->1.0), Map(1l->1.0, 2l->0.5, 3l->6.0), Map(1L-> 1.0)).map(m => new Long2DoubleOpenHashMap(m.keys.toArray, m.values.toArray))
-    val model = new WideRandomForestModel(importances.map(TestPredictorWithImportance(null,_).toMember).toList, nLabels)
+    val importances = List(Map(1l -> 1.0, 2l -> 1.0), Map(1l -> 1.0, 2l -> 0.5, 3l -> 6.0), Map(1L -> 1.0)).map(m => new Long2DoubleOpenHashMap(m.keys.toArray, m.values.toArray))
+    val model = new WideRandomForestModel(importances.map(TestPredictorWithImportance(null, _).toMember).toList, nLabels)
     val totalImportnace = model.variableImportance
-    assertEquals(Map(1L->1.0, 2L->0.5, 3L->2.0), totalImportnace)
-  }  
-  
+    assertEquals(Map(1L -> 1.0, 2L -> 0.5, 3L -> 2.0), totalImportnace)
+  }
+
   @Test
   def whenEmptyPredictsHighestLabel() {
     val model = new WideRandomForestModel(List(), nLabels)
@@ -34,7 +34,7 @@ class WideRadomForrestModelTest extends SparkTest {
 
   @Test
   def whenOnePredictorPassesThePrediction() {
-    val assumedPreditions = Array(1,2)
+    val assumedPreditions = Array(1, 2)
     val model = new WideRandomForestModel(List(TestPredictorWithImportance(assumedPreditions, null).toMember), nLabels)
     val prediction = model.predict(testData)
     assertArrayEquals(assumedPreditions, prediction)
@@ -42,10 +42,10 @@ class WideRadomForrestModelTest extends SparkTest {
 
   @Test
   def whenManyPreditorsThenPredictsByVoting() {
-    val assumedPreditions = List(Array(1,0), Array(1,2), Array(1,0))
+    val assumedPreditions = List(Array(1, 0), Array(1, 2), Array(1, 0))
     val model = new WideRandomForestModel(assumedPreditions.map(TestPredictorWithImportance(_, null).toMember).toList, nLabels)
     val prediction = model.predict(testData)
-    assertArrayEquals(Array(1,0), prediction)
+    assertArrayEquals(Array(1, 0), prediction)
   }
-  
+
 }
