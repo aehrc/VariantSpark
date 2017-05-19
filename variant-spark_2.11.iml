@@ -176,5 +176,6 @@
     <orderEntry type="library" scope="TEST" name="Maven: org.scala-saddle:google-rfc-2445:20110304" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: com.googlecode.efficient-java-matrix-library:ejml:0.19" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.apache.commons:commons-math:2.2" level="project" />
+    <orderEntry type="library" name="scala-sdk-2.11.0" level="application" />
   </component>
 </module>
