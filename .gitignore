@@ -48,3 +48,5 @@ tmp
 .idea
 
 *.iml
+
+variant-spark_2.11.iml
