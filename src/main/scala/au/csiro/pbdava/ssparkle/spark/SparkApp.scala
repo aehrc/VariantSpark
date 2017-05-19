@@ -1,12 +1,9 @@
 package au.csiro.pbdava.ssparkle.spark
 
-import org.apache.log4j.{Level, Logger}
-import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.sql.SQLContext
 import au.csiro.pbdava.ssparkle.common.utils.Logging
+import org.apache.log4j.{Level, Logger}
+import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
-
-//import org.bdgenomics.adam.rdd.ADAMContext
 
 trait SparkApp extends Logging {
   def defaultMasterUrl = "local"

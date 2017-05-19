@@ -6,8 +6,7 @@ import org.apache.spark.broadcast.Broadcast
 import scala.reflect.ClassTag
 
 object SparkUtils {
-  
-  
+
   
   def withBroadcast[T, R](sc:SparkContext)(v:T)(f: Broadcast[T] => R)(implicit ev:ClassTag[T]) = {
     val br = sc.broadcast(v)(ev)
