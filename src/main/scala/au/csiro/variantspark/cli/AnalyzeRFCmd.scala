@@ -94,7 +94,7 @@ class AnalyzeRFCmd extends ArgsApp with FeatureSourceArgs with Echoable with Log
       val samples = featureSource.sampleNames
       LoanUtils.withCloseable(CSVWriter.open(outputOobPerTree)) { writer =>
         writer.writeRow(samples)
-        rfModel.members.map(m => m.oobIndexs.zip(m.oobPred).toMap)
+        rfModel.members.map(m => m.oobIndexes.zip(m.oobPred).toMap)
           .map(m => Range(0,samples.size).map(i => m.getOrElse(i, null))).foreach(writer.writeRow)
       }
     }
