@@ -41,8 +41,8 @@ target
 .cache-tests
 .ipynb_checkpoints
 
-.RData 
-.Rhistory 
+.RData
+.Rhistory
 tmp
 
-.idea/workspace.xml
+.idea
