@@ -4,8 +4,8 @@ import java.util.Arrays;
 import java.util.function.BiConsumer;
 
 /**
- * Fast gini based splitter. NOT MULITHEADED !!! (Caches state to avoid heap
- * allocations)
+ * Fast gini based splitter. NOT MULITHREADED !!!
+ * Caches state to avoid heap allocations
  * 
  * @author szu004
  *
@@ -28,8 +28,6 @@ public class JConfusionClassificationSplitter implements ClassificationSplitter 
 		rightSplitCounts = new int[this.nCategories];
 	}
 
-	
-	
 	
 	@Override
 	public SplitInfo findSplit(double[] data, int[] splitIndices) {
@@ -71,15 +69,13 @@ public class JConfusionClassificationSplitter implements ClassificationSplitter 
 		}
 
 		confusionCalc.accept(splitIndices, confusion);
-		//for (int i : splitIndices) {
-		//	confusion[(int) data[i]][labels[i]]++;
-		//}
+
 		Arrays.fill(leftSplitCounts, 0);
 		Arrays.fill(rightSplitCounts, 0);
 		for (int[] l : confusion) {
 			ArrayOps.addEq(rightSplitCounts, l);
 		}
-		// just try all for now
+
 		for (int sp = 0; sp < nLevels - 1; sp++) {
 			ArrayOps.addEq(leftSplitCounts, confusion[sp]);
 			ArrayOps.subEq(rightSplitCounts, confusion[sp]);

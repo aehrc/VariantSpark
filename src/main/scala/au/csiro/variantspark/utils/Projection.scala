@@ -36,7 +36,7 @@ object Projector {
   def splitRDD(rdd: RDD[Vector], fraction:Double):(Projector, Projector) = split(rdd.first, fraction)
   def rddFolds(rdd:RDD[Vector], nFolds:Int, testFolds:Boolean = true):List[Projector] = folds(rdd.first, nFolds, testFolds)
   
-  // TODO: (Refactoring) Find a better place for these (if needed at all
+  // TODO: (Refactoring) Find a better place for these (if needed at all)
   
   def projectVector(indexSet: Set[Int], invert: Boolean = false)(v: Vector): Vector = {
     val a = v.toArray

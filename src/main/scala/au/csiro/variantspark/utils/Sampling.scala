@@ -45,7 +45,7 @@ object Sampling {
  
     def folds(size:Int, nFolds:Int):List[Array[Int]] = {
       val rdg = new RandomDataGenerator()
-      //check it there is enough to have at least one element per folr
+      //check if there is enough to have at least one element per fold
       if (size < nFolds)
         throw new RuntimeException("Not enougth elements")
       val permutation = rdg.nextPermutation(size, size)

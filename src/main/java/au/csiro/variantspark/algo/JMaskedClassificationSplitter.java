@@ -25,11 +25,11 @@ public class JMaskedClassificationSplitter {
 	 public SplitInfo findSplit(double[] data,int[] splitIndices) {	
 	    SplitInfo result = null;
 	    double minGini = 1.0;
-	    // let's think about like this 
-	    // on the first pass we both calculate the splits as well as determine which split points are actually present
-	    // in this dataset
-	    // as 0 are most likely we will  do 0 as the initial pass
 
+	    /* TODO (review implementation)
+         * on the first pass we calcuate
+         * the splits AND determine which split points are in this dataset
+	     * because 0 is most likely we will do 0 as the initial pass */
 	    long splitCandidateSet = 0L; 
 		for(int i:splitIndices) {
 			splitCandidateSet|=(1 << (int)data[i]);

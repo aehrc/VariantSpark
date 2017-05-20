@@ -27,7 +27,6 @@ public class Long2LongAccumulableParam implements AccumulableParam<Long2LongOpen
 
 	@Override
 	public Long2LongOpenHashMap zero(Long2LongOpenHashMap arg0) {
-		// TODO Auto-generated method stub
 		return new Long2LongOpenHashMap();
 	}
 	

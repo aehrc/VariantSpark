@@ -21,9 +21,6 @@ public class DefaultObjectFactory<T> implements ObjectFactory<T>{
             } catch (ClassNotFoundException ex) {
             	throw new RuntimeException(ex);
             }
-	    //    if (!CmdApp.class.isAssignableFrom(clazz)) {
-	    //    	throw new IllegalArgumentException("Class: " + className  + " is not a CmdApp");
-	    //    }
         }
 
 		@Override

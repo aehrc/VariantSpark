@@ -13,14 +13,12 @@ object TestWideKMeans extends SparkApp {
   
   def main(args:Array[String]) {
     println("Testign WideKMeans")
-    
-    
+
     val dims = 1000
     val centersNo = 5
     val samples = 30
     val clusterVariance = 0.005
     val centers = sc.parallelize(Range(0,dims).map(i => Vectors.dense(Array.fill(centersNo)(Math.random()))), 10)
-    //centers.foreach(println)
     val clusterAssignment = Range(0,samples).map(i => Math.floor(Math.random()*centersNo).toInt).toList
     println(clusterAssignment)
     
