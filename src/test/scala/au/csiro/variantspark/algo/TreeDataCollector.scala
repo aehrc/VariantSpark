@@ -27,8 +27,8 @@ class TreeDataCollector(treeStream: Stream[PredictiveModelWithImportance[Vector]
   }
 
   override def batchPredict(indexedData: RDD[(Vector, Long)], models: Seq[PredictiveModelWithImportance[Vector]], indexes: Seq[Array[Int]]): Seq[Array[Int]] = {
-    //TODO I should be prjecting with indexes here
-    //but it doed not matter in this case
+    //TODO I should be projecting with indexes here
+    //but it does not matter in this case
     models.zip(indexes).map { case (model, indexes) => model.predictIndexed(indexedData) }
   }
 

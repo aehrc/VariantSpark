@@ -34,16 +34,16 @@ class WideRadomForrestModelTest extends SparkTest {
 
   @Test
   def whenOnePredictorPassesThePrediction() {
-    val assumedPreditions = Array(1, 2)
-    val model = new WideRandomForestModel(List(TestPredictorWithImportance(assumedPreditions, null).toMember), nLabels)
+    val assumedPredictions = Array(1, 2)
+    val model = new WideRandomForestModel(List(TestPredictorWithImportance(assumedPredictions, null).toMember), nLabels)
     val prediction = model.predict(testData)
-    assertArrayEquals(assumedPreditions, prediction)
+    assertArrayEquals(assumedPredictions, prediction)
   }
 
   @Test
-  def whenManyPreditorsThenPredictsByVoting() {
-    val assumedPreditions = List(Array(1, 0), Array(1, 2), Array(1, 0))
-    val model = new WideRandomForestModel(assumedPreditions.map(TestPredictorWithImportance(_, null).toMember).toList, nLabels)
+  def whenManyPredictorsThenPredictsByVoting() {
+    val assumedPredictions = List(Array(1, 0), Array(1, 2), Array(1, 0))
+    val model = new WideRandomForestModel(assumedPredictions.map(TestPredictorWithImportance(_, null).toMember).toList, nLabels)
     val prediction = model.predict(testData)
     assertArrayEquals(Array(1, 0), prediction)
   }

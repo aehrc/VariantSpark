@@ -35,7 +35,7 @@ class PairWiseDistanceTest extends SparkTest {
 
 
   @Test
-  def testCorrectlCalculatesPairWiseDistance2D() {
+  def testCorrectlyCalculatesPairWiseDistance2D() {
     val input = sc.parallelize(List(Array[Byte](0, 1), Array[Byte](0, 2), Array[Byte](1, 1)))
     val result = PairwiseDistance().compute(input)
     assertEquals(1, result.length)
@@ -44,7 +44,7 @@ class PairWiseDistanceTest extends SparkTest {
 
 
   @Test
-  def testCorrectlCalculatesPairWiseDistance3d() {
+  def testCorrectlyCalculatesPairWiseDistance3d() {
     val input = sc.parallelize(List(Array[Byte](0, 1, 1), Array[Byte](0, 2, 0), Array[Byte](0, 1, 0), Array[Byte](0, 2, 1)), 2)
     val result = PairwiseDistance().compute(input)
     assertEquals(3, result.length)

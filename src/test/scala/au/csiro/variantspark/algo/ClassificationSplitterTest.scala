@@ -6,7 +6,7 @@ import org.junit.Test;
 import org.apache.spark.mllib.linalg.Vectors
 import au.csiro.pbdava.ssparkle.common.utils.Logging
 
-abstract class ClassificattionSplitterTest extends Logging {
+abstract class ClassificationSplitterTest extends Logging {
 
   def splitter(labels: Array[Int], nLabels: Int = 2): ClassificationSplitter
 
@@ -24,13 +24,13 @@ abstract class ClassificattionSplitterTest extends Logging {
 
 
   @Test
-  def testConstansLabelSplit() {
+  def testConstantsLabelSplit() {
     val splitInfo = splitter(Array(1, 1, 1, 1)).findSplit(Vectors.dense(0.0, 1.0, 2.0, 3.0).toArray, Range(0, 4).toArray)
     assertEquals(SplitInfo(0, 0.0, 0.0, 0.0), splitInfo)
   }
 
   @Test
-  def testConstantsValuesSplist() {
+  def testConstantsValuesSplit() {
     val splitInfo = splitter(Array(0, 1, 0, 1)).findSplit(Vectors.dense(1.0, 1.0, 1.0, 1.0).toArray, Range(0, 4).toArray)
     assertNull(splitInfo)
   }
@@ -60,16 +60,16 @@ abstract class ClassificattionSplitterTest extends Logging {
 
 }
 
-class JClassificationSplitterTest extends ClassificattionSplitterTest {
+class JClassificationSplitterTest extends ClassificationSplitterTest {
   def splitter(labels: Array[Int], nLabels: Int = 2) = new JClassificationSplitter(labels, nLabels, 4)
 }
 
 
-class JClassificationSplitterUnboundedTest extends ClassificattionSplitterTest {
+class JClassificationSplitterUnboundedTest extends ClassificationSplitterTest {
   def splitter(labels: Array[Int], nLabels: Int = 2) = new JClassificationSplitter(labels, nLabels)
 }
 
-class JConfusionClassificationSplitterTest extends ClassificattionSplitterTest {
+class JConfusionClassificationSplitterTest extends ClassificationSplitterTest {
   def splitter(labels: Array[Int], nLabels: Int = 2) = new JConfusionClassificationSplitter(labels, nLabels, 4)
 }
 

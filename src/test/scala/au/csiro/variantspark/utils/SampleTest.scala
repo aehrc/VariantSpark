@@ -33,7 +33,7 @@ class SampleTest {
   }
 
   @Test
-  def testFreactionSampleWithoutReplacement() {
+  def testFractionSampleWithoutReplacement() {
     val nSize = 100
     val fraction = 0.5
     val sample = Sample.fraction(nSize, fraction, false)
@@ -47,7 +47,7 @@ class SampleTest {
 
 
   @Test
-  def testFreactionSampleWithReplacement() {
+  def testFractionSampleWithReplacement() {
     val nSize = 100
     val fraction = 0.5
     val sample = Sample.fraction(nSize, fraction, true)

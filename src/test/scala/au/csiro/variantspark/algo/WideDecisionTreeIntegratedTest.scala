@@ -46,7 +46,7 @@ class WideDecisionTreeIntegratedTest extends SparkTest {
     assertArrayEquals(expected, prediction)
 
 
-    // check variable imporcances
+    // check variable importances
     val expectedImportances = CsvParser.parse(CsvFile("src/test/data/CNAE-9_R_importance.csv")).withRowIndex(0).withColIndex(0)
       .firstCol(s"maxdepth_${maxDepth}").mapValues(CsvParser.parseDouble).values.toSeq.toArray
 
