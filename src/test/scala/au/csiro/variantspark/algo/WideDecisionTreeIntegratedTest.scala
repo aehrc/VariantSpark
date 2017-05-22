@@ -1,19 +1,14 @@
 package au.csiro.variantspark.algo
 
-import org.junit.Assert._
-import org.junit.Test;
-import org.apache.spark.rdd.RDD
-import org.apache.spark.mllib.linalg.Vector
-import org.apache.spark.mllib.linalg.Vectors
-import au.csiro.variantspark.test.SparkTest
 import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
-import au.csiro.variantspark.input.CsvFeatureSource
-import au.csiro.variantspark.input.CsvLabelSource
-import org.apache.hadoop.fs.FileSystem
-
-import org.saddle.io._
-import org.saddle._
 import au.csiro.variantspark.data.BoundedOrdinal
+import au.csiro.variantspark.input.{CsvFeatureSource, CsvLabelSource}
+import au.csiro.variantspark.test.SparkTest
+import org.apache.hadoop.fs.FileSystem
+import org.apache.spark.mllib.linalg.Vectors
+import org.junit.Assert._
+import org.junit.Test
+import org.saddle.io._
 
 class WideDecisionTreeIntegratedTest extends SparkTest {
 

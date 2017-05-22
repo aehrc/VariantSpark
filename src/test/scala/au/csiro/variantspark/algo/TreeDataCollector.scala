@@ -1,12 +1,11 @@
 package au.csiro.variantspark.algo
 
-import scala.collection.mutable.MutableList
-
+import au.csiro.variantspark.data.VariableType
+import au.csiro.variantspark.utils.Sample
 import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.rdd.RDD
 
-import au.csiro.variantspark.utils.Sample
-import au.csiro.variantspark.data.VariableType
+import scala.collection.mutable.MutableList
 
 class TreeDataCollector(treeStream: Stream[PredictiveModelWithImportance[Vector]] = Stream.continually(TestPredictorWithImportance(null, null))) extends BatchTreeModel[Vector] {
   val allData = MutableList[RDD[(Vector, Long)]]()

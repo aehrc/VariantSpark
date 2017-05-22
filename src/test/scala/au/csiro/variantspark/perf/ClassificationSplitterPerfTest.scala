@@ -1,14 +1,9 @@
 package au.csiro.variantspark.perf
 
-import org.junit.Assert._
-import org.junit.Test;
-import au.csiro.variantspark.algo.ClassificationSplitter
-import it.unimi.dsi.util.XorShift1024StarRandomGenerator
-import org.apache.spark.mllib.linalg.Vectors
 import au.csiro.pbdava.ssparkle.common.utils.Timed
-import au.csiro.variantspark.algo.JClassificationSplitter
-import scala.collection.immutable.BitSet
-import au.csiro.variantspark.algo.JConfusionClassificationSplitter
+import au.csiro.variantspark.algo.{JClassificationSplitter, JConfusionClassificationSplitter}
+import it.unimi.dsi.util.XorShift1024StarRandomGenerator
+import org.junit.Test
 
 class ClassificationSplitterPerfTest {
 

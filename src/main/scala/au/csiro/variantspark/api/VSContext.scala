@@ -1,16 +1,19 @@
 package au.csiro.variantspark.api
 
-import au.csiro.variantspark.input.FeatureSource
-import au.csiro.variantspark.input.VCFSource
-import org.apache.spark.SparkContext
-import au.csiro.variantspark.input.VCFFeatureSource
-import org.apache.spark.SparkConf
-import au.csiro.variantspark.input.CsvLabelSource
+import au.csiro.variantspark.input.{CsvLabelSource, FeatureSource, VCFFeatureSource, VCFSource}
 import org.apache.hadoop.fs.FileSystem
-import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.SparkSession
 
-
+/**
+  * A class to represent an instance of the variant-spark context, or spark sql context
+  *
+  * @constructor Create a new `VSContext` by specifying the `SparkSession` and `sparkPar`
+  *
+  * @param SparkSession The spark session.
+  * @param Int The number of partitions in the the spark session.
+  *
+  * @example class VSContext(val spark:SparkSession, val sparkPar:Int=0)
+  */
 class VSContext(val spark:SparkSession, val sparkPar:Int=0) {
 
   val sc = spark.sparkContext
@@ -32,3 +35,4 @@ class VSContext(val spark:SparkSession, val sparkPar:Int=0) {
 object VSContext {
   def apply(spark:SparkSession) = new VSContext(spark)
 }
+

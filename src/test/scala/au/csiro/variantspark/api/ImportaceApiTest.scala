@@ -1,10 +1,8 @@
 package au.csiro.variantspark.api
 
 
-import org.junit.Assert._
-import org.junit.Test;
 import au.csiro.variantspark.test.SparkTest
-import org.apache.spark.sql.SQLContext
+import org.junit.Test
 
 class ImportaceApiTest extends SparkTest {
   @Test

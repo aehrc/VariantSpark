@@ -1,16 +1,14 @@
 package au.csiro.variantspark.input.generate
 
 
-import org.junit.Assert._
-import org.junit.Test;
+import au.csiro.variantspark.input.{Feature, FeatureSource}
 import au.csiro.variantspark.test.SparkTest
-
+import breeze.linalg.DenseVector
 import breeze.stats.meanAndVariance
-import au.csiro.variantspark.input.FeatureSource
-import au.csiro.variantspark.input.Feature
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import breeze.linalg.DenseVector
+import org.junit.Assert._
+import org.junit.Test
 
 class TestFeatureGenerator(val samples: Seq[Feature])(implicit sc: SparkContext) extends FeatureSource {
   def features(): RDD[Feature] = sc.parallelize(samples)

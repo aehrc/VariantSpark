@@ -1,12 +1,9 @@
 package au.csiro.variantspark.perf
 
-import org.junit.Assert._
-import org.junit.Test;
-import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 import au.csiro.pbdava.ssparkle.common.utils.Timed
-import au.csiro.variantspark.metrics.Gini
-import breeze.linalg.DenseVector
 import au.csiro.variantspark.algo.FastGini
+import it.unimi.dsi.util.XorShift1024StarRandomGenerator
+import org.junit.Test
 
 class GiniPerfTest {
 

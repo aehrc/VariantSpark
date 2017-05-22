@@ -1,6 +1,5 @@
 package au.csiro.variantspark.algo
 
-import org.apache.spark.mllib.linalg.Vectors
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

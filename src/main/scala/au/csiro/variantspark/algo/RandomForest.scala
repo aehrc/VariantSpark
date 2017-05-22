@@ -1,29 +1,18 @@
 package au.csiro.variantspark.algo
 
-import scala.Range
-import scala.collection.JavaConversions.mapAsScalaMap
-
-import org.apache.spark.mllib.linalg.Vector
+import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
+import au.csiro.pbdava.ssparkle.common.utils.Logging
+import au.csiro.pbdava.ssparkle.common.utils.Timed._
+import au.csiro.variantspark.data.VariableType
+import au.csiro.variantspark.metrics.Metrics
+import au.csiro.variantspark.utils.IndexedRDDFunction._
+import au.csiro.variantspark.utils.{Sample, defRng}
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
+import it.unimi.dsi.util.XorShift1024StarRandomGenerator
+import org.apache.commons.lang3.builder.ToStringBuilder
 import org.apache.spark.rdd.RDD
 
-import au.csiro.variantspark.metrics.Metrics
-import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
-import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap
-import au.csiro.pbdava.ssparkle.common.utils.Logging
-import au.csiro.variantspark.utils.RDDProjections._
-import au.csiro.variantspark.utils.Projector
-import au.csiro.pbdava.ssparkle.common.utils.Timed._
-import au.csiro.variantspark.utils.Sample
-import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
-import au.csiro.variantspark.data.VariableType
-import it.unimi.dsi.util.XorShift1024StarRandomGenerator
-import au.csiro.variantspark.utils.defRng
-import org.apache.commons.lang3.builder.ToStringBuilder
-import au.csiro.variantspark.utils.IndexedRDDFunction._
-
-import au.csiro.variantspark.algo._
 import scala.reflect.ClassTag
-import it.unimi.dsi.fastutil.ints.Int2IntMap
 
 
 

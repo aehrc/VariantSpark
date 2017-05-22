@@ -1,17 +1,10 @@
 package au.csiro.variantspark.algo
 
+import au.csiro.variantspark.data.BoundedOrdinal
+import au.csiro.variantspark.input.generate.{EfectLabelGenerator, OrdinalFeatureGenerator}
+import au.csiro.variantspark.test.SparkTest
 import org.junit.Assert._
 import org.junit.Test
-import au.csiro.variantspark.test.SparkTest
-import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
-import au.csiro.variantspark.utils.VectorRDDFunction._
-import org.saddle.io._
-import org.saddle._
-import org.saddle.io.CsvImplicits._
-import au.csiro.variantspark.data.BoundedOrdinal
-import au.csiro.variantspark.input.generate.OrdinalFeatureGenerator
-import au.csiro.variantspark.input.generate.EfectLabelGenerator
-import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 
 
 class WideRandomForestIntegratedTest extends SparkTest {

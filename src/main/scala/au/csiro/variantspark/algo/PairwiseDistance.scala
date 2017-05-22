@@ -5,8 +5,8 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.AccumulableParam
 
 
-object PariWiseAccumulator extends AccumulableParam[Array[Long], Array[Byte]] {
-  
+object PairWiseAccumulator extends AccumulableParam[Array[Long], Array[Byte]] {
+
   // adding to lower triangular matrix
   def addAccumulator(result: Array[Long], t: Array[Byte]): Array[Long] = {
     var index = 0
@@ -16,10 +16,10 @@ object PariWiseAccumulator extends AccumulableParam[Array[Long], Array[Byte]] {
     }
     result
   }
-  
+
   def addInPlace(r1: Array[Long], r2: Array[Long]): Array[Long] = {
     for(i <- Range(0, r1.length)) { r1(i) += r2(i)}
-    r1 
+    r1
   }
 
   def zero(initialValue: Array[Long]): Array[Long] = {
@@ -28,16 +28,16 @@ object PariWiseAccumulator extends AccumulableParam[Array[Long], Array[Byte]] {
 }
 
 class PairwiseDistance {
-  
+
   /**
-   * Computes lower traiangular part of the pairwise distance matrix with Eucledian distance
+   * Computes lower triangular part of the pairwise distance matrix with Euclidean distance
    */
   def compute(data: RDD[Array[Byte]]):Array[Double] = {
     val noOfSamples = data.first.length
     // we need to allocate array for lower triangular matrix
-    // size n*(n-1) /2 
+    // size n*(n-1) /2
     val outputMatSize = noOfSamples*(noOfSamples-1)/2
-    val pairWiseAccumulator = data.sparkContext.accumulable(Array.fill(outputMatSize)(0L))(PariWiseAccumulator)
+    val pairWiseAccumulator = data.sparkContext.accumulable(Array.fill(outputMatSize)(0L))(PairWiseAccumulator)
     data.foreach(pairWiseAccumulator.add(_))
     val resultAsLong = pairWiseAccumulator.value
     resultAsLong.map(l => Math.sqrt(l.toDouble))    

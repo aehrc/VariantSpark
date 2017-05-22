@@ -1,10 +1,10 @@
 package au.csiro.variantspark.output
 
-import org.junit.Assert._
-import org.junit.Test;
-import au.csiro.variantspark.test.SparkTest
-import au.csiro.variantspark.input.generate.OrdinalFeatureGenerator
 import au.csiro.variantspark.input.ParquetFeatureSource
+import au.csiro.variantspark.input.generate.OrdinalFeatureGenerator
+import au.csiro.variantspark.test.SparkTest
+import org.junit.Assert._
+import org.junit.Test
 
 class ParquetFeatureSinkTest extends SparkTest {
 

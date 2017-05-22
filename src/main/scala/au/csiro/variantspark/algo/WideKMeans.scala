@@ -27,8 +27,8 @@ class WideKMeans(kk:Int, kiter:Int) {
         Vectors.dense( Range(0,k).map(i => d(i)).toArray)
     }
    
-    // now we need to run iteratios
-    // so first cluster assignmet
+    // now we need to run iterators
+    // so first cluster assignment
     // and for this we need to find distance of each point to it's centre
     var clusterCentres = initialCenters
     
@@ -62,7 +62,7 @@ class WideKMeans(kk:Int, kiter:Int) {
         val clusterAssignment =  br_clusterAssignment.value
         val clusterSizes = br_clusterSizes.value
         Range(0,dims).foreach(i => contributions(clusterAssignment(i)) += v(i)/clusterSizes(clusterAssignment(i)))
-        // for each in cluster assignment add a contribution to a corresponging cluster
+        // for each in cluster assignment add a contribution to a corresponding cluster
         Vectors.dense(contributions)
       })
 //      clusterCentres.unpersist()

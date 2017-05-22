@@ -1,20 +1,10 @@
 package au.csiro.variantspark.algo
 
 
-import org.junit.Assert._
-import org.junit.Test;
-import org.apache.spark.rdd.RDD
-import org.apache.spark.mllib.linalg.Vector
-import org.apache.spark.mllib.linalg.Vectors
-import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
-import org.apache.spark.SparkContext
-import org.apache.spark.SparkConf
 import au.csiro.variantspark.test.SparkTest
-import scala.collection.JavaConversions._
-import au.csiro.variantspark.utils.Sample
-import scala.collection.mutable.MutableList
-import au.csiro.variantspark.data.UnboundedOrdinal
 import breeze.linalg.DenseMatrix
+import org.junit.Assert._
+import org.junit.Test
 
 class PairWiseDistanceTest extends SparkTest {
 
