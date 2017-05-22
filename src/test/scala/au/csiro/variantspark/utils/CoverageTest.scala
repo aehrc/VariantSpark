@@ -4,7 +4,7 @@ import org.apache.commons.math3.random.JDKRandomGenerator
 import org.junit.Assert._
 import org.junit.Test
 
-class SampleTest {
+class CoverageTest {
   implicit val rng = new JDKRandomGenerator()
 
   @Test

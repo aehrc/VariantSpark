@@ -13,7 +13,7 @@ class Sample(val nSize:Int, val indexes:Array[Int]) {
   def asWeights:Array[Int] = Array()
   def indexesIn:Set[Int] = indexes.toSet
   def indexesOut:Set[Int] = Range(0, nSize).toSet.diff(indexesIn)
-  def lenght = indexes.length
+  def length = indexes.length
 }
 
 
