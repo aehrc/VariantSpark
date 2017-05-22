@@ -36,21 +36,7 @@ class FilterCmd extends ArgsApp with TestArgs with SparkApp {
     val features = source.features().zipWithIndex().cache()
     val featureCount = features.count()
     println(s"No feautures: ${featureCount}")    
-    /*
-    val (sampleCount, sampleTime) = Timed.time(features.sample(false, 0.05).collect().size)
-    println(s"No feautures sample: ${sampleCount}, time: ${sampleTime}")
 
-    val (filterCount, filterTime) = Timed.time(features.filter(_ => Math.random() < 0.05).collect().size)
-    println(s"No feautures filter: ${filterCount}, time: ${filterTime}") 
-
-    val (setCount, setTime) = Timed.time{
-      val indexed = Range(0, featureCount.toInt).filter(_ => Math.random() < 0.05).map(_.toLong).toSet
-      val br_index = sc.broadcast(indexed)
-      features.filter(t => br_index.value.contains(t._2)).collect().size
-    }
-    println(s"No feautures set: ${setCount}, time: ${setTime}") 
-    * 
-    */
    }     
 }
 

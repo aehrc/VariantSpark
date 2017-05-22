@@ -5,7 +5,7 @@ import au.csiro.pbdava.ssparkle.spark.SparkApp
 
 
 trait SparkArgs extends SparkApp {
-    // spark related
+
   @Option(name="-sp", required=false, usage="Spark parallelism (def=<default-spark-par>)", aliases=Array("--spark-par"))
   val sparkPar = 0
 }

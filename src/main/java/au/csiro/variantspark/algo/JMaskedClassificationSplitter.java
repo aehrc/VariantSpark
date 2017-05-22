@@ -42,7 +42,7 @@ public class JMaskedClassificationSplitter {
 				splitCandidateSet >>= 1;
 			}
 			splitCandidateSet >>= 1;
-			// only run if there is at least one more index to try in this subset
+			
 			if (splitCandidateSet != 0L) {
 				Arrays.fill(leftSplitCounts, 0);
 				Arrays.fill(rightSplitCounts, 0);

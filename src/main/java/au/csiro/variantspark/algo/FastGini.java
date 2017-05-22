@@ -17,13 +17,7 @@ public final class FastGini {
 		}
 		return (total == 0) ? 0.0 : 1 -sumSq/(((double)total)*total);
 	}
-	
-	/**
-	 * There is some (minuscule ;) performanceg gain from using the expanded version so let's keep it this way.
-	 * May be more important if a C/C++ version is available
-	 * @param counts
-	 * @return
-	 */
+
 	public static double gini(int[] counts) {
 		switch(counts.length) {
 			case 0: return 0.0;

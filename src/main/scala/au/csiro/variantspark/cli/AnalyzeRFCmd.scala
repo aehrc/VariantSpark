@@ -29,7 +29,6 @@ import au.csiro.variantspark.cli.args.LabelSourceArgs
 
 class AnalyzeRFCmd extends ArgsApp with FeatureSourceArgs with Echoable with Logging with TestArgs {
 
-  // input options
   @Option(name="-im", required=true, usage="Path to input model", aliases=Array("--input-model"))
   val inputModel:String = null
 
@@ -70,8 +69,8 @@ class AnalyzeRFCmd extends ArgsApp with FeatureSourceArgs with Echoable with Log
     echo(s"Analyzing random forrest model")
     
     
-    //NOTE: There is some wirdness going on here with the classloaded
-    //So I am using the Spark JavaSerializer to the the rihght one
+    //NOTE: There is some wierdness going on here with the class loaded
+    //So I am using the Spark JavaSerializer to the the right one
     val javaSerializer = new JavaSerializer(conf)
     val si = javaSerializer.newInstance()
     

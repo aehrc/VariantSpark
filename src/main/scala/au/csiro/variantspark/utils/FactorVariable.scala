@@ -1,7 +1,5 @@
 package au.csiro.variantspark.utils
 
-import scala.Range
-
 case class FactorVariable(val values:Array[Int], val nCategories:Int, subset:Option[Array[Int]] = None ) {
   
   def indices:Iterator[Int] = subset.map(_.toIterator).getOrElse((Range(0, values.length).toIterator))

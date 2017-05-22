@@ -7,7 +7,7 @@ import org.apache.spark.AccumulableParam
 
 object PariWiseAccumulator extends AccumulableParam[Array[Long], Array[Byte]] {
   
-  // adding to lower traingular matrix
+  // adding to lower triangular matrix
   def addAccumulator(result: Array[Long], t: Array[Byte]): Array[Long] = {
     var index = 0
     for(r <- Range(1, t.length); c <- Range(0, r))  {
@@ -34,7 +34,7 @@ class PairwiseDistance {
    */
   def compute(data: RDD[Array[Byte]]):Array[Double] = {
     val noOfSamples = data.first.length
-    // we need to allocate array for lower traingulat matrix 
+    // we need to allocate array for lower triangular matrix
     // size n*(n-1) /2 
     val outputMatSize = noOfSamples*(noOfSamples-1)/2
     val pairWiseAccumulator = data.sparkContext.accumulable(Array.fill(outputMatSize)(0L))(PariWiseAccumulator)

@@ -38,7 +38,6 @@ import au.csiro.variantspark.stats.CochranArmitageTestCalculator
 
 class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
-  // input options
   @Option(name="-if", required=true, usage="Path to input file or directory", aliases=Array("--input-file"))
   val inputFile:String = null
 
@@ -55,8 +54,7 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
   @Option(name="-fc", required=true, usage="Name of the feature column", aliases=Array("--feature-column"))
   val featureColumn:String = null
   
-  
-  // output options
+
   @Option(name="-of", required=false, usage="Path to output file (def = stdout)", aliases=Array("--output-file") )
   val outputFile:String = null
 
@@ -68,8 +66,6 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
         , aliases=Array("--output-include-data") )
   val includeData = false
 
-  
-  // spark related
   @Option(name="-sp", required=false, usage="Spark parallelism (def=<default-spark-par>)", aliases=Array("--spark-par"))
   val sparkPar = 0
  
@@ -129,9 +125,9 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
         
     echo(s"Loaded variables: ${dumpListHead(variablePerview, totalVariables)}, took: ${dataLoadingTimer.durationInSec}")    
     
-    // discover variabele type
+    // discover variable type
     // for now assume it's ordered factor with provided number of levels
-    echo(s"Assumed oridinal variable with ${varOrdinalLevels} levles")
+    echo(s"Assumed ordinal variable with ${varOrdinalLevels} levles")
     // TODO (Feature): Add autodiscovery
     val dataType = BoundedOrdinal(varOrdinalLevels)
     

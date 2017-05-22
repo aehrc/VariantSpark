@@ -10,8 +10,7 @@ import au.csiro.variantspark.cmd.EchoUtils._
 
 
 trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
-  
-  // input options
+
   @Option(name="-if", required=false, usage="Path to input file or directory", aliases=Array("--input-file"))
   val inputFile:String = null
 

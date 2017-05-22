@@ -25,8 +25,7 @@ case class ParquetFeatureSource(inputPath:String)(implicit sc: SparkContext) ext
 
   def features():RDD[Feature] = {
      val sqlContext = new org.apache.spark.sql.SQLContext(sc)
-     // this is used to implicitly convert an RDD to a DataFrame.
-     import sqlContext.implicits._ 
+
      val rawDF = sqlContext.read.parquet(inputPath)
      rawDF.rdd.map( r => Feature(r.getString(0), r.getAs(1)))
   }

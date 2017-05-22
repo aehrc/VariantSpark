@@ -36,7 +36,6 @@ import au.csiro.variantspark.output.ParquetFeatureSink
 
 class GenerateFeaturesCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
-  // generator options
   @Option(name="-gl", required=false, usage="Number of levels to generate (def=3)", aliases=Array("--gen-n-levels"))
   val nLevels:Int = 3
 
@@ -46,8 +45,7 @@ class GenerateFeaturesCmd extends ArgsApp with SparkApp with Echoable with Loggi
   @Option(name="-gs", required=false, usage="Number of samples to generate (def=100)", aliases=Array("--gen-n-samples"))
   val nSamples:Int = 100
   
-  
-  // output options
+
   @Option(name="-of", required=true, usage="Path to output file (def = stdout)", aliases=Array("--output-file") )
   val outputFile:String = null
   
@@ -56,8 +54,7 @@ class GenerateFeaturesCmd extends ArgsApp with SparkApp with Echoable with Loggi
 
   @Option(name="-sr", required=false, usage="Random seed to use (def=<random>)", aliases=Array("--seed"))
   val randomSeed: Long = defRng.nextLong
-  
-  // spark related
+
   @Option(name="-sp", required=false, usage="Spark parallelism (def=<default-spark-par>)", aliases=Array("--spark-par"))
   val sparkPar = 0
  
