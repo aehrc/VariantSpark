@@ -40,35 +40,35 @@ object TestWideDecisionTree extends SparkApp {
     
     val (trainSetProj, testSetProj) = Projector.splitRDD(vectorData, 0.8)
     val trainSetWithIndex = vectorData.project(trainSetProj).zipWithIndex().cache()
-    val trainLables = trainSetProj.projectArray(labels)
+    val trainLabels = trainSetProj.projectArray(labels)
 
     val testSet = vectorData.project(testSetProj).cache()
-    val testLables = testSetProj.projectArray(labels)
+    val testLabels = testSetProj.projectArray(labels)
     
     val dataType = BoundedOrdinal(3)
     val rf = new WideRandomForest()
     
-    val result  = rf.batchTrain(trainSetWithIndex, dataType, trainLables, 20, 10)
+    val result  = rf.batchTrain(trainSetWithIndex, dataType, trainLabels, 20, 10)
 
     val variableImportance = result.variableImportance
     println(result.predict(testSet).toList)    
     variableImportance.toSeq.sortBy(-_._2).take(50).foreach(println)
     
     val testPredict = result.predict(testSet)
-    val testError = Metrics.classificatoinError(testLables,testPredict)
+    val testError = Metrics.classificationError(testLabels,testPredict)
     println(s"Test error: ${testError}")
 
    val crossvalidateResult = CV.evaluateMean(Projector.rddFolds(vectorData, 3)) { fold =>
       val trainSetWithIndex = vectorData.project(fold.inverted).zipWithIndex().cache()
-      val trainLables = fold.inverted.projectArray(labels)
+      val trainLabels = fold.inverted.projectArray(labels)
 
       val testSet = vectorData.project(fold).cache()
-      val testLables = fold.projectArray(labels)   
+      val testLabels = fold.projectArray(labels)
      
       val rf = new WideRandomForest()
-      val result  = rf.batchTrain(trainSetWithIndex,dataType,  trainLables, 20, 10)
+      val result  = rf.batchTrain(trainSetWithIndex,dataType,  trainLabels, 20, 10)
       val testPredict = result.predict(testSet)
-      val testError = Metrics.classificatoinError(testLables,testPredict)
+      val testError = Metrics.classificationError(testLabels,testPredict)
       testError
     }
     

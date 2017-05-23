@@ -12,7 +12,7 @@ object TestWideKMeans extends SparkApp {
 
   
   def main(args:Array[String]) {
-    println("Testign WideKMeans")
+    println("Testing WideKMeans")
 
     val dims = 1000
     val centersNo = 5

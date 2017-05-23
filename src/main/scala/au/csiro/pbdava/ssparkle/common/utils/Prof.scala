@@ -4,13 +4,14 @@ trait Prof extends Logging {
   
   lazy val profEnable:Boolean = System.getProperty("sparkle.prof", "false").toBoolean
   
-  var prevStartTime = 0L;
+  var prevStartTime = 0L
+
   def profReset() = if (!profEnable) {} else {
     prevStartTime = System.currentTimeMillis()
   }
   
   def profPoint(msg: =>String) = if (!profEnable) {} else {
-    val duration = System.currentTimeMillis() - prevStartTime;
+    val duration = System.currentTimeMillis() - prevStartTime
     logInfo(s"${msg}: ${duration}")
     profReset()
   }

@@ -64,8 +64,8 @@ public class JConfusionClassificationSplitter implements ClassificationSplitter 
 	    	return result;
 	    }
 
-		for (int sp = 0; sp < confusion.length; sp++) {
-			Arrays.fill(confusion[sp], 0);
+		for (int[] aConfusion : confusion) {
+			Arrays.fill(aConfusion, 0);
 		}
 
 		confusionCalc.accept(splitIndices, confusion);

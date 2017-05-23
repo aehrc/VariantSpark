@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 /**
  * Fast gini based splitter.
- * NOT MULITHEADED !!! (Caches state to avoid heap allocations)
+ * NOT MULITHREADED !!! (Caches state to avoid heap allocations)
  * 
  * @author szu004
  *
@@ -42,9 +42,9 @@ public class JClassificationSplitter implements ClassificationSplitter {
 	    	return result;
 	    }
 	 
-	    int actualNLevles = (nLevels > 0) ?  nLevels : getLevelCount(data);
+	    int actualNLevels = (nLevels > 0) ?  nLevels : getLevelCount(data);
 	    
-		for(int sp = 0 ; sp < actualNLevles - 1; sp ++) {
+		for(int sp = 0 ; sp < actualNLevels - 1; sp ++) {
 			Arrays.fill(leftSplitCounts, 0);
 			Arrays.fill(rightSplitCounts, 0);
 			for(int i:splitIndices) {

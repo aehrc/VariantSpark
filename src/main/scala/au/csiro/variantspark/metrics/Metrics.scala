@@ -23,5 +23,5 @@ object Metrics {
     expected.toSeq.zip(predicted).filter(i => i._1 != i._2).size.toDouble/expected.length
   }
   
-  def classificatoinError(expected:Array[Int], predicted:Array[Int]):Double = accuracy(expected, predicted)
+  def classificationError(expected:Array[Int], predicted:Array[Int]):Double = accuracy(expected, predicted)
 }

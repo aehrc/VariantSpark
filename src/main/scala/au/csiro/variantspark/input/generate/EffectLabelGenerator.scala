@@ -16,16 +16,16 @@ import breeze.stats.MeanAndVariance
 /**
  * Generate a dichotomous response 
  */
-class EfectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int, 
-      effects:Map[String,Double], val noiseEffectSigma:Double, val noiseEffectMean:Double= 0.1, 
-      val noiseVarFraction:Double=0.0 , seed:Long = 13L) extends LabelSource with Logging {
-  
-  def logistic(d:Double) = 1.0 / (1.0 + Math.exp(-d))
-  
-  
+class EffectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
+                                                        effects:Map[String,Double], val noiseEffectSigma:Double, val noiseEffectMean:Double= 0.1,
+                                                        val noiseVarFraction:Double=0.0, seed:Long = 13L) extends LabelSource with Logging {
 
-  lazy val rng = new XorShift1024StarRandomGenerator(seed) 
-  
+  def logistic(d:Double) = 1.0 / (1.0 + Math.exp(-d))
+
+
+
+  lazy val rng = new XorShift1024StarRandomGenerator(seed)
+
   lazy val noiseEffects:Map[String, Double] =  {
     // select noise variables
     val gs = new GaussianRandomGenerator(rng)
@@ -53,7 +53,7 @@ class EfectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
   // TODO: (Refactoring) make it a lazy vals
   var continousStats:MeanAndVariance = _
   var continousResponse:DenseVector[Double] = _
-  
+
   def getLabels(labels:Seq[String]):Array[Int] = {
     val nSamples = labels.size
 
@@ -63,18 +63,18 @@ class EfectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
 
     val zeroLevelValue = zeroLevel.toDouble
     continousResponse = withBroadcast(featureSource.features.sparkContext)(allEffects){ br_effects =>
-       featureSource.features.filter(f => br_effects.value.contains(f.label)).mapPartitions {it => 
+       featureSource.features.filter(f => br_effects.value.contains(f.label)).mapPartitions {it =>
          val normalizer = DenseVector.fill(nSamples)(zeroLevelValue)
          it.map(f => (DenseVector(f.toVector.values.toArray)-=normalizer) *= (2 * br_effects.value(f.label)))
        }.fold(DenseVector.zeros[Double](nSamples))(_+=_)
     }
-    
+
     continousStats = meanAndVariance(continousResponse)
     logDebug(s"Continuous mav: ${continousStats}")
     logDebug(s"Continuous response: ${continousResponse}")
-    
+
     val classProbabilities = continousResponse.map(logistic)
-    
+
     logDebug(s"Class probabilities: ${classProbabilities}")
 
     val classes = classProbabilities.map(c => if (rng.nextDouble() < c) 1 else 0)
@@ -84,14 +84,14 @@ class EfectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
     // print out correlation of variables
     //val output = classes.toArray.map(_.toDouble)
     //val correlationCalc = new PearsonsCorrelation()
-    //effects.map { case (v,e) => (v, correlationCalc.correlation(output, influentialVariablesData(v).toArray)) }.foreach(println)    
-    classes.toArray  
+    //effects.map { case (v,e) => (v, correlationCalc.correlation(output, influentialVariablesData(v).toArray)) }.foreach(println)
+    classes.toArray
   }
 }
 
 
-object EfectLabelGenerator {
-  def apply(featureSource:FeatureSource)(zeroLevel:Int, 
-      effects:Map[String,Double], noiseEffectSigma:Double = 0.0, noiseEffectMean:Double= 0.0, 
-       noiseVarFraction:Double=0.0 , seed:Long = 13L) = new EfectLabelGenerator(featureSource)(zeroLevel, effects, noiseEffectSigma, noiseEffectMean, noiseVarFraction, seed)
+object EffectLabelGenerator {
+  def apply(featureSource:FeatureSource)(zeroLevel:Int,
+      effects:Map[String,Double], noiseEffectSigma:Double = 0.0, noiseEffectMean:Double= 0.0,
+       noiseVarFraction:Double=0.0 , seed:Long = 13L) = new EffectLabelGenerator(featureSource)(zeroLevel, effects, noiseEffectSigma, noiseEffectMean, noiseVarFraction, seed)
 }

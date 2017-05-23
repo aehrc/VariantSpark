@@ -4,7 +4,7 @@ package au.csiro.variantspark.api
 import au.csiro.variantspark.test.SparkTest
 import org.junit.Test
 
-class ImportaceApiTest extends SparkTest {
+class ImportanceApiTest extends SparkTest {
   @Test
   def testCreateContext() {
 

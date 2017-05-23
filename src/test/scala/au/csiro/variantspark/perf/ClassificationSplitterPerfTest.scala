@@ -39,7 +39,7 @@ class ClassificationSplitterPerfTest {
     val rg = new XorShift1024StarRandomGenerator(13)
     val nLabels = 10000
     val labels = Array.fill(nLabels)(Math.abs(rg.nextInt) % 2)
-    val sp = new JConfusionClassificationSplitter(labels, 2, 3);
+    val sp = new JConfusionClassificationSplitter(labels, 2, 3)
     val splitIndexes = Range(0, nLabels).toArray
     val data = Array.fill(nLabels)((Math.abs(rg.nextInt()) % 3).toDouble)
     Timed.time {
@@ -64,7 +64,7 @@ class ClassificationSplitterPerfTest {
   // should be very efficient on GPUs
   //
   //  def findBitmapSplit(data:Array[BitSet], labels:Array[BitSet], split:BitSet) = {
-  //    // assume enrtire set
+  //    // assume entire set
   //
   //    val totalCount= labels.map(l => ( l & split ).size).toArray
   //    for (i <- 0 until data.length -1) {
@@ -81,21 +81,21 @@ class ClassificationSplitterPerfTest {
   //    val data = Array.fill(nLabels)((Math.abs(rg.nextInt()) % 3).toByte)
   //    // encode labels as bytes
   //    val bSplit = BitSet(splitIndexes:_*)
-  //    val bLables = Range(0,2).map(i => BitSet(labels.indices.filter(labels(_) == i).toArray:_*)).toArray
+  //    val bLabels = Range(0,2).map(i => BitSet(labels.indices.filter(labels(_) == i).toArray:_*)).toArray
   //    val bData = Range(0,3).map(i => BitSet(data.indices.filter(labels(_) == i).toArray:_*)).toArray
   //    Timed.time {
   //      for (i <- 0 until 50000) {
-  //        findBitmapSplit(bData, bLables, bSplit)
+  //        findBitmapSplit(bData, bLabels, bSplit)
   //      }
   //    }.report("Splitting")
   //    Timed.time {
   //      for (i <- 0 until 50000) {
-  //        findBitmapSplit(bData, bLables, bSplit)
+  //        findBitmapSplit(bData, bLabels, bSplit)
   //      }
   //    }.report("Splitting1")
   //    Timed.time {
   //      for (i <- 0 until 50000) {
-  //        findBitmapSplit(bData, bLables, bSplit)
+  //        findBitmapSplit(bData, bLabels, bSplit)
   //      }
   //    }.report("Splitting2")
   //  }

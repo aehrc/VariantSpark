@@ -10,7 +10,7 @@ object Gini {
     if (counts.length ==2 ) {
       val c1 = counts(0)
       val c2 = counts(1)
-      val total = (c1+c2)
+      val total = c1 + c2
       val p1 = c1.toDouble/total
       val p2 = c2.toDouble/total
       if (total == 0) (0.0, total) else (1.0 - p1*p1 - p2*p2, total)

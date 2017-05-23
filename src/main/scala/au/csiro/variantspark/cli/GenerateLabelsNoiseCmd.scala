@@ -34,7 +34,7 @@ import au.csiro.variantspark.utils.defRng
 import au.csiro.variantspark.input.generate.OrdinalFeatureGenerator
 import au.csiro.variantspark.output.ParquetFeatureSink
 import au.csiro.variantspark.input.ParquetFeatureSource
-import au.csiro.variantspark.input.generate.NoisyEfectLabelGenerator
+import au.csiro.variantspark.input.generate.NoisyEffectLabelGenerator
 import java.io.File
 import java.util.ArrayList
 import java.io.PrintStream
@@ -49,7 +49,7 @@ class GenerateLabelsNoiseCmd extends ArgsApp with SparkApp with Echoable with Lo
   val inputType: String = "parquet"
 
   @Option(name = "-ivo", required = false, usage = "Variable type ordinal with this number of levels (def = 3)", aliases = Array("--input-var-ordinal"))
-  val varOrdinalLevels: Int = 3;
+  val varOrdinalLevels: Int = 3
 
   // output options
 
@@ -69,16 +69,16 @@ class GenerateLabelsNoiseCmd extends ArgsApp with SparkApp with Echoable with Lo
   @Option(name = "-gfve", required = false, usage = "Fraction of variance explained by the effects (def=0.2)", aliases = Array("--gen-frac-var-explained"))
   val fracVarExplained: Double = 0.2
 
-  @Option(name = "-gct", required = false, usage = "Generator class threshold precentile (def=0.750", aliases = Array("--gen-class-threshold"))
-  val classThresholdPrecentile: Double = 0.75
+  @Option(name = "-gct", required = false, usage = "Generator class threshold percentile (def=0.750", aliases = Array("--gen-class-threshold"))
+  val classThresholdPercentile: Double = 0.75
 
   @Option(name = "-gz", required = false, usage = "Generator zero level (def = <factor-levels>/2)", aliases = Array("--gen-zero-level"))
   val zeroLevel: Int = -1
 
   @Option(name = "-gm", required = false, usage = "Multiply effect contributions", aliases = Array("--gen-multiplicative-effect"))
   val multiplicativeEffects: Boolean = false
-  
-  
+
+
   @Option(name = "-ge", required = false, usage = "Generator effects <var-name>:<effect-size> (can be used may times)", aliases = Array("--gen-effect"))
   val effectsDef: ArrayList[String] = new ArrayList()
 
@@ -92,7 +92,7 @@ class GenerateLabelsNoiseCmd extends ArgsApp with SparkApp with Echoable with Lo
   val sparkPar = 0
 
   @Override
-  def testArgs = Array("-if", "target/getds.parquet", "-sp", "4", "-ff", "target/features.csv", "-fc", "resp", "-sr", "133", "-v", "-fcc", "resp_cont", "-fiv", 
+  def testArgs = Array("-if", "target/getds.parquet", "-sp", "4", "-ff", "target/features.csv", "-fc", "resp", "-sr", "133", "-v", "-fcc", "resp_cont", "-fiv",
     "-ge", "v_0:1.0", "-ge", "v_1:1.0", "-gfve", "0.5" , "-gct", "0.66")
 
   @Override
@@ -111,8 +111,8 @@ class GenerateLabelsNoiseCmd extends ArgsApp with SparkApp with Echoable with Lo
     val featureSource = new ParquetFeatureSource(inputFile)
     echo(s"Loaded rows: ${dumpList(featureSource.sampleNames)}")
 
-    val generator = NoisyEfectLabelGenerator(featureSource)(zeroLevel = actualZeroLevel, effects = effects, 
-      fractionVarianceExplained = fracVarExplained, classThresholdPrecentile = classThresholdPrecentile, 
+    val generator = NoisyEffectLabelGenerator(featureSource)(zeroLevel = actualZeroLevel, effects = effects,
+      fractionVarianceExplained = fracVarExplained, classThresholdPrecentile = classThresholdPercentile,
       multiplicative = multiplicativeEffects, 
       seed = randomSeed)
     echo(s"Saving feature output to: ${featuresFile}, column: ${featureColumn}")

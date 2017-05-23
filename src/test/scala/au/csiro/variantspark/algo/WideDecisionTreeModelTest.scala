@@ -30,7 +30,7 @@ class WideDecisionTreeModelTest extends SparkTest {
   }
 
   @Test
-  def testCorrectlyIdentifiedVariabelImportanceForComplexTree() {
+  def testCorrectlyIdentifiedVariableImportanceForComplexTree() {
     // let's build a tree with 2 variables and 5 nodes
     val decisionTreeModel = new WideDecisionTreeModel(
       SplitNode(majorityLabel = 0, size = 10, nodeImpurity = 1.0, splitVariableIndex = 1L, splitPoint = 1.0, impurityReduction = 0.0,

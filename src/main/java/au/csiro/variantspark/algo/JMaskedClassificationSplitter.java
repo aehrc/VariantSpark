@@ -5,7 +5,7 @@ import java.util.Arrays;
 
 /**
  * Fast gini based splitter.
- * NOT MULITHEADED !!! (Caches state to avoid heap allocations)
+ * NOT MULITHREADED !!! (Caches state to avoid heap allocations)
  * 
  * @author szu004
  *

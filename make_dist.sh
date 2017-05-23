@@ -17,7 +17,7 @@ fi
 
 DIST_NAME="variant-spark_${DIST_VERSION}"
 
-echo "Builing distribution for version: ${DIST_VERSION}"
+echo "Building distribution for version: ${DIST_VERSION}"
 echo "Dist jar: ${DIST_JAR}"
 
 DIST_DIR="target/dist/${DIST_NAME}"

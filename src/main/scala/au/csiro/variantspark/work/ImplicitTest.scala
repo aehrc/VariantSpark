@@ -22,12 +22,12 @@ object Appl {
   type IntFunc = (Int,Int) => (Double) => Int 
   
   
-  def func(x:Int, y:Int)(implicit k:Double) = 10;
-  
+  def func(x:Int, y:Int)(implicit k:Double) = 10
+
   def run() {
-    implicit val iii: Double = 10.0;
-    val f = func _;
-    
+    implicit val iii: Double = 10.0
+    val f = func _
+
     implicit val rnd = new JDKRandomGenerator()
     Sampler(rnd).run
   }

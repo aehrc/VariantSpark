@@ -34,7 +34,7 @@ import au.csiro.variantspark.utils.defRng
 import au.csiro.variantspark.input.generate.OrdinalFeatureGenerator
 import au.csiro.variantspark.output.CSVFeatureSink
 import au.csiro.variantspark.input.ParquetFeatureSource
-import au.csiro.variantspark.input.generate.EfectLabelGenerator
+import au.csiro.variantspark.input.generate.EffectLabelGenerator
 import java.io.File
 import java.util.ArrayList
 import au.csiro.variantspark.cli.args.FeatureSourceArgs

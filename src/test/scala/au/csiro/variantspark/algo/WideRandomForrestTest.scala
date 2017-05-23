@@ -23,7 +23,7 @@ class WideRandomForrestTest extends SparkTest {
     assertEquals("All trees in the model", collector.allTreest, model.trees)
     assertTrue("All trees trained on the same data", collector.allData.forall(_ == testData))
     assertTrue("All trees trained with expected nTryFactor", collector.allnTryFration.forall(_ == nTryFraction))
-    assertTrue("All trees trained same labels", collector.allLabels.forall(_ == labels))
+    assertTrue("All trees trained same labels", collector.allLabels.forall(_ sameElements labels))
     assertTrue("All trees trained with requested samples", collector.allSamples.forall(s => s.nSize == nSamples && !s.indexesOut.isEmpty))
   }
 
@@ -37,10 +37,10 @@ class WideRandomForrestTest extends SparkTest {
     assertEquals("All trees in the model", collector.allTreest, model.trees)
     assertTrue("All trees trained on the same data", collector.allData.forall(_ == testData))
     assertTrue("All trees trained with expected nTryFactor", collector.allnTryFration.forall(_ == nTryFraction))
-    assertTrue("All trees trained same labels", collector.allLabels.forall(_ == labels))
+    assertTrue("All trees trained same labels", collector.allLabels.forall(_ sameElements labels))
     // the oob errors should follow the 1 0 1 pattern
     // as even trees predict all 0 and odd trees all 1
-    assertEquals("Oob erros should always decrease", model.oobErrors.sortBy(-_), model.oobErrors)
+    assertEquals("Oob errors should always decrease", model.oobErrors.sortBy(-_), model.oobErrors)
     assertEquals("The first error should be 0.5", 0.5, model.oobErrors.head, 0)
     assertEquals("The last error should be 0", 0, model.oobErrors.last, 0.01)
     assertTrue("All trees trained with requested samples", collector.allSamples.forall(s => s.length == nSamples / 2 && !s.indexesOut.isEmpty))

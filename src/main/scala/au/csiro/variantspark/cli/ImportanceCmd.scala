@@ -48,7 +48,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
   
   @Option(name="-ivo", required=false, usage="Variable type ordinal with this number of levels (def = 3)" 
       , aliases=Array("--input-var-ordinal"))
-  val varOrdinalLevels:Int = 3;
+  val varOrdinalLevels:Int = 3
 
   @Option(name="-ff", required=true, usage="Path to feature file", aliases=Array("--feature-file"))
   val featuresFile:String = null
@@ -61,7 +61,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
   @Option(name="-of", required=false, usage="Path to output file (def = stdout)", aliases=Array("--output-file") )
   val outputFile:String = null
 
-  @Option(name="-on", required=false, usage="The number of top important variabels to include in output (def=20)", 
+  @Option(name="-on", required=false, usage="The number of top important variables to include in output (def=20)",
       aliases=Array("--output-n-variables"))
   val nVariables:Int = 20
  
@@ -87,11 +87,11 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
   val rfEstimateOob:Boolean = false
 
   
-  @Option(name="-rre", required=false, usage="RandomForest: randomize equal gini reucrtion (def=no)" , aliases=Array("--rf-randomize-equal"))
+  @Option(name="-rre", required=false, usage="RandomForest: randomize equal gini recursion (def=no)" , aliases=Array("--rf-randomize-equal"))
   val rfRandomizeEqual:Boolean = false
 
   
-  @Option(name="-rsf", required=false, usage="RandomForest: sample with no replacement (def=1.0 for bootsrap  else 0.6666)" , aliases=Array("--rf-subsample-fraction"))
+  @Option(name="-rsf", required=false, usage="RandomForest: sample with no replacement (def=1.0 for bootstrap  else 0.6666)" , aliases=Array("--rf-subsample-fraction"))
   val rfSubsampleFraction:Double = Double.NaN
   
   @Option(name="-rsn", required=false, usage="RandomForest: sample with no replacement (def=false -- bootstrap)" , aliases=Array("--rf-sample-no-replacement"))
@@ -135,7 +135,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     implicit val hadoopConf:Configuration = sc.hadoopConfiguration
     
     
-    logDebug(s"Runing with filesystem: ${fs}, home: ${fs.getHomeDirectory}")
+    logDebug(s"Running with filesystem: ${fs}, home: ${fs.getHomeDirectory}")
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
     echo(s"Finding  ${nVariables}  most important features using random forest")
 
@@ -161,13 +161,13 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     
     val inputData = source.features().zipWithIndex().cache()
     val totalVariables = inputData.count()
-    val variablePerview = inputData.map({case (f,i) => f.label}).take(defaultPreviewSize).toList
+    val variablePreview = inputData.map({case (f,i) => f.label}).take(defaultPreviewSize).toList
         
-    echo(s"Loaded variables: ${dumpListHead(variablePerview, totalVariables)}, took: ${dataLoadingTimer.durationInSec}")    
+    echo(s"Loaded variables: ${dumpListHead(variablePreview, totalVariables)}, took: ${dataLoadingTimer.durationInSec}")
     
     // discover variable type
     // for now assume it's ordered factor with provided number of levels
-    echo(s"Assumed ordinal variable with ${varOrdinalLevels} levles")
+    echo(s"Assumed ordinal variable with ${varOrdinalLevels} levels")
     // TODO (Feature): Add autodiscovery
     val dataType = BoundedOrdinal(varOrdinalLevels)
     
@@ -182,7 +182,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     val rf = new ByteRandomForest(RandomForestParams(oob=rfEstimateOob, seed = randomSeed, bootstrap = !rfSampleNoReplacement, 
         subsample = rfSubsampleFraction, randomizeEquality = rfRandomizeEqual, 
         nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction))
-    val traningData = inputData.map{ case (f, i) => (f.values, i)}
+    val trainingData = inputData.map{ case (f, i) => (f.values, i)}
     
     implicit val rfCallback = new RandomForestCallback() {
       var totalTime = 0l
@@ -200,7 +200,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
       }
     }
 
-    val result = rf.batchTrain(traningData, dataType, labels, nTrees, rfBatchSize)
+    val result = rf.batchTrain(trainingData, dataType, labels, nTrees, rfBatchSize)
     
     echo(s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s") 
         
@@ -225,13 +225,13 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
       varImportance.take(math.min(nVariables, defaultPreviewSize)).foreach({case(label, importance) => echo(s"${label}: ${importance}")})
     }
 
-    val importntVariableData = if (includeData) traningData.collectAtIndexes(topImportantVariableIndexes) else null
+    val importantVariableData = if (includeData) trainingData.collectAtIndexes(topImportantVariableIndexes) else null
     
     LoanUtils.withCloseable(if (outputFile != null ) CSVWriter.open(outputFile) else CSVWriter.open(ReusablePrintStream.stdout)) { writer =>
       val header = List("variable","importance") ::: (if (includeData) source.sampleNames else Nil)
       writer.writeRow(header)
       writer.writeAll(topImportantVariables.map({case (i, importance) => 
-        List(index(i), importance) ::: (if (includeData) importntVariableData(i).toArray.toList else Nil)}))
+        List(index(i), importance) ::: (if (includeData) importantVariableData(i).toArray.toList else Nil)}))
     }
   }
 }

@@ -32,7 +32,7 @@ class AnalyzeRFCmd extends ArgsApp with FeatureSourceArgs with Echoable with Log
   @Option(name="-im", required=true, usage="Path to input model", aliases=Array("--input-model"))
   val inputModel:String = null
 
-  @Option(name="-ii", required=false, usage="Path to input variabel index file", aliases=Array("--input-idnex"))
+  @Option(name="-ii", required=false, usage="Path to input variable index file", aliases=Array("--input-idnex"))
   val inputIndex:String = null
 
   @Option(name="-ob", required=false, usage="Path to output importance", aliases=Array("--output-oob"))
@@ -94,7 +94,7 @@ class AnalyzeRFCmd extends ArgsApp with FeatureSourceArgs with Echoable with Log
       LoanUtils.withCloseable(CSVWriter.open(outputOobPerTree)) { writer =>
         writer.writeRow(samples)
         rfModel.members.map(m => m.oobIndexes.zip(m.oobPred).toMap)
-          .map(m => Range(0,samples.size).map(i => m.getOrElse(i, null))).foreach(writer.writeRow)
+          .map(m => samples.indices.map(i => m.getOrElse(i, null))).foreach(writer.writeRow)
       }
     }
     

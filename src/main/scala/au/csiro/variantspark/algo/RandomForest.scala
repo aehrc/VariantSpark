@@ -190,7 +190,7 @@ class RandomForest[V](params:RandomForestParams=RandomForestParams()
           val oobError = oobAggregator.map { agg =>
             members.map { m =>
                 agg.addVote(m.oobPred, m.oobIndexes)
-                Metrics.classificatoinError(labels, agg.predictions)
+                Metrics.classificationError(labels, agg.predictions)
             }
           }.getOrElse(List.fill(predictors.size)(Double.NaN))
           members.zip(oobError)

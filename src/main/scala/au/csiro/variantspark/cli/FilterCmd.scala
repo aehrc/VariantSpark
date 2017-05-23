@@ -29,13 +29,13 @@ class FilterCmd extends ArgsApp with TestArgs with SparkApp {
   @Override
   def run():Unit = {
     implicit val fs = FileSystem.get(sc.hadoopConfiguration)  
-    logDebug(s"Runing with filesystem: ${fs}, home: ${fs.getHomeDirectory}") 
+    logDebug(s"Running with filesystem: ${fs}, home: ${fs.getHomeDirectory}")
     
     val vcfSource = VCFSource(sc.textFile(inputFile))
     val source  = VCFFeatureSource(vcfSource)
     val features = source.features().zipWithIndex().cache()
     val featureCount = features.count()
-    println(s"No feautures: ${featureCount}")    
+    println(s"No features: ${featureCount}")
 
    }     
 }

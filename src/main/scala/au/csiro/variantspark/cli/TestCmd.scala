@@ -34,7 +34,7 @@ class TestCmd extends ArgsApp with TestArgs /*with SparkApp*/ {
   @Override
   def run():Unit = {
     //implicit val fs = FileSystem.get(sc.hadoopConfiguration)  
-    //logDebug(s"Runing with filesystem: ${fs}, home: ${fs.getHomeDirectory}") 
+    //logDebug(s"Running with filesystem: ${fs}, home: ${fs.getHomeDirectory}")
     println("Hello Word: " + inputFile + ", " + limit)
     println("Properties: ")
     //System.getProperties().asScala.foreach(k => println(k))

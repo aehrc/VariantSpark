@@ -7,17 +7,17 @@ import org.apache.spark.mllib.linalg.Vectors
 import org.junit.Assert._
 import org.junit.Test
 
-class WideRadomForrestModelTest extends SparkTest {
+class WideRandomForrestModelTest extends SparkTest {
   val nLabels = 4
   val nSamples = 2
   val testData = sc.parallelize(List(Vectors.zeros(nSamples)))
 
   @Test
-  def whenManyPredictorsThenAveragesImportnace() {
+  def whenManyPredictorsThenAveragesImportance() {
     val importances = List(Map(1l -> 1.0, 2l -> 1.0), Map(1l -> 1.0, 2l -> 0.5, 3l -> 6.0), Map(1L -> 1.0)).map(m => new Long2DoubleOpenHashMap(m.keys.toArray, m.values.toArray))
     val model = new WideRandomForestModel(importances.map(TestPredictorWithImportance(null, _).toMember).toList, nLabels)
-    val totalImportnace = model.variableImportance
-    assertEquals(Map(1L -> 1.0, 2L -> 0.5, 3L -> 2.0), totalImportnace)
+    val totalImportance = model.variableImportance
+    assertEquals(Map(1L -> 1.0, 2L -> 0.5, 3L -> 2.0), totalImportance)
   }
 
   @Test

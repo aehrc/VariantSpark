@@ -20,7 +20,7 @@ class CsvLabelSource(val fileName:String, val columnName:String)(implicit hadoop
             
       val header = reader.readNext().get
       val columnIndex = header.indexOf(columnName)
-      reader.iterator.map(row => (row(0), row(columnIndex).toInt)).toMap
+      reader.iterator.map(row => (row.head, row(columnIndex).toInt)).toMap
     }
   }
   

@@ -49,7 +49,7 @@ object PairwiseDistance {
   
   def apply() = new PairwiseDistance()
  
-  def lowerTraingToMatrix(lowerTriang:Array[Double], matrixSize1D:Int):DenseMatrix[Double] = {
+  def lowerTrainingToMatrix(lowerTriang:Array[Double], matrixSize1D:Int):DenseMatrix[Double] = {
     // need to infer matrix size from lowerTriangSize
     assert(lowerTriang.length == (matrixSize1D-1)*matrixSize1D / 2, "Correct dimension passed")
     DenseMatrix.tabulate(matrixSize1D,matrixSize1D) { case (r,c) => 

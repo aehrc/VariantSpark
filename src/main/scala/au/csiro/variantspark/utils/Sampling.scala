@@ -47,7 +47,7 @@ object Sampling {
       val rdg = new RandomDataGenerator()
       //check if there is enough to have at least one element per fold
       if (size < nFolds)
-        throw new RuntimeException("Not enougth elements")
+        throw new RuntimeException("Not enough elements")
       val permutation = rdg.nextPermutation(size, size)
       // now I just need to distribute this collections evenly into n folds
       val byFold = Array.range(0, size).groupBy(permutation(_)%nFolds)
