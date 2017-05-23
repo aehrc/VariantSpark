@@ -1,9 +1,7 @@
 package au.csiro.variantspark.input
 
+import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.mllib.linalg.Vector
-import org.apache.spark.mllib.linalg.Vectors
-import java.util.Arrays
 
 
 case class VectorFeature(label:String, values: Vector)

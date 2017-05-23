@@ -78,8 +78,10 @@ case class RandomForestModel[V](val members: List[RandomForestMember[V]], val la
   def normalizedVariableImportance(norm:VarImportanceNormalizer = To100ImportanceNormalizer): Map[Long, Double] = norm.normalize(variableImportance)
 
   def variableImportance: Map[Long, Double] = {
+
     // average the importance of each variable over all trees
     // if a variable is not used in a tree it's importance for this tree is assumed to be 0
+
     trees.map(_.variableImportanceAsFastMap).foldLeft(new Long2DoubleOpenHashMap())(_.addAll(_))
       .asScala.mapValues(_/size)
   }
@@ -148,7 +150,6 @@ class RandomForest[V](params:RandomForestParams=RandomForestParams()
 
   // TODO (Design): This seems like an easiest solution but it make this class
   // to keep random state ... perhaps this could be externalised to the implicit random
-
 
 
   implicit lazy val rng = new XorShift1024StarRandomGenerator(params.seed)

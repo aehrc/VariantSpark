@@ -1,7 +1,6 @@
 package au.csiro.variantspark.metrics
 
 import au.csiro.variantspark.utils.FactorVariable
-import breeze.linalg.DenseVector
 
 object Gini {
   def sqr(x: Double) = x * x

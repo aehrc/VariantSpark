@@ -74,9 +74,11 @@ trait Merger {
 
 case class DeterministicMerger() extends Merger {
   def merge(a1:Array[VarSplitInfo], a2:Array[VarSplitInfo]) = {
-    // TODO: this seem to introduce bias towards low index variables which may make them appear
+
+    // TODO: this seems to introduce bias towards low index variables which may make them appear
     // more important than they actually are
-    // in oder to avoid that in case of gini equality a random variable should be selected
+    // to avoid that (in case of gini equality) select a random variable
+
     def mergeSplitInfo(s1:VarSplitInfo, s2:VarSplitInfo) = {
       if (s1 == null) s2 else if (s2 == null) s1 else if (s1.gini < s2.gini) s1 else if (s2.gini < s1.gini) s2 else if (s1.variableIndex < s2.variableIndex) s1 else s2
     }
@@ -89,9 +91,11 @@ case class RandomizingMerger(seed:Long) extends Merger {
 
   lazy val rnd  = new  XorShift1024StarRandomGenerator(seed ^ TaskContext.getPartitionId())
   def merge(a1:Array[VarSplitInfo], a2:Array[VarSplitInfo]) = {
-    // TODO: this seem to introduce bias towards low index variables which may make them appear
+
+    // TODO: this seems to introduce bias towards low index variables which may make them appear
     // more important than they actually are
-    // in oder to avoid that in case of gini equaliy a random variable should be selected
+    // in oder to avoid that (in case of gini equality) select a random variable
+
     def mergeSplitInfo(s1:VarSplitInfo, s2:VarSplitInfo) = {
       if (s1 == null) s2 else if (s2 == null) s1 else if (s1.gini < s2.gini) s1 else if (s2.gini < s1.gini) s2 else if (rnd.nextBoolean()) s1 else s2
     }
@@ -110,10 +114,13 @@ case class VariableSplitter[V](val dataType: VariableType, val labels:Array[Int]
       case BoundedOrdinal(nLevels) => new JConfusionClassificationSplitter(labels, nCategories, nLevels)
       case _ => throw new RuntimeException(s"Data type ${dataType} not supported")
     }
-    // now I can filter out splits that do not improve gini
+    // TODO: Filter out splits that do not improve gini
+
     splits.map { subsetInfo =>
       if (rng.nextDouble() <= mTryFactor) {
-        //TODO (CanSplit): use a better method
+
+        // TODO (CanSplit): use a better method
+
         val splitInfo = canSplit.split(data, splitter, subsetInfo.indices)
         if (splitInfo != null && splitInfo.gini < subsetInfo.impurity) splitInfo else null
       } else null
@@ -127,10 +134,10 @@ case class VariableSplitter[V](val dataType: VariableType, val labels:Array[Int]
           val thisVarSplits = findSplits(vi._1, splits)
           thisVarSplits.map(si => if (si != null) VarSplitInfo(vi._2, si) else null).toArray
         }
-      //  .foldLeft(Array.fill[VarSplitInfo](splits.length)(null))(DecisionTree.merge)
+      // TODO: .foldLeft(Array.fill[VarSplitInfo](splits.length)(null))(DecisionTree.merge)
       // the fold above can be done by spark
-      // but this help to optimize for performance
-      //Some(result).toIterator
+      // and the line below will help to optimize performance
+      // Some(result).toIterator
       result
     }
   }
@@ -437,7 +444,7 @@ class DecisionTree[V](val params: DecisionTreeParams = DecisionTreeParams())(imp
     }
     logDebug(s"Splits to include: ${subsetsToSplit}") 
     
-    //TODO: (OPTIMIZE) if there is not splits to calculate do not call compute splits etc.            
+    // TODO: (OPTIMIZE) if there is not splits to calculate do not call compute splits etc.
       
     val (bestSplits, nextLevelSubsets) = findBestSplitsAndSubsets(indexedData, subsetsToSplit.unzip._1.toList, br_splitter)
     logDebug(s"Best splits: ${bestSplits.toList}")
@@ -445,7 +452,7 @@ class DecisionTree[V](val params: DecisionTreeParams = DecisionTreeParams())(imp
     
     profPoint("Best splits and splitting done")
  
-    // compute the next level tree nodes (notice the recursive call)
+    // TODO: compute the next level tree nodes (notice the recursive call)
     val nextLevelNodes = if (!nextLevelSubsets.isEmpty) buildSplit(indexedData, nextLevelSubsets, br_splitter, treeLevel + 1) else List()
      
     profPoint("Sublevels done")
@@ -457,7 +464,6 @@ class DecisionTree[V](val params: DecisionTreeParams = DecisionTreeParams())(imp
     // TODO (Optimize): I use oplain arrays that obscure things somewhat assuming they are faster to serialise, but perhaps the difference is negligible and
     // I could use for example an array of tuples rather the obscure indexing scheme
 
-    
     // I need to be able to find which nodes to use for splits
     // so I need say an Array that would tell me now which nodes were actually passed to split and what their index vas
     // at this stage we would know exactly what we need
@@ -475,8 +481,10 @@ class DecisionTree[V](val params: DecisionTreeParams = DecisionTreeParams())(imp
     profIt("findBestSplitsAndSubsets") { 
       val subsetsToSplitAsIndices = subsetsToSplit.toArray
       withBroadcast(indexedData)(subsetsToSplitAsIndices){ br_splits => 
-        val bestSplits = DecisionTree.findBestSplits(indexedData, br_splits, br_splitter)          
+        val bestSplits = DecisionTree.findBestSplits(indexedData, br_splits, br_splitter)
+
         // now with the same broadcasted splits
+
         (bestSplits, DecisionTree.splitSubsets(indexedData, bestSplits, br_splits, br_splitter))
       }
     }

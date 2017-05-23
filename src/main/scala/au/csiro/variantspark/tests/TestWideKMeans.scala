@@ -1,11 +1,9 @@
 package au.csiro.variantspark.tests
 
 import au.csiro.pbdava.ssparkle.spark.SparkApp
-import org.apache.spark.mllib.linalg.Vectors
-import org.apache.spark.mllib.linalg.Vector
-import org.apache.spark.rdd.RDD
 import au.csiro.variantspark.algo.WideKMeans
-import scala.Range
+import org.apache.spark.mllib.linalg.{Vector, Vectors}
+import org.apache.spark.rdd.RDD
 
 object TestWideKMeans extends SparkApp {
   conf.setAppName("VCF cluster")

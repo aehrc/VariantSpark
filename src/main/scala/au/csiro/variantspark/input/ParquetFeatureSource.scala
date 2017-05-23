@@ -1,18 +1,9 @@
 package au.csiro.variantspark.input
 
-import org.apache.spark.rdd.RDD
-import org.apache.spark.SparkContext
-import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
-import java.io.FileInputStream
-import com.github.tototoshi.csv.CSVReader
-import au.csiro.pbdava.ssparkle.spark.SparkUtils._
-import com.github.tototoshi.csv.CSVFormat
-import com.github.tototoshi.csv.CSVParser
-import com.github.tototoshi.csv.DefaultCSVFormat
-import org.apache.hadoop.fs.FileSystem
 import au.csiro.pbdava.ssparkle.common.utils.SerialUtils
-import org.apache.hadoop.fs.Path
-import org.apache.spark.sql.SQLContext
+import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 
 
 

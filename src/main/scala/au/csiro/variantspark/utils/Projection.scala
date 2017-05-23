@@ -1,8 +1,6 @@
 package au.csiro.variantspark.utils
 
-import org.apache.spark.mllib.linalg.Vector
-import org.apache.spark.mllib.linalg.Vectors
-import org.apache.commons.math3.random.RandomDataGenerator
+import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
 
 class Projector(indexSet: Set[Int], include: Boolean = true) extends Serializable {

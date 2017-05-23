@@ -1,12 +1,11 @@
 package au.csiro.variantspark.input
 
+import java.io.InputStreamReader
+
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 import com.github.tototoshi.csv.CSVReader
-import java.io.File
-import org.apache.hadoop.fs.FileSystem
-import org.apache.hadoop.fs.Path
-import java.io.InputStreamReader
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
 
 class CsvLabelSource(val fileName:String, val columnName:String)(implicit hadoopConf:Configuration) extends LabelSource {
   

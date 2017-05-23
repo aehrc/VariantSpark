@@ -30,9 +30,9 @@ class NoisyEffectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
 
   // TODO: (Refactoring) make it a lazy vals
   var baseContinuousResponse:DenseVector[Double]  = _
-  var baseContinousStats:MeanAndVariance = _
+  var baseContinuousStats:MeanAndVariance = _
   var noisyContinuousResponse:DenseVector[Double]  = _
-  var noisyContinousStats:MeanAndVariance = _
+  var noisyContinuousStats:MeanAndVariance = _
 
 
   def foldAdditive(nSamples:Int,rdd:RDD[DenseVector[Double]]) = rdd.fold(DenseVector.zeros[Double](nSamples))(_+=_)
@@ -56,13 +56,13 @@ class NoisyEffectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
 
     logDebug(s"Continuous response: ${baseContinuousResponse}")
 
-    baseContinousStats = meanAndVariance(baseContinuousResponse)
+    baseContinuousStats = meanAndVariance(baseContinuousResponse)
 
-    logDebug(s"Continuous mav: ${baseContinousStats}")
+    logDebug(s"Continuous mav: ${baseContinuousStats}")
 
-    // based on the variablity of the base respone we can caculate the sigma of the desired noise level
-    val actualNoiseVar = baseContinousStats.variance * (1 - fractionVarianceExplained) / fractionVarianceExplained
-    logDebug(s"Signal varinace: ${baseContinousStats.variance}, fractio to explain: ${fractionVarianceExplained}")
+    // based on the variability of the base response we can calculate the sigma of the desired noise level
+    val actualNoiseVar = baseContinuousStats.variance * (1 - fractionVarianceExplained) / fractionVarianceExplained
+    logDebug(s"Signal varinace: ${baseContinuousStats.variance}, fractio to explain: ${fractionVarianceExplained}")
     logDebug(s"Actual noise variance: ${actualNoiseVar}")
 
     val actualNoiseSigma = Math.sqrt(actualNoiseVar)
@@ -71,10 +71,10 @@ class NoisyEffectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
     noisyContinuousResponse = baseContinuousResponse + noise
     logDebug(s"noisyContinuousResponse: ${noisyContinuousResponse}")
 
-    noisyContinousStats  = meanAndVariance(noisyContinuousResponse)
-    logDebug(s"Actual noisy response stats: ${noisyContinousStats}")
+    noisyContinuousStats  = meanAndVariance(noisyContinuousResponse)
+    logDebug(s"Actual noisy response stats: ${noisyContinuousStats}")
 
-    val actualFractionVarianceExplained =  baseContinousStats.variance / noisyContinousStats.variance
+    val actualFractionVarianceExplained =  baseContinuousStats.variance / noisyContinuousStats.variance
 
     logDebug(s"Actual fraction variance explained: ${actualFractionVarianceExplained}")
 

@@ -6,22 +6,25 @@ import org.junit.Test
 import au.csiro.pbdava.ssparkle.common.utils.Timer
 
 
-class CoverageTest {
+class CodeCoverageTests {
   implicit val rng = new JDKRandomGenerator()
 
   @Test
-  def firstTest() {
+  def helloWorldTest() {
     val myTruth = true
     val myNum = 1
+    val myHello = "hello variant-spark"
     assertTrue("This should be true", myTruth)
     assertEquals(1,myNum)
+    assertEquals("hello variant-spark",myHello)
   }
 
 
   @Test
   def testScalaTimerDuration() {
     val myTimer = Timer()
-    val duration = 0
-    assertEquals(myTimer.duration,duration)
+    val myStartTime = System.currentTimeMillis()
+    val elapsed = System.currentTimeMillis() - myStartTime
+    assertEquals(myTimer.duration,elapsed)
   }
 }

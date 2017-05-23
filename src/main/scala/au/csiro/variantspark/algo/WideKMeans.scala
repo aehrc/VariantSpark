@@ -1,11 +1,7 @@
 package au.csiro.variantspark.algo
 
+import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.mllib.linalg.Vector
-import org.apache.spark.mllib.linalg.Vectors
-import java.util.Arrays
-import org.apache.spark.SparkContext
-import org.apache.spark.mllib.linalg.SparseVector
 
 object WideKMeans {
   def sqr(d:Double) = d*d
@@ -34,7 +30,7 @@ class WideKMeans(kk:Int, kiter:Int) {
     
     for(i <- Range(0,iter)) {
     
-  //    clusterCentres.cache()
+      //  clusterCentres.cache()
       val clusterAssignment = data.zip(clusterCentres)
         .aggregate(Array.fill(dims)(Array.fill(k)(0.0)))(
             (dists, vac) => {
@@ -65,7 +61,7 @@ class WideKMeans(kk:Int, kiter:Int) {
         // for each in cluster assignment add a contribution to a corresponding cluster
         Vectors.dense(contributions)
       })
-//      clusterCentres.unpersist()
+      //      clusterCentres.unpersist()
       clusterCentres = newClusterCentres
     }
     clusterCentres

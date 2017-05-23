@@ -119,7 +119,7 @@ class GenerateLabelsNoiseCmd extends ArgsApp with SparkApp with Echoable with Lo
 
     val labels = generator.getLabels(featureSource.sampleNames)
 
-    echo(s"Continous response mean: ${generator.noisyContinousStats.mean} , total variance: ${generator.noisyContinousStats.variance}")
+    echo(s"Continous response mean: ${generator.noisyContinuousStats.mean} , total variance: ${generator.noisyContinuousStats.variance}")
 
     val effectVarData = if (includeEffectVarData) {
       SparkUtils.withBroadcast(sc)(effects) { br_effects =>
