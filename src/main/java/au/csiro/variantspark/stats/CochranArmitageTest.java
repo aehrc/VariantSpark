@@ -4,7 +4,7 @@ import org.apache.commons.math3.distribution.NormalDistribution;
 
 /**
  * 
- * Adapted from: https://github.com/DBHi-BiC/snpEff/blob/master/src/main/java/ca/mcgill/mcb/pcingola/probablility/CochranArmitageTest.java
+ * Adapted from: https://github.com/DBHi-BiC/snpEff/blob/master/src/main/java/ca/mcgill/mcb/pcingola/probability/CochranArmitageTest.java
  * 
  * 
  * Calculate a Cochran-Armitage test

@@ -22,7 +22,7 @@ class WideRandomForrestTest extends SparkTest {
     val model = rf.train(testData, UnboundedOrdinal, labels, 10)
     assertEquals("All trees in the model", collector.allTreest, model.trees)
     assertTrue("All trees trained on the same data", collector.allData.forall(_ == testData))
-    assertTrue("All trees trained with expected nTryFactor", collector.allnTryFration.forall(_ == nTryFraction))
+    assertTrue("All trees trained with expected nTryFactor", collector.allTryFration.forall(_ == nTryFraction))
     assertTrue("All trees trained same labels", collector.allLabels.forall(_ sameElements labels))
     assertTrue("All trees trained with requested samples", collector.allSamples.forall(s => s.nSize == nSamples && !s.indexesOut.isEmpty))
   }
@@ -36,7 +36,7 @@ class WideRandomForrestTest extends SparkTest {
     val model = rf.train(testData, UnboundedOrdinal, labels, nTrees)
     assertEquals("All trees in the model", collector.allTreest, model.trees)
     assertTrue("All trees trained on the same data", collector.allData.forall(_ == testData))
-    assertTrue("All trees trained with expected nTryFactor", collector.allnTryFration.forall(_ == nTryFraction))
+    assertTrue("All trees trained with expected nTryFactor", collector.allTryFration.forall(_ == nTryFraction))
     assertTrue("All trees trained same labels", collector.allLabels.forall(_ sameElements labels))
     // the oob errors should follow the 1 0 1 pattern
     // as even trees predict all 0 and odd trees all 1

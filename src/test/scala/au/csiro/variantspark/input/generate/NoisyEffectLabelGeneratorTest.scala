@@ -23,7 +23,7 @@ class NoisyEffectLabelGeneratorTest extends SparkTest {
   @Test
   def testResponseGeneration_var_0_2_prec_0_75() {
     val featureGenerator = OrdinalFeatureGenerator(3, 1000, 500)
-    val labelGenerator = new NoisyEffectLabelGenerator(featureGenerator)(1, Map("v_0" -> 1.0, "v_1" -> 0.5, "v_2" -> 0.25), fractionVarianceExplained = 0.2, classThresholdPrecentile = 0.75)
+    val labelGenerator = new NoisyEffectLabelGenerator(featureGenerator)(1, Map("v_0" -> 1.0, "v_1" -> 0.5, "v_2" -> 0.25), fractionVarianceExplained = 0.2, classThresholdPercentile = 0.75)
     val classes = labelGenerator.getLabels(featureGenerator.sampleNames)
     // we would expect 75% of samples in class 0
     assertEquals(0.75, classes.count(_ == 0).toDouble / classes.size, 0.01)
@@ -38,7 +38,7 @@ class NoisyEffectLabelGeneratorTest extends SparkTest {
   def testMultiplicativeResponseGeneration_var_0_2_prec_0_75() {
     val featureGenerator = OrdinalFeatureGenerator(3, 1000, 500)
     val labelGenerator = new NoisyEffectLabelGenerator(featureGenerator)(1, Map("v_0" -> 1.0, "v_1" -> 0.5, "v_2" -> 0.25),
-      fractionVarianceExplained = 0.2, classThresholdPrecentile = 0.75, multiplicative = true)
+      fractionVarianceExplained = 0.2, classThresholdPercentile = 0.75, multiplicative = true)
     val classes = labelGenerator.getLabels(featureGenerator.sampleNames)
     // we would expect 75% of samples in class 0
     assertEquals(0.75, classes.count(_ == 0).toDouble / classes.size, 0.01)
@@ -57,7 +57,7 @@ class NoisyEffectLabelGeneratorTest extends SparkTest {
       Feature("v_3", Array[Byte](2, 2, 2, 2))
     ))
     val labelGenerator = new NoisyEffectLabelGenerator(featureGenerator)(1, Map("v_0" -> 0.1, "v_1" -> 0.5, "v_2" -> 2.0),
-      fractionVarianceExplained = 0.2, classThresholdPrecentile = 0.75, multiplicative = false)
+      fractionVarianceExplained = 0.2, classThresholdPercentile = 0.75, multiplicative = false)
 
     val classes = labelGenerator.getLabels(featureGenerator.sampleNames)
     assertEquals(DenseVector[Double](-2.6, 0, 2.6, 1.9), labelGenerator.baseContinuousResponse)
@@ -72,7 +72,7 @@ class NoisyEffectLabelGeneratorTest extends SparkTest {
       Feature("v_3", Array[Byte](2, 2, 2, 2))
     ))
     val labelGenerator = new NoisyEffectLabelGenerator(featureGenerator)(1, Map("v_0" -> 0.1, "v_1" -> 0.5, "v_2" -> 2.0),
-      fractionVarianceExplained = 0.2, classThresholdPrecentile = 0.75, multiplicative = true)
+      fractionVarianceExplained = 0.2, classThresholdPercentile = 0.75, multiplicative = true)
 
     val classes = labelGenerator.getLabels(featureGenerator.sampleNames)
     assertEquals(DenseVector[Double](-0.1, 1.0, 0.1, -0.2), labelGenerator.baseContinuousResponse)
@@ -82,7 +82,7 @@ class NoisyEffectLabelGeneratorTest extends SparkTest {
   @Test
   def testResponseGeneration_var_0_5_prec_0_50() {
     val featureGenerator = OrdinalFeatureGenerator(3, 1000, 500)
-    val labelGenerator = new NoisyEffectLabelGenerator(featureGenerator)(1, Map("v_0" -> 1.0, "v_1" -> 0.5, "v_2" -> 0.25), fractionVarianceExplained = 0.5, classThresholdPrecentile = 0.5)
+    val labelGenerator = new NoisyEffectLabelGenerator(featureGenerator)(1, Map("v_0" -> 1.0, "v_1" -> 0.5, "v_2" -> 0.25), fractionVarianceExplained = 0.5, classThresholdPercentile = 0.5)
     val classes = labelGenerator.getLabels(featureGenerator.sampleNames)
     // we would expect 75% of samples in class 0
     assertEquals(0.5, classes.count(_ == 0).toDouble / classes.size, 0.01)

@@ -10,7 +10,7 @@ import scala.collection.mutable.MutableList
 class TreeDataCollector(treeStream: Stream[PredictiveModelWithImportance[Vector]] = Stream.continually(TestPredictorWithImportance(null, null))) extends BatchTreeModel[Vector] {
   val allData = MutableList[RDD[(Vector, Long)]]()
   val allLabels = MutableList[Array[Int]]()
-  val allnTryFration = MutableList[Double]()
+  val allTryFration = MutableList[Double]()
   val allSamples = MutableList[Sample]()
   val allTreest = MutableList[PredictiveModelWithImportance[Vector]]()
   val treeIter = treeStream.toIterator
@@ -18,7 +18,7 @@ class TreeDataCollector(treeStream: Stream[PredictiveModelWithImportance[Vector]
   override def batchTrain(indexedData: RDD[(Vector, Long)], dataType: VariableType, labels: Array[Int], nTryFraction: Double, samples: Seq[Sample]): Seq[PredictiveModelWithImportance[Vector]] = {
     allData += indexedData
     allLabels += labels
-    allnTryFration += nTryFraction
+    allTryFration += nTryFraction
     allSamples ++= samples
     val newTrees = treeIter.take(samples.size).toSeq
     allTreest ++= newTrees

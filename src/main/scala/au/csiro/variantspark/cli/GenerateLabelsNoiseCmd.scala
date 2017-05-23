@@ -59,8 +59,8 @@ class GenerateLabelsNoiseCmd extends ArgsApp with SparkApp with Echoable with Lo
   @Option(name = "-fc", required = true, usage = "Name of the dichotomous response column" , aliases = Array("--feature-column"))
   val featureColumn: String = null
 
-  @Option(name = "-fcc", required = false, usage = "Name of the continous response column(def=None)", aliases = Array("--feature-continous-column"))
-  val featureContinousColumn: String = null
+  @Option(name = "-fcc", required = false, usage = "Name of the continuous response column(def=None)", aliases = Array("--feature-continuous-column"))
+  val featureContinuousColumn: String = null
 
   @Option(name = "-fiv", required = false, usage = "Include effect variable data", aliases = Array("--feature-include-variables"))
   val includeEffectVarData: Boolean = false
@@ -112,8 +112,8 @@ class GenerateLabelsNoiseCmd extends ArgsApp with SparkApp with Echoable with Lo
     echo(s"Loaded rows: ${dumpList(featureSource.sampleNames)}")
 
     val generator = NoisyEffectLabelGenerator(featureSource)(zeroLevel = actualZeroLevel, effects = effects,
-      fractionVarianceExplained = fracVarExplained, classThresholdPrecentile = classThresholdPercentile,
-      multiplicative = multiplicativeEffects, 
+      fractionVarianceExplained = fracVarExplained, classThresholdPercentile = classThresholdPercentile,
+      multiplicative = multiplicativeEffects,
       seed = randomSeed)
     echo(s"Saving feature output to: ${featuresFile}, column: ${featureColumn}")
 
@@ -126,10 +126,10 @@ class GenerateLabelsNoiseCmd extends ArgsApp with SparkApp with Echoable with Lo
         featureSource.features.filter(f => br_effects.value.contains(f.label)).map(f => (f.label, f.values)).collectAsMap()
       }
     } else Map.empty
-    
+
     LoanUtils.withCloseable(CSVWriter.open(new File(featuresFile))) { writer =>
-      writer.writeRow(List("", featureColumn) ::: (if (featureContinousColumn!=null) List(featureContinousColumn) else Nil) ::: effectVarData.toList.map(_._1))
-      val outputColumns = List(featureSource.sampleNames, labels.toList) ::: (if (featureContinousColumn!=null) List(generator.noisyContinuousResponse.data.toList) else Nil) ::: effectVarData.toList.map(_._2.toList)
+      writer.writeRow(List("", featureColumn) ::: (if (featureContinuousColumn!=null) List(featureContinuousColumn) else Nil) ::: effectVarData.toList.map(_._1))
+      val outputColumns = List(featureSource.sampleNames, labels.toList) ::: (if (featureContinuousColumn!=null) List(generator.noisyContinuousResponse.data.toList) else Nil) ::: effectVarData.toList.map(_._2.toList)
       writer.writeAll(outputColumns.transpose)
     }
   }

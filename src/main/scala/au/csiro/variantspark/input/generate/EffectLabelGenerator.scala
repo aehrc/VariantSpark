@@ -51,8 +51,8 @@ class EffectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
   }
 
   // TODO: (Refactoring) make it a lazy vals
-  var continousStats:MeanAndVariance = _
-  var continousResponse:DenseVector[Double] = _
+  var continuousStats:MeanAndVariance = _
+  var continouusResponse:DenseVector[Double] = _
 
   def getLabels(labels:Seq[String]):Array[Int] = {
     val nSamples = labels.size
@@ -62,18 +62,18 @@ class EffectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
     logDebug(s"Noise effects: ${noiseEffects}")
 
     val zeroLevelValue = zeroLevel.toDouble
-    continousResponse = withBroadcast(featureSource.features.sparkContext)(allEffects){ br_effects =>
+    continouusResponse = withBroadcast(featureSource.features.sparkContext)(allEffects){ br_effects =>
        featureSource.features.filter(f => br_effects.value.contains(f.label)).mapPartitions {it =>
          val normalizer = DenseVector.fill(nSamples)(zeroLevelValue)
          it.map(f => (DenseVector(f.toVector.values.toArray)-=normalizer) *= (2 * br_effects.value(f.label)))
        }.fold(DenseVector.zeros[Double](nSamples))(_+=_)
     }
 
-    continousStats = meanAndVariance(continousResponse)
-    logDebug(s"Continuous mav: ${continousStats}")
-    logDebug(s"Continuous response: ${continousResponse}")
+    continuousStats = meanAndVariance(continouusResponse)
+    logDebug(s"Continuous mav: ${continuousStats}")
+    logDebug(s"Continuous response: ${continouusResponse}")
 
-    val classProbabilities = continousResponse.map(logistic)
+    val classProbabilities = continouusResponse.map(logistic)
 
     logDebug(s"Class probabilities: ${classProbabilities}")
 

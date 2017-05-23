@@ -18,7 +18,7 @@ object TestWideDecisionTree extends SparkApp {
   conf.setAppName("VCF cluster")
   
   def main(args:Array[String]) {
-    println("Testign WideKMeans")
+    println("Testing WideKMeans")
     
     val dims = 1000
     val importantDims = 30

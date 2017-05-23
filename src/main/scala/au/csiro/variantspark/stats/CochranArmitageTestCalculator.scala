@@ -28,7 +28,7 @@ object CochranArmitageTestCalculator {
 
 class CochranArmitageTestScorer(val labels:Array[Int], val weights:Array[Double], val top:Int = 20) {
   /**
-   * This implements a CochranArmitageTest for thrends
+   * This implements a CochranArmitageTest for threads
    * see: https://en.wikipedia.org/wiki/Cochran%E2%80%93Armitage_test_for_trend
    */
   

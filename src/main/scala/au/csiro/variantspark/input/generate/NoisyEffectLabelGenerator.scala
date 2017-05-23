@@ -20,7 +20,7 @@ import org.apache.spark.rdd.RDD
  */
 class NoisyEffectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
                                                              effects:Map[String,Double],
-                                                             val fractionVarianceExplained:Double, val classThresholdPrecentile:Double = 0.75, val multiplicative:Boolean = false,
+                                                             val fractionVarianceExplained:Double, val classThresholdPercentile:Double = 0.75, val multiplicative:Boolean = false,
                                                              seed:Long = 13L) extends LabelSource with Logging {
 
   def logistic(d:Double) = 1.0 / (1.0 + Math.exp(-d))
@@ -78,7 +78,7 @@ class NoisyEffectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
 
     logDebug(s"Actual fraction variance explained: ${actualFractionVarianceExplained}")
 
-    val classThreshold = DescriptiveStats.percentile(noisyContinuousResponse.valuesIterator, classThresholdPrecentile)
+    val classThreshold = DescriptiveStats.percentile(noisyContinuousResponse.valuesIterator, classThresholdPercentile)
     logDebug(s"Actual class threshold: ${classThreshold}")
 
     val classes = noisyContinuousResponse.map(v => if (v > classThreshold) 1 else 0)
@@ -91,7 +91,7 @@ class NoisyEffectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
 
 object NoisyEffectLabelGenerator {
   def apply(featureSource:FeatureSource)(zeroLevel:Int,
-      effects:Map[String,Double], fractionVarianceExplained:Double, classThresholdPrecentile:Double = 0.75 ,
-        multiplicative:Boolean = false, seed:Long = 13L) =
-          new NoisyEffectLabelGenerator(featureSource)(zeroLevel, effects, fractionVarianceExplained, classThresholdPrecentile, multiplicative, seed)
+                                         effects:Map[String,Double], fractionVarianceExplained:Double, classThresholdPercentile:Double = 0.75,
+                                         multiplicative:Boolean = false, seed:Long = 13L) =
+          new NoisyEffectLabelGenerator(featureSource)(zeroLevel, effects, fractionVarianceExplained, classThresholdPercentile, multiplicative, seed)
 }

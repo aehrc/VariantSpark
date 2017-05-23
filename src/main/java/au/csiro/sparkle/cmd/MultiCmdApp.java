@@ -70,6 +70,6 @@ public abstract class MultiCmdApp extends CmdApp {
 	   System.out.println("Available commands are:");
 	   modules.keySet().stream().sorted().forEach(cmd -> System.out.format("\t%s\n", cmd));
 	   System.out.println("For help on a specific command use:");
-	   System.out.format("\t<app-nane> command -h\n", getAppName());	   
+	   System.out.format("\t<app-name> command -h\n", getAppName());
     }
 }

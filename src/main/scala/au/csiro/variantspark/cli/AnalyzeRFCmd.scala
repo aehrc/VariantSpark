@@ -69,8 +69,8 @@ class AnalyzeRFCmd extends ArgsApp with FeatureSourceArgs with Echoable with Log
     echo(s"Analyzing random forrest model")
     
     
-    //NOTE: There is some wierdness going on here with the class loaded
-    //So I am using the Spark JavaSerializer to the the right one
+    // TODO: (refactor) There is some weirdness going on here with the class loaded
+    // So I am using the Spark JavaSerializer to the the right one
     val javaSerializer = new JavaSerializer(conf)
     val si = javaSerializer.newInstance()
     

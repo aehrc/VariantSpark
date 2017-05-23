@@ -13,7 +13,7 @@ import java.util.Arrays;
 public class JMaskedClassificationSplitter {
 	private final int[] leftSplitCounts;
 	private final int[] rightSplitCounts;
-	private final double[] leftRigtGini = new double[2];
+	private final double[] leftRightGini = new double[2];
 	private final int[] labels;
 		
 	public JMaskedClassificationSplitter(int[] labels, int nCategories) {
@@ -53,9 +53,9 @@ public class JMaskedClassificationSplitter {
 						rightSplitCounts[labels[i]]++;					
 					}
 				}
-				double g = FastGini.splitGini(leftSplitCounts, rightSplitCounts, leftRigtGini);
+				double g = FastGini.splitGini(leftSplitCounts, rightSplitCounts, leftRightGini);
 				if (g < minGini ) {
-					result = new SplitInfo(sp, g, leftRigtGini[0], leftRigtGini[1]);
+					result = new SplitInfo(sp, g, leftRightGini[0], leftRightGini[1]);
 					minGini = g;
 				}
 				sp++;

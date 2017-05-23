@@ -76,7 +76,7 @@ case class DeterministicMerger() extends Merger {
   def merge(a1:Array[VarSplitInfo], a2:Array[VarSplitInfo]) = {
     // TODO: this seem to introduce bias towards low index variables which may make them appear
     // more important than they actually are
-    // in oder to avoid that in case of gini equaliy a random variable should be selected
+    // in oder to avoid that in case of gini equality a random variable should be selected
     def mergeSplitInfo(s1:VarSplitInfo, s2:VarSplitInfo) = {
       if (s1 == null) s2 else if (s2 == null) s1 else if (s1.gini < s2.gini) s1 else if (s2.gini < s1.gini) s2 else if (s1.variableIndex < s2.variableIndex) s1 else s2
     }
@@ -355,8 +355,8 @@ object DecisionTreeModel {
         leaves.asInstanceOf[List[((LeafNode, Int), Int)]]
       } else {
         val (bareSplits, splitIndexes) = splits.unzip
-        val transfomedSplits = resolveSplitNodes(indexedData, bareSplits.asInstanceOf[List[(SplitNode, Int)]]).zip(splitIndexes)
-        leaves.asInstanceOf[List[((LeafNode, Int), Int)]] ::: predict(transfomedSplits)
+        val transformedSplits = resolveSplitNodes(indexedData, bareSplits.asInstanceOf[List[(SplitNode, Int)]]).zip(splitIndexes)
+        leaves.asInstanceOf[List[((LeafNode, Int), Int)]] ::: predict(transformedSplits)
       }
     }
 
