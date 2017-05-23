@@ -32,8 +32,7 @@ public class JClassificationSplitter implements ClassificationSplitter {
 		this.rightSplitCounts = new int[nCategories];
 		this.nLevels = nLevels;
 	}
-	
-	
+
 	
 	@Override
 	public SplitInfo findSplit(double[] data,int[] splitIndices) {	

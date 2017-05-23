@@ -1,6 +1,5 @@
 package au.csiro.pbdava.ssparkle.common.arg4j
 
-import au.csiro.sparkle.common.args4j.ArgsApp
 import au.csiro.sparkle.cmd.CmdApp
 
 

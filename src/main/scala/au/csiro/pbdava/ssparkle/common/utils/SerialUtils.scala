@@ -1,10 +1,7 @@
 package au.csiro.pbdava.ssparkle.common.utils
 
-import java.io.OutputStream
-import java.io.ObjectOutputStream
-import java.io.ObjectInputStream
-import java.io.InputStream
-import scala.reflect.Manifest
+import java.io.{InputStream, ObjectInputStream, ObjectOutputStream, OutputStream}
+
 import scala.reflect.ClassTag
 
 object SerialUtils {

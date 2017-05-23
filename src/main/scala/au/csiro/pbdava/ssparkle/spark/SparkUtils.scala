@@ -16,6 +16,7 @@ object SparkUtils {
       br.destroy()
     }
   }
-  
+
+  // TODO (review RDD for update to DF/DS)
   implicit def rdd2sc(rdd:RDD[_]) = rdd.sparkContext
 }

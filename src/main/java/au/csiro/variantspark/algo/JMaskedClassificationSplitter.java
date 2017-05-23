@@ -26,9 +26,9 @@ public class JMaskedClassificationSplitter {
 	    SplitInfo result = null;
 	    double minGini = 1.0;
 
-	    /* TODO (review implementation)
-         * on the first pass we calcuate
-         * the splits AND determine which split points are in this dataset
+	    /* TODO (review and test implementation)
+         * on the first pass we calculate the splits
+         * AND determine which split points are in this dataset
 	     * because 0 is most likely we will do 0 as the initial pass */
 	    long splitCandidateSet = 0L; 
 		for(int i:splitIndices) {

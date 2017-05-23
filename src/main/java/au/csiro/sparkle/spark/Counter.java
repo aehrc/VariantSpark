@@ -4,6 +4,9 @@ import java.io.Serializable;
 
 import org.apache.spark.Accumulator;
 
+// TODO: (Update) to use V2
+// import org.apache.spark.util.AccumulatorV2;
+
 public class Counter implements Serializable {
 	
     private static final long serialVersionUID = 1L;
