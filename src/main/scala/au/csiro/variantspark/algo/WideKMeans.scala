@@ -21,6 +21,8 @@ object WideKMeans {
   *
   *
   *
+  * @run Computes values in each cluster
+  * @assignClusters Assigns the values found in the cluster to an output Array
   * @param k Number of desired clusters
   * @param iterations The number of iterations requested
   */
@@ -140,6 +142,7 @@ class WideKMeans(k:Int, iterations:Int) {
 
         )
       .map(v => v.zipWithIndex.min._2)
+
       clusterAssignment
   }
   
