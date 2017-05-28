@@ -99,8 +99,8 @@ class WideKMeans(k:Int, iterations:Int) {
           Vectors.dense(contributions)
 
         })
-
-      clusterCenters = newClusterCenters
+      //TODO: fix error, line 103 should not be commented out
+      //clusterCenters = newClusterCenters
     }
     clusterCentres
   }
