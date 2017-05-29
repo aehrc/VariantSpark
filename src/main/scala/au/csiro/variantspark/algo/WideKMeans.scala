@@ -33,7 +33,7 @@ class WideKMeans(k:Int, iterations:Int) {
     * Specify the input data
     *
     * 1. Splits the vectors into k dense vectors
-    * 2. Finds the Equlidian distance between the new center and the values on the graph
+    * 2. Finds the Euclidean distance between the new center and the values on the graph
     * 3. Assigns values with lowest distances to the clusters
     * 4. Creates new dense vectors with the values found
     * 5. Repeats till the number of iterations is met
@@ -57,7 +57,7 @@ class WideKMeans(k:Int, iterations:Int) {
 
     for(i <- Range(0,iter)) {
     
-      //  clusterCentres.cache()
+      // clusterCentres.cache()  TODO: determine why this line is commented out
       val clusterAssignment = data.zip(clusterCentres)
         .aggregate(Array.fill(dimension)(Array.fill(numOfClusters)(0.0)))(
 
@@ -100,7 +100,7 @@ class WideKMeans(k:Int, iterations:Int) {
 
         })
       //TODO: fix error, line 103 should not be commented out
-      //clusterCenters = newClusterCenters
+      // clusterCenters = newClusterCenters
     }
     clusterCentres
   }
