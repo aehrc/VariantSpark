@@ -46,19 +46,18 @@ class WideKMeans(k:Int, iterations:Int) {
     val numOfClusters = k
     val iter = iterations
     
-    val dimension = data.first().size // gets the dimension of the first value in the RDD
+    val dimension = data.first().size
 
     val initialCenters = data.map { vector =>
         val array = vector.toArray
         Vectors.dense( Range(0,numOfClusters).map(i => array(i)).toArray)
     }
 
-    var clusterCentres = initialCenters
+    var clusterCenters = initialCenters
 
     for(i <- Range(0,iter)) {
-    
-      // clusterCentres.cache()  TODO: determine why this line is commented out
-      val clusterAssignment = data.zip(clusterCentres)
+
+      val clusterAssignment = data.zip(clusterCenters)
         .aggregate(Array.fill(dimension)(Array.fill(numOfClusters)(0.0)))(
 
             (distances, vectorsAndCenters) => {
@@ -99,10 +98,10 @@ class WideKMeans(k:Int, iterations:Int) {
           Vectors.dense(contributions)
 
         })
-      //TODO: fix error, line 103 should not be commented out
-      // clusterCenters = newClusterCenters
+
+      clusterCenters = newClusterCenters
     }
-    clusterCentres
+    clusterCenters
   }
 
   /**
