@@ -1,51 +1,128 @@
 package au.csiro.variantspark.algo
 
 import scala.Range
-import scala.collection.JavaConversions.asScalaSet
-
-import org.apache.spark.rdd.RDD
-import org.apache.spark.rdd.RDD.rddToPairRDDFunctions
-import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
-import scala.collection.mutable.MutableList
-import org.apache.spark.broadcast.Broadcast
-import au.csiro.pbdava.ssparkle.common.utils.Logging
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
-import au.csiro.pbdava.ssparkle.spark.SparkUtils._
-import au.csiro.variantspark.metrics.Gini
-import au.csiro.variantspark.utils.Sample
-import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
-import au.csiro.variantspark.utils.IndexedRDDFunction._
-import au.csiro.variantspark.utils.FactorVariable
-import org.apache.commons.math3.random.RandomGenerator
-import org.apache.commons.math3.random.JDKRandomGenerator
-import au.csiro.pbdava.ssparkle.common.utils.Prof
-import it.unimi.dsi.util.XorShift1024StarRandomGenerator
-import au.csiro.variantspark.data.VariableType
-import au.csiro.variantspark.data.BoundedOrdinal
-import au.csiro.variantspark.utils.defRng
-import org.apache.commons.lang3.builder.ToStringBuilder
-import au.csiro.variantspark.utils.CanSize
 import scala.reflect.ClassTag
+import scala.collection.JavaConversions.asScalaSet
+import scala.collection.mutable.MutableList
+
+import au.csiro.pbdava.ssparkle.spark.SparkUtils._
+import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
+import au.csiro.pbdava.ssparkle.common.utils.Logging
+import au.csiro.pbdava.ssparkle.common.utils.Prof
+
+import au.csiro.variantspark.ata.BoundedOrdinal
+import au.csiro.variantspark.data.VariableTyped
+import au.csiro.variantspark.metrics.Gini
+import au.csiro.variantspark.utils.{defRng, CanSize, FactorVariable, IndexedRDDFunction._, Sample}
+
+import org.apache.commons.lang3.builder.ToStringBuilder
+import org.apache.commons.math3.random.{RandomGenerator, JDKRandomGenerator}
+import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.rdd.{RDD, RDD.rddToPairRDDFunctions}
 import org.apache.spark.TaskContext
 
+import it.unimi.dsi.fastutil.{longs.Long2DoubleOpenHashMap, ints.Int2ObjectOpenHashMap}
+import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 
+/** Splits whatever is passed at the index specified
+  */
 trait CanSplit[V] extends CanSize[V] {
+
+  /** Returns the SplitInfo class located below
+    *
+    * Specify the 'v', 'splitter', 'indicies', and 'SplitInfo'
+    *
+    * @param v: generic type, input specific data construct
+    * @param splitter: input a classificationsplitter object, splits the values in v according to it's properties
+    * @param indicies: input an array of indicies of type int
+    * @return SplitInfo: returns info on the splits conducted touch on in [[au.csiro.variantspark.algo.SplitInfo]]
+    */
   def split(v:V, splitter: ClassificationSplitter, indices:Array[Int]):SplitInfo
+
+  /** Returns value at a certain index
+    * 
+    * Specify the 'v' and 'i'
+    *
+    *
+    * @param v: generic type, input specific data construct
+    * @param i: index
+    */
   def at(v:V)(i:Int):Int
 }
 
+/** Allows for a general description of the construct 
+  *
+  * Specify the 'indices', 'impurtity', and 'majoritylabel' these values will not be visible outside the class
+  *
+  * {{{
+  * val subInfo = SubsetInfo(indices, impurtity, majorityLabel)
+  * val subInfoAlt = SubsetInfo(indices, impurity, labels, nLabels)
+  * }}}
+  *
+  * @constructor creates value based on the indices, impurity, and majorityLabel
+  * @constructor this: an alterative constructor for the use of the FactorVariable class
+  * @param indices: input an array of integers representing the indices of the values
+  * @param impurity: input the value of impurity of the data construct
+  * @param majorityLabel: input the specific label related to the majority of the values
+  */
 case class SubsetInfo(indices:Array[Int], impurity:Double, majorityLabel:Int) {
+
+  /** An alternative constructor for the SubsetInfo class, use this if the majorityLabel has not already been defined
+    * 
+    * Specify the 'indices', 'impurity', 'labels', and 'nLabels'
+    *
+    * {{{
+    * val subInfo = SubsetInfo(indices, impurtity, labels, nLables)
+    * }}}
+    *
+    * @param indices: input an array of integers that contains the indicies required
+    * @param inpurity: a value based on the gini impurity of the dataset sent in
+    * @param labels: in put an array of integers that contains the labels of the values for each row
+    * @param nLabels: specify the number of labels for that specific dataset
+    *
+    */
   def this(indices:Array[Int], impurity:Double, labels:Array[Int], nLabels:Int)  {
     this(indices, impurity, FactorVariable.labelMode(indices, labels, nLabels))
   }
+
   def length = indices.length
   override def toString(): String = s"SubsetInfo(${indices.toList},${impurity}, ${majorityLabel})"
 }
 
+/** An immutable container for the information that was recently split 
+  * 
+  * Specify 'splitPoint', 'gini', 'leftGini', and 'rightGini'
+  *
+  * @constructor create an object containing the information about the split
+  * @param splitPoint: specifies the exact point in the dataset that it was split at
+  * @param gini: general gini value of the dataset
+  * @param leftGini: the gini impurity of the left split of the dataset
+  * @param rightGini: the gini impurity of the right split of the dataset
+  */
 case class SplitInfo(val splitPoint:Int, val gini:Double,  val leftGini:Double, val rightGini:Double)
 
+/** Class utilized to give an insight into the split data
+  * 
+  * Specify the 'variableIndex', 'splitPoint', 'gini', 'leftGini', and 'rightGini'
+  *
+  * @constructor creates information about the split that occured on a specifc variable
+  * @param variableIndex: specifies the index of the variable that the dataset will split on
+  * @param splitPoint: specifies the point in the index of the exact split
+  * @param gini: general gini value of the dataset
+  * @param leftGini: the gini impurity of the left split of the dataset
+  * @param rightGini: the gini impurity of the right split of the dataset 
+  */
 case class VarSplitInfo(val variableIndex: Long, val splitPoint:Int, val gini:Double, val leftGini:Double, val rightGini:Double) {
 
+  /** Creates a list of the subsetInfos for the dataset split
+    *
+    * @param splitVarData: a map of long key values and a generic type construct for the dataset
+    * @param labels: input an array of integer labels
+    * @param nCategories: specify the number of categories of the dataset or 'columns'
+    * @param subset: specify the SubsetInfo class touched on previously at [[au.csiro.variantspark.algo.SubsetInfo]]
+    * @param canSplit: from the CanSplit trait will be specified automatically touch on previous at [[au.csiro.variantspark.algo.CanSplit]]
+    * @return returns a list containing information about the subsets created in the split, refer to the SubsetInfo class
+    */
   def split[V](splitVarData:Map[Long, V], labels:Array[Int], nCategories:Int)(subset:SubsetInfo)(implicit canSplit:CanSplit[V]):List[SubsetInfo] = {
     List(
         new SubsetInfo(subset.indices.filter(canSplit.at(splitVarData(variableIndex))(_) <= splitPoint), leftGini, labels, nCategories),
@@ -53,6 +130,15 @@ case class VarSplitInfo(val variableIndex: Long, val splitPoint:Int, val gini:Do
     )
   }
 
+  /** Creates a list of the subsetInfos for the dataset split
+    *
+    * @param data: input the specific data construct
+    * @param labels: input an array of integer labels
+    * @param nCategories: specify the number of categories of the dataset or 'columns'
+    * @param subset: specify the SubsetInfo class touched on previously at [[algo.SubsetInfo]]
+    * @param canSplit: from the CanSplit trait will be specified automatically touch on previous at [[algo.CanSplit]]
+    * @return returns a tupple of the subset information
+    */
   def split[V](data:V, labels:Array[Int], nCategories:Int)(subset:SubsetInfo)(implicit canSplit:CanSplit[V]):(SubsetInfo, SubsetInfo) = {
     (
         new SubsetInfo(subset.indices.filter(canSplit.at(data)(_) <= splitPoint), leftGini, labels, nCategories),
@@ -61,24 +147,55 @@ case class VarSplitInfo(val variableIndex: Long, val splitPoint:Int, val gini:Do
   }
 }
 
-
+/** Utilized to return a VarSplitInfo object
+  */
 object VarSplitInfo {
+
+  /** Applys the values obtained from the [[au.csiro.variantspark.algo.SplitInfo]] class to create an [[au.csiro.variantspark.algo.VarSplitInfo]] object
+    *
+    * @param variableIndex: input an index of where the variable split from  
+    * @param split: input a [[au.csiro.variantspark.algo.SplitInfo]] object
+    * @return returns a [[au.csiro.variantspark.algo.VarSplitInfo]] object
+    */
   def apply(variableIndex:Long, split:SplitInfo):VarSplitInfo  = apply(variableIndex, split.splitPoint, split.gini, split.leftGini, split.rightGini)
 }
 
-
-
+/** Defines the trait for the case class [[au.csiro.variantspark.algo.DeterministicMerger]]
+  */
 trait Merger {
+
+  /** Operates a merging function utilizing two arrays of the class [[au.csiro.variantspark.algo.VarSplitInfo]]
+    *
+    * @param a1: input an array of [[au.csiro.variantspark.algo.VarSplitInfo]] 
+    * @param a2: input an array of [[au.csiro.variantspark.algo.VarSplitInfo]]
+    * @return Returns an array of [[au.csiro.variantspark.algo.VarSplitInfo]]
+    */
   def merge(a1:Array[VarSplitInfo], a2:Array[VarSplitInfo]):  Array[VarSplitInfo]
 }
 
+/** Utilizes the Deterministic Decision Tree model found here: [[https://en.wikipedia.org/wiki/Decision_tree_model#Randomized_decision_tree]]
+  * Extends the [[au.csiro.variantspark.algo.Merger]] class
+  */
 case class DeterministicMerger() extends Merger {
+
+  /** Operates a merging function utilizing two arrays of the class [[au.csiro.variantspark.algo.VarSplitInfo]]
+    *
+    * @param a1: input an array of [[au.csiro.variantspark.algo.VarSplitInfo]] 
+    * @param a2: input an array of [[au.csiro.variantspark.algo.VarSplitInfo]]
+    * @return Returns the merged array a1
+    */
   def merge(a1:Array[VarSplitInfo], a2:Array[VarSplitInfo]) = {
 
     // TODO: this seems to introduce bias towards low index variables which may make them appear
     // more important than they actually are
     // to avoid that (in case of gini equality) select a random variable
 
+    /** Takes the [[au.csiro.variantspark.algo.VarSplitInfo]] from two seperate splits and returns the value from either s1 or s2 based on the gini impurity
+      *
+      * @param s1: input an [[au.csiro.variantspark.algo.VarSplitInfo]] 
+      * @param s2: input an [[au.csiro.variantspark.algo.VarSplitInfo]]
+      * @return Returns either s1 or s2 based on the gini impurity calculation
+      */
     def mergeSplitInfo(s1:VarSplitInfo, s2:VarSplitInfo) = {
       if (s1 == null) s2 else if (s2 == null) s1 else if (s1.gini < s2.gini) s1 else if (s2.gini < s1.gini) s2 else if (s1.variableIndex < s2.variableIndex) s1 else s2
     }
@@ -87,15 +204,35 @@ case class DeterministicMerger() extends Merger {
   }
 }
 
+/** Utilizes the Randomized Decision Tree model found here: [[https://en.wikipedia.org/wiki/Decision_tree_model#Randomized_decision_tree]]
+  * Extends the [[au.csiro.variantspark.algo.Merger]] class
+  *
+  * @param seed: input a seed value to initialize the random number generator for rnd
+  */
 case class RandomizingMerger(seed:Long) extends Merger {
 
   lazy val rnd  = new  XorShift1024StarRandomGenerator(seed ^ TaskContext.getPartitionId())
+
+  /** Operates a merging function utilizing two arrays of the class [[au.csiro.variantspark.algo.VarSplitInfo]]
+    *
+    * @param a1: input an array of [[au.csiro.variantspark.algo.VarSplitInfo]] 
+    * @param a2: input an array of [[au.csiro.variantspark.algo.VarSplitInfo]]
+    * @return Returns the merged array a1
+    */
   def merge(a1:Array[VarSplitInfo], a2:Array[VarSplitInfo]) = {
 
     // TODO: this seems to introduce bias towards low index variables which may make them appear
     // more important than they actually are
     // in oder to avoid that (in case of gini equality) select a random variable
 
+    /** Takes the [[au.csiro.variantspark.algo.VarSplitInfo]] from two seperate splits and returns the value from either s1 or s2 based on the gini impurity
+      *
+      * @note if the gini values of each split are equal then the value returns one at random
+      *
+      * @param s1: input an [[au.csiro.variantspark.algo.VarSplitInfo]] 
+      * @param s2: input an [[au.csiro.variantspark.algo.VarSplitInfo]]
+      * @return Returns either s1 or s2 based on the gini impurity calculation
+      */
     def mergeSplitInfo(s1:VarSplitInfo, s2:VarSplitInfo) = {
       if (s1 == null) s2 else if (s2 == null) s1 else if (s1.gini < s2.gini) s1 else if (s2.gini < s1.gini) s2 else if (rnd.nextBoolean()) s1 else s2
     }
@@ -104,12 +241,32 @@ case class RandomizingMerger(seed:Long) extends Merger {
   }
 }
 
-
+/** This is the main split function
+  * 
+  * 1. specifies the number of categories based on the label input
+  * 2. 
+  *
+  * @param dataType: specify the basic data type of the variable split on
+  * @param labels: input an array of labels used by the dataset
+  * @param mTryFactor: default to 1.0
+  * @param randomizedEquality: default to false
+  */
 case class VariableSplitter[V](val dataType: VariableType, val labels:Array[Int], mTryFactor:Double=1.0, val randomizeEquality:Boolean = false)(implicit canSplit:CanSplit[V]) extends Logging  with Prof {
 
   val nCategories = labels.max + 1
 
+  /** Find the splits in the data based on the gini value 
+    * 
+    * Specify the 'data' and 'splits' inputs
+    *
+    * @param data: input the data from the dataset of generic type V
+    * @param splits: input an array of the [[au.csiro.variantspark.algo.SubsetInfo]] class
+    * @return returns an array [[au.csiro.variantspark.algo.SplitInfo]]
+    */
   def findSplits(data:V, splits:Array[SubsetInfo])(implicit rng:RandomGenerator):Array[SplitInfo] = {
+
+    /** if the dataType of the 
+      */
     val splitter = dataType match {
       case BoundedOrdinal(nLevels) => new JConfusionClassificationSplitter(labels, nCategories, nLevels)
       case _ => throw new RuntimeException(s"Data type ${dataType} not supported")
