@@ -1,28 +1,22 @@
 package au.csiro.variantspark.algo
 
-import scala.Range
-import scala.reflect.ClassTag
-import scala.collection.JavaConversions.asScalaSet
-import scala.collection.mutable.MutableList
-
-import au.csiro.pbdava.ssparkle.spark.SparkUtils._
 import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
-import au.csiro.pbdava.ssparkle.common.utils.Logging
-import au.csiro.pbdava.ssparkle.common.utils.Prof
-
-import au.csiro.variantspark.ata.BoundedOrdinal
-import au.csiro.variantspark.data.VariableTyped
+import au.csiro.pbdava.ssparkle.common.utils.{Logging, Prof}
+import au.csiro.pbdava.ssparkle.spark.SparkUtils._
+import au.csiro.variantspark.data.{BoundedOrdinal, VariableType}
 import au.csiro.variantspark.metrics.Gini
-import au.csiro.variantspark.utils.{defRng, CanSize, FactorVariable, IndexedRDDFunction._, Sample}
-
-import org.apache.commons.lang3.builder.ToStringBuilder
-import org.apache.commons.math3.random.{RandomGenerator, JDKRandomGenerator}
-import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.rdd.{RDD, RDD.rddToPairRDDFunctions}
-import org.apache.spark.TaskContext
-
-import it.unimi.dsi.fastutil.{longs.Long2DoubleOpenHashMap, ints.Int2ObjectOpenHashMap}
+import au.csiro.variantspark.utils.IndexedRDDFunction._
+import au.csiro.variantspark.utils.{CanSize, FactorVariable, Sample, defRng}
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
+import org.apache.commons.lang3.builder.ToStringBuilder
+import org.apache.commons.math3.random.RandomGenerator
+import org.apache.spark.TaskContext
+import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.rdd.RDD
+import org.apache.spark.rdd.RDD.rddToPairRDDFunctions
+
+import scala.reflect.ClassTag
 
 /** Splits whatever is passed at the index specified
   */
