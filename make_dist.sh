@@ -27,7 +27,7 @@ mkdir -p ${DIST_DIR}/lib
 cp LICENSE README.md THIRDPARTY ${DIST_DIR}
 
 cp variant-spark ${DIST_DIR}/variant-spark
-cp target/variant-spark-0.0.1-SNAPSHOT-all.jar  ${DIST_DIR}/lib
+cp ${DIST_JAR}  ${DIST_DIR}/lib
 cp -r data/ ${DIST_DIR}/data/
 cp -r scripts ${DIST_DIR}/scripts/
 cp -r conf ${DIST_DIR}/conf/
