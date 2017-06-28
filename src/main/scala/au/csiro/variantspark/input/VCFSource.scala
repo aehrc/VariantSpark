@@ -1,12 +1,9 @@
 package au.csiro.variantspark.input
 
-import htsjdk.variant.vcf.VCFCodec
 import htsjdk.samtools.util.AbstractIterator
 import htsjdk.tribble.readers.LineIterator
-import htsjdk.variant.vcf.VCFHeader
-import collection.JavaConverters._
+import htsjdk.variant.vcf.{VCFCodec, VCFHeader, VCFHeaderVersion}
 import org.apache.spark.SparkContext
-import htsjdk.variant.vcf.VCFHeaderVersion
 import org.apache.spark.rdd.RDD
 
 

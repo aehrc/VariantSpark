@@ -1,8 +1,6 @@
 package au.csiro.variantspark.utils
 
-import org.apache.spark.mllib.linalg.Vector
-import org.apache.spark.mllib.linalg.Vectors
-import org.apache.commons.math3.random.RandomDataGenerator
+import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
 
 class Projector(indexSet: Set[Int], include: Boolean = true) extends Serializable {
@@ -36,7 +34,7 @@ object Projector {
   def splitRDD(rdd: RDD[Vector], fraction:Double):(Projector, Projector) = split(rdd.first, fraction)
   def rddFolds(rdd:RDD[Vector], nFolds:Int, testFolds:Boolean = true):List[Projector] = folds(rdd.first, nFolds, testFolds)
   
-  // TODO: (Refactoring) Find a better place for these (if needed at all
+  // TODO: (Refactoring) Find a better place for these (if needed at all)
   
   def projectVector(indexSet: Set[Int], invert: Boolean = false)(v: Vector): Vector = {
     val a = v.toArray

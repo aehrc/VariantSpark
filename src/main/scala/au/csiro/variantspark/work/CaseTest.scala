@@ -13,7 +13,7 @@ object CaseTest {
     
     vr match  {
       case UnboundedOrdinal => println("object:" + vr)
-      case _ => println("Defaylt:" + vr)
+      case _ => println("Default:" + vr)
     }
   }
 }

@@ -1,96 +1,147 @@
 package au.csiro.variantspark.algo
 
+import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.mllib.linalg.Vector
-import org.apache.spark.mllib.linalg.Vectors
-import java.util.Arrays
-import org.apache.spark.SparkContext
-import org.apache.spark.mllib.linalg.SparseVector
 
 object WideKMeans {
-  def sqr(d:Double) = d*d
+  def square(d:Double) = d*d
 }
 
-class WideKMeans(kk:Int, kiter:Int) {
-  
-  // the general ideas it to use kmeans on wide representation
-  
-  // return cluster centers as RDD[Vector]
-  
+/**
+  * A class to implement a ''Wide K-Means''.
+  *
+  * Specify the `k` and `iterations`
+  * then access the fields like this:
+
+  * {{{
+  * val wKM = WideKMeans(5, 10)
+  * val clusterCenters = wKM.run(data)
+  * val resultingClusters = wKM.assignClusters(data, clusterCenters)
+  * }}}
+  *
+  *
+  *
+  * @run Computes values in each cluster
+  * @assignClusters Assigns the values found in the cluster to an output Array
+  * @param k Number of desired clusters
+  * @param iterations The number of iterations requested
+  */
+
+class WideKMeans(k:Int, iterations:Int) {
+
+  /**
+    * Specify the input data
+    *
+    * 1. Splits the vectors into k dense vectors
+    * 2. Finds the Euclidean distance between the new center and the values on the graph
+    * 3. Assigns values with lowest distances to the clusters
+    * 4. Creates new dense vectors with the values found
+    * 5. Repeats till the number of iterations is met
+    *
+    * @param data Input an RDD[Vector]
+    * @return Returns the cluster centers as a RDD[Vector]
+    */
   def run(data: RDD[Vector]):RDD[Vector] = {
+
+    val numOfClusters = k
+    val iter = iterations
     
-    val k = kk
-    val iter = kiter
-    /// initial centre selection is just a projection of the (can be random)
-    
-    val dims = data.first().size
-    val initialCenters = data.map { v =>
-        val d = v.toArray
-        // this should be taking random k indexes out of dims
-        Vectors.dense( Range(0,k).map(i => d(i)).toArray)
+    val dimension = data.first().size
+
+    val initialCenters = data.map { vector =>
+        val array = vector.toArray
+        Vectors.dense( Range(0,numOfClusters).map(i => array(i)).toArray)
     }
-   
-    // now we need to run iteratios
-    // so first cluster assignmet
-    // and for this we need to find distance of each point to it's centre
-    var clusterCentres = initialCenters
-    
+
+    var clusterCenters = initialCenters
+
     for(i <- Range(0,iter)) {
-    
-  //    clusterCentres.cache()
-      val clusterAssignment = data.zip(clusterCentres)
-        .aggregate(Array.fill(dims)(Array.fill(k)(0.0)))(
-            (dists, vac) => {
-              val dv = vac._1.toArray
-              for(i <- Range(0,dims); j<- Range(0,k)) {dists(i)(j) += WideKMeans.sqr(dv(i) - vac._2(j)) }
-              dists
-            } ,  // add sqr(dists - vectorsAndCenters) for all (i, j)
-            (dist1, dist2) => { 
-              for(i <- Range(0,dims); j<- Range(0,k)) {dist1(i)(j) += dist2(i)(j) }
-              dist1 
-            } // just sum them together
+
+      val clusterAssignment = data.zip(clusterCenters)
+        .aggregate(Array.fill(dimension)(Array.fill(numOfClusters)(0.0)))(
+
+            (distances, vectorsAndCenters) => {
+
+              val dv = vectorsAndCenters._1.toArray
+              for(i <- Range(0,dimension); j<- Range(0,numOfClusters)) {
+                distances(i)(j) += WideKMeans.square(dv(i) - vectorsAndCenters._2(j))
+              }
+              distances
+
+            } ,
+
+            (distance1, distance2) => {
+
+              for(i <- Range(0,dimension); j<- Range(0,numOfClusters)) {
+                distance1(i)(j) += distance2(i)(j)
+              }
+              distance1
+
+            }
+
         )
-      .map(v => v.zipWithIndex.min._2) // should be find the index of min distance
-      // 
+      .map(v => v.zipWithIndex.min._2)
       
-      val clusterSizes = Array.fill(k)(0)
+      val clusterSizes = Array.fill(numOfClusters)(0)
       clusterAssignment.foreach(c=> clusterSizes(c) += 1)
       
       val br_clusterAssignment = data.context.broadcast(clusterAssignment)
       val br_clusterSizes = data.context.broadcast(clusterSizes)
-      // also count and broadcast cluster membership arity
-      
-      // now calculate new cluster centers
-      val newClusterCentres = data.map( v => {
-        val contributions:Array[Double] = Array.fill(k)(0.0)
-        val clusterAssignment =  br_clusterAssignment.value
-        val clusterSizes = br_clusterSizes.value
-        Range(0,dims).foreach(i => contributions(clusterAssignment(i)) += v(i)/clusterSizes(clusterAssignment(i)))
-        // for each in cluster assignment add a contribution to a corresponging cluster
-        Vectors.dense(contributions)
-      })
-//      clusterCentres.unpersist()
-      clusterCentres = newClusterCentres
+
+      val newClusterCenters = data.map( vector => {
+
+          val contributions:Array[Double] = Array.fill(numOfClusters)(0.0)
+          val clusterAssignment =  br_clusterAssignment.value
+          val clusterSizes = br_clusterSizes.value
+
+          Range(0,dimension).foreach(i => contributions(clusterAssignment(i)) += vector(i)/clusterSizes(clusterAssignment(i)))
+          Vectors.dense(contributions)
+
+        })
+
+      clusterCenters = newClusterCenters
     }
-    clusterCentres
+    clusterCenters
   }
-  
-  def assignClusters(data:RDD[Vector], clusterCentres:RDD[Vector]):Array[Int] = {
-     val dims = data.first().size
-     val k = clusterCentres.first().size
-     val clusterAssignment = data.zip(clusterCentres)
-        .aggregate(Array.fill(dims)(Array.fill(k)(0.0)))(
-            (dists, vac) => {
-              val dv = vac._1.toArray
-              for(i <- Range(0,dims); j<- Range(0,k)) {dists(i)(j) += WideKMeans.sqr(dv(i) - vac._2(j)) }                
-              dists
-            } ,  // add sqr(dists - vectorsAndCenters) for all (i, j)
-            (dist1, dist2) => { 
-              for(i <- Range(0,dims); j<- Range(0,k)) {dist1(i)(j) += dist2(i)(j) }
-              dist1 
-            } // just sum them together
+
+  /**
+    * Assigns points to specific clusters using vectors found from clusterCentres
+    *
+    *
+    * @param data original data input
+    * @param clusterCenters result of the run function
+    * @return returns the cluster assignments
+    */
+  def assignClusters(data:RDD[Vector], clusterCenters:RDD[Vector]): Array[Int] = {
+
+     val dimension = data.first().size
+     val k = clusterCenters.first().size
+
+     val clusterAssignment = data.zip(clusterCenters)
+        .aggregate(Array.fill(dimension)(Array.fill(k)(0.0)))(
+
+            (distances, vectorsAndCenters) => {
+
+              val dv = vectorsAndCenters._1.toArray
+              for(i <- Range(0,dimension); j<- Range(0,k)) {
+                distances(i)(j) += WideKMeans.square(dv(i) - vectorsAndCenters._2(j))
+              }
+              distances
+
+            } ,
+
+            (distance1, distance2) => {
+
+              for(i <- Range(0,dimension); j<- Range(0,k)) {
+                distance1(i)(j) += distance2(i)(j)
+              }
+              distance1
+
+            }
+
         )
-      .map(v => v.zipWithIndex.min._2) // should be find the index of min distance 
+      .map(v => v.zipWithIndex.min._2)
+
       clusterAssignment
   }
   

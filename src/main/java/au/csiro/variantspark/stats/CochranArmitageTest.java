@@ -4,7 +4,7 @@ import org.apache.commons.math3.distribution.NormalDistribution;
 
 /**
  * 
- * Adapted from: https://github.com/DBHi-BiC/snpEff/blob/master/src/main/java/ca/mcgill/mcb/pcingola/probablility/CochranArmitageTest.java
+ * Adapted from: https://github.com/DBHi-BiC/snpEff/blob/master/src/main/java/ca/mcgill/mcb/pcingola/probability/CochranArmitageTest.java
  * 
  * 
  * Calculate a Cochran-Armitage test
@@ -48,7 +48,7 @@ public class CochranArmitageTest {
 	public double p(int N1[], int N2[], double weight[]) {
 		double t = test(N1, N2, weight);
 		NormalDistribution z = new NormalDistribution();
-		// two sided hypotesis
+		// two sided hypothesis
 		double p = z.cumulativeProbability(-Math.abs(t)) * 2;
 		return p;
 	}
@@ -60,7 +60,8 @@ public class CochranArmitageTest {
 	 * @param weight
 	 * @return
 	 */
-	double t(int N1[], int N2[], double weight[]) {
+    @SuppressWarnings("JavaDoc")
+    double calculateT(int N1[], int N2[], double weight[]) {
 		int R1 = 0, R2 = 0;
 		int k = N1.length;
 
@@ -91,14 +92,15 @@ public class CochranArmitageTest {
 	 * 
 	 * @return
 	 */
-	public double test(int N1[], int N2[], double weight[]) {
-		// Sanity checks
-		if (N1.length != N2.length) throw new RuntimeException("Row length do not match: " + N1.length + " != " + N2.length);
-		if (N1.length != weight.length) throw new RuntimeException("Weight length does not match data rows length: " + N1.length + " != " + weight.length);
+	@SuppressWarnings("JavaDoc")
+    public double test(int N1[], int N2[], double weight[]) {
+		if (N1.length != N2.length)
+			throw new RuntimeException("Row length do not match: " + N1.length + " != " + N2.length);
+		if (N1.length != weight.length)
+		    throw new RuntimeException("Weight length does not match data rows length: " + N1.length + " != " + weight.length);
 
-		// Calculate T value
-		double t = t(N1, N2, weight);
-		double var = var(N1, N2, weight);
+		double t = calculateT(N1, N2, weight);
+		double var = calcVariance(N1, N2, weight);
 
 		return t / Math.sqrt(var);
 	}
@@ -110,27 +112,24 @@ public class CochranArmitageTest {
 	 * @param weight
 	 * @return
 	 */
-	double var(int N1[], int N2[], double weight[]) {
+    @SuppressWarnings("JavaDoc")
+    double calcVariance(int N1[], int N2[], double weight[]) {
 		int k = N1.length;
 
-		// Calculate R1 and R2
 		int R1 = 0, R2 = 0;
 		for (int i = 0; i < k; i++) {
 			R1 += N1[i];
 			R2 += N2[i];
 		}
 
-		// Total
 		int N = R1 + R2;
 
-		// Calculate first sum (see reference)
 		double sum1 = 0;
 		for (int i = 0; i < k; i++) {
 			int Ci = N1[i] + N2[i];
 			sum1 += (weight[i] * weight[i]) * Ci * (N - Ci);
 		}
 
-		// Calculate second sum
 		double sum2 = 0;
 		for (int i = 0; i < (k - 1); i++) {
 			int Ci = N1[i] + N2[i];
@@ -140,10 +139,9 @@ public class CochranArmitageTest {
 			}
 		}
 
-		// Calculate variance
-		double var = ((double) R1 * R2) / N * (sum1 - 2.0 * sum2);
+		double variance = ((double) R1 * R2) / N * (sum1 - 2.0 * sum2);
 
-		return var;
+		return variance;
 	}
 
 }

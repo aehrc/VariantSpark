@@ -34,7 +34,7 @@ import au.csiro.variantspark.utils.defRng
 import au.csiro.variantspark.input.generate.OrdinalFeatureGenerator
 import au.csiro.variantspark.output.ParquetFeatureSink
 import au.csiro.variantspark.input.ParquetFeatureSource
-import au.csiro.variantspark.input.generate.EfectLabelGenerator
+import au.csiro.variantspark.input.generate.EffectLabelGenerator
 import java.io.File
 import java.util.ArrayList
 import java.io.PrintStream
@@ -49,7 +49,7 @@ class GenerateLabelsCmd extends ArgsApp with SparkApp with Echoable with Logging
   val inputType: String = "parquet"
 
   @Option(name = "-ivo", required = false, usage = "Variable type ordinal with this number of levels (def = 3)", aliases = Array("--input-var-ordinal"))
-  val varOrdinalLevels: Int = 3;
+  val varOrdinalLevels: Int = 3
 
   // output options
 
@@ -59,8 +59,8 @@ class GenerateLabelsCmd extends ArgsApp with SparkApp with Echoable with Logging
   @Option(name = "-fc", required = true, usage = "Name of the dichotomous response column" , aliases = Array("--feature-column"))
   val featureColumn: String = null
 
-  @Option(name = "-fcc", required = false, usage = "Name of the continous response column(def=None)", aliases = Array("--feature-continous-column"))
-  val featureContinousColumn: String = null
+  @Option(name = "-fcc", required = false, usage = "Name of the continuous response column(def=None)", aliases = Array("--feature-continuous-column"))
+  val featureContinuousColumn: String = null
 
   @Option(name = "-fiv", required = false, usage = "Include effect variable data", aliases = Array("--feature-include-variables"))
   val includeEffectVarData: Boolean = false
@@ -82,7 +82,7 @@ class GenerateLabelsCmd extends ArgsApp with SparkApp with Echoable with Logging
   val effectsDef: ArrayList[String] = new ArrayList()
 
   // output options
-  @Option(name = "-on", required = false, usage = "Output noise vaiables (false)", aliases = Array("--output-noise-vars"))
+  @Option(name = "-on", required = false, usage = "Output noise variables (false)", aliases = Array("--output-noise-vars"))
   val outputNoiseVars = false
 
   // output options
@@ -100,7 +100,7 @@ class GenerateLabelsCmd extends ArgsApp with SparkApp with Echoable with Logging
   val sparkPar = 0
 
   @Override
-  def testArgs = Array("-if", "target/getds.parquet", "-sp", "4", "-ff", "target/features.csv", "-fc", "resp", "-sr", "133", "-v", "-on", "-fcc", "resp_cont", "-fiv", 
+  def testArgs = Array("-if", "target/getds.parquet", "-sp", "4", "-ff", "target/features.csv", "-fc", "resp", "-sr", "133", "-v", "-on", "-fcc", "resp_cont", "-fiv",
     "-ge", "v_0:1.0", "-ge", "v_1:1.0", "-gm", "0.1", "-gvf", "0.01", "-gs", "0")
 
   @Override
@@ -119,19 +119,19 @@ class GenerateLabelsCmd extends ArgsApp with SparkApp with Echoable with Logging
     val featureSource = new ParquetFeatureSource(inputFile)
     echo(s"Loaded rows: ${dumpList(featureSource.sampleNames)}")
 
-    val generator = EfectLabelGenerator(featureSource)(zeroLevel = actualZeroLevel, effects = effects, noiseEffectSigma = noiseSigma, noiseEffectMean = noiseMean, noiseVarFraction = noiseVarFraction,
+    val generator = EffectLabelGenerator(featureSource)(zeroLevel = actualZeroLevel, effects = effects, noiseEffectSigma = noiseSigma, noiseEffectMean = noiseMean, noiseVarFraction = noiseVarFraction,
       seed = randomSeed)
     echo(s"Saving feature output to: ${featuresFile}, column: ${featureColumn}")
 
     val labels = generator.getLabels(featureSource.sampleNames)
 
-    echo(s"Continous response mean: ${generator.continousStats.mean} , total variance: ${generator.continousStats.variance}")
+    echo(s"Continous response mean: ${generator.continuousStats.mean} , total variance: ${generator.continuousStats.variance}")
     if (isEcho) {
       effects.toStream.sortBy(_._1).map {
         case (v, e) =>
           // 2/3 * (2e) ^ 2 == E(X^2) ; E(X)^2 == 0
           val varVariance = 8.0 / 3.0 * e * e
-          s"${v} -> e=${e},  v=${varVariance}, R2=${varVariance / generator.continousStats.variance}"
+          s"${v} -> e=${e},  v=${varVariance}, R2=${varVariance / generator.continuousStats.variance}"
       }.foreach(println)
     }
     if (outputNoiseVars) {
@@ -142,16 +142,16 @@ class GenerateLabelsCmd extends ArgsApp with SparkApp with Echoable with Logging
     //TODO (Refactoring): Refactor to a FeatureSink
     //TODO (Func): Use remote filesystem
     //TODO (Refactoring): Consider data feame
-    
+
     val effectVarData = if (includeEffectVarData) {
       SparkUtils.withBroadcast(sc)(effects) { br_effects =>
         featureSource.features.filter(f => br_effects.value.contains(f.label)).map(f => (f.label, f.values)).collectAsMap()
       }
     } else Map.empty
-    
+
     LoanUtils.withCloseable(CSVWriter.open(new File(featuresFile))) { writer =>
-      writer.writeRow(List("", featureColumn) ::: (if (featureContinousColumn!=null) List(featureContinousColumn) else Nil) ::: effectVarData.toList.map(_._1))
-      val outputColumns = List(featureSource.sampleNames, labels.toList) ::: (if (featureContinousColumn!=null) List(generator.continousResponse.data.toList) else Nil) ::: effectVarData.toList.map(_._2.toList)
+      writer.writeRow(List("", featureColumn) ::: (if (featureContinuousColumn!=null) List(featureContinuousColumn) else Nil) ::: effectVarData.toList.map(_._1))
+      val outputColumns = List(featureSource.sampleNames, labels.toList) ::: (if (featureContinuousColumn!=null) List(generator.continouusResponse.data.toList) else Nil) ::: effectVarData.toList.map(_._2.toList)
       writer.writeAll(outputColumns.transpose)
     }
   }

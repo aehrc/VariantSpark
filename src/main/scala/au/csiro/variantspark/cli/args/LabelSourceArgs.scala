@@ -8,6 +8,7 @@ import org.apache.hadoop.fs.FileSystem
 
 
 trait LabelSourceArgs extends SparkArgs with Echoable {
+
   @ArgsOption(name="-ff", required=false, usage="Path to feature file", aliases=Array("--feature-file"))
   val featuresFile:String = null
 

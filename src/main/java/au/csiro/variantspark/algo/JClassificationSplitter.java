@@ -4,20 +4,21 @@ import java.util.Arrays;
 
 /**
  * Fast gini based splitter.
- * NOT MULITHEADED !!! (Caches state to avoid heap allocations)
+ * NOT MULITHREADED !!! (Caches state to avoid heap allocations)
  * 
  * @author szu004
  *
  */
+@SuppressWarnings("JavaDoc")
 public class JClassificationSplitter implements ClassificationSplitter {
 	private final int[] leftSplitCounts;
 	private final int[] rightSplitCounts;
-	private final double[] leftRigtGini = new double[2];
+	private final double[] leftRightGini = new double[2];
 	private final int[] labels;
 	private final int nLevels;
 
 	/**
-	 * The ounbounded version
+	 * The outbounded version
 	 * @param labels
 	 * @param nCategories
 	 */
@@ -31,8 +32,7 @@ public class JClassificationSplitter implements ClassificationSplitter {
 		this.rightSplitCounts = new int[nCategories];
 		this.nLevels = nLevels;
 	}
-	
-	
+
 	
 	@Override
 	public SplitInfo findSplit(double[] data,int[] splitIndices) {	
@@ -42,9 +42,9 @@ public class JClassificationSplitter implements ClassificationSplitter {
 	    	return result;
 	    }
 	 
-	    int actualNLevles = (nLevels > 0) ?  nLevels : getLevelCount(data);
+	    int actualNLevels = (nLevels > 0) ?  nLevels : getLevelCount(data);
 	    
-		for(int sp = 0 ; sp < actualNLevles - 1; sp ++) {
+		for(int sp = 0 ; sp < actualNLevels - 1; sp ++) {
 			Arrays.fill(leftSplitCounts, 0);
 			Arrays.fill(rightSplitCounts, 0);
 			for(int i:splitIndices) {
@@ -54,9 +54,9 @@ public class JClassificationSplitter implements ClassificationSplitter {
 					rightSplitCounts[labels[i]]++;					
 				}
 			}
-			double g = FastGini.splitGini(leftSplitCounts, rightSplitCounts, leftRigtGini, true);
+			double g = FastGini.splitGini(leftSplitCounts, rightSplitCounts, leftRightGini, true);
 			if (g < minGini ) {
-				result = new SplitInfo(sp, g, leftRigtGini[0], leftRigtGini[1]);
+				result = new SplitInfo(sp, g, leftRightGini[0], leftRightGini[1]);
 				minGini = g;
 			}
 		}

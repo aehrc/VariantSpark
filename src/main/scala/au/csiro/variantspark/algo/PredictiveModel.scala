@@ -1,9 +1,9 @@
 package au.csiro.variantspark.algo
 
-import org.apache.spark.rdd.RDD
-import org.apache.spark.mllib.linalg.Vector
-import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
 import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
+import org.apache.spark.rdd.RDD
+
 import scala.reflect.ClassTag
 
 trait PredictiveModel[V] {

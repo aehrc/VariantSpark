@@ -36,9 +36,9 @@ public abstract class ArgsApp extends CmdApp {
 					Function.identity(), (h1,h2) -> h1, ()->new LinkedHashMap<>()))
 			.values().stream()
 			.forEach(oh -> ((ObjectOptionHandler<?>)oh).printUsage(System.out));
-	};
-	
-	@Override
+	}
+
+    @Override
 	protected  void run(String[] args)  throws Exception {
         CmdLineParser parser = buildParser(this);
         try {

@@ -1,7 +1,6 @@
 package au.csiro.variantspark.algo
 
 import org.apache.spark.mllib.linalg.Vector
-import scala.reflect.ClassTag
 
 @SerialVersionUID(1l)
 class CanSplitVector extends CanSplit[Vector] with Serializable {

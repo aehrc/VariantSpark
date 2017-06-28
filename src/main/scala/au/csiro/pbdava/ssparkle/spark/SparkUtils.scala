@@ -6,8 +6,7 @@ import org.apache.spark.broadcast.Broadcast
 import scala.reflect.ClassTag
 
 object SparkUtils {
-  
-  
+
   
   def withBroadcast[T, R](sc:SparkContext)(v:T)(f: Broadcast[T] => R)(implicit ev:ClassTag[T]) = {
     val br = sc.broadcast(v)(ev)
@@ -17,6 +16,7 @@ object SparkUtils {
       br.destroy()
     }
   }
-  
+
+  // TODO (review RDD for update to DF/DS)
   implicit def rdd2sc(rdd:RDD[_]) = rdd.sparkContext
 }

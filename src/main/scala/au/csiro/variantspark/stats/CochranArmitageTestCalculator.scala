@@ -14,8 +14,7 @@ class CochranArmitageTestCalculator(val labels:Array[Int], val weights:Array[Dou
     val inputClassesNo  = values.max  + 1
     require(inputClassesNo <= weights.length)
     
-    // only works for two classes
-    // so labels need to be 0 and 1
+    // only works for two classes, so labels need to be 0 and 1
     val confusionMatrix = Array.fill(2)(Array.fill(weights.length)(0))
     labels.zip(values).foreach { case (li, vi) => confusionMatrix(li)(vi) +=1 }
     tester.p(confusionMatrix(0), confusionMatrix(1), weights)
@@ -29,7 +28,7 @@ object CochranArmitageTestCalculator {
 
 class CochranArmitageTestScorer(val labels:Array[Int], val weights:Array[Double], val top:Int = 20) {
   /**
-   * This implemments a CochranArmitageTest for thrends
+   * This implements a CochranArmitageTest for threads
    * see: https://en.wikipedia.org/wiki/Cochran%E2%80%93Armitage_test_for_trend
    */
   

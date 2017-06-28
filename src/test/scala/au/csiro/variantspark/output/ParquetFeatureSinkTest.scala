@@ -1,10 +1,10 @@
 package au.csiro.variantspark.output
 
-import org.junit.Assert._
-import org.junit.Test;
-import au.csiro.variantspark.test.SparkTest
-import au.csiro.variantspark.input.generate.OrdinalFeatureGenerator
 import au.csiro.variantspark.input.ParquetFeatureSource
+import au.csiro.variantspark.input.generate.OrdinalFeatureGenerator
+import au.csiro.variantspark.test.SparkTest
+import org.junit.Assert._
+import org.junit.Test
 
 class ParquetFeatureSinkTest extends SparkTest {
 
@@ -14,7 +14,7 @@ class ParquetFeatureSinkTest extends SparkTest {
     val sink = new ParquetFeatureSink("target/parquet-sink")
     sink.save(originalSource)
     val source = new ParquetFeatureSource("target/parquet-sink")
-    assertEquals(originalSource.sampleNames, source.sampleNames)    
+    assertEquals(originalSource.sampleNames, source.sampleNames)
     assertArrayEquals(originalSource.features.collect().asInstanceOf[Array[Object]], source.features.collect().asInstanceOf[Array[Object]])
   }
 }

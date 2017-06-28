@@ -1,8 +1,6 @@
 package au.csiro.variantspark.work
 
-import au.csiro.pbdava.ssparkle.common.utils.Timed
 import breeze.linalg.DenseVector
-import org.apache.spark.mllib.linalg.Vectors
 
 object BreezeTest {
   def main(argv:Array[String]) {

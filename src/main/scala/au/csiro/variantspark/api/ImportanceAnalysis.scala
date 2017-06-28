@@ -30,8 +30,8 @@ class ImportanceAnalysis(val sqlContext:SQLContext, val featureSource:FeatureSou
     val dataType = BoundedOrdinal(varOrdinalLevels)
     val labels = labelSource.getLabels(featureSource.sampleNames)
     val rf = new ByteRandomForest(rfParams)
-    val traningData = inputData.map{ case (f, i) => (f.values, i)}
-    rf.batchTrain(traningData, dataType, labels, nTrees, rfBatchSize)    
+    val trainingData = inputData.map{ case (f, i) => (f.values, i)}
+    rf.batchTrain(trainingData, dataType, labels, nTrees, rfBatchSize)
   }
   
   private lazy val br_normalizedVariableImportance = {

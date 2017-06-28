@@ -29,11 +29,10 @@ import au.csiro.variantspark.cli.args.LabelSourceArgs
 
 class AnalyzeRFCmd extends ArgsApp with FeatureSourceArgs with Echoable with Logging with TestArgs {
 
-  // input options
   @Option(name="-im", required=true, usage="Path to input model", aliases=Array("--input-model"))
   val inputModel:String = null
 
-  @Option(name="-ii", required=false, usage="Path to input variabel index file", aliases=Array("--input-idnex"))
+  @Option(name="-ii", required=false, usage="Path to input variable index file", aliases=Array("--input-idnex"))
   val inputIndex:String = null
 
   @Option(name="-ob", required=false, usage="Path to output importance", aliases=Array("--output-oob"))
@@ -70,8 +69,8 @@ class AnalyzeRFCmd extends ArgsApp with FeatureSourceArgs with Echoable with Log
     echo(s"Analyzing random forrest model")
     
     
-    //NOTE: There is some wirdness going on here with the classloaded
-    //So I am using the Spark JavaSerializer to the the rihght one
+    // TODO: (refactor) There is some weirdness going on here with the class loaded
+    // So I am using the Spark JavaSerializer to the the right one
     val javaSerializer = new JavaSerializer(conf)
     val si = javaSerializer.newInstance()
     
@@ -94,8 +93,8 @@ class AnalyzeRFCmd extends ArgsApp with FeatureSourceArgs with Echoable with Log
       val samples = featureSource.sampleNames
       LoanUtils.withCloseable(CSVWriter.open(outputOobPerTree)) { writer =>
         writer.writeRow(samples)
-        rfModel.members.map(m => m.oobIndexs.zip(m.oobPred).toMap)
-          .map(m => Range(0,samples.size).map(i => m.getOrElse(i, null))).foreach(writer.writeRow)
+        rfModel.members.map(m => m.oobIndexes.zip(m.oobPred).toMap)
+          .map(m => samples.indices.map(i => m.getOrElse(i, null))).foreach(writer.writeRow)
       }
     }
     

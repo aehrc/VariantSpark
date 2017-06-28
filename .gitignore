@@ -41,6 +41,12 @@ target
 .cache-tests
 .ipynb_checkpoints
 
-.RData 
-.Rhistory 
+.RData
+.Rhistory
 tmp
+
+.idea
+
+*.iml
+
+variant-spark_2.11.iml

@@ -2,11 +2,10 @@ package au.csiro.variantspark.algo;
 
 import java.util.Arrays;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 
 /**
- * Fast gini based splitter. NOT MULITHEADED !!! (Caches state to avoid heap
- * allocations)
+ * Fast gini based splitter. NOT MULITHREADED !!!
+ * Caches state to avoid heap allocations
  * 
  * @author szu004
  *
@@ -15,7 +14,7 @@ public class JConfusionClassificationSplitter implements ClassificationSplitter 
 	private final int[] leftSplitCounts;
 	private final int[] rightSplitCounts;
 	private final int[][] confusion;
-	private final double[] leftRigtGini = new double[2];
+	private final double[] leftRightGini = new double[2];
 	private final int[] labels;
 	private final int nCategories;
 	private final int nLevels;
@@ -30,8 +29,6 @@ public class JConfusionClassificationSplitter implements ClassificationSplitter 
 	}
 
 	
-	
-	
 	@Override
 	public SplitInfo findSplit(double[] data, int[] splitIndices) {
 		return dofindSplit(splitIndices, (idx, conf) -> {
@@ -45,7 +42,7 @@ public class JConfusionClassificationSplitter implements ClassificationSplitter 
 	public SplitInfo findSplit(int[] data, int[] splitIndices) {
 		return dofindSplit(splitIndices, (idx, conf) -> {
 			for (int i : idx) {
-				conf[(int) data[i]][labels[i]]++;
+				conf[data[i]][labels[i]]++;
 			}
 		});
 	}
@@ -67,26 +64,24 @@ public class JConfusionClassificationSplitter implements ClassificationSplitter 
 	    	return result;
 	    }
 
-		for (int sp = 0; sp < confusion.length; sp++) {
-			Arrays.fill(confusion[sp], 0);
+		for (int[] aConfusion : confusion) {
+			Arrays.fill(aConfusion, 0);
 		}
 
 		confusionCalc.accept(splitIndices, confusion);
-		//for (int i : splitIndices) {
-		//	confusion[(int) data[i]][labels[i]]++;
-		//}
+
 		Arrays.fill(leftSplitCounts, 0);
 		Arrays.fill(rightSplitCounts, 0);
 		for (int[] l : confusion) {
 			ArrayOps.addEq(rightSplitCounts, l);
 		}
-		// just try all for now
+
 		for (int sp = 0; sp < nLevels - 1; sp++) {
 			ArrayOps.addEq(leftSplitCounts, confusion[sp]);
 			ArrayOps.subEq(rightSplitCounts, confusion[sp]);
-			double g = FastGini.splitGini(leftSplitCounts, rightSplitCounts, leftRigtGini, true);
+			double g = FastGini.splitGini(leftSplitCounts, rightSplitCounts, leftRightGini, true);
 			if (g < minGini) {
-				result = new SplitInfo(sp, g, leftRigtGini[0], leftRigtGini[1]);
+				result = new SplitInfo(sp, g, leftRightGini[0], leftRightGini[1]);
 				minGini = g;
 			}
 		}
