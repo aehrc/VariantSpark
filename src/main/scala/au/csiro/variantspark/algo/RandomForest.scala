@@ -14,16 +14,20 @@ import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
 
-
+/** Allows for normalization(scaling)of the input map values
+  */
 trait VarImportanceNormalizer {
   def normalize(varImportance:Map[Long,Double]):Map[Long, Double]
 }
 
+/** Defines normalization variable
+  */
 case object IdentityVarImportanceNormalizer extends VarImportanceNormalizer {
   override def normalize(varImportance:Map[Long,Double]):Map[Long, Double] = varImportance
 }
 
-
+/** Implements normalization variable scaling
+  */
 class StandardImportanceNormalizer(val scale:Double) extends VarImportanceNormalizer {
   override def normalize(varImportance:Map[Long,Double]):Map[Long, Double] = {
     val total = varImportance.values.sum  * scale
@@ -31,9 +35,10 @@ class StandardImportanceNormalizer(val scale:Double) extends VarImportanceNormal
   }
 }
 
+/** Defines two different scaling values - 100% and 1%
+  */
 case object To100ImportanceNormalizer extends StandardImportanceNormalizer(100.0) 
 case object ToOneImportanceNormalizer extends StandardImportanceNormalizer(1.0) 
-
 
 case class VotingAggregator(val nLabels:Int, val nSamples:Int) {
   lazy val votes = Array.fill(nSamples)(Array.fill(nLabels)(0))

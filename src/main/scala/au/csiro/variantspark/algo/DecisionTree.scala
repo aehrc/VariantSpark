@@ -46,7 +46,7 @@ trait CanSplit[V] extends CanSize[V] {
 
 /** Allows for a general description of the construct 
   *
-  * Specify the 'indices', 'impurtity', and 'majoritylabel' these values will not be visible outside the class
+  * Specify the 'indices', 'impurity', and 'majoritylabel' these values will not be visible outside the class
   *
   * {{{
   * val subInfo = SubsetInfo(indices, impurtity, majorityLabel)
@@ -54,7 +54,7 @@ trait CanSplit[V] extends CanSize[V] {
   * }}}
   *
   * @constructor creates value based on the indices, impurity, and majorityLabel
-  * @constructor this: an alterative constructor for the use of the FactorVariable class
+  * @constructor this: an alternative constructor for the use of the FactorVariable class
   * @param indices: input an array of integers representing the indices of the values
   * @param impurity: input the value of impurity of the data construct
   * @param majorityLabel: input the specific label related to the majority of the values
@@ -99,7 +99,7 @@ case class SplitInfo(val splitPoint:Int, val gini:Double,  val leftGini:Double, 
   * 
   * Specify the 'variableIndex', 'splitPoint', 'gini', 'leftGini', and 'rightGini'
   *
-  * @constructor creates information about the split that occured on a specifc variable
+  * @constructor creates information about the split that occurred on a specific variable
   * @param variableIndex: specifies the index of the variable that the dataset will split on
   * @param splitPoint: specifies the point in the index of the exact split
   * @param gini: general gini value of the dataset
@@ -180,7 +180,7 @@ case class DeterministicMerger() extends Merger {
     */
   def merge(a1:Array[VarSplitInfo], a2:Array[VarSplitInfo]) = {
 
-    /** Takes the [[au.csiro.variantspark.algo.VarSplitInfo]] from two seperate splits and returns the value from either s1 or s2 based on the gini impurity
+    /** Takes the [[au.csiro.variantspark.algo.VarSplitInfo]] from two separate splits and returns the value from either s1 or s2 based on the gini impurity
       *
       * @param s1: input an [[au.csiro.variantspark.algo.VarSplitInfo]] 
       * @param s2: input an [[au.csiro.variantspark.algo.VarSplitInfo]]
@@ -312,7 +312,7 @@ object DecisionTree extends Logging  with Prof {
     * @param bestSplits: input an Array containing the [[au.csiro.variantspark.algo.VarSplitInfo]] class
     * @param br_subsets: input a Broadcast of Arrays containing the [[au.csiro.variantspark.algo.SubsetInfo]] class
     * @param br_splitter: Broadcast of the [[au.csiro.variantspark.algo.VariableSplitter]] class
-    * @return Returns an indexed list of splited subsets
+    * @return Returns an indexed list of splitted subsets
     */
   def splitSubsets[V](indexedData: RDD[(V, Long)], bestSplits:Array[VarSplitInfo], br_subsets:Broadcast[Array[SubsetInfo]], br_splitter:Broadcast[VariableSplitter[V]]) = {
     profIt("REM: splitSubsets") {
