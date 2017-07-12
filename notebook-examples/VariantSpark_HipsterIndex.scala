@@ -2,30 +2,40 @@
 // MAGIC %md
 // MAGIC ![VariantSpark](https://s3.us-east-2.amazonaws.com/csiro-graphics/variant-spark.png)  
 // MAGIC * [**VariantSpark**](http://bioinformatics.csiro.au/variantspark) is a machine learning library for real-time genomic data analysis (for thousands of samples and millions of variants) and is...  
-// MAGIC   * Built on top of Apache Spark and written in Scala
+// MAGIC   * Built on top of Apache Spark
+// MAGIC   * Written in Scala
 // MAGIC   * Authored by the team at [CSIRO Bioinformatics](http://bioinformatics.csiro.au/) in Australia
-// MAGIC   * Uses a custom ML **random forest** implementation to find the most *important* variants attributing to a phenotype of interest   
-// MAGIC * The demo...  
+// MAGIC   * Uses a custom machine learning **random forest** implementation to find the most *important* variants attributing to a phenotype of interest   
+// MAGIC * This demo...  
 // MAGIC   * Includes a dataset with a subset of the samples and variants (in VCF format) from the 1000 Genomes Project  
-// MAGIC   * Uses a synthetic phenotype called *Hipster-Index* (in CSV format) factoring various real phenotypes (monobrow, beard, etc.)
+// MAGIC   * Uses a synthetic phenotype called *HipsterIndex* (in CSV format) factoring various real phenotypes (monobrow, beard, etc.)
+
+// COMMAND ----------
+
+// MAGIC %md
+// MAGIC ## HipsterIndex
+// MAGIC The synthetic HipsterIndex was created using the following genotypes and formular:
 // MAGIC 
-// MAGIC Create the synthetic Hiptser-Index using these genotypes with the following formular:
-// MAGIC 
-// MAGIC | ID |SNP ID     | chr | position | phenotype | paper |
+// MAGIC | ID |SNP ID     | chromosome | position | phenotype | reference |
 // MAGIC |---:|----------:|----:|-------:|-----:|----------:|------:|
 // MAGIC | B6 |[rs2218065](https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs=2218065) | chr2 | 223034082 | monobrow | [Adhikari K, et al. (2016) Nat Commun.](https://www.ncbi.nlm.nih.gov/pubmed/?term=26926045) |
 // MAGIC | R1 |[rs1363387](https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs=1363387) | chr5 | 126626044 | Retina horizontal cells (checks) | [Kay, JN et al. (2012) Nature](22407321)
 // MAGIC | B2 |[rs4864809](https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs=4864809) | chr4 |  54511913 | beard | [Adhikari K, et al. (2016) Nat Commun.](https://www.ncbi.nlm.nih.gov/pubmed/?term=26926045)
-// MAGIC | C2 |[rs4410790](https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs=4410790)  |chr7 |17284577| coffee         | [Cornelis MC et al. (2011) PLoS Genet.](https://www.ncbi.nlm.nih.gov/pubmed/?term=21490707) |
+// MAGIC | C2 |[rs4410790](https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs=4410790)  |chr7 |17284577| coffee consumption        | [Cornelis MC et al. (2011) PLoS Genet.](https://www.ncbi.nlm.nih.gov/pubmed/?term=21490707) |
 // MAGIC 
-// MAGIC `Hipster-Index = ((2 + GT[B6]) * (1.5 + GT[R1])) + ((0.5 + GT[C2]) * (1 + GT[B2]))`
+// MAGIC `HipsterIndex = ((2 + GT[B6]) * (1.5 + GT[R1])) + ((0.5 + GT[C2]) * (1 + GT[B2]))`
 // MAGIC 
-// MAGIC   GT stands for the genotype at this location with *homozygote* reference encoded as 0, *heterozygote* as 1 and *homozygote alternative* 2
+// MAGIC   GT stands for the genotype at this location with *homozygote* reference encoded as 0, *heterozygote* as 1 and *homozygote alternative* as 2. We then label individuals with a HipsterIndex score above 10 as hipsters, and the rest non-hipsters. By doing so, we created a binary annotation for the individuals in the 1000 Genome Project.
 // MAGIC 
+// MAGIC In the rest of this notebook, we will demonstrate the usage of VariantSpark to reverse-engineer the association of the selected SNPs to the phenotype of insterest (i.e. being a hipster).
+
+// COMMAND ----------
+
+// MAGIC %md
 // MAGIC ###0. SETUP -- Databricks (Spark) cluster setup steps for VariantSpark:  
 // MAGIC 
 // MAGIC 1. **Download** VariantSpark java libraries to your computer from...   
-// MAGIC   https://drive.google.com/file/d/0B-LSR-6V0Ah5NmZBOWw0Ni02NFU/view?usp=sharing
+// MAGIC   https://academics.cloud.databricks.com/files/jars/b2f93143_eddd_4346_9184_19ff3e1c39e1-variant_spark_0_0_1_1_6_1_SNAPSHOT_all-2fadb.jar
 // MAGIC 2. **Import** the libary into your Databricks instance by...  
 // MAGIC   On the Databricks interface, navigate to `Workspace > Users > Username` and select `Import` from the Username drop-down menu.   
 // MAGIC   At the bottom of `Import Notebooks` window, click the link in `(To import a library, such as a jar or egg,click here)`.   
@@ -106,6 +116,8 @@ val importanceAnalysis = ImportanceAnalysis(featureSource, labelSource, nTrees =
 // MAGIC %md
 // MAGIC ###5. RUN ANALYSIS using VariantSpark   
 // MAGIC 
+// MAGIC Unlike other statistical approaches, random forests have the advantage of not needing the data to be extensively pre-processed, so the analysis can be triggered on the loaded data directly. 
+// MAGIC 
 // MAGIC 1. Use Scala to call the variableImportance method on the instance of the ImportanceAnalysis object  
 // MAGIC     to calcuate the variant importance attributing to the phenotype
 // MAGIC 2. Cache the analysis results into a SparkSQL table  
@@ -122,23 +134,17 @@ display(variableImportance)
 // COMMAND ----------
 
 // MAGIC %md
-// MAGIC ###6. VISUALIZE ANALYSIS using SparkSQL   
-// MAGIC 
-// MAGIC 1. Query the SparkSQL table to display the top 6 results in descending order 
-// MAGIC 2. Plot the results into a bar chart using the visualization feature in Databricks
-// MAGIC 
-// MAGIC *Note: the Hipster-Index is constructed from 4 SNPs so we expect the importance to be limited to these SNPs  
-// MAGIC and the ones on [linkage disequilibrium (LD)](https://en.wikipedia.org/wiki/Linkage_disequilibrium) with them.* 
-
-// COMMAND ----------
-
-// MAGIC %sql
-// MAGIC select * from importance order by importance desc limit 6
+// MAGIC ##Variant Importance Score
+// MAGIC VariantSpark assigns an "Importance" score to each tested variant reflecting it's association to the phenotype of interest. The Importance score is calculated based on the [Gini Impurity](https://en.wikipedia.org/wiki/Decision_tree_learning#Gini_impurity) scores of the decision trees in the random forest built by VariantSpark. In the decision tree building process, at each tree node, VariantSpark uses variants from the VCF dataset to split the samples and calculate the Gini Impurity scores before and after the split. At a given node _N_, the decrease in the Gini Impurity score by splitting using a feature _p_ is defined as 
+// MAGIC $$
+// MAGIC \Delta I = I(N) - (I(L) + I(R)),
+// MAGIC $$ 
+// MAGIC where _I(N)_ is the Gini Impurity at node _N_, and _I(L)_ and _I(R)_ are the Gini Impurity scores of the left and right child node, respectively. Then, the Importance score of variant _p_ is defined as the mean of the decrease in Gini Impurity score by splitting using the variant _p_ across all nodes and trees in the random forest. A variant with __higher Importance score implies it is more strongly associated with the phenotype of interest__.
 
 // COMMAND ----------
 
 // MAGIC %md
-// MAGIC ###7. VISUALIZE ANALYSIS using Python  
+// MAGIC ###6. VISUALIZE ANALYSIS using Python  
 // MAGIC 
 // MAGIC 1. Query the SparkSQL table to display the top 100 results in descending order 
 // MAGIC 2. Plot the results into a line chart using the visualization feature in the python libraries
@@ -160,8 +166,6 @@ display(variableImportance)
 // MAGIC 
 // MAGIC 1. Using the R collect method to load the SparkSQL table into a local R session  
 // MAGIC 2. List the results using the head method in R  
-// MAGIC 
-// MAGIC *NOTE: Serveral blog post mention that using `collect(...)` is inefficient - example using `data.table()` at http://dsnotes.com/post/r-read-hdfs/*
 
 // COMMAND ----------
 
@@ -182,15 +186,14 @@ display(variableImportance)
 
 // MAGIC %r
 // MAGIC library(ggplot2)
-// MAGIC importance_df  = collect(sql(sqlContext,'SELECT * FROM importance ORDER BY importance DESC LIMIT 20'))
-// MAGIC ggplot(importance_df, aes(x=variable, y=importance)) + geom_bar(stat='identity') + coord_flip()
+// MAGIC importance_df  = collect(sql(sqlContext,'SELECT * FROM importance ORDER BY importance DESC limit 25'))
+// MAGIC ggplot(importance_df, aes(x=variable, y=importance)) + geom_bar(stat='identity') + scale_x_discrete(limits=importance_df[order(importance_df$importance), "variable"]) + coord_flip()
 
 // COMMAND ----------
 
 // MAGIC %md
 // MAGIC ##Results interpretation
-// MAGIC The plot above shows that VariantSpark has recovered the correct genotypes of this multivariate phenotype   
-// MAGIC with interacting features (multiplicative and additive effects). 
+// MAGIC The plot above shows that VariantSpark has recovered the correct genotypes of this multivariate phenotype with interacting features (multiplicative and additive effects). 
 // MAGIC 
 // MAGIC ![Hipster-Index](https://s3.us-east-2.amazonaws.com/csiro-graphics/HistperSignatureGraphic-01.png)
 // MAGIC 
@@ -200,17 +203,16 @@ display(variableImportance)
 // MAGIC 3. __chr7_17284577__ (rs4410790) the marker for increased coffee consuption is ranked third  
 // MAGIC 4. __chr4_54511913__ (rs4864809) the marker for beards is fourth
 // MAGIC 
-// MAGIC The last two are in swapped order compared to the formular of the HipsterIndex,   
-// MAGIC however with 0.5 and 1 as weight they may be difficult to differentiate. 
+// MAGIC The last two are in swapped order compared to the formular of the HipsterIndex, however with 0.5 and 1 as weight they may be difficult to differentiate. 
 
 // COMMAND ----------
 
 // MAGIC %md
-// MAGIC ### ALTERNATE ANALYSIS    
+// MAGIC ### ALTERNATIVE ANALYSIS    
 // MAGIC 
 // MAGIC Compare the results from other tools, such as [Hail](https://hail.is).  
 // MAGIC The Hail P-values for this example were computed in a [different notebook](https://docs.databricks.com/spark/latest/training/1000-genomes.html)  
-// MAGIC *NOTE: To use Hail's logistic regression as a different Spark version is required.* 
+// MAGIC *NOTE: To use Hail's logistic regression a different Spark version is required.* 
 // MAGIC 
 // MAGIC 1. Use an alternate tool (Hail) for analysis
 // MAGIC 2. Load the pre-computed values using Python
@@ -226,10 +228,10 @@ display(variableImportance)
 // COMMAND ----------
 
 // MAGIC %md
-// MAGIC ###1. REVIEW ANALYSIS  
+// MAGIC ###1. REVIEW RESULTS FROM ALTERNATIVE ANALYSIS  
 // MAGIC 
 // MAGIC The list shows the result returned by Hail's logistic regression method, listing important variables in a **different** order,  
-// MAGIC suggesting that complex interacting variables are better recoved using random forests   
+// MAGIC suggesting that complex interacting variables are better recoved using random forest.   
 // MAGIC *NOTE: logistic regression results show __chr5_126626044__ came up first, instead of __chr2_223034082__.*
 
 // COMMAND ----------
@@ -278,6 +280,11 @@ display(hailDF)
 // COMMAND ----------
 
 // MAGIC %md
+// MAGIC While HAIL identified the correct variables their order is not consistent with their weight in the formular. More generally, HAIL has identified a large number of variables as associated with the label that VariantSpark scores with a low Importance socre. Utilizing VariantSpark random forests allows us to reduce the noise and extract the signal with the correct ordering. 
+
+// COMMAND ----------
+
+// MAGIC %md
 // MAGIC ###Credit
 // MAGIC 
-// MAGIC The [Transformational Bioinformatics team](https://aehrc.com/biomedical-informatics/transformational-bioinformatics/) has developed VariantSpark and put together this illustrative example. Thank you to Lynn Langit for input on the presenetation of this notebook. 
+// MAGIC Transformational Bioinformatics team has developed VariantSpark and put together this illustrative example. Thank you to Lynn Langit for input on the presentation of this notebook. 
