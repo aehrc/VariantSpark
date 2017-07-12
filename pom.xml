@@ -57,30 +57,23 @@
 	</scm>
 
 
-    <!-- DODO: change to ossrh below -->
-    <distributionManagement>
-        <repository>
-            <id>pbdava-nexus</id>
-            <name>Internal Releases</name>
-            <url>http://pbdava-dev.it.csiro.au:8081/nexus/content/repositories/releases</url>
-        </repository>
-        <snapshotRepository>
-            <id>pbdava-nexus</id>
-            <name>Internal Releases</name>
-            <url>http://pbdava-dev.it.csiro.au:8081/nexus/content/repositories/snapshots</url>
-        </snapshotRepository>
-    </distributionManagement>
-
-	<!--distributionManagement>
-		<snapshotRepository>
-			<id>ossrh</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-		</snapshotRepository>
+	<!-- DODO: change to ossrh below -->
+	<distributionManagement>
 		<repository>
-			<id>ossrh</id>
-			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+			<id>pbdava-nexus</id>
+			<name>Internal Releases</name>
+			<url>http://pbdava-dev.it.csiro.au:8081/nexus/content/repositories/releases</url>
 		</repository>
-	</distributionManagement-->
+		<snapshotRepository>
+			<id>pbdava-nexus</id>
+			<name>Internal Releases</name>
+			<url>http://pbdava-dev.it.csiro.au:8081/nexus/content/repositories/snapshots</url>
+		</snapshotRepository>
+	</distributionManagement>
+
+	<!--distributionManagement> <snapshotRepository> <id>ossrh</id> <url>https://oss.sonatype.org/content/repositories/snapshots</url> 
+		</snapshotRepository> <repository> <id>ossrh</id> <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url> 
+		</repository> </distributionManagement -->
 
 	<properties>
 		<maven.compiler.source>1.8</maven.compiler.source>
@@ -175,10 +168,15 @@
 				<version>3.2.2</version>
 				<executions>
 					<execution>
+						<id>add-scala-source</id>
+						<goals>
+							<goal>add-source</goal>
+						</goals>
+					</execution>
+					<execution>
 						<id>scala-compile-first</id>
 						<phase>process-resources</phase>
 						<goals>
-							<!--goal>add-source</goal -->
 							<goal>compile</goal>
 						</goals>
 					</execution>
@@ -189,7 +187,17 @@
 							<goal>testCompile</goal>
 						</goals>
 					</execution>
+					<execution>
+						<id>attach-scaladocs</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>doc-jar</goal>
+						</goals>
+					</execution>
 				</executions>
+				<configuration>
+					<scalaVersion>${scala.version}</scalaVersion>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -269,6 +277,7 @@
 										<goals>
 											<goal>compile</goal>
 											<goal>testCompile</goal>
+											<goal>add-source</goal>
 										</goals>
 									</pluginExecutionFilter>
 									<action>
@@ -278,11 +287,6 @@
 							</pluginExecutions>
 						</lifecycleMappingMetadata>
 					</configuration>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-surefire-plugin</artifactId>
-					<version>2.19.1</version>
 				</plugin>
 			</plugins>
 		</pluginManagement>
@@ -298,7 +302,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-source-plugin</artifactId>
-						<version>2.2.1</version>
+						<version>3.0.1</version>
 						<executions>
 							<execution>
 								<id>attach-sources</id>
@@ -307,6 +311,9 @@
 								</goals>
 							</execution>
 						</executions>
+						<configuration>
+							<attach>true</attach>
+						</configuration>
 					</plugin>
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
