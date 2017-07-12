@@ -57,23 +57,13 @@
 	</scm>
 
 
-	<!-- DODO: change to ossrh below -->
 	<distributionManagement>
-		<repository>
-			<id>pbdava-nexus</id>
-			<name>Internal Releases</name>
-			<url>http://pbdava-dev.it.csiro.au:8081/nexus/content/repositories/releases</url>
-		</repository>
 		<snapshotRepository>
-			<id>pbdava-nexus</id>
-			<name>Internal Releases</name>
-			<url>http://pbdava-dev.it.csiro.au:8081/nexus/content/repositories/snapshots</url>
+			<id>ossrh</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
 		</snapshotRepository>
+        <!-- The release repository is define in the `nexus-staging-maven-plugin` -->
 	</distributionManagement>
-
-	<!--distributionManagement> <snapshotRepository> <id>ossrh</id> <url>https://oss.sonatype.org/content/repositories/snapshots</url> 
-		</snapshotRepository> <repository> <id>ossrh</id> <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url> 
-		</repository> </distributionManagement -->
 
 	<properties>
 		<maven.compiler.source>1.8</maven.compiler.source>
@@ -82,7 +72,9 @@
 		<scala.binary.version>2.11</scala.binary.version>
 		<scala.version>2.11.8</scala.version>
 		<spark.version>2.1.0</spark.version>
+        <sonata.autorelease>false</sonata.autorelease>
 	</properties>
+	
 	<dependencies>
 		<dependency>
 			<groupId>org.scala-lang</groupId>
@@ -250,6 +242,17 @@
 				<configuration>
 					<source>1.8</source>
 					<target>1.8</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.sonatype.plugins</groupId>
+				<artifactId>nexus-staging-maven-plugin</artifactId>
+				<version>1.6.8</version>
+				<extensions>true</extensions>
+				<configuration>
+					<serverId>ossrh</serverId>
+					<nexusUrl>https://oss.sonatype.org/</nexusUrl>
+					<autoReleaseAfterClose>${sonata.autorelease}</autoReleaseAfterClose>
 				</configuration>
 			</plugin>
 		</plugins>
