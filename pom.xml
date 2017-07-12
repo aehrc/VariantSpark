@@ -8,11 +8,11 @@
 
 	<name>variant-spark</name>
 	<description>Genomic variants interpretation toolkit</description>
-	<url>https://github.com/csirobigdata/variant-spark</url>
+	<url>http://bioinformatics.csiro.au/variantspark</url>
 	<licenses>
 		<license>
 			<name>CSIRO Non-Commercial Source Code Licence Agreement v1.0</name>
-			<url>https://raw.githubusercontent.com/csirobigdata/variant-spark/master/LICENSE</url>
+			<url>https://raw.githubusercontent.com/aehrc/VariantSpark/master/LICENSE</url>
 		</license>
 	</licenses>
 	<inceptionYear>2014</inceptionYear>
@@ -51,9 +51,9 @@
 	</developers>
 
 	<scm>
-		<connection>scm:git:git://github.com/csirobigdata/variant-spark.git</connection>
-		<developerConnection>scm:git:ssh://github.com:csirobigdata/variant-spark.git</developerConnection>
-		<url>https://github.com/csirobigdata/variant-spark</url>
+		<connection>scm:git:git://github.com/aehrc/VariantSpark.git</connection>
+		<developerConnection>scm:git:ssh://github.com:aehrc/VariantSpark.git</developerConnection>
+		<url>https://github.com/aehrc/VariantSpark</url>
 	</scm>
 
 
