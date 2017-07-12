@@ -5,16 +5,56 @@
 	<artifactId>variant-spark_${scala.binary.version}</artifactId>
 	<version>0.0.2-SNAPSHOT</version>
 	<packaging>jar</packaging>
-	<name>${project.artifactId}</name>
-	<description>Machine learning for VCF</description>
-	<inceptionYear>2010</inceptionYear>
+
+	<name>variant-spark</name>
+	<description>Genomic variants interpretation toolkit</description>
+	<url>https://github.com/csirobigdata/variant-spark</url>
 	<licenses>
 		<license>
-			<name>My License</name>
-			<url>http://....</url>
-			<distribution>repo</distribution>
+			<name>CSIRO Non-Commercial Source Code Licence Agreement v1.0</name>
+			<url>https://raw.githubusercontent.com/csirobigdata/variant-spark/master/LICENSE</url>
 		</license>
 	</licenses>
+	<inceptionYear>2014</inceptionYear>
+
+	<developers>
+		<developer>
+			<name>Denis Bauer</name>
+			<email>denis.bauer@csiro.au</email>
+			<organization>CSIRO eHealth</organization>
+			<organizationUrl>https://aehrc.com</organizationUrl>
+		</developer>
+		<developer>
+			<name>Piotr Szul</name>
+			<email>piotr.szul@data61.csiro.au</email>
+			<organization>CSIRO Data61</organization>
+			<organizationUrl>http://www.data61.csiro.au/</organizationUrl>
+		</developer>
+		<developer>
+			<name>Aidan O’Brien</name>
+			<email>aidan.o’brien@csiro.au</email>
+			<organization>CSIRO eHealth</organization>
+			<organizationUrl>https://aehrc.com</organizationUrl>
+		</developer>
+		<developer>
+			<name>Oscar Luo</name>
+			<email>Oscar.luo@csiro.au</email>
+			<organization>CSIRO eHealth</organization>
+			<organizationUrl>https://aehrc.com</organizationUrl>
+		</developer>
+		<developer>
+			<name>Robert Dunne</name>
+			<email>Rob.Dunne@data61.csiro.au</email>
+			<organization>CSIRO eHealth</organization>
+			<organizationUrl>http://www.data61.csiro.au/</organizationUrl>
+		</developer>
+	</developers>
+
+	<scm>
+		<connection>scm:git:git://github.com/csirobigdata/variant-spark.git</connection>
+		<developerConnection>scm:git:ssh://github.com:csirobigdata/variant-spark.git</developerConnection>
+		<url>https://github.com/csirobigdata/variant-spark</url>
+	</scm>
 
 	<properties>
 		<maven.compiler.source>1.8</maven.compiler.source>
@@ -23,7 +63,6 @@
 		<scala.binary.version>2.11</scala.binary.version>
 		<scala.version>2.11.8</scala.version>
 		<spark.version>2.1.0</spark.version>
-		<!--skipTests>true</skipTests-->
 	</properties>
 	<dependencies>
 		<dependency>
@@ -68,9 +107,9 @@
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/com.github.samtools/htsjdk -->
 		<dependency>
-		    <groupId>com.github.samtools</groupId>
-		    <artifactId>htsjdk</artifactId>
-		    <version>2.5.1</version>
+			<groupId>com.github.samtools</groupId>
+			<artifactId>htsjdk</artifactId>
+			<version>2.5.1</version>
 		</dependency>
 		<dependency>
 			<groupId>joda-time</groupId>
@@ -84,39 +123,39 @@
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/it.unimi.dsi/dsiutils -->
 		<dependency>
-		    <groupId>it.unimi.dsi</groupId>
-		    <artifactId>dsiutils</artifactId>
-		    <version>2.3.3</version>
-		    <exclusions>
-		    	<exclusion>		    	
-				    <groupId>ch.qos.logback</groupId>
-				  	<artifactId>logback-classic</artifactId>		    	
-		    	</exclusion>
-		    </exclusions>
+			<groupId>it.unimi.dsi</groupId>
+			<artifactId>dsiutils</artifactId>
+			<version>2.3.3</version>
+			<exclusions>
+				<exclusion>
+					<groupId>ch.qos.logback</groupId>
+					<artifactId>logback-classic</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
-		    <groupId>org.scala-saddle</groupId>
-		    <artifactId>saddle-core_${scala.binary.version}</artifactId>
-		    <version>1.3.4</version>
-		    <scope>test</scope>
-		</dependency>		
+			<groupId>org.scala-saddle</groupId>
+			<artifactId>saddle-core_${scala.binary.version}</artifactId>
+			<version>1.3.4</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
 		<plugins>
 			<plugin>
-			    <groupId>net.alchim31.maven</groupId>
-			    <artifactId>scala-maven-plugin</artifactId>
-			    <version>3.2.2</version>
+				<groupId>net.alchim31.maven</groupId>
+				<artifactId>scala-maven-plugin</artifactId>
+				<version>3.2.2</version>
 				<executions>
 					<execution>
 						<id>scala-compile-first</id>
 						<phase>process-resources</phase>
 						<goals>
-						    <!--goal>add-source</goal-->
+							<!--goal>add-source</goal -->
 							<goal>compile</goal>
 						</goals>
-					</execution>									
+					</execution>
 					<execution>
 						<id>scala-test-compile</id>
 						<phase>process-test-resources</phase>
@@ -124,7 +163,7 @@
 							<goal>testCompile</goal>
 						</goals>
 					</execution>
-				</executions>				
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -181,7 +220,8 @@
 		</plugins>
 		<pluginManagement>
 			<plugins>
-				<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
+				<!--This plugin's configuration is used to store Eclipse m2e settings 
+					only. It has no influence on the Maven build itself. -->
 				<plugin>
 					<groupId>org.eclipse.m2e</groupId>
 					<artifactId>lifecycle-mapping</artifactId>
@@ -206,7 +246,7 @@
 										</goals>
 									</pluginExecutionFilter>
 									<action>
-                                        <ignore/>
+										<ignore />
 									</action>
 								</pluginExecution>
 							</pluginExecutions>
@@ -224,21 +264,21 @@
 						<!-- If you have classpath issue like NoDefClassError,... -->
 						<!-- useManifestOnlyJar>false</useManifestOnlyJar -->
 					</configuration>
-				</plugin>					
+				</plugin>
 			</plugins>
 		</pluginManagement>
 	</build>
 	<profiles>
-        <profile>
-            <id>scala_2.10</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <properties>
-		        <scala.binary.version>2.10</scala.binary.version>
-		        <scala.version>2.10.6</scala.version>
-            </properties>
-        </profile>  	
+		<profile>
+			<id>scala_2.10</id>
+			<activation>
+				<activeByDefault>false</activeByDefault>
+			</activation>
+			<properties>
+				<scala.binary.version>2.10</scala.binary.version>
+				<scala.version>2.10.6</scala.version>
+			</properties>
+		</profile>
 		<profile>
 			<id>cdh5.8.2</id>
 			<activation>
@@ -249,44 +289,44 @@
 					<id>cloudera</id>
 					<url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
 				</repository>
-			</repositories>		
+			</repositories>
 			<properties>
 				<spark.version>1.6.0-cdh5.8.2</spark.version>
 			</properties>
 			<dependencies>
 				<!-- https://mvnrepository.com/artifact/org.xerial.snappy/snappy-java -->
 				<dependency>
-				    <groupId>org.xerial.snappy</groupId>
-				    <artifactId>snappy-java</artifactId>
-				    <version>1.1.2.6</version>
+					<groupId>org.xerial.snappy</groupId>
+					<artifactId>snappy-java</artifactId>
+					<version>1.1.2.6</version>
 					<scope>provided</scope>
 				</dependency>
 			</dependencies>
-		</profile>	
-        <profile>
-            <id>cdh5.9.0</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <repositories>
-                <repository>
-                    <id>cloudera</id>
-                    <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
-                </repository>
-            </repositories>     
-            <properties>
-                <spark.version>1.6.0-cdh5.9.0</spark.version>
-            </properties>
-            <dependencies>
-                <!-- https://mvnrepository.com/artifact/org.xerial.snappy/snappy-java -->
-                <dependency>
-                    <groupId>org.xerial.snappy</groupId>
-                    <artifactId>snappy-java</artifactId>
-                    <version>1.1.2.6</version>
-                    <scope>provided</scope>
-                </dependency>
-            </dependencies>
-        </profile>  		
+		</profile>
+		<profile>
+			<id>cdh5.9.0</id>
+			<activation>
+				<activeByDefault>false</activeByDefault>
+			</activation>
+			<repositories>
+				<repository>
+					<id>cloudera</id>
+					<url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
+				</repository>
+			</repositories>
+			<properties>
+				<spark.version>1.6.0-cdh5.9.0</spark.version>
+			</properties>
+			<dependencies>
+				<!-- https://mvnrepository.com/artifact/org.xerial.snappy/snappy-java -->
+				<dependency>
+					<groupId>org.xerial.snappy</groupId>
+					<artifactId>snappy-java</artifactId>
+					<version>1.1.2.6</version>
+					<scope>provided</scope>
+				</dependency>
+			</dependencies>
+		</profile>
 		<profile>
 			<id>no-perf</id>
 			<activation>
@@ -305,11 +345,11 @@
 							<disableXmlReport>true</disableXmlReport>
 							<!-- If you have classpath issue like NoDefClassError,... -->
 							<!-- useManifestOnlyJar>false</useManifestOnlyJar -->
-				          	<excludes>
-				            	<exclude>au.csiro.variantspark.perf.*</exclude>
-				          	</excludes>
+							<excludes>
+								<exclude>au.csiro.variantspark.perf.*</exclude>
+							</excludes>
 						</configuration>
-					</plugin>				
+					</plugin>
 				</plugins>
 			</build>
 		</profile>
