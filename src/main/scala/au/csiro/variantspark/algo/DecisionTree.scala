@@ -54,7 +54,6 @@ trait CanSplit[V] extends CanSize[V] {
   * }}}
   *
   * @constructor creates value based on the indices, impurity, and majorityLabel
-  * @constructor this: an alterative constructor for the use of the FactorVariable class
   * @param indices: input an array of integers representing the indices of the values
   * @param impurity: input the value of impurity of the data construct
   * @param majorityLabel: input the specific label related to the majority of the values

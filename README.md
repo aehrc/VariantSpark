@@ -57,6 +57,10 @@ Note: The difference between running in `--local` mode and in `--spark` with `lo
 
 ### Running examples
 
+There are multiple methods for running variant-spark examples
+
+#### Manual Examples
+
 variant-spark comes with a few example scripts in the `scripts` directory that demonstrate how to run its commands on sample data .
 
 There is a few small data sets in the `data` directory suitable for running in the `--local` mode. The scripts that operate on this data start with the `local-` prefix. For example
@@ -85,3 +89,17 @@ After the test data has been successfully copied to HDFS you can run examples sc
 	./scripts/run-importance-ch22.sh
 
 Note: if you installed the data to a non default location the `VS_DATA_DIR` needs to be set accordingly when running the examples	
+
+#### Jupyter notebook example
+
+For convenience we have also provided a sample end-to-end variant-spark workflow
+in a Jupyter notebook.  This example, using a synthetic phenotype (Hipster-index)
+can be found in the notebook-examples folder of this repository.
+
+To use this example:
+1. Create a free, community [Databricks](https://databricks.com/) account
+2. Download the `VariantSpark_HipsterIndex.scala` file
+3. Import the notebook file into your Databricks instance
+4. Start a cluster (be sure to select the version of Spark and Scala specified in the notebook)
+5. Attach the notebook to the cluster
+6. Run the sample notebook
