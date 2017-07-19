@@ -32,20 +32,22 @@
 // COMMAND ----------
 
 // MAGIC %md
-// MAGIC ###0. SETUP -- Databricks (Spark) cluster setup steps for VariantSpark:  
+// MAGIC ###0. SETUP -- Databricks Spark cluster and VariantSpark:  
 // MAGIC 
-// MAGIC 1. **Download** VariantSpark java libraries to your computer from...   
-// MAGIC   https://academics.cloud.databricks.com/files/jars/b2f93143_eddd_4346_9184_19ff3e1c39e1-variant_spark_0_0_1_1_6_1_SNAPSHOT_all-2fadb.jar
-// MAGIC 2. **Import** the libary into your Databricks instance by...  
-// MAGIC   On the Databricks interface, navigate to `Workspace > Users > Username` and select `Import` from the Username drop-down menu.   
-// MAGIC   At the bottom of `Import Notebooks` window, click the link in `(To import a library, such as a jar or egg,click here)`.   
-// MAGIC   Upload  the .jar file using this interface, using any names you like. Make sure that the option `Attach automatically to all clusters` is checked in the success dialog.
-// MAGIC 3. **Create** a cluster by...  
-// MAGIC   Next click the `Clusters` icon on the left sidebar and then `+Create Cluster.` For `Apache Spark Version`, select `Spark 1.6.2 (Hadoop 2)`.  
-// MAGIC 4. **Attach** this notebook to your cluster by clicking on your cluster name in menu `Detached` at the top left of this workbook. 
-// MAGIC 
-// MAGIC NOTES: The VariantSpark libary works on Databricks academic or community cluster `Spark 1.6.3` running Hadoop 2 and Scala 2.10      
-// MAGIC IMPORTANT: The VariantSpark library does not yet work with `Spark 2.0`
+// MAGIC 1. **Import** the variant-spark libary into your Databricks instance by...  
+// MAGIC   - Navigate to `Workspace > Users > Username` and select `Create > Library`    
+// MAGIC   - Click on `maven coordinates` in the source list in the 'Create Library' page
+// MAGIC   - Enter `au.csiro.aehrc.variant-spark:variant-spark_2.11:0.0.2-SNAPSHOT` in the coordinate text box
+// MAGIC   - Click `advanced` and enter `https://oss.sonatype.org/content/repositories/snapshots` in repository text box
+// MAGIC   - Click the `create library` button
+// MAGIC   - Verify that the option `automatically attach to all clusters` is checked in the libraries page
+// MAGIC 2. **Create** a cluster by...  
+// MAGIC   - Click the `Clusters` icon on the left sidebar and then `Create Cluster.` 
+// MAGIC   - Enter any text, i.e `demo` into the cluster name text box
+// MAGIC   - Select the `Apache Spark Version` value `Spark 2.1 (auto-updating scala 2.11)`  
+// MAGIC   - Click the `create cluster` button and wait for your cluster to be provisioned
+// MAGIC 3. **Attach** this notebook to your cluster by...   
+// MAGIC   - Click on your cluster name in menu `Detached` at the top left of this workbook to attach it to this workbook 
 
 // COMMAND ----------
 
@@ -70,7 +72,7 @@
 // MAGIC ###2. LOAD VARIANTS using VariantSpark     
 // MAGIC 
 // MAGIC 1. Use Scala to import the VSContext and ImportanceAnalysis objects from the VariantSpark library  
-// MAGIC 2. Create an instance of the VSContext object, passing in an instance of the Spark SQLContext object to it  
+// MAGIC 2. Create an instance of the VSContext object, passing in an instance of the Spark Context object to it  
 // MAGIC 3. Call the featureSource method on the instance of the vsContext object and pass in the path the the demo feature file  
 // MAGIC      to load the variants from the vcf file
 // MAGIC 4. Display the first 10 sample names
@@ -79,7 +81,7 @@
 
 import au.csiro.variantspark.api.VSContext
 import au.csiro.variantspark.api.ImportanceAnalysis
-implicit val vsContext = VSContext(sqlContext)
+implicit val vsContext = VSContext(spark)
 
 val featureSource = vsContext.featureSource("/vs-datasets/hipsterIndex/hipster.vcf.bz2")
 println("Names of loaded samples:")
@@ -116,14 +118,11 @@ val importanceAnalysis = ImportanceAnalysis(featureSource, labelSource, nTrees =
 // MAGIC %md
 // MAGIC ###5. RUN ANALYSIS using VariantSpark   
 // MAGIC 
-// MAGIC Unlike other statistical approaches, random forests have the advantage of not needing the data to be extensively pre-processed, so the analysis can be triggered on the loaded data directly. 
+// MAGIC Unlike other statistical approaches, random forests have the advantage of not needing the data to be extensively pre-processed, so the analysis can be triggered on the loaded data directly. The analysis will take around 4 minutes on a Databricks community (one node) cluster.  
 // MAGIC 
-// MAGIC 1. Use Scala to call the variableImportance method on the instance of the ImportanceAnalysis object  
-// MAGIC     to calcuate the variant importance attributing to the phenotype
+// MAGIC 1. Use Scala to call the `variableImportance` method on the instance of the `ImportanceAnalysis` object to calcuate the variant importance attributing to the phenotype
 // MAGIC 2. Cache the analysis results into a SparkSQL table  
 // MAGIC 3. Display the tabular results    
-// MAGIC *Note: The next section runs a large number of Spark jobs, up to 1409 jobs and takes 4 minutes to run on the DataBricks community edition.   
-// MAGIC It took 4 minutes and ran 944 jobs on the academic cluster.* 
 
 // COMMAND ----------
 
@@ -144,7 +143,21 @@ display(variableImportance)
 // COMMAND ----------
 
 // MAGIC %md
-// MAGIC ###6. VISUALIZE ANALYSIS using Python  
+// MAGIC ###6a. VISUALIZE ANALYSIS using SparkSQL
+// MAGIC 1. Query the SparkSQL table to display the top 10 results in descending order 
+// MAGIC 2. Plot the results into a bar chart using the visualization feature in Databricks
+// MAGIC 
+// MAGIC *Note: the Hipster-Index is constructed from 4 SNPs so we expect the importance to be limited to these SNPs and the ones on [linkage disequilibrium (LD)](https://en.wikipedia.org/wiki/Linkage_disequilibrium) with them.* 
+
+// COMMAND ----------
+
+// MAGIC %sql
+// MAGIC select * from importance order by importance desc limit 100
+
+// COMMAND ----------
+
+// MAGIC %md
+// MAGIC ###6b. VISUALIZE ANALYSIS using Python  
 // MAGIC 
 // MAGIC 1. Query the SparkSQL table to display the top 100 results in descending order 
 // MAGIC 2. Plot the results into a line chart using the visualization feature in the python libraries
@@ -280,7 +293,7 @@ display(hailDF)
 // COMMAND ----------
 
 // MAGIC %md
-// MAGIC While HAIL identified the correct variables their order is not consistent with their weight in the formular. More generally, HAIL has identified a large number of variables as associated with the label that VariantSpark scores with a low Importance socre. Utilizing VariantSpark random forests allows us to reduce the noise and extract the signal with the correct ordering. 
+// MAGIC While HAIL identified the correct variables their order is not consistent with their weight in the formular. More generally, HAIL has identified a large number of variables as associated with the label that VariantSpark scores with a low Importance score. Utilizing VariantSpark random forests allows us to reduce the noise and extract the signal with the correct ordering. 
 
 // COMMAND ----------
 
