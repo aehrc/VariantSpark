@@ -20,7 +20,7 @@ trait VarImportanceNormalizer {
   def normalize(varImportance:Map[Long,Double]):Map[Long, Double]
 }
 
-/** Defines normalization variable
+/** Defines normalization variable conditionally
   */
 case object IdentityVarImportanceNormalizer extends VarImportanceNormalizer {
   override def normalize(varImportance:Map[Long,Double]):Map[Long, Double] = varImportance
@@ -35,19 +35,30 @@ class StandardImportanceNormalizer(val scale:Double) extends VarImportanceNormal
   }
 }
 
-/** Defines two different scaling values - 100% and 1%
+/** Defines two different scaling values conditionally - 100% and 1%
   */
 case object To100ImportanceNormalizer extends StandardImportanceNormalizer(100.0) 
-case object ToOneImportanceNormalizer extends StandardImportanceNormalizer(1.0) 
+case object ToOneImportanceNormalizer extends StandardImportanceNormalizer(1.0)
 
+/** Implements voting aggregator conditionally
+  * @param nLabels the number of labels
+  * @param nSamples the number of samples
+  */
 case class VotingAggregator(val nLabels:Int, val nSamples:Int) {
   lazy val votes = Array.fill(nSamples)(Array.fill(nLabels)(0))
-  
+
+  /** Implements adding a vote
+    * @param predictions the number of predictions
+    * @param indexes the number of indexes
+    */
   def addVote(predictions:Array[Int], indexes:Iterable[Int]) {
     require(predictions.length <= nSamples, "Valid number of samples")
     predictions.zip(indexes).foreach{ case(v, i) => votes(i)(v) += 1}
   }
-  
+
+  /** Implements adding a vote
+    * @param predictions the number of predictions
+    */
   def addVote(predictions:Array[Int]):VotingAggregator = {
     require(predictions.length == nSamples, "Full prediction range")
     predictions.zipWithIndex.foreach{ case(v, i) => votes(i)(v) += 1}
@@ -57,12 +68,20 @@ case class VotingAggregator(val nLabels:Int, val nSamples:Int) {
   def predictions = votes.map(_.zipWithIndex.maxBy(_._1)._2)
 }
 
-
+/** Implements random forest members conditionally
+  * @param predictor the predictor model
+  * @param oobIndexes an array of out-of-bag index values
+  */
 @SerialVersionUID(2l)
 case class RandomForestMember[V](val predictor:PredictiveModelWithImportance[V],
                                  val oobIndexes:Array[Int] = null, val oobPred:Array[Int] = null) {
 }
 
+/** Implements random forest models conditionally
+  * @param members the RF members
+  * @param labelCount the label count
+  * @param oobErrors the out-of-bag erros
+  */
 @SerialVersionUID(2l)
 case class RandomForestModel[V](val members: List[RandomForestMember[V]], val labelCount:Int, val oobErrors:
   List[Double] = List.empty)(implicit canSplit:CanSplit[V]) {
@@ -104,6 +123,13 @@ case class RandomForestModel[V](val members: List[RandomForestMember[V]], val la
 
 }
 
+/** Implements random forest params conditionally
+  * @param oob the out-of-bag value
+  * @param nTryFraction the n-try fraction value
+  * @param bootstrap the bootstrap value
+  * @param subsample the subsample value
+  * @param seed the seed value
+  */
 case class RandomForestParams(
     oob:Boolean = true,
     nTryFraction:Double =  Double.NaN,
@@ -155,23 +181,23 @@ object RandomForest {
   val defaultBatchSize = 10
 }
 
+/** Implements random forest
+  * @param params the RF params
+  * @param modelBuilderFactory the type of model, i.e. 'wide decision tree builder'
+  */
 class RandomForest[V](params:RandomForestParams=RandomForestParams()
       ,modelBuilderFactory:RandomForest.ModelBuilderFactory[V] = RandomForest.wideDecisionTreeBuilder[V] _
       )(implicit canSplit:CanSplit[V]) extends Logging {
 
-  // TODO (Design): This seems like an easiest solution but it make this class
-  // to keep random state ... perhaps this could be externalised to the implicit random
-
+  // TODO (Design):easiest solution -> makes this class keep random state, but could be externalised to implicit random
   implicit lazy val rng = new XorShift1024StarRandomGenerator(params.seed)
 
   def train(indexedData: RDD[(V, Long)],  dataType: VariableType,  labels: Array[Int], nTrees: Int)
            (implicit callback:RandomForestCallback = null): RandomForestModel[V] =
               batchTrain(indexedData, dataType, labels, nTrees, RandomForest.defaultBatchSize)
 
-  /**
-   * TODO (Nice): Make a parameter rather then an extra method
-   * TODO (Func): Add OOB calculation
-   */
+
+  // TODO (Nice to do): Make a param rather then an extra method, (Func) Add OOB Calculation
   def batchTrain(indexedData: RDD[(V, Long)], dataType: VariableType, labels: Array[Int], nTrees: Int, nBatchSize:Int)
                 (implicit callback:RandomForestCallback = null): RandomForestModel[V] = {
 
