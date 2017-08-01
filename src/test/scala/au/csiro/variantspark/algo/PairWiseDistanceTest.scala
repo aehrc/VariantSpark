@@ -12,14 +12,14 @@ class PairWiseDistanceTest extends SparkTest {
   @Test
   def testCorrectlyCreateLowerTriang2D() {
     val lowerTriang2D = Array(0.3)
-    val result = PairwiseDistance.lowerTrainingToMatrix(lowerTriang2D, 2)
+    val result = PairwiseDistance.lowerTriangToMatrix(lowerTriang2D, 2)
     assertEquals(DenseMatrix((0.0, 0.3), (0.3, 0.0)), result)
   }
 
   @Test
   def testCorrectlyCreateLowerTriang4D() {
     val lowerTriang4D = Array[Double](1, 2, 3, 4, 5, 6)
-    val result = PairwiseDistance.lowerTrainingToMatrix(lowerTriang4D, 4)
+    val result = PairwiseDistance.lowerTriangToMatrix(lowerTriang4D, 4)
     assertEquals(new DenseMatrix(4, 4, Array[Double](0, 1, 2, 4, 1, 0, 3, 5, 2, 3, 0, 6, 4, 5, 6, 0)), result)
   }
 
