@@ -18,6 +18,13 @@ The potential users include:
 - Medical researchers or clinicians seeking to perform clustering on genomic profiles to stratify large-cohort genomic data
 - General researchers with classification or clustering needs of datasets with millions of features.
 
+### Learn More
+
+To learn more watch this video from Spark Summit.
+
+[![variant-spark talk at Spark Summit East 2017](/images/vs-spark-summit-2017.png?raw=true)](https://www.youtube.com/watch?v=iDshsTWqGzw)
+
+
 ### Building
 
 variant-spark requires java jdk 1.8+ and maven 3+
