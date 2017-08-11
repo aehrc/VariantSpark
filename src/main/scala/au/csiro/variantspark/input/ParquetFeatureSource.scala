@@ -10,8 +10,9 @@ import org.apache.spark.rdd.RDD
 case class ParquetFeatureSource(inputPath:String)(implicit sc: SparkContext) extends FeatureSource {
 
   override lazy val sampleNames:List[String] = {
-    val fs  = FileSystem.get(sc.hadoopConfiguration)
-    SerialUtils.read(fs.open(new Path(inputPath, "_columns")))
+    val pathToColumns = new Path(inputPath, "_columns")
+    val fs = FileSystem.get(pathToColumns.toUri(), sc.hadoopConfiguration)
+    SerialUtils.read(fs.open(pathToColumns))
   }
 
   def features():RDD[Feature] = {

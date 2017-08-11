@@ -110,3 +110,7 @@ To use an example:
 4. **Start** a cluster (be sure to select the version of Spark and Scala specified in the notebook)
 5. **Attach** the notebook to the cluster
 6. **Run** the sample notebook
+
+### Community
+
+Please feel free to add issues and/or upvote issues you care about. Also join the [Gitter chat](https://gitter.im/VariantSpark/Lobby).
