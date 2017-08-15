@@ -15,7 +15,21 @@ import org.apache.spark.sql.Row
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
 import scala.collection.JavaConversions._
 
-
+/**
+  * A class to represent an instance of the Importance Analysis
+  *
+  * @constructor Create a new `Importance Analysis` by specifying the parameters listed below
+  *
+  * @param sqlContext    The SQL context.
+  * @param featureSource The feature source.
+  * @param labelSource  The label source.
+  * @param rfParams The Random Forest parameters.
+  * @param nTrees The number of Decision Trees.
+  * @param rfBatchSize The batch size of the Random Forest
+  * @param varOrdinalLevels The level of ordinal
+  *
+  * @example class ImportanceAnalysis(featureSource, labelSource, nTrees = 1000)
+  */
 
 class ImportanceAnalysis(val sqlContext:SQLContext, val featureSource:FeatureSource, 
       val labelSource:LabelSource, 
