@@ -9,8 +9,8 @@ import org.apache.spark.sql.SparkSession
   *
   * @constructor Create a new `VSContext` by specifying the `SparkSession` and `sparkPar`
   *
-  * @param SparkSession The spark session.
-  * @param Int The number of partitions in the the spark session.
+  * @param spark The spark session.
+  * @param sparkPar The number of partitions in the the spark session.
   *
   * @example class VSContext(val spark:SparkSession, val sparkPar:Int=0)
   */
