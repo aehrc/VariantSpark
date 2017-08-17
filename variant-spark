@@ -2,27 +2,27 @@
 
 PWD=$(cd `dirname "$0"`; pwd)
 
+if [[ -z "${VARIANT_SPARK_HOME}" ]]; then
+	VARIANT_SPARK_HOME="${PWD}"
+fi
+
 if [[ -n "${VS_ECHO_CMDLINE}" ]]; then
 	echo "$0" "$@"
 fi
 
-
-
-if [[ -d "${PWD}/lib" ]]; then 
-	VS_ASSEMBLY_DIR="${PWD}/lib"
+if [[ -d "${VARIANT_SPARK_HOME}/lib" ]]; then 
+	VS_ASSEMBLY_DIR="${VARIANT_SPARK_HOME}/lib"
 else
-	VS_ASSEMBLY_DIR="${PWD}/target"
+	VS_ASSEMBLY_DIR="${VARIANT_SPARK_HOME}/target"
 fi 
 	
 VS_ASSEMBLY_JAR=$(echo ${VS_ASSEMBLY_DIR}/variant-spark_*-all.jar)
 
-RUNNER=spark
+RUNNER="--spark"
 declare -a SPARK_PARAMS 
 spark_param_index=0
-if [[ "$1" == "--spark"  || "$1" == "--local" ]]; then
-	if [[ "$1" == "--local" ]]; then
-		RUNNER=local
-	fi
+if [[ "$1" == "--spark"  || "$1" == "--emr" || "$1" == "--local" ]]; then
+	RUNNER="$1"
 	shift 1
 	while [[ "$#" -gt 0 ]]; do
 		arg="$1"
@@ -35,14 +35,24 @@ if [[ "$1" == "--spark"  || "$1" == "--local" ]]; then
 	done
 fi
 
-if [[ "${RUNNER}" == "spark" ]]; then
+if [[ -n "${VS_DEBUG}" ]]; then
+	echo "Home: ${VARIANT_SPARK_HOME} "
+	echo "Runner: ${RUNNER}"
+	echo "Jar: ${VS_ASSEMBLY_JAR}"
+fi
+
+if [[ "${RUNNER}" == "--spark" ]]; then
 	spark-submit --class au.csiro.variantspark.cli.VariantSparkApp \
- 	--driver-class-path ${PWD}/conf \
+ 	--driver-class-path ${VARIANT_SPARK_HOME}/conf \
+ 	"${SPARK_PARAMS[@]}" \
+ 	${VS_ASSEMBLY_JAR} "$@"
+elif [[ "${RUNNER}" == "--emr" ]]; then
+	spark-submit --class au.csiro.variantspark.cli.VariantSparkApp \
  	"${SPARK_PARAMS[@]}" \
  	${VS_ASSEMBLY_JAR} "$@"
 else
 	SPARK_JARS="${SPARK_HOME}/jars/*"
-	SPARK_CLASSPATH="${PWD}/conf:${VS_ASSEMBLY_JAR}:${SPARK_JARS}:/usr/lib/hadoop/lib/*:/usr/lib/hadoop/.//*:/usr/lib/hadoop-hdfs/./:/usr/lib/hadoop-hdfs/lib/*:/usr/lib/hadoop-hdfs/.//*:/usr/lib/hadoop-yarn/lib/*:/usr/lib/hadoop-yarn/.//*:/usr/lib/hadoop-mapreduce/lib/*:/usr/lib/hadoop-mapreduce/.//*"
+	SPARK_CLASSPATH="${VARIANT_SPARK_HOME}/conf:${VS_ASSEMBLY_JAR}:${SPARK_JARS}:/usr/lib/hadoop/lib/*:/usr/lib/hadoop/.//*:/usr/lib/hadoop-hdfs/./:/usr/lib/hadoop-hdfs/lib/*:/usr/lib/hadoop-hdfs/.//*:/usr/lib/hadoop-yarn/lib/*:/usr/lib/hadoop-yarn/.//*:/usr/lib/hadoop-mapreduce/lib/*:/usr/lib/hadoop-mapreduce/.//*"
         echo "$SPARK_CLASSPATH"
 	java -cp "${SPARK_CLASSPATH}" "${SPARK_PARAMS[@]}"  au.csiro.variantspark.cli.VariantSparkApp "$@"
 fi
