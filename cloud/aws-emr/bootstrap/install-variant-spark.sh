@@ -28,12 +28,12 @@ if [ "$IS_MASTER" = true ]; then
  	aws s3 cp s3://au.csiro.pbdava.test/variant-spark/dist/variant-spark_2.11-0.0.2-SNAPSHOT.tar.gz .
  	tar -xzf variant-spark_2.11-0.0.2-SNAPSHOT.tar.gz
 	rm variant-spark_2.11-0.0.2-SNAPSHOT.tar.gz
+	ln -s variant-spark_2.11-0.0.2-SNAPSHOT variant-spark-0.0.2
+	VARIANT_SPARK_HOME=${INST_DIR}/variant-spark-0.0.2
 	cat << EOF | sudo tee /etc/profile.d/variant-spark.sh
-export VARIANT_SPARK_HOME=${INST_DIR}
+export VARIANT_SPARK_HOME=${VARIANT_SPARK_HOME}
 export PATH=\${PATH}:\${VARIANT_SPARK_HOME}
 EOF
-	ln -s variant-spark_2.11-0.0.2-SNAPSHOT variant-spark-0.0.2
-	export PATH=${PATH}:${INST_DIR}/variant-spark-0.0.2
 	echo "Installed variant-spark in: ${INST_DIR}"
 fi
 
