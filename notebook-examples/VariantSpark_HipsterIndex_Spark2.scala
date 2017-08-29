@@ -2,8 +2,7 @@
 // MAGIC %md
 // MAGIC ![VariantSpark](https://s3.us-east-2.amazonaws.com/csiro-graphics/variant-spark.png)  
 // MAGIC * [**VariantSpark**](http://bioinformatics.csiro.au/variantspark) is a machine learning library for real-time genomic data analysis (for thousands of samples and millions of variants) and is...  
-// MAGIC   * Built on top of Apache Spark
-// MAGIC   * Written in Scala
+// MAGIC   * Built on top of Apache Spark and written in Scala
 // MAGIC   * Authored by the team at [CSIRO Bioinformatics](http://bioinformatics.csiro.au/) in Australia
 // MAGIC   * Uses a custom machine learning **random forest** implementation to find the most *important* variants attributing to a phenotype of interest   
 // MAGIC * This demo...  
@@ -144,7 +143,7 @@ display(variableImportance)
 
 // MAGIC %md
 // MAGIC ###6a. VISUALIZE ANALYSIS using SparkSQL
-// MAGIC 1. Query the SparkSQL table to display the top 10 results in descending order 
+// MAGIC 1. Query the SparkSQL table to display the top 25 results in descending order 
 // MAGIC 2. Plot the results into a bar chart using the visualization feature in Databricks
 // MAGIC 
 // MAGIC *Note: the Hipster-Index is constructed from 4 SNPs so we expect the importance to be limited to these SNPs and the ones on [linkage disequilibrium (LD)](https://en.wikipedia.org/wiki/Linkage_disequilibrium) with them.* 
@@ -152,23 +151,27 @@ display(variableImportance)
 // COMMAND ----------
 
 // MAGIC %sql
-// MAGIC select * from importance order by importance desc limit 100
+// MAGIC select * from importance order by importance desc limit 25
 
 // COMMAND ----------
 
 // MAGIC %md
 // MAGIC ###6b. VISUALIZE ANALYSIS using Python  
 // MAGIC 
-// MAGIC 1. Query the SparkSQL table to display the top 100 results in descending order 
+// MAGIC 1. Query the SparkSQL table to display the top 25 results in descending order 
 // MAGIC 2. Plot the results into a line chart using the visualization feature in the python libraries
 
 // COMMAND ----------
 
 // MAGIC %python
 // MAGIC import matplotlib.pyplot as plt
-// MAGIC importance = sqlContext.sql("select * from importance order by importance desc limit 100")
+// MAGIC importance = sqlContext.sql("select * from importance order by importance desc limit 25")
 // MAGIC importanceDF = importance.toPandas()
-// MAGIC importanceDF.plot()
+// MAGIC ax = importanceDF.plot(x="variable", y="importance",lw=3,colormap='Reds_r',title='Importance in Descending Order', fontsize=9)
+// MAGIC ax.set_xlabel("variable")
+// MAGIC ax.set_ylabel("importance")
+// MAGIC plt.xticks(rotation=12)
+// MAGIC plt.grid(True)
 // MAGIC plt.show()
 // MAGIC display()
 
@@ -183,7 +186,8 @@ display(variableImportance)
 // COMMAND ----------
 
 // MAGIC %r
-// MAGIC importance_df_full  = collect(sql(sqlContext,'SELECT * FROM importance ORDER BY importance DESC'))
+// MAGIC library(SparkR)
+// MAGIC importance_df_full  = collect(sql('SELECT * FROM importance ORDER BY importance DESC'))
 // MAGIC head(importance_df_full)
 
 // COMMAND ----------
@@ -199,7 +203,7 @@ display(variableImportance)
 
 // MAGIC %r
 // MAGIC library(ggplot2)
-// MAGIC importance_df  = collect(sql(sqlContext,'SELECT * FROM importance ORDER BY importance DESC limit 25'))
+// MAGIC importance_df  = collect(sql('SELECT * FROM importance ORDER BY importance DESC limit 25'))
 // MAGIC ggplot(importance_df, aes(x=variable, y=importance)) + geom_bar(stat='identity') + scale_x_discrete(limits=importance_df[order(importance_df$importance), "variable"]) + coord_flip()
 
 // COMMAND ----------
@@ -265,7 +269,7 @@ display(hailDF)
 // COMMAND ----------
 
 // MAGIC %r
-// MAGIC hail_pvals <- read.df(sqlContext, "/vs-datasets/hipsterIndex/hail_pvals.csv", source="csv", header="true", inferSchema="true")
+// MAGIC hail_pvals <- read.df("/vs-datasets/hipsterIndex/hail_pvals.csv", source="csv", header="true", inferSchema="true")
 // MAGIC hail_pvals <- as.data.frame(hail_pvals)
 // MAGIC 
 // MAGIC hail_df <- aggregate(hail_pvals$pvals, by=list(hail_pvals$snp), min)
@@ -274,7 +278,7 @@ display(hailDF)
 // COMMAND ----------
 
 // MAGIC %r
-// MAGIC importance_df_full  = collect(sql(sqlContext,'SELECT * FROM importance ORDER BY importance DESC'))
+// MAGIC importance_df_full  = collect(sql('SELECT * FROM importance ORDER BY importance DESC'))
 // MAGIC importance_df_agg <- aggregate(importance_df_full$importance, by=list(importance_df_full$variable), max)
 // MAGIC rownames(importance_df_agg) <- as.vector(importance_df_agg$Group.1)
 // MAGIC importance_df_agg$hail_pv <- hail_df[as.vector(importance_df_agg$Group.1), "x"]
