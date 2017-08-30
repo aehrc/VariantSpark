@@ -1,0 +1,162 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Cloudformation Template to spin up EMR clusters V3 (Version 5 of EMR only)
+Parameters:
+  clusterName:
+    Description: Name of the cluster
+    Type: String
+  taskInstanceCount:
+    Description: Number of task instances
+    Type: String
+    AllowedValues:
+    - '1'
+    - '2'
+    - '3'
+    - '4'
+    - '5'
+    - '6'
+    - '7'
+    ConstraintDescription: Up to 7 nodes only
+  emrVersion:
+    Description: Version of EMR
+    Type: String
+    AllowedPattern: emr-5.[0-9].[0-9]
+    ConstraintDescription: 'Must be EMR Version 5 (i.e: emr-5.3.0)'
+  masterInstanceType:
+    Description: Instance type of Master Node
+    Type: String
+  coreInstanceType:
+    Description: Instance type of Core Node
+    Type: String
+  taskInstanceType:
+    Description: Instance type of Task Node
+    Type: String
+  environmentType:
+    Description: What environment do you want the cluster to be in
+    Type: String
+  s3BucketBasePath:
+    Description: Bucket to log EMR actions to
+    Type: String
+  taskBidPrice:
+    Description: Bid price for Task nodes
+    Type: String
+  terminationProtected:
+    Description: Is the cluster to have termination protection enabled
+    Type: String
+    AllowedValues:
+    - 'true'
+    - 'false'
+    ConstraintDescription: Boolean
+  awsRegion:
+    Description: awsRegion
+    Default: ap-southeast-2
+    AllowedValues:
+    - ap-southeast-2
+    Type: String
+Conditions:
+  isLive:
+    Fn::Equals:
+    - Ref: environmentType
+    - live
+Resources:
+  EMRClusterV5:
+    Type: AWS::EMR::Cluster
+    Properties:
+      Instances:
+        MasterInstanceGroup:
+          InstanceCount: 1
+          InstanceType:
+            Ref: masterInstanceType
+          Market: ON_DEMAND
+          Name: Master instance group - 1
+        CoreInstanceGroup:
+          InstanceCount: 1
+          InstanceType:
+            Ref: coreInstanceType
+          Market: ON_DEMAND
+          Name: Core instance group - 2
+        TerminationProtected:
+          Ref: terminationProtected
+        Ec2SubnetId: ENTER SUBNET HERE
+        Ec2KeyName: ENTER NAME OF SSH KEY HERE
+        EmrManagedMasterSecurityGroup: ENTER SECURITY GROUP HERE
+        EmrManagedSlaveSecurityGroup: ENTER SECURITY GROUP HERE
+        ServiceAccessSecurityGroup: ENTER SECURITY GROUP HERE
+      BootstrapActions:
+      - Name: Install VariantSpark
+        ScriptBootstrapAction:
+          Path: s3://au.csiro.pbdava.test/variant-spark/bootstrap/install-variant-spark.sh
+      Configurations:
+      - Classification: hadoop-log4j
+        ConfigurationProperties:
+          hadoop.log.maxfilesize: 256MB
+          hadoop.log.maxbackupindex: '3'
+          hadoop.security.log.maxfilesize: 256MB
+          hadoop.security.log.maxbackupindex: '3'
+          hdfs.audit.log.maxfilesize: 256MB
+          hdfs.audit.log.maxbackupindex: '3'
+          mapred.audit.log.maxfilesize: 256MB
+          mapred.audit.log.maxbackupindex: '3'
+          hadoop.mapreduce.jobsummary.log.maxfilesize: 256MB
+          hadoop.mapreduce.jobsummary.log.maxbackupindex: '3'
+      - Classification: hbase-log4j
+        ConfigurationProperties:
+          hbase.log.maxbackupindex: '3'
+          hbase.log.maxfilesize: 10MB
+          hbase.security.log.maxbackupindex: '3'
+          hbase.security.log.maxfilesize: 10MB
+      - Classification: yarn-site
+        ConfigurationProperties:
+          yarn.log-aggregation.retain-seconds: '43200'
+      Applications:
+      - Name: Hadoop
+      - Name: Hive
+      - Name: Pig
+      - Name: Hue
+      - Name: HCatalog
+      - Name: Sqoop
+      - Name: Ganglia
+      - Name: Spark
+      - Name: Oozie
+      - Name: Tez
+      Name:
+        Ref: clusterName
+      JobFlowRole: ENTER EMR ROLE HERE
+      ServiceRole: ENTER EMR ROLE HERE
+      ReleaseLabel:
+        Ref: emrVersion
+      LogUri:
+        Fn::Join:
+        - ''
+        - - s3n://
+          - Ref: s3BucketBasePath
+          - "/logs/"
+      VisibleToAllUsers: true
+      Tags:
+      - Key: Name
+        Value:
+          Fn::Join:
+          - ''
+          - - emr-instance-
+            - Ref: AWS::StackName
+            - ''
+      - Key: Environment
+        Value:
+          Ref: environmentType
+      - Key: Stack ID
+        Value:
+          Ref: AWS::StackName
+  EMRTaskNodes:
+    Type: AWS::EMR::InstanceGroupConfig
+    Properties:
+      InstanceCount:
+        Ref: taskInstanceCount
+      InstanceType:
+        Ref: taskInstanceType
+      BidPrice:
+        Ref: taskBidPrice
+      Market: SPOT
+      InstanceRole: TASK
+      Name: Task instance group - 3
+      JobFlowId:
+        Ref: EMRClusterV5
