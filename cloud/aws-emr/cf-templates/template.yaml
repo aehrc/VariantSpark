@@ -20,17 +20,21 @@ Parameters:
   emrVersion:
     Description: Version of EMR
     Type: String
+    Default: "emr-5.7.0"
     AllowedPattern: emr-5.[0-9].[0-9]
     ConstraintDescription: 'Must be EMR Version 5 (i.e: emr-5.3.0)'
   masterInstanceType:
     Description: Instance type of Master Node
     Type: String
+    Default: "m4.large"
   coreInstanceType:
     Description: Instance type of Core Node
     Type: String
+    Default: "m4.large"
   taskInstanceType:
     Description: Instance type of Task Node
     Type: String
+    Default: "m4.large"
   environmentType:
     Description: What environment do you want the cluster to be in
     Type: String
@@ -77,61 +81,32 @@ Resources:
           Name: Core instance group - 2
         TerminationProtected:
           Ref: terminationProtected
-        Ec2SubnetId: ENTER SUBNET HERE
-        Ec2KeyName: ENTER NAME OF SSH KEY HERE
-        EmrManagedMasterSecurityGroup: ENTER SECURITY GROUP HERE
-        EmrManagedSlaveSecurityGroup: ENTER SECURITY GROUP HERE
-        ServiceAccessSecurityGroup: ENTER SECURITY GROUP HERE
+        Ec2SubnetId: "subnet-a23d0fd4"  
+        Ec2KeyName: "default"
+        AdditionalMasterSecurityGroups:
+        - "sg-14ffe073"
       BootstrapActions:
       - Name: Install VariantSpark
         ScriptBootstrapAction:
-          Path: s3://au.csiro.pbdava.test/variant-spark/bootstrap/install-variant-spark.sh
+          Path: "s3://au.csiro.pbdava.test/variant-spark/bootstrap/install-variant-spark.sh"
       Configurations:
-      - Classification: hadoop-log4j
+      - Classification: spark-defaults
         ConfigurationProperties:
-          hadoop.log.maxfilesize: 256MB
-          hadoop.log.maxbackupindex: '3'
-          hadoop.security.log.maxfilesize: 256MB
-          hadoop.security.log.maxbackupindex: '3'
-          hdfs.audit.log.maxfilesize: 256MB
-          hdfs.audit.log.maxbackupindex: '3'
-          mapred.audit.log.maxfilesize: 256MB
-          mapred.audit.log.maxbackupindex: '3'
-          hadoop.mapreduce.jobsummary.log.maxfilesize: 256MB
-          hadoop.mapreduce.jobsummary.log.maxbackupindex: '3'
-      - Classification: hbase-log4j
-        ConfigurationProperties:
-          hbase.log.maxbackupindex: '3'
-          hbase.log.maxfilesize: 10MB
-          hbase.security.log.maxbackupindex: '3'
-          hbase.security.log.maxfilesize: 10MB
-      - Classification: yarn-site
-        ConfigurationProperties:
-          yarn.log-aggregation.retain-seconds: '43200'
+          spark.dynamicAllocation.enabled: 'false'
+          spark.history.fs.logDirectory: "s3://au.csiro.pbdava.test/variant-spark/sparklog/"
+          spark.eventLog.dir: "s3://au.csiro.pbdava.test/variant-spark/sparklog/"
       Applications:
-      - Name: Hadoop
-      - Name: Hive
-      - Name: Pig
-      - Name: Hue
-      - Name: HCatalog
-      - Name: Sqoop
       - Name: Ganglia
       - Name: Spark
-      - Name: Oozie
-      - Name: Tez
       Name:
         Ref: clusterName
-      JobFlowRole: ENTER EMR ROLE HERE
-      ServiceRole: ENTER EMR ROLE HERE
+      JobFlowRole: "EMR_EC2_DefaultRole"
+      ServiceRole: "EMR_DefaultRole"
       ReleaseLabel:
         Ref: emrVersion
       LogUri:
-        Fn::Join:
-        - ''
-        - - s3n://
-          - Ref: s3BucketBasePath
-          - "/logs/"
-      VisibleToAllUsers: true
+        Ref: s3BucketBasePath
+      VisibleToAllUsers: false
       Tags:
       - Key: Name
         Value:

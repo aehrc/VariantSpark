@@ -1,0 +1,70 @@
+--- 
+test: "Data"
+options:
+  region: ap-southeast-2
+  name: "test-spark-m4x2-spot"
+  release-label: "emr-5.7.0"
+  applications:
+  - Name: Ganglia
+  - Name: Spark 
+  tags:
+    application: "variant-spark"
+    use: "testing"
+  ec2-attributes:
+    KeyName: "default"
+    InstanceProfile: "EMR_EC2_DefaultRole"
+    SubnetId: "subnet-a23d0fd4"
+    EmrManagedSlaveSecurityGroup: "sg-82ffe0e5"
+    EmrManagedMasterSecurityGroup: "sg-aefde2c9"
+    AdditionalMasterSecurityGroups:
+    - sg-14ffe073 
+  log-uri: "s3n://au.csiro.pbdava.test/variant-spark/logs/"
+  instance-groups: 
+  - Name: "Master Instance Group"
+    InstanceCount: 1
+    InstanceGroupType: "MASTER"
+    InstanceType: "m4.large"
+    EbsConfiguration:
+      EbsBlockDeviceConfigs:
+      - VolumeSpecification:
+          SizeInGB: 32
+          VolumeType: "gp2"
+        VolumesPerInstance: 1
+  - Name: "Core Instance Group"
+    InstanceCount: 1
+    InstanceGroupType: "CORE"
+    InstanceType: "m4.large"
+    EbsConfiguration:
+      EbsBlockDeviceConfigs:
+      - VolumeSpecification:
+          SizeInGB: 32
+          VolumeType: "gp2"
+        VolumesPerInstance: 1
+  - Name: "Task Instance Group"
+    InstanceCount: 1
+    InstanceGroupType: "TASK"
+    InstanceType: "m4.large"
+    BidPrice: "0.07"
+    EbsConfiguration:
+      EbsBlockDeviceConfigs:
+      - VolumeSpecification:
+          SizeInGB: 32
+          VolumeType: "gp2"
+        VolumesPerInstance: 1
+  configurations:
+  - Classification: "spark"
+    Properties:
+      maximizeResourceAllocation: "true" 
+  - Classification: "spark-defaults"
+    Properties:
+      spark.eventLog.dir: "s3://au.csiro.pbdava.test/variant-spark/sparklog/"
+      spark.history.fs.logDirectory: "s3://au.csiro.pbdava.test/variant-spark/sparklog/"
+      spark.dynamicAllocation.enabled: "false"
+  bootstrap-actions:
+  - Path: "s3://au.csiro.pbdava.test/variant-spark/bootstrap/install-variant-spark.sh"
+    Name: "Install Variant Spark"
+  ebs-root-volume-size: 10 
+  service-role: EMR_DefaultRole 
+  enable-debugging: true 
+  scale-down-behavior: TERMINATE_AT_INSTANCE_HOUR 
+ 
