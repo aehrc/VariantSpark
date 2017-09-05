@@ -1,24 +1,22 @@
 --- 
 test: "Data"
 options:
-  region: ap-southeast-2
+  region: {{region}}
   name: "test-spark-m4x2-spot"
-  release-label: "emr-5.7.0"
+  release-label: {{release-label}}
+  auto-terminate: {{auto-terminate}}
   applications:
   - Name: Ganglia
   - Name: Spark 
   tags:
     application: "variant-spark"
     use: "testing"
-  ec2-attributes:
-    KeyName: "default"
-    InstanceProfile: "EMR_EC2_DefaultRole"
-    SubnetId: "subnet-a23d0fd4"
-    EmrManagedSlaveSecurityGroup: "sg-82ffe0e5"
-    EmrManagedMasterSecurityGroup: "sg-aefde2c9"
-    AdditionalMasterSecurityGroups:
-    - sg-14ffe073 
-  log-uri: "s3n://au.csiro.pbdava.test/variant-spark/logs/"
+  ec2-attributes: {{ec2-attributes}}
+  log-uri: "s3n://{{conf.logBucketBase}}/logs/"
+  ebs-root-volume-size: 10 
+  service-role: EMR_DefaultRole 
+  enable-debugging: true 
+  scale-down-behavior: TERMINATE_AT_INSTANCE_HOUR 
   instance-groups: 
   - Name: "Master Instance Group"
     InstanceCount: 1
@@ -41,10 +39,10 @@ options:
           VolumeType: "gp2"
         VolumesPerInstance: 1
   - Name: "Task Instance Group"
-    InstanceCount: 1
+    InstanceCount: {{taskInstanceGroup.InstanceCount}}
     InstanceGroupType: "TASK"
-    InstanceType: "m4.large"
-    BidPrice: "0.07"
+    InstanceType: {{taskInstanceGroup.InstanceType}}
+    BidPrice: "{{taskInstanceGroup.BidPrice}}"
     EbsConfiguration:
       EbsBlockDeviceConfigs:
       - VolumeSpecification:
@@ -57,14 +55,10 @@ options:
       maximizeResourceAllocation: "true" 
   - Classification: "spark-defaults"
     Properties:
-      spark.eventLog.dir: "s3://au.csiro.pbdava.test/variant-spark/sparklog/"
-      spark.history.fs.logDirectory: "s3://au.csiro.pbdava.test/variant-spark/sparklog/"
+      spark.eventLog.dir: "s3://{{conf.logBucketBase}}/sparklog/"
+      spark.history.fs.logDirectory: "s3://{{conf.logBucketBase}}/sparklog/"
       spark.dynamicAllocation.enabled: "false"
+      spark.executor.instances: "{{taskInstanceGroup.InstanceCount}}"
   bootstrap-actions:
   - Path: "s3://au.csiro.pbdava.test/variant-spark/bootstrap/install-variant-spark.sh"
-    Name: "Install Variant Spark"
-  ebs-root-volume-size: 10 
-  service-role: EMR_DefaultRole 
-  enable-debugging: true 
-  scale-down-behavior: TERMINATE_AT_INSTANCE_HOUR 
- 
+    Name: "Install Variant Spark" 

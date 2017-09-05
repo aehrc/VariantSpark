@@ -1,0 +1,16 @@
+region: "ap-southeast-2"
+release-label: "emr-5.7.0"
+auto-terminate: true
+ec2-attributes:
+  AdditionalMasterSecurityGroups: ['sg-14ffe073']
+  KeyName: "default"
+  SubnetId: "subnet-a23d0fd4"
+  InstanceProfile: "EMR_EC2_DefaultRole"
+  EmrManagedSlaveSecurityGroup: "sg-82ffe0e5"
+  EmrManagedMasterSecurityGroup: "sg-aefde2c9"
+taskInstanceGroup:
+  InstanceCount: 2
+  InstanceType: "m4.large"  
+  BidPrice: 0.07
+conf:
+  logBucketBase: "au.csiro.pbdava.test/variant-spark"

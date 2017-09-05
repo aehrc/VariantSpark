@@ -5,7 +5,8 @@ import argparse
 import os
 
 EMR_PARSER = argparse.ArgumentParser(description='EMR Options')
-EMR_PARSER.add_argument('--cluster-id', required = True)
+EMR_PARSER.add_argument('--cluster-id', required = False)
+EMR_PARSER.add_argument('--cluster-file', required = False)
 EMR_PARSER.add_argument('--step-name', default = 'variant-spark')
 EMR_PARSER.add_argument('--action-on-failure', default = 'CONTINUE')
 
@@ -23,7 +24,6 @@ def emr_runner(runner_args):
         
     emr_options, other_args = EMR_PARSER.parse_known_args(runner_args)
     return run
-    
 
 def spark_runner():
     def run(args):

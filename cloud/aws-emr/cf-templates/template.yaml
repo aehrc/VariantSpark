@@ -8,15 +8,6 @@ Parameters:
   taskInstanceCount:
     Description: Number of task instances
     Type: String
-    AllowedValues:
-    - '1'
-    - '2'
-    - '3'
-    - '4'
-    - '5'
-    - '6'
-    - '7'
-    ConstraintDescription: Up to 7 nodes only
   emrVersion:
     Description: Version of EMR
     Type: String
@@ -135,3 +126,7 @@ Resources:
       Name: Task instance group - 3
       JobFlowId:
         Ref: EMRClusterV5
+Outputs:
+  ClusterID:
+    Description: "EMR Cluster ID"
+    Value: !Ref EMRClusterV5
