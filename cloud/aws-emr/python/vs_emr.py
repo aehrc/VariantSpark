@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import os
 import yaml
 import click
 import pystache
@@ -9,7 +10,8 @@ import json
 import subprocess
 import jsonmerge
 import functools
-
+import shlex
+from pkg_resources import resource_filename, resource_string
 
 EMR_TEMPL = "aws emr add-steps --cluster-id %(cluster_id)s --steps Type=Spark,Name='%(step_name)s',ActionOnFailure=%(action_on_failure)s,Args=[%(arg_list)s]"
 VS_EMR_ARGS = ['--class','au.csiro.variantspark.cli.VariantSparkApp','/mnt/variant-spark-0.0.2/lib/variant-spark_2.11-0.0.2-SNAPSHOT-all.jar']
@@ -52,10 +54,10 @@ def resolve_cluster_id(aws_ctx, cluster_id, cluster_id_file):
                 cluster_info = json.load(input)
             aws_ctx.debug("Cluster info is: %s" % str(cluster_info))
             cluster_id = cluster_info['ClusterId']    
-            return cluster_id
         else:
             raise click.BadOptionUsage('--cluster-id or --cluster-id-file is required')                
-            
+    return cluster_id
+                
 '''
 '''
 def dict_put_path(dictionary, path_key, value):
@@ -70,8 +72,12 @@ def dict_put_path(dictionary, path_key, value):
     current_dict[path[-1]] = value
 
 
+def dict_put(dictionary, pv ):
+    path_key, value = pv
+    dict_put_path(dictionary, path_key, value)
+    return dictionary
 
-def resolve_to_cmd_options(aws_ctx, template_file, config):
+def resolve_to_cmd_options(aws_ctx, template_file, user_config):
     
     def to_cmd_option(k,v):
         if "tags" == k:
@@ -85,6 +91,12 @@ def resolve_to_cmd_options(aws_ctx, template_file, config):
         
     with open(template_file, 'r') as template_f:
         template  = template_f.read()
+        
+        
+    unresolved_config = yaml.load(pystache.render(template, {})) 
+    unresolved_defaults = unresolved_config.get('defaults') or dict()
+    defaults = yaml.load(pystache.render(template, jsonmerge.merge(unresolved_defaults, user_config))).get('defaults') or dict()
+    config = jsonmerge.merge(defaults, user_config)
     aws_config = yaml.load(pystache.render(template, config))   
     aws_ctx.debug("AWS Config: %s" % aws_config)    
     aws_options = aws_config['options']
@@ -97,12 +109,28 @@ def resolve_to_cmd_options(aws_ctx, template_file, config):
     return cmd_options  
 
 
-def resolve_config(conf_file, conf_json, conf):
+def load_yaml(conf_file):
+    with open(conf_file, "r") as cf:
+        return yaml.load(cf)  
+
+
+def cmd_conf_to_config(conf):
+    def split_conf_string(s):
+        index = s.find('=')
+        print(index)
+        return (s[0:index],s[index+1:])  
+    config = dict()
+    for conf_entry in conf:
+        key, value = split_conf_string(conf_entry)
+        dict_put_path(config, key, value)        
+    return config
     
-    def load_conf(conf_file):
-        with open(conf_file, "r") as cf:
-            return yaml.load(cf)       
-         
+    
+def merge_configs(configs):
+    return functools.reduce(jsonmerge.merge,[dict()] + configs)  
+    
+def resolve_config(conf_file, conf_json, conf):
+           
     def split_conf_string(s):
         index = s.find('=')
         print(index)
@@ -112,7 +140,7 @@ def resolve_config(conf_file, conf_json, conf):
     for conf_entry in conf:
         key, value = split_conf_string(conf_entry)
         dict_put_path(conf_dict, key, value)        
-    return functools.reduce(jsonmerge.merge,[dict()] + [load_conf(conf_file_item) for conf_file_item in conf_file] +  [ json.loads(conf_json_item) for conf_json_item in conf_json] + [conf_dict])  
+    return functools.reduce(jsonmerge.merge,[dict()] + [load_yaml(conf_file_item) for conf_file_item in conf_file] +  [ json.loads(conf_json_item) for conf_json_item in conf_json] + [conf_dict])  
 
 #
 # Command line interface
@@ -126,14 +154,53 @@ def resolve_config(conf_file, conf_json, conf):
 def cli(ctx, noop, verbose):
     ctx.obj = AWSContext(noop, verbose)
 
+
+MAP_OPTIONS_TO_CONFIG = dict(
+    worker_type="worker.instanceType",
+    worker_instances="worker.instanceCount",
+    worker_bid="worker.bidPrice",
+    master_type="master.instanceType"
+)
+
 @cli.command(name='start-cluster')
+@click.option('--worker-type', required = False)
+@click.option('--worker-instances', required = False)
+@click.option('--worker-bid', required = False)
+@click.option('--master-type', required = False)
+@click.option('--profile',  multiple=True)
+@click.option('--conf',  multiple=True)
+@click.option('--cluster-id-file',  required = False)
+@pass_aws_cxt
+def start_cluster(aws_ctx, conf, profile, cluster_id_file, **kwargs):
+    
+    configuration_file = os.path.join(os.environ['HOME'], '.vs_emr/config.yaml')
+    configuration = load_yaml(configuration_file) if os.path.exists(configuration_file) else dict()    
+    default_config = configuration.get('default')
+    profiles = configuration.get('profiles')
+    profile_configs = [profiles.get(profile_name) for profile_name in  profile] if profiles else []
+    
+
+    options_config = functools.reduce(dict_put, ((MAP_OPTIONS_TO_CONFIG[k], v) for k,v in  kwargs.items() if v is not None), dict())
+    config = merge_configs([default_config]+ profile_configs + [ cmd_conf_to_config(conf),  options_config])
+                
+    cmd_options = resolve_to_cmd_options(aws_ctx, resource_filename(__name__, os.path.join('templates','spot-cluster.yaml')), config)
+    cmd = " ".join(['aws', 'emr', 'create-cluster'] + cmd_options)
+    output = aws_ctx.aws_run(cmd)
+    if not aws_ctx.noop:
+        if cluster_id_file is not None:
+            aws_ctx.echo("Saving cluster info to: %s" % cluster_id_file)
+            with open(cluster_id_file, "w") as output_file:
+                output_file.write(output)
+        aws_ctx.echo(output)
+
+@cli.command(name='start-cluster-ex')
 @click.option('--template',  default = 'profiles/cluster.yaml')
 @click.option('--conf-file',  multiple=True, default = ['conf/default.yaml'])
 @click.option('--conf-json', multiple=True)
 @click.option('--conf',  multiple=True)
 @click.option('--cluster-id-file',  required = False)
 @pass_aws_cxt
-def start_cluster(aws_ctx, template, conf_file, conf_json, conf, cluster_id_file):
+def start_cluster_ex(aws_ctx, template, conf_file, conf_json, conf, cluster_id_file):
     config = resolve_config(conf_file, conf_json, conf)
     cmd_options = resolve_to_cmd_options(aws_ctx, template, config)
     cmd = " ".join(['aws', 'emr', 'create-cluster'] + cmd_options)
@@ -146,34 +213,42 @@ def start_cluster(aws_ctx, template, conf_file, conf_json, conf, cluster_id_file
         aws_ctx.echo(output)
 
 
-@cli.command(name='kill-cluster')
+@cli.command(name='stop-cluster')
 @click.option("--cluster-id", required = False)
 @click.option("--cluster-id-file", required = False)
 @pass_aws_cxt
 def kill_cluster(aws_ctx, cluster_id, cluster_id_file):
     cluster_id = resolve_cluster_id(aws_ctx, cluster_id, cluster_id_file)    
-    aws_ctx.echo("Killing cluster with id: %s" % cluster_id)
+    aws_ctx.echo("Stopping cluster with id: %s" % cluster_id)
     cmd = " ".join(['aws', 'emr', 'terminate-clusters', '--cluster-id', cluster_id])
     output = aws_ctx.aws_run(cmd) 
     aws_ctx.echo(output)
     # add waiting for termination aws emr wait cluster-running/cluster-terminated --cluster-id j-3SD91U2E1L2QX
     
     
-@cli.command(name='variant-spark', context_settings=dict(
+@cli.command(name='submit-cmd', context_settings=dict(
     ignore_unknown_options=True,
 ))
-@click.argument('variant_spark_args', nargs=-1, type=click.UNPROCESSED)
 @click.option("--cluster-id", required = False)
 @click.option("--cluster-id-file", required = False)
 @click.option("--step-name", required = False, default="variant-spark")
 @click.option("--action_on_failure", required=False, default="CONTINUE", 
               type=click.Choice(['CONTINUE', 'TERMINATE_CLUSTER', 'CANCEL_AND_WAIT']))
+@click.option("--spark-opts", required=False)
+@click.argument('variant_spark_args', nargs=-1, type=click.UNPROCESSED)
 @pass_aws_cxt
-def variant_spark(aws_ctx, cluster_id, cluster_id_file, step_name, action_on_failure, variant_spark_args):
+def submit_cmd(aws_ctx, cluster_id, cluster_id_file, step_name, action_on_failure, spark_opts, variant_spark_args):
     cluster_id = resolve_cluster_id(aws_ctx, cluster_id, cluster_id_file)     
     aws_ctx.echo("At cluster: %s running: %s" %  (cluster_id, " ".join(variant_spark_args)))
-    step_id = aws_ctx.aws_emr_step(cluster_id, step_name, action_on_failure, VS_EMR_ARGS + list(variant_spark_args))
+    step_id = aws_ctx.aws_emr_step(cluster_id, step_name, action_on_failure, shlex.split(spark_opts or '') + VS_EMR_ARGS + list(variant_spark_args))
     aws_ctx.echo("Step Id: %s" % step_id)
+
+
+
+@cli.command(name='test')
+def test():
+    print(resource_string(__name__, os.path.join('templates','spot-cluster.yaml')))
+
 
 if __name__ == '__main__':
     cli()
