@@ -199,8 +199,6 @@
 					<skipTests>${skipTests}</skipTests>
 					<useFile>false</useFile>
 					<disableXmlReport>true</disableXmlReport>
-					<!-- If you have classpath issue like NoDefClassError,... -->
-					<!-- useManifestOnlyJar>false</useManifestOnlyJar -->
 				</configuration>
 			</plugin>
 
@@ -421,9 +419,7 @@
 		<profile>
 			<id>no-perf</id>
 			<activation>
-				<property>
-					<name>!run.perf</name>
-				</property>
+				<activeByDefault>true</activeByDefault>
 			</activation>
 			<build>
 				<plugins>
@@ -437,7 +433,7 @@
 							<!-- If you have classpath issue like NoDefClassError,... -->
 							<!-- useManifestOnlyJar>false</useManifestOnlyJar -->
 							<excludes>
-								<exclude>au.csiro.variantspark.perf.*</exclude>
+								<exclude>au.csiro.variantspark.perf.*Test</exclude>
 							</excludes>
 						</configuration>
 					</plugin>
