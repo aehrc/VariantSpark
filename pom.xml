@@ -430,8 +430,6 @@
 							<skipTests>${skipTests}</skipTests>
 							<useFile>false</useFile>
 							<disableXmlReport>true</disableXmlReport>
-							<!-- If you have classpath issue like NoDefClassError,... -->
-							<!-- useManifestOnlyJar>false</useManifestOnlyJar -->
 							<excludes>
 								<exclude>au.csiro.variantspark.perf.*Test</exclude>
 							</excludes>
