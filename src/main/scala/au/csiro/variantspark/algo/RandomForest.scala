@@ -47,7 +47,7 @@ case object ToOneImportanceNormalizer extends StandardImportanceNormalizer(1.0)
 case class VotingAggregator(val nLabels:Int, val nSamples:Int) {
   lazy val votes = Array.fill(nSamples)(Array.fill(nLabels)(0))
 
-  /** Implements adding a vote
+  /** Adds a vote with predictions and indexes
     * @param predictions the number of predictions
     * @param indexes the number of indexes
     */
@@ -56,7 +56,7 @@ case class VotingAggregator(val nLabels:Int, val nSamples:Int) {
     predictions.zip(indexes).foreach{ case(v, i) => votes(i)(v) += 1}
   }
 
-  /** Implements adding a vote
+  /** Adds a vote with predictions
     * @param predictions the number of predictions
     */
   def addVote(predictions:Array[Int]):VotingAggregator = {
@@ -64,7 +64,10 @@ case class VotingAggregator(val nLabels:Int, val nSamples:Int) {
     predictions.zipWithIndex.foreach{ case(v, i) => votes(i)(v) += 1}
     this
   }
-  
+
+  /** Maps votes to predictions
+    *
+    */
   def predictions = votes.map(_.zipWithIndex.maxBy(_._1)._2)
 }
 
@@ -80,7 +83,7 @@ case class RandomForestMember[V](val predictor:PredictiveModelWithImportance[V],
 /** Implements random forest models conditionally
   * @param members the RF members
   * @param labelCount the label count
-  * @param oobErrors the out-of-bag erros
+  * @param oobErrors the out-of-bag errors
   */
 @SerialVersionUID(2l)
 case class RandomForestModel[V](val members: List[RandomForestMember[V]], val labelCount:Int, val oobErrors:
@@ -102,10 +105,10 @@ case class RandomForestModel[V](val members: List[RandomForestMember[V]], val la
   def normalizedVariableImportance(norm:VarImportanceNormalizer = To100ImportanceNormalizer):
     Map[Long, Double] = norm.normalize(variableImportance)
 
+  /** Sets the variable importance by averaging the importance of each variable over all trees
+    *  if a variable is not used in a tree it's importance for this tree is assumed to be 0
+    */
   def variableImportance: Map[Long, Double] = {
-
-    // average the importance of each variable over all trees
-    // if a variable is not used in a tree it's importance for this tree is assumed to be 0
 
     trees.map(_.variableImportanceAsFastMap).foldLeft(new Long2DoubleOpenHashMap())(_.addAll(_))
       .asScala.mapValues(_/size)
@@ -189,7 +192,7 @@ class RandomForest[V](params:RandomForestParams=RandomForestParams()
       ,modelBuilderFactory:RandomForest.ModelBuilderFactory[V] = RandomForest.wideDecisionTreeBuilder[V] _
       )(implicit canSplit:CanSplit[V]) extends Logging {
 
-  // TODO (Design):easiest solution -> makes this class keep random state, but could be externalised to implicit random
+  // TODO (Design):make this class keep random state (could be externalised to implicit random)
   implicit lazy val rng = new XorShift1024StarRandomGenerator(params.seed)
 
   def train(indexedData: RDD[(V, Long)],  dataType: VariableType,  labels: Array[Int], nTrees: Int)
@@ -197,7 +200,8 @@ class RandomForest[V](params:RandomForestParams=RandomForestParams()
               batchTrain(indexedData, dataType, labels, nTrees, RandomForest.defaultBatchSize)
 
 
-  // TODO (Nice to do): Make a param rather then an extra method, (Func) Add OOB Calculation
+  // TODO (Design): Make a param rather then an extra method
+  // TODO (Func): Add OOB Calculation
   def batchTrain(indexedData: RDD[(V, Long)], dataType: VariableType, labels: Array[Int], nTrees: Int, nBatchSize:Int)
                 (implicit callback:RandomForestCallback = null): RandomForestModel[V] = {
 
