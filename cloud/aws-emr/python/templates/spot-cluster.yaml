@@ -2,7 +2,7 @@
 defaults:
   region: null
   releaseLabel: "emr-5.7.0"
-  autoTerminate: false
+  autoTerminate: true
   instanceType: "m4.large"
   ebsRootVolumeSize: 10
   ebsSizeInGB: 32
@@ -63,6 +63,8 @@ options:
   - Classification: "spark-defaults"
     Properties:
       spark.dynamicAllocation.enabled: "false"
+      spark.serializer: "org.apache.spark.serializer.KryoSerializer"
+      spark.locality.wait: "10s"
       {{#conf.logBucketBase}}spark.eventLog.dir: "s3://{{conf.logBucketBase}}/sparklog/"{{/conf.logBucketBase}}
       {{#conf.logBucketBase}}spark.history.fs.logDirectory: "s3://{{conf.logBucketBase}}/sparklog/"{{/conf.logBucketBase}}
   bootstrap-actions:
