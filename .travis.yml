@@ -1,1 +1,12 @@
 language: java
+jdk:
+  - oraclejdk8
+
+cache:
+  directories:
+  - $HOME/.m2
+
+script: dev/travis-build.sh
+
+before_deploy: dev/travis-prepare-s3-release.sh
+
