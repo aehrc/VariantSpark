@@ -5,6 +5,6 @@ export CI_PROJECT_VERSION=$(mvn help:evaluate -Dexpression=project.version $@ 2>
 export CI_VERSION="${CI_PROJECT_VERSION%%-*}"
 export CI_BASE_VERSION="${CI_VERSION%.*}"
 
-export CI_COMMIT_TAG=${TRAVIS_COMMIT?"TRAVIS_COMMIT undefined. Are we running under travis-ci?"}
-export CI_COMMIT_TAG_SHORT=$(git rev-parse --short ${CI_COMMIT_TAG})
-
+export CI_COMMIT_HASH=${TRAVIS_COMMIT?"TRAVIS_COMMIT undefined. Are we running under travis-ci?"}
+export CI_COMMIT_HASH_SHORT=$(git rev-parse --short ${CI_COMMIT_HASH})
+export CI_TAG=${TRAVIS_TAG}

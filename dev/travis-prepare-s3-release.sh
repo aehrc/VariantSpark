@@ -8,14 +8,21 @@ cd "$FWDIR"
 
 . ${FWDIR}/dev/travis-set-ver.sh
 
+if [[ -n "${CI_TAG}" ]]; then
+	echo "Tagged build for tag: ${CI_TAG}"
+	#TODO: Add the check that the CI_VERSION is the same as TAGGED"
+ 	S3_VERSION="${CI_VERSION}"	
+	S3_BASE_DIR=release
+else
+        echo "Commit build for hash: ${CI_COMMIT_HASH_SHORT}"
+	S3_VERSION="${CI_BASE_VERSION}-${CI_COMMIT_HASH_SHORT}"
+        S3_BASE_DIR=builds
+fi
 
-S3_VERSION="${CI_BASE_VERSION}-${CI_COMMIT_TAG_SHORT}"
-echo "Release to S3 as: ${S3_VERSION}"
-
-
-S3_VERSION_DIR="${CI_BASE_VERSION}"
+S3_VERSION_DIR="${S3_BASE_DIR}/${CI_BASE_VERSION}"
 S3_RELEASE_DIR="${S3_VERSION_DIR}/${S3_VERSION}"
 
+echo "Release to s3 as: ${S3_RELEASE_DIR}" 
 
 S3_BUILD_DIR=target/s3-release
 rm -rf "${S3_BUILD_DIR}" 
