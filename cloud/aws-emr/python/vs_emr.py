@@ -43,6 +43,22 @@ class AWSContext(object):
             output =  subprocess.check_output(cmd, shell=True)
             self.debug("Output: %s" % output)
             return output
+        
+    def load_config(self, config_file):
+        is_default_config = config_file is None
+        config_file = config_file if config_file is not None else os.path.join(os.environ['HOME'], '.vs_emr/config.yaml')
+        
+        configuration = {}
+        
+        if os.path.exists(config_file):
+            self.echo("Loading config from: %s" % config_file)
+            configuration = load_yaml(config_file)
+        elif is_default_config:
+            echo("Default config file not fount at: %s. Running with empty configuration!" % config_file )
+        else:
+            raise(click.BadParameter("Provided config file does not exists: %s" % config_file))
+        self.debug("Configuration is: %s" % configuration)
+        return Configuration(configuration)
             
 pass_aws_cxt = click.make_pass_decorator(AWSContext)
            
@@ -142,47 +158,70 @@ def resolve_config(conf_file, conf_json, conf):
         dict_put_path(conf_dict, key, value)        
     return functools.reduce(jsonmerge.merge,[dict()] + [load_yaml(conf_file_item) for conf_file_item in conf_file] +  [ json.loads(conf_json_item) for conf_json_item in conf_json] + [conf_dict])  
 
+
+class Configuration:
+    
+    def __init__(self, configuration):
+        self.configuration = configuration
+        
+    def resolve_config(self, profiles, options, conf):
+        
+        def load_profile(profile_name):
+            conf_profile = conf_profiles.get(profile_name)
+            if conf_profile is not None:
+                return conf_profile
+            else:
+                raise click.BadParameter("Profile `%s` not defined in the configuration" % profile_name)
+
+        conf_defaults = self.configuration.get('default')
+        conf_profiles = self.configuration.get('profiles', dict())
+        profile_configs = [load_profile(profile_name) for profile_name in  profiles] if conf_profiles else []
+        options_config = functools.reduce(dict_put, ((MAP_OPTIONS_TO_CONFIG[k], v) for k,v in  options.items() if v is not None), dict())
+        config = merge_configs([conf_defaults]+ profile_configs + [ cmd_conf_to_config(conf),  options_config])
+        return config
+
 #
 # Command line interface
 #
 
 @click.group()
 #this needs to be moved to vnl.sumbmit.main somehow but for now I just to not have any idea how do it
-@click.option('--noop', help='Name to greet', is_flag=True)
-@click.option('--verbose', help='Name to greet', is_flag=True)
+@click.option('--dry-run', help='Dry run. Do not execute the actual command', is_flag=True)
+@click.option('--verbose', help='Produce verbose output', is_flag=True)
+@click.option('--silent', help='Do not produce any output', is_flag=True)
 @click.pass_context
-def cli(ctx, noop, verbose):
-    ctx.obj = AWSContext(noop, verbose)
+def cli(ctx, dry_run, verbose, silent):
+    ctx.obj = AWSContext(dry_run, verbose, silent)
 
 
 MAP_OPTIONS_TO_CONFIG = dict(
     worker_type="worker.instanceType",
     worker_instances="worker.instanceCount",
     worker_bid="worker.bidPrice",
-    master_type="master.instanceType"
+    master_type="master.instanceType",
+    master_bid="master.bidPrice"
 )
 
 @cli.command(name='start-cluster')
-@click.option('--worker-type', required = False)
-@click.option('--worker-instances', required = False)
-@click.option('--worker-bid', required = False)
+@click.option('--worker-type', required = False, help='The type of AWS EC2 instance to use for worker nodes. E.g. r4.2xlarge')
+@click.option('--worker-instances', required = False, help='The number of worker instances in the cluster')
+@click.option('--worker-bid', required = False, help='The maximum spot price for the worker instances')
 @click.option('--master-type', required = False)
+@click.option('--master-bif', required = False)
 @click.option('--profile',  multiple=True)
 @click.option('--conf',  multiple=True)
 @click.option('--cluster-id-file',  required = False)
+@click.option('--config-file', required = False)
 @pass_aws_cxt
-def start_cluster(aws_ctx, conf, profile, cluster_id_file, **kwargs):
+def start_cluster(aws_ctx, conf, profile, cluster_id_file, config_file, **kwargs):
     
-    configuration_file = os.path.join(os.environ['HOME'], '.vs_emr/config.yaml')
-    configuration = load_yaml(configuration_file) if os.path.exists(configuration_file) else dict()    
-    default_config = configuration.get('default')
-    profiles = configuration.get('profiles')
-    profile_configs = [profiles.get(profile_name) for profile_name in  profile] if profiles else []
+    def options_to_conf():        
+        return functools.reduce(dict_put, ((MAP_OPTIONS_TO_CONFIG[k], v) for k,v in  kwargs.items() if v is not None), dict())
     
-
-    options_config = functools.reduce(dict_put, ((MAP_OPTIONS_TO_CONFIG[k], v) for k,v in  kwargs.items() if v is not None), dict())
-    config = merge_configs([default_config]+ profile_configs + [ cmd_conf_to_config(conf),  options_config])
-                
+    configuration  = aws_ctx.load_config(config_file)
+    if profile:
+        aws_ctx.echo("Using profiles: %s" % list(profile))
+    config = configuration.resolve_config(profile,options_to_conf(), conf)
     cmd_options = resolve_to_cmd_options(aws_ctx, resource_filename(__name__, os.path.join('templates','spot-cluster.yaml')), config)
     cmd = " ".join(['aws', 'emr', 'create-cluster'] + cmd_options)
     output = aws_ctx.aws_run(cmd)
@@ -192,27 +231,7 @@ def start_cluster(aws_ctx, conf, profile, cluster_id_file, **kwargs):
             with open(cluster_id_file, "w") as output_file:
                 output_file.write(output)
         aws_ctx.echo(output)
-
-@cli.command(name='start-cluster-ex')
-@click.option('--template',  default = 'profiles/cluster.yaml')
-@click.option('--conf-file',  multiple=True, default = ['conf/default.yaml'])
-@click.option('--conf-json', multiple=True)
-@click.option('--conf',  multiple=True)
-@click.option('--cluster-id-file',  required = False)
-@pass_aws_cxt
-def start_cluster_ex(aws_ctx, template, conf_file, conf_json, conf, cluster_id_file):
-    config = resolve_config(conf_file, conf_json, conf)
-    cmd_options = resolve_to_cmd_options(aws_ctx, template, config)
-    cmd = " ".join(['aws', 'emr', 'create-cluster'] + cmd_options)
-    output = aws_ctx.aws_run(cmd)
-    if not aws_ctx.noop:
-        if cluster_id_file is not None:
-            aws_ctx.echo("Saving cluster info to: %s" % cluster_id_file)
-            with open(cluster_id_file, "w") as output_file:
-                output_file.write(output)
-        aws_ctx.echo(output)
-
-
+        
 @cli.command(name='stop-cluster')
 @click.option("--cluster-id", required = False)
 @click.option("--cluster-id-file", required = False)
@@ -242,12 +261,6 @@ def submit_cmd(aws_ctx, cluster_id, cluster_id_file, step_name, action_on_failur
     aws_ctx.echo("At cluster: %s running: %s" %  (cluster_id, " ".join(variant_spark_args)))
     step_id = aws_ctx.aws_emr_step(cluster_id, step_name, action_on_failure, shlex.split(spark_opts or '') + VS_EMR_ARGS + list(variant_spark_args))
     aws_ctx.echo("Step Id: %s" % step_id)
-
-
-
-@cli.command(name='test')
-def test():
-    print(resource_string(__name__, os.path.join('templates','spot-cluster.yaml')))
 
 
 if __name__ == '__main__':

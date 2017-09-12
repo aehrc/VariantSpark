@@ -6,9 +6,11 @@ defaults:
   instanceType: "m4.large"
   ebsRootVolumeSize: 10
   ebsSizeInGB: 32
+  variantSparkBootstrap: "s3://au.csiro.pbdava.test/variant-spark/bootstrap/install-variant-spark.sh"
   master:
     instanceType: {{instanceType}}
     ebsSizeInGB: {{ebsSizeInGB}}
+    bidPrice: null
   worker:
     instanceCount: 1
     instanceType: {{instanceType}}
@@ -39,6 +41,7 @@ options:
     InstanceCount: 1
     InstanceGroupType: "MASTER"
     InstanceType: "{{master.instanceType}}"
+    {{#master.bidPrice}}BidPrice: "{{master.bidPrice}}"{{/master.bidPrice}}
     EbsConfiguration:
       EbsBlockDeviceConfigs:
       - VolumeSpecification:
@@ -68,5 +71,5 @@ options:
       {{#conf.logBucketBase}}spark.eventLog.dir: "s3://{{conf.logBucketBase}}/sparklog/"{{/conf.logBucketBase}}
       {{#conf.logBucketBase}}spark.history.fs.logDirectory: "s3://{{conf.logBucketBase}}/sparklog/"{{/conf.logBucketBase}}
   bootstrap-actions:
-  - Path: "s3://au.csiro.pbdava.test/variant-spark/bootstrap/install-variant-spark.sh"
-    Name: "Install Variant Spark" 
+  - Name: "Install Variant Spark"
+    Path: {{variantSparkBootstrap}}
