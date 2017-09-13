@@ -16,3 +16,5 @@ deploy:
   skip_cleanup: true
   acl: public_read
   region: ap-southeast-2
+  on:
+  - all_branches: true
