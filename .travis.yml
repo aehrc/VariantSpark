@@ -17,4 +17,4 @@ deploy:
   acl: public_read
   region: ap-southeast-2
   on:
-  - all_branches: true
+    all_branches: true
