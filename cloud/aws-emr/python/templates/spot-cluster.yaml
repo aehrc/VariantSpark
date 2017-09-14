@@ -6,7 +6,8 @@ defaults:
   instanceType: "m4.large"
   ebsRootVolumeSize: 10
   ebsSizeInGB: 32
-  variantSparkBootstrap: "s3://au.csiro.pbdava.test/variant-spark/bootstrap/install-variant-spark.sh"
+  variantSparkReleaseUrl: null
+  variantSparkBootstrap: "{{variantSparkReleaseUrl}}/bootstrap/install-variant-spark.sh"
   master:
     instanceType: {{instanceType}}
     ebsSizeInGB: {{ebsSizeInGB}}
@@ -73,3 +74,4 @@ options:
   bootstrap-actions:
   - Name: "Install Variant Spark"
     Path: {{variantSparkBootstrap}}
+    Args: ["--release-url", "{{variantSparkReleaseUrl}}"]

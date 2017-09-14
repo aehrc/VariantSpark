@@ -14,7 +14,7 @@ import shlex
 from pkg_resources import resource_filename, resource_string
 
 EMR_TEMPL = "aws emr add-steps --cluster-id %(cluster_id)s --steps Type=Spark,Name='%(step_name)s',ActionOnFailure=%(action_on_failure)s,Args=[%(arg_list)s]"
-VS_EMR_ARGS = ['--class','au.csiro.variantspark.cli.VariantSparkApp','/mnt/variant-spark-0.0.2/lib/variant-spark_2.11-0.0.2-SNAPSHOT-all.jar']
+VS_EMR_ARGS = ['--class','au.csiro.variantspark.cli.VariantSparkApp','/mnt/variant-spark/variant-spark_2.11-all.jar']
 
 class AWSContext(object):
     def __init__(self, noop = False, verbose = False, silent = False):
