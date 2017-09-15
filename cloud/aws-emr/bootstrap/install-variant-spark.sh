@@ -63,19 +63,19 @@ VS_INST_DIR="${INST_VOL}/variant-spark"
 
 echo "Bootstraping variant-spark"
 
-if [ "$IS_MASTER" = false ]; then
-	echo "Installing variant-spark in: ${VS_INST_DIR}"
+if [ "$IS_MASTER" = true ]; then
+  echo "Installing variant-spark in: ${VS_INST_DIR}"
   mkdir -p "${VS_INST_DIR}"
-	#download and install variant spark
+  #download and install variant spark
   cd ${VS_INST_DIR}
- 	aws s3 cp --recursive "${VS_RELEASE_URL}" .
+  aws s3 cp --recursive "${VS_RELEASE_URL}" .
   VS_UNVERSIONED_JAR="lib/variant-spark_2.11-*-all.jar"
   VS_VERSIONED_JAR="$(echo ${VS_UNVERSIONED_JAR})"
   if [[ "${VS_UNVERSIONED_JAR}" == ${VS_VERSIONED_JAR} ]]; then
     fatal_error_msg "Could not find variant-spark assembly jar. Check if ${VS_RELEASE_URL} is a valid release url in S3"
   fi
   echo "Found variant-spark assembly jar: ${VS_VERSIONED_JAR}"
-	#create symbolic link for libaries
+  #create symbolic link for libaries
   ln -s "${VS_VERSIONED_JAR}" variant-spark_2.11-all.jar
   echo "Installed variant-spark in: ${VS_INST_DIR}"
 fi
