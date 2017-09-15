@@ -176,8 +176,7 @@ class Configuration:
         conf_defaults = self.configuration.get('default')
         conf_profiles = self.configuration.get('profiles', dict())
         profile_configs = [load_profile(profile_name) for profile_name in  profiles] if conf_profiles else []
-        options_config = functools.reduce(dict_put, ((MAP_OPTIONS_TO_CONFIG[k], v) for k,v in  options.items() if v is not None), dict())
-        config = merge_configs([conf_defaults]+ profile_configs + [ cmd_conf_to_config(conf),  options_config])
+        config = merge_configs([conf_defaults]+ profile_configs + [ cmd_conf_to_config(conf),  options])
         return config
 
 #
@@ -207,7 +206,7 @@ MAP_OPTIONS_TO_CONFIG = dict(
 @click.option('--worker-instances', required = False, help='The number of worker instances in the cluster')
 @click.option('--worker-bid', required = False, help='The maximum spot price for the worker instances')
 @click.option('--master-type', required = False)
-@click.option('--master-bif', required = False)
+@click.option('--master-bid', required = False)
 @click.option('--profile',  multiple=True)
 @click.option('--conf',  multiple=True)
 @click.option('--cluster-id-file',  required = False)

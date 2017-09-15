@@ -63,7 +63,7 @@ VS_INST_DIR="${INST_VOL}/variant-spark"
 
 echo "Bootstraping variant-spark"
 
-if [ "$IS_MASTER" = false ]; then
+if [ "$IS_MASTER" = true ]; then
 	echo "Installing variant-spark in: ${VS_INST_DIR}"
   mkdir -p "${VS_INST_DIR}"
 	#download and install variant spark
