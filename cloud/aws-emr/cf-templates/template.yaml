@@ -1,0 +1,132 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Cloudformation Template to spin up EMR clusters V3 (Version 5 of EMR only)
+Parameters:
+  clusterName:
+    Description: Name of the cluster
+    Type: String
+  taskInstanceCount:
+    Description: Number of task instances
+    Type: String
+  emrVersion:
+    Description: Version of EMR
+    Type: String
+    Default: "emr-5.7.0"
+    AllowedPattern: emr-5.[0-9].[0-9]
+    ConstraintDescription: 'Must be EMR Version 5 (i.e: emr-5.3.0)'
+  masterInstanceType:
+    Description: Instance type of Master Node
+    Type: String
+    Default: "m4.large"
+  coreInstanceType:
+    Description: Instance type of Core Node
+    Type: String
+    Default: "m4.large"
+  taskInstanceType:
+    Description: Instance type of Task Node
+    Type: String
+    Default: "m4.large"
+  environmentType:
+    Description: What environment do you want the cluster to be in
+    Type: String
+  s3BucketBasePath:
+    Description: Bucket to log EMR actions to
+    Type: String
+  taskBidPrice:
+    Description: Bid price for Task nodes
+    Type: String
+  terminationProtected:
+    Description: Is the cluster to have termination protection enabled
+    Type: String
+    AllowedValues:
+    - 'true'
+    - 'false'
+    ConstraintDescription: Boolean
+  awsRegion:
+    Description: awsRegion
+    Default: ap-southeast-2
+    AllowedValues:
+    - ap-southeast-2
+    Type: String
+Conditions:
+  isLive:
+    Fn::Equals:
+    - Ref: environmentType
+    - live
+Resources:
+  EMRClusterV5:
+    Type: AWS::EMR::Cluster
+    Properties:
+      Instances:
+        MasterInstanceGroup:
+          InstanceCount: 1
+          InstanceType:
+            Ref: masterInstanceType
+          Market: ON_DEMAND
+          Name: Master instance group - 1
+        CoreInstanceGroup:
+          InstanceCount: 1
+          InstanceType:
+            Ref: coreInstanceType
+          Market: ON_DEMAND
+          Name: Core instance group - 2
+        TerminationProtected:
+          Ref: terminationProtected
+        Ec2SubnetId: "subnet-a23d0fd4"  
+        Ec2KeyName: "default"
+        AdditionalMasterSecurityGroups:
+        - "sg-14ffe073"
+      BootstrapActions:
+      - Name: Install VariantSpark
+        ScriptBootstrapAction:
+          Path: "s3://au.csiro.pbdava.test/variant-spark/bootstrap/install-variant-spark.sh"
+      Configurations:
+      - Classification: spark-defaults
+        ConfigurationProperties:
+          spark.dynamicAllocation.enabled: 'false'
+          spark.history.fs.logDirectory: "s3://au.csiro.pbdava.test/variant-spark/sparklog/"
+          spark.eventLog.dir: "s3://au.csiro.pbdava.test/variant-spark/sparklog/"
+      Applications:
+      - Name: Ganglia
+      - Name: Spark
+      Name:
+        Ref: clusterName
+      JobFlowRole: "EMR_EC2_DefaultRole"
+      ServiceRole: "EMR_DefaultRole"
+      ReleaseLabel:
+        Ref: emrVersion
+      LogUri:
+        Ref: s3BucketBasePath
+      VisibleToAllUsers: false
+      Tags:
+      - Key: Name
+        Value:
+          Fn::Join:
+          - ''
+          - - emr-instance-
+            - Ref: AWS::StackName
+            - ''
+      - Key: Environment
+        Value:
+          Ref: environmentType
+      - Key: Stack ID
+        Value:
+          Ref: AWS::StackName
+  EMRTaskNodes:
+    Type: AWS::EMR::InstanceGroupConfig
+    Properties:
+      InstanceCount:
+        Ref: taskInstanceCount
+      InstanceType:
+        Ref: taskInstanceType
+      BidPrice:
+        Ref: taskBidPrice
+      Market: SPOT
+      InstanceRole: TASK
+      Name: Task instance group - 3
+      JobFlowId:
+        Ref: EMRClusterV5
+Outputs:
+  ClusterID:
+    Description: "EMR Cluster ID"
+    Value: !Ref EMRClusterV5

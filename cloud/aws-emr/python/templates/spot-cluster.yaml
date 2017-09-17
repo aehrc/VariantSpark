@@ -1,0 +1,77 @@
+--- 
+defaults:
+  region: null
+  releaseLabel: "emr-5.7.0"
+  autoTerminate: true
+  instanceType: "m4.large"
+  ebsRootVolumeSize: 10
+  ebsSizeInGB: 32
+  variantSparkReleaseUrl: null
+  variantSparkBootstrap: "{{variantSparkReleaseUrl}}/bootstrap/install-variant-spark.sh"
+  master:
+    instanceType: {{instanceType}}
+    ebsSizeInGB: {{ebsSizeInGB}}
+    bidPrice: null
+  worker:
+    instanceCount: 1
+    instanceType: {{instanceType}}
+    ebsSizeInGB: {{ebsSizeInGB}}
+    bidPrice: null
+  conf:
+    logBucketBase: null
+  ec2Attributes: {}
+options:
+  region: "{{region}}"
+  name: "variant-spark_{{worker.instanceType}}-{{worker.instanceCount}}"
+  release-label: "{{releaseLabel}}"
+  auto-terminate: {{autoTerminate}}
+  applications:
+  - Name: Ganglia
+  - Name: Spark 
+  tags:
+    application: "variant-spark"
+    use: "testing"
+  ec2-attributes: {{ec2Attributes}}
+  {{#conf.logBucketBase}}log-uri: "s3n://{{conf.logBucketBase}}/logs/"{{/conf.logBucketBase}}
+  ebs-root-volume-size: 10 
+  service-role: "EMR_DefaultRole"
+  enable-debugging: true
+  scale-down-behavior: "TERMINATE_AT_INSTANCE_HOUR"
+  instance-groups: 
+  - Name: "Master Instance Group"
+    InstanceCount: 1
+    InstanceGroupType: "MASTER"
+    InstanceType: "{{master.instanceType}}"
+    {{#master.bidPrice}}BidPrice: "{{master.bidPrice}}"{{/master.bidPrice}}
+    EbsConfiguration:
+      EbsBlockDeviceConfigs:
+      - VolumeSpecification:
+          SizeInGB: {{master.ebsSizeInGB}}
+          VolumeType: "gp2"
+        VolumesPerInstance: 1
+  - Name: "Core Instance Group"
+    InstanceCount: {{worker.instanceCount}}
+    InstanceGroupType: "CORE"
+    InstanceType: {{worker.instanceType}}
+    {{#worker.bidPrice}}BidPrice: "{{worker.bidPrice}}"{{/worker.bidPrice}}
+    EbsConfiguration:
+      EbsBlockDeviceConfigs:
+      - VolumeSpecification:
+          SizeInGB: 32
+          VolumeType: "gp2"
+        VolumesPerInstance: 1
+  configurations:
+  - Classification: "spark"
+    Properties:
+      maximizeResourceAllocation: "true" 
+  - Classification: "spark-defaults"
+    Properties:
+      spark.dynamicAllocation.enabled: "false"
+      spark.serializer: "org.apache.spark.serializer.KryoSerializer"
+      spark.locality.wait: "10s"
+      {{#conf.logBucketBase}}spark.eventLog.dir: "s3://{{conf.logBucketBase}}/sparklog/"{{/conf.logBucketBase}}
+      {{#conf.logBucketBase}}spark.history.fs.logDirectory: "s3://{{conf.logBucketBase}}/sparklog/"{{/conf.logBucketBase}}
+  bootstrap-actions:
+  - Name: "Install Variant Spark"
+    Path: {{variantSparkBootstrap}}
+    Args: ["--release-url", "{{variantSparkReleaseUrl}}"]
