@@ -36,6 +36,7 @@ import au.csiro.variantspark.utils.IndexedRDDFunction._
 import java.io.ObjectOutputStream
 import java.io.FileOutputStream
 import org.apache.hadoop.conf.Configuration
+import au.csiro.variantspark.utils.HdfsPath
 
 class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
@@ -205,7 +206,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     echo(s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s") 
         
     if (modelFile != null) {
-      LoanUtils.withCloseable(new ObjectOutputStream(new FileOutputStream(modelFile))) { objectOut =>
+      LoanUtils.withCloseable(new ObjectOutputStream(HdfsPath(modelFile).create())) { objectOut =>
         objectOut.writeObject(result)
       }
     }
@@ -227,7 +228,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
 
     val importantVariableData = if (includeData) trainingData.collectAtIndexes(topImportantVariableIndexes) else null
     
-    LoanUtils.withCloseable(if (outputFile != null ) CSVWriter.open(outputFile) else CSVWriter.open(ReusablePrintStream.stdout)) { writer =>
+    LoanUtils.withCloseable(if (outputFile != null ) CSVWriter.open(HdfsPath(outputFile).create())else CSVWriter.open(ReusablePrintStream.stdout)) { writer =>
       val header = List("variable","importance") ::: (if (includeData) source.sampleNames else Nil)
       writer.writeRow(header)
       writer.writeAll(topImportantVariables.map({case (i, importance) => 
