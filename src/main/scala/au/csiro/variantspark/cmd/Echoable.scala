@@ -12,6 +12,10 @@ trait Echoable {
   def isSilent = beSilent
   def isEcho = !isSilent
   def isVerbose = !beSilent && beVerbose
+
+  def warn(msg: => String) {
+    echo(s"Warning: ${msg}") 
+  }
   
   def echo(msg: =>String) {
     if (isEcho) {
