@@ -138,7 +138,7 @@ case class RandomForestParams(
     nTryFraction:Double =  Double.NaN,
     bootstrap:Boolean = true,
     subsample:Double = Double.NaN,
-    randomizeEquality:Boolean = false,
+    randomizeEquality:Boolean = true,
     seed:Long =  defRng.nextLong
 ) {
   def resolveDefaults(nSamples:Int, nVariables:Int):RandomForestParams = {

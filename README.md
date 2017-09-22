@@ -59,7 +59,17 @@ You can also run variant-spark in the `--local` mode. In this mode variant-spark
 
 	./variant-spark --local -- importance  -if data/chr22_1000.vcf -ff data/chr22-labels.csv -fc 22_16051249 -v -rn 500 -rbs 20 -ro
 
-Note: The difference between running in `--local` mode and in `--spark` with `local` master is that in the latter case Spark uses the hadoop filesystem configuration and the input files need to be copied to this filesystem (e.g. HDFS) 
+Note: 
+
+The difference between running in `--local` mode and in `--spark` with `local` master is that in the latter case Spark uses the hadoop filesystem configuration and the input files need to be copied to this filesystem (e.g. HDFS) 
+Also the output will be written to the location determined by the hadoop filesystem settings. In particular paths without schema e.g. 'output.csv' will be resolved with the hadoop default filesystem (usually HDFS)
+To change this behavior you can set the default filesystem in the command line using `spark.hadoop.fs.default.name` option. For example to use local filesystem as the default use:
+
+    veriant-spaek --spark ... --conf "spark.hadoop.fs.default.name=file:///" ... -- importance  ... -of output.csv
+
+You can also use the full URI with the schema to address any filesystem for both input and output files e.g.:
+
+    veriant-spaek --spark ... --conf "spark.hadoop.fs.default.name=file:///" ... -- importance  -if hdfs:///user/data/input.csv ... -of output.csv
 
 
 ### Running examples
@@ -114,3 +124,4 @@ To use an example:
 ### Community
 
 Please feel free to add issues and/or upvote issues you care about. Also join the [Gitter chat](https://gitter.im/VariantSpark/Lobby).
+

@@ -6,13 +6,12 @@ import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 import com.github.tototoshi.csv.CSVReader
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
+import au.csiro.variantspark.utils.HdfsPath
 
 class CsvLabelSource(val fileName:String, val columnName:String)(implicit hadoopConf:Configuration) extends LabelSource {
   
   lazy val labelMap = {
-    val path  = new Path(fileName)
-    val fs = path.getFileSystem(hadoopConf)
-    LoanUtils.withCloseable(CSVReader.open(new InputStreamReader(fs.open(path)))) { reader => 
+    LoanUtils.withCloseable(CSVReader.open(new InputStreamReader(HdfsPath(fileName).open()))) { reader => 
      
       // we expect this to be small 
       // so local read should be fine
