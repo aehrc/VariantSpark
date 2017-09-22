@@ -67,7 +67,7 @@ To change this behavior you can set the default filesystem in the command line u
 
     veriant-spaek --spark ... --conf "spark.hadoop.fs.default.name=file:///" ... -- importance  ... -of output.csv
 
-You can also use the full URI with the schema to address any filesystem, e.g.:
+You can also use the full URI with the schema to address any filesystem for both input and output files e.g.:
 
     veriant-spaek --spark ... --conf "spark.hadoop.fs.default.name=file:///" ... -- importance  -if hdfs:///user/data/input.csv ... -of output.csv
 
@@ -124,3 +124,4 @@ To use an example:
 ### Community
 
 Please feel free to add issues and/or upvote issues you care about. Also join the [Gitter chat](https://gitter.im/VariantSpark/Lobby).
+
