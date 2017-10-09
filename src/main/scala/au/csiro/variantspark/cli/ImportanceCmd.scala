@@ -88,7 +88,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
   val rfEstimateOob:Boolean = false
 
   
-  @Option(name="-rre", required=false, usage="RandomForest: randomize equal gini recursion (def=no)" , aliases=Array("--rf-randomize-equal"))
+  @Option(name="-rre", required=false, usage="RandomForest: [DEPRICATED] randomize equal gini recursion is on by default now" , aliases=Array("--rf-randomize-equal"))
   val rfRandomizeEqual:Boolean = false
 
   
@@ -181,7 +181,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     echo(s"Random seed is: ${randomSeed}")
     val treeBuildingTimer = Timer()
     val rf = new ByteRandomForest(RandomForestParams(oob=rfEstimateOob, seed = randomSeed, bootstrap = !rfSampleNoReplacement, 
-        subsample = rfSubsampleFraction, randomizeEquality = rfRandomizeEqual, 
+        subsample = rfSubsampleFraction, 
         nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction))
     val trainingData = inputData.map{ case (f, i) => (f.values, i)}
     
