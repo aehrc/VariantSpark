@@ -6,19 +6,20 @@ defaults:
   instanceType: "m4.large"
   ebsRootVolumeSize: 10
   ebsSizeInGB: 32
+  bidPrice: null
   variantSparkReleaseUrl: null
   variantSparkBootstrap: "{{variantSparkReleaseUrl}}/bootstrap/install-variant-spark.sh"
   master:
     instanceType: {{instanceType}}
     ebsSizeInGB: {{ebsSizeInGB}}
-    bidPrice: null
+    bidPrice: {{bidPrice}}
   worker:
     instanceCount: 1
     instanceType: {{instanceType}}
     ebsSizeInGB: {{ebsSizeInGB}}
-    bidPrice: null
+    bidPrice: {{bidPrice}}
   conf:
-    logBucketBase: null
+    logBucketBase: true
   ec2Attributes: {}
 options:
   region: "{{region}}"

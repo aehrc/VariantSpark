@@ -88,6 +88,22 @@ def dict_put_path(dictionary, path_key, value):
     current_dict[path[-1]] = value
 
 
+""" Make the dict use yaml compatible values for None(null) and Boolean (types)
+"""
+def yamlize_dict(d):
+    def convert_value(v):
+        if type(v) == dict:
+            return yamlize_dict(v)
+        elif type(v) == bool:
+            return str(v).lower()
+        elif v is None:
+            return "null"
+        else:
+            return v
+    return dict( (k,convert_value(v)) for k,v in d.items())
+    
+    
+
 def dict_put(dictionary, pv ):
     path_key, value = pv
     dict_put_path(dictionary, path_key, value)
@@ -111,7 +127,7 @@ def resolve_to_cmd_options(aws_ctx, template_file, user_config):
         
     unresolved_config = yaml.load(pystache.render(template, {})) 
     unresolved_defaults = unresolved_config.get('defaults') or dict()
-    defaults = yaml.load(pystache.render(template, jsonmerge.merge(unresolved_defaults, user_config))).get('defaults') or dict()
+    defaults = yaml.load(pystache.render(template, yamlize_dict(jsonmerge.merge(unresolved_defaults, user_config)))).get('defaults') or dict()
     config = jsonmerge.merge(defaults, user_config)
     aws_config = yaml.load(pystache.render(template, config))   
     aws_ctx.debug("AWS Config: %s" % aws_config)    
@@ -202,20 +218,36 @@ MAP_OPTIONS_TO_CONFIG = dict(
     auto_terminate="autoTerminate"
 )
 
-@cli.command(name='start-cluster', help='Start a new AWS EMR cluster configured with VariantSpark.')
-@click.option('--worker-type', required = False, help='The type of AWS EC2 instance to use for worker nodes. E.g. r4.2xlarge.')
-@click.option('--worker-instances', required = False, help='The number of worker instances in the cluster.')
-@click.option('--worker-bid', required = False, help='The maximum spot price for the worker instances.')
-@click.option('--master-type', required = False, help='The type of AWS EC2 instance to use for the master node. E.g. r4.2xlarge.')
-@click.option('--master-bid', required = False, help='The maximum spot price for the master instance.')
+@cli.command(name='start-cluster',
+            help='''Start a new AWS EMR cluster configured with VariantSpark.
+The configuration is loaded first from the `config-file` then the profiles are applied, then the overrides passed in as `--conf` 
+and finally the command line arguments.''')
+@click.option('--worker-type', required = False,
+            help='The type of AWS EC2 instance to use for worker nodes. E.g. r4.2xlarge.')
+@click.option('--worker-instances', required = False,
+            help='The number of worker instances in the cluster.')
+@click.option('--worker-bid', required = False,
+            help='The maximum spot price for the worker instances.')
+@click.option('--worker-on-demand', required = False, is_flag=True, default = None, 
+            help='Use on-demand market for workers (Ignore the spot price).')
+@click.option('--master-type', required = False, 
+            help='The type of AWS EC2 instance to use for the master node. E.g. r4.2xlarge.')
+@click.option('--master-bid', required = False, 
+            help='The maximum spot price for the master instance.')
+@click.option('--master-on-demand', required = False, is_flag=True, default = None, 
+            help='Use on-demand market for master (Ignore the spot price).')
 @click.option('--auto-terminate/--no-auto-terminate', required = False, default=None,
-                    help = 'Flag to indicate if the cluster should auto terminate on completion of all the steps.')
-@click.option('--profile',  multiple=True)
-@click.option('--conf',  multiple=True)
-@click.option('--cluster-id-file',  required = False, help='Path to the file to save the cluster id to. Can be later passed to other commands.')
-@click.option('--config-file', required = False, help='Configuration file to use. The default is `~/.vs-emr/config.yaml`')
+            help = 'Flag to indicate if the cluster should auto terminate on completion of all the steps.')
+@click.option('--profile',  multiple=True, 
+            help='Configuration profile(s) to load.')
+@click.option('--conf',  multiple=True, 
+            help='Configuration override(s) in the format of name=value, e.g. `master.ebsSizeInGB=128`.')
+@click.option('--cluster-id-file',  required = False,
+            help='Path to the file to save the cluster id to. Can be later passed to other commands.')
+@click.option('--config-file', required = False,
+            help='Configuration file to use. The default is `~/.vs-emr/config.yaml`')
 @pass_aws_cxt
-def start_cluster(aws_ctx, conf, profile, cluster_id_file, config_file, **kwargs):
+def start_cluster(aws_ctx, conf, profile, cluster_id_file, config_file, master_on_demand, worker_on_demand,  **kwargs):
     
     aws_ctx.debug("kwargs: %s" % kwargs)
     def options_to_conf():        
@@ -225,6 +257,11 @@ def start_cluster(aws_ctx, conf, profile, cluster_id_file, config_file, **kwargs
     if profile:
         aws_ctx.echo("Using profiles: %s" % list(profile))
     config = configuration.resolve_config(profile,options_to_conf(), conf)
+    # manual overrides for on  demant prices
+    if master_on_demand:
+        dict_put_path(config,'master.bidPrice', None)
+    if worker_on_demand:
+        dict_put_path(config, 'worker.bidPrice', None)        
     cmd_options = resolve_to_cmd_options(aws_ctx, resource_filename(__name__, os.path.join('templates','spot-cluster.yaml')), config)
     cmd = " ".join(['aws', 'emr', 'create-cluster'] + cmd_options)
     output = aws_ctx.aws_run(cmd)
@@ -235,9 +272,11 @@ def start_cluster(aws_ctx, conf, profile, cluster_id_file, config_file, **kwargs
                 output_file.write(output)
         aws_ctx.echo(output)
         
-@cli.command(name='stop-cluster')
-@click.option("--cluster-id", required = False)
-@click.option("--cluster-id-file", required = False)
+@cli.command(name='stop-cluster', help='Stops (terminates) a cluster created with `start-cluster`.')
+@click.option("--cluster-id", required = False,
+            help='EMR cluster id e.g. "j-2XON221YYVZMQ".')
+@click.option("--cluster-id-file", required = False,
+            help='Path to the file with the cluster id (as saved by `create-cluster`).')
 @pass_aws_cxt
 def kill_cluster(aws_ctx, cluster_id, cluster_id_file):
     cluster_id = resolve_cluster_id(aws_ctx, cluster_id, cluster_id_file)    
@@ -249,14 +288,21 @@ def kill_cluster(aws_ctx, cluster_id, cluster_id_file):
     
     
 @cli.command(name='submit-cmd', context_settings=dict(
-    ignore_unknown_options=True,
-))
-@click.option("--cluster-id", required = False)
-@click.option("--cluster-id-file", required = False)
-@click.option("--step-name", required = False, default="variant-spark")
+    ignore_unknown_options=True), 
+    help='''Submit a variant-spark step to the EMR cluster created with `start-cluster`. 
+Multiple steps can be submitted to a single cluster.'''
+)
+@click.option("--cluster-id", required = False,
+            help='EMR cluster id e.g. "j-2XON221YYVZMQ".')
+@click.option("--cluster-id-file", required = False,
+            help='Path to the file with the cluster id (as saved by `create-cluster`).')
+@click.option("--step-name", required = False, default="variant-spark",
+            help='The name of the EMR step to use (default="variant-spark")')
 @click.option("--action_on_failure", required=False, default="CONTINUE", 
-              type=click.Choice(['CONTINUE', 'TERMINATE_CLUSTER', 'CANCEL_AND_WAIT']))
-@click.option("--spark-opts", required=False)
+            type=click.Choice(['CONTINUE', 'TERMINATE_CLUSTER', 'CANCEL_AND_WAIT']), 
+            help='Action on step failure (as in EMR)')
+@click.option("--spark-opts", required=False, 
+            help='Apache Spark options to use, passed in a single string, e.g. "--num-executors 8 --conf spark.default.parallelism=128"')
 @click.argument('variant_spark_args', nargs=-1, type=click.UNPROCESSED)
 @pass_aws_cxt
 def submit_cmd(aws_ctx, cluster_id, cluster_id_file, step_name, action_on_failure, spark_opts, variant_spark_args):
