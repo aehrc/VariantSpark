@@ -1,7 +1,7 @@
 --- 
 defaults:
   region: null
-  releaseLabel: "emr-5.7.0"
+  releaseLabel: "emr-5.8.0"
   autoTerminate: true
   instanceType: "m4.large"
   ebsRootVolumeSize: 10
@@ -69,8 +69,6 @@ options:
       spark.dynamicAllocation.enabled: "false"
       spark.serializer: "org.apache.spark.serializer.KryoSerializer"
       spark.locality.wait: "10s"
-      {{#conf.logBucketBase}}spark.eventLog.dir: "s3://{{conf.logBucketBase}}/sparklog/"{{/conf.logBucketBase}}
-      {{#conf.logBucketBase}}spark.history.fs.logDirectory: "s3://{{conf.logBucketBase}}/sparklog/"{{/conf.logBucketBase}}
   bootstrap-actions:
   - Name: "Install Variant Spark"
     Path: {{variantSparkBootstrap}}

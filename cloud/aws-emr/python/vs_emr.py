@@ -198,22 +198,26 @@ MAP_OPTIONS_TO_CONFIG = dict(
     worker_instances="worker.instanceCount",
     worker_bid="worker.bidPrice",
     master_type="master.instanceType",
-    master_bid="master.bidPrice"
+    master_bid="master.bidPrice", 
+    auto_terminate="autoTerminate"
 )
 
-@cli.command(name='start-cluster')
-@click.option('--worker-type', required = False, help='The type of AWS EC2 instance to use for worker nodes. E.g. r4.2xlarge')
-@click.option('--worker-instances', required = False, help='The number of worker instances in the cluster')
-@click.option('--worker-bid', required = False, help='The maximum spot price for the worker instances')
-@click.option('--master-type', required = False)
-@click.option('--master-bid', required = False)
+@cli.command(name='start-cluster', help='Start a new AWS EMR cluster configured with VariantSpark.')
+@click.option('--worker-type', required = False, help='The type of AWS EC2 instance to use for worker nodes. E.g. r4.2xlarge.')
+@click.option('--worker-instances', required = False, help='The number of worker instances in the cluster.')
+@click.option('--worker-bid', required = False, help='The maximum spot price for the worker instances.')
+@click.option('--master-type', required = False, help='The type of AWS EC2 instance to use for the master node. E.g. r4.2xlarge.')
+@click.option('--master-bid', required = False, help='The maximum spot price for the master instance.')
+@click.option('--auto-terminate/--no-auto-terminate', required = False, default=None,
+                    help = 'Flag to indicate if the cluster should auto terminate on completion of all the steps.')
 @click.option('--profile',  multiple=True)
 @click.option('--conf',  multiple=True)
-@click.option('--cluster-id-file',  required = False)
-@click.option('--config-file', required = False)
+@click.option('--cluster-id-file',  required = False, help='Path to the file to save the cluster id to. Can be later passed to other commands.')
+@click.option('--config-file', required = False, help='Configuration file to use. The default is `~/.vs-emr/config.yaml`')
 @pass_aws_cxt
 def start_cluster(aws_ctx, conf, profile, cluster_id_file, config_file, **kwargs):
     
+    aws_ctx.debug("kwargs: %s" % kwargs)
     def options_to_conf():        
         return functools.reduce(dict_put, ((MAP_OPTIONS_TO_CONFIG[k], v) for k,v in  kwargs.items() if v is not None), dict())
     

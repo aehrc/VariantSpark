@@ -55,7 +55,7 @@ The --user is optional and should be used if you do not have permissions to inst
 
 TODO: describe configuration:
 (example is in conf) 
-The file needs to be saved to ${HOME}/.vs_emr/default.yaml
+The file needs to be saved to ${HOME}/.vs_emr/config.yaml
 
 #### Usage
 
@@ -63,9 +63,7 @@ To see available commands use:
 
     vs-emr  help
     
-    
 ### Running on sample datasets
-
 
     vs-emr start-cluster 
     vs-emr submit-cmd --cluster-id j-1PH8VDFJUDV0K  importance -if s3://au.csiro.pbdava.test/variant-spark/data/chr22_1000.vcf -ff s3://au.csiro.pbdava.test/variant-spark/data/chr22-labels.csv -fc 22_16051249 -v -rn 500 -rbs 20
