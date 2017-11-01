@@ -19,8 +19,13 @@ Then configure your `aws cli`, providing your default region, access keys, etc w
     
 (More info on the configuration process and using the `aws cli` can be found at [AWS CLI User Guide](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html)
 
+Now we need to choose S3 storage for `variant-spark` output files and for the EMR cluster logs. If you have an existing S3 bucket you can use it or you can create a new bucket.  We will use:
+    
+* `s3://<your-bucket-name>/variant-spark/output/` as the output location
+* `s3://<your-bucket-name>/variant-spark/logs/` as the cluster log location.
 
-
+Please note the trailing slashes! They are important to designate folders in S3.  
+  
 Now we can install the `vs-emr` - variant spark cli for EMR - with:
 
     pip install --user ./python 
@@ -38,7 +43,6 @@ Create the `vs-emr` configuration:
     
 Edit the configuration in `~/.vs_emr/config.yaml` replacing the values in `<<>>` with appropriate values.
 
-
 The sample data for hipsterIndex demo are available at `s3://variant-spark/datasets/hipsterIndex/`.
 
 To run the demo we first create a small cluster with two `m4.large` worker instances (as defined in `~/.vs_emr/config.yaml`):
@@ -47,25 +51,24 @@ To run the demo we first create a small cluster with two `m4.large` worker insta
     
 This command will start an EMR cluster configured to run `variant-spark` and save its id to `/tmp/cluster-id`.  The cluster will auto-terminate after the last step has been completed so we need to submit the steps before the cluster setup has finished (which usually takes between 5 to 8 minutes).
 
-To run the `variant-spark` importance on hipster index data use: 
+To run the `variant-spark` importance on hipster index data use (use your S3 output bucket name): 
     
-    vs-emr submit-cmd --cluster-id-file /tmp/cluster-id  importance -if s3://variant-spark/datasets/hipsterIndex/hipster.vcf.bz2 -ff s3://variant-spark/datasets/hipsterIndex/hipster_labels.txt -fc label -v -rn 1000 -rbs 100 -on 100 -of s3://au.csiro.pbdava.test/variant-spark/output/hipster-importance-1.csv
+    vs-emr submit-cmd --cluster-id-file /tmp/cluster-id  importance -if s3://variant-spark/datasets/hipsterIndex/hipster.vcf.bz2 -ff s3://variant-spark/datasets/hipsterIndex/hipster_labels.txt -fc label -v -rn 1000 -rbs 100 -on 100 -of s3://<your-bucket-name>/variant-spark/output/hipster-importance.csv
 
-This should complete in about 5 minutes (after the cluster setup has finished) and save the top 100 important variables to `s3://au.csiro.pbdava.test/variant-spark/output/hipster-importance-1.csv`
+This should complete in about 5 minutes (after the cluster setup has finished) and save the top 100 important variables to `s3://<your-bucket-name>/variant-spark/output/hipster-importance-1.csv`
 
 In this example we use on-demand instances for both the master and the workers. If you prefer to use spot instances at the max price of say $0.1 you can add the `--conf "bidPrice=0.1"` option to `start-cluster` e.g.
     
     vs-emr start-cluster --cluster-id-file /tmp/cluster-id --conf "bidPrice=0.1"
     
-You can examine the cluster configuration and log files using AWS console or  `aws-cli` while its running as well as up to seven days after its termination.
-
+You can examine the cluster configuration and log files using AWS console or  `aws cli` while it's running as well as up to seven days after its termination.
 
 ### Distributions 
 
 variant-spark distributions are available on `s3` Sydney Region (ap-southeast-2)
 
-- develpment builds in `s3://variant-spark/s3://variant-spark/unstable/<version>`
-- relase builds in: `s3://variant-spark/s3://variant-spark/stable/<version>`
+- develpment builds in `s3://variant-spark/unstable/<version>`
+- relase builds in: `s3://variant-spark/stable/<version>`
 
 where `<version>` is:
 

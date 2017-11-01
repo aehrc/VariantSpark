@@ -1,6 +1,5 @@
 --- 
 defaults:
-  region: null
   releaseLabel: "emr-5.8.0"
   autoTerminate: true
   instanceType: "m4.large"
@@ -22,7 +21,6 @@ defaults:
     logBucketUri: null
   ec2Attributes: {}
 options:
-  region: "{{region}}"
   name: "variant-spark_{{worker.instanceType}}-{{worker.instanceCount}}"
   release-label: "{{releaseLabel}}"
   auto-terminate: {{autoTerminate}}
