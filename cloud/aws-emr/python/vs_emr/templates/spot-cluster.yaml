@@ -19,7 +19,7 @@ defaults:
     ebsSizeInGB: {{ebsSizeInGB}}
     bidPrice: {{bidPrice}}
   conf:
-    logBucketBase: true
+    logBucketUri: null
   ec2Attributes: {}
 options:
   region: "{{region}}"
@@ -33,10 +33,10 @@ options:
     application: "variant-spark"
     use: "testing"
   ec2-attributes: {{ec2Attributes}}
-  {{#conf.logBucketBase}}log-uri: "s3n://{{conf.logBucketBase}}/logs/"{{/conf.logBucketBase}}
-  ebs-root-volume-size: 10 
+  {{#conf.logBucketUri}}log-uri: "{{conf.logBucketUri}}"{{/conf.logBucketUri}}
+  {{#conf.logBucketUri}}enable-debugging: true{{/conf.logBucketUri}}
+  ebs-root-volume-size: {{ebsRootVolumeSize}} 
   service-role: "EMR_DefaultRole"
-  enable-debugging: true
   scale-down-behavior: "TERMINATE_AT_INSTANCE_HOUR"
   instance-groups: 
   - Name: "Master Instance Group"
