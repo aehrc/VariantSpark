@@ -1,6 +1,6 @@
 default:
   variantSparkReleaseUrl: "s3://variant-spark/unstable/0.1/0.1-134ed4e"
-  region: ap-southeast-2
+  region: <<REPLACE_WITH_REGION_NAME>>
   instanceType: "m4.large"
   autoTerminate: true
   releaseLabel: "emr-5.8.0"
