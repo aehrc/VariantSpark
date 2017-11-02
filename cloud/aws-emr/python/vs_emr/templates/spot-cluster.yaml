@@ -20,7 +20,9 @@ defaults:
   conf:
     logBucketUri: null
   ec2Attributes: {}
-options:
+# these are almost liteally passed to aws emr `create-clustr` as corrsponding option
+# e.g. `name` is  passed as `--name` etc.
+options:  
   name: "variant-spark_{{worker.instanceType}}-{{worker.instanceCount}}"
   release-label: "{{releaseLabel}}"
   auto-terminate: {{autoTerminate}}
