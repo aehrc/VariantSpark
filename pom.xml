@@ -74,6 +74,13 @@
 		<spark.version>2.1.0</spark.version>
         <sonata.autorelease>false</sonata.autorelease>
 	</properties>
+
+    <repositories>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories</url>
+        </repository>
+    </repositories>
 	
 	<dependencies>
 		<dependency>
@@ -150,8 +157,13 @@
 			<version>1.3.4</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+		    <groupId>au.csiro.aehrc.third.hail</groupId>
+            <artifactId>hail</artifactId>
+            <version>0.1-SNAPSHOT</version>
+            <scope>provided</scope>
+		</dependency>
 	</dependencies>
-
 	<build>
 		<plugins>
 			<plugin>
