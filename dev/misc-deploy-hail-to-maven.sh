@@ -9,7 +9,7 @@ mvn deploy:deploy-file \
   -Dfile=${HAIL_JAR} \
   -Dpackaging=jar \
   -DgeneratePom=true \
-  -DgroupId=au.csiro.aehrc.third.hail \
+  -DgroupId=au.csiro.aehrc.third.hail-is \
   -DartifactId=hail \
   -Dversion=0.1-SNAPSHOT \
   -DgeneratePom.description="Private deployment of hail to maven"

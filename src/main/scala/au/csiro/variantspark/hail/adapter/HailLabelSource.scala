@@ -10,6 +10,7 @@ class HailLabelSource(val vds: VariantDataset, val saPath:List[String]) extends 
     
     val saQuery =  vds.saSignature.query(saPath)
     val sampleAnnotationsAsMap = vds.sampleIdsAndAnnotations.map(t => (t._1.asInstanceOf[String], t._2.asInstanceOf[Row])).toMap
+    //TODO: Better conversion to Int
     labels.map(l => saQuery(sampleAnnotationsAsMap(l)).toString.toInt).toArray
   }
 }

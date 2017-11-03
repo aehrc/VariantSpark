@@ -78,7 +78,7 @@
     <repositories>
         <repository>
             <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories</url>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
             <snapshots>
                 <enabled>true</enabled>
                 <updatePolicy>always</updatePolicy>
@@ -162,11 +162,10 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-		    <groupId>au.csiro.aehrc.third.hail</groupId>
+		    <groupId>au.csiro.aehrc.third.hail-is</groupId>
             <artifactId>hail</artifactId>
             <version>0.1-SNAPSHOT</version>
-            <scope>system</scope>
-            <systemPath>/Users/szu004/third/hail/build/libs/hail.jar</systemPath>
+            <scope>provided</scope>
 		</dependency>
 	</dependencies>
 	<build>
