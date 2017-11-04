@@ -1,0 +1,31 @@
+default:
+  variantSparkReleaseUrl: "s3://variant-spark/stable/0.1/0.1.0"
+  instanceType: "m4.large"
+  autoTerminate: true
+  releaseLabel: "emr-5.8.0"
+  bidPrice: 0.07
+  ec2Attributes:
+    AdditionalMasterSecurityGroups: <<REPLACE_WITH_THE_LIST_OF_EXTRE_SECURITY_GROUPS>>
+    KeyName: <<REPLACE_WITH_SSH_KEY_NAME>>
+    SubnetId: <<REPLACE_WITH_SUBNET-ID>>
+    InstanceProfile: "EMR_EC2_DefaultRole"
+  worker:
+    instanceCount: 2
+  conf:
+    logBucketUri: <<REPLACE_WITH_S3_URI_TO_LOG_LOCATION>>
+profiles:
+  r4.16xlarge:
+    bidPrice: 0.8
+    instanceType: "r4.2xlarge"
+    worker:
+      instanceType: "r4.16xlarge"
+  db-small:
+    bidPrice: null
+    instanceType: "r4.2xlarge"
+    worker:
+      instanceCount: 2
+  db-medium:
+    bidPrice: null
+    instanceType: "r4.2xlarge"
+    worker: 
+      instanceCount: 4 
