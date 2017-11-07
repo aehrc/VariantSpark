@@ -167,6 +167,27 @@
             <version>0.1-SNAPSHOT</version>
             <scope>provided</scope>
 		</dependency>
+
+    <dependency>
+      <groupId>org.ow2.asm</groupId>
+      <artifactId>asm</artifactId>
+      <version>5.1</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.ow2.asm</groupId>
+      <artifactId>asm-util</artifactId>
+      <version>5.1</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.ow2.asm</groupId>
+      <artifactId>asm-analysis</artifactId>
+      <version>5.1</version>
+      <scope>provided</scope>
+    </dependency>
+
+
 	</dependencies>
 	<build>
 		<plugins>

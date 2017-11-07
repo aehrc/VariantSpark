@@ -18,10 +18,13 @@ object HailApp {
     val table = hc.importTable("data/chr22-labels-hail.csv", keyNames = Array("sample"), separator=",", 
           types = Map("x22_16050408" -> TInt))
     println("Table signature: " + table.signature)
-    val vcf = hc.importVCF("data/chr22_1000.vcf")   
-    val annotatedVcf =  vcf.annotateSamplesTable(table, root="sa.pheno")
-    println("Samples schema annotated: " + annotatedVcf.saSignature)
     
+    val vcf = hc.importVCF("data/chr22_1000.vcf")   
+    val annotatedVcfRaw =  vcf.annotateSamplesTable(table, root="sa.pheno")
+    val annotatedVcf = annotatedVcfRaw.annotateSamplesExpr("sa.value = sa.pheno.x22_16050408")
+    
+    println("Samples schema annotated: " + annotatedVcf.saSignature)
+       
     val c = annotatedVcf.xxx()
     println(c)    
     val fs = new HailFeatureSource(annotatedVcf)
