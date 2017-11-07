@@ -1,11 +1,10 @@
-package au.csiro.variantspark.hail
+package au.csiro.variantspark.work.hail
 
 import is.hail.HailContext
 import is.hail.expr._
-import VSHailFunctions._
+import au.csiro.variantspark.hail.VSHailFunctions._
 import au.csiro.variantspark.hail.adapter.HailFeatureSource
 import org.apache.spark.sql.Row
-
 
 object HailTestApp {
   

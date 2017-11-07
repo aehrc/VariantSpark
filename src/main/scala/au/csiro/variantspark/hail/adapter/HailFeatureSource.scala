@@ -8,6 +8,12 @@ import au.csiro.variantspark.input.Feature
 import is.hail.variant.Variant
 import is.hail.variant.Genotype
 
+/** Implements the variant-spark FeatureSource on a Hail VariantDataset. 
+  * Sample names come from VariantDataset samples the genotypes are encoded as 0, 1 or 2 for 
+  * base homo, hetero and alt homo alleles respectively. Uncalled genotypes are encoded as 0.
+  * 
+  * @param vds a hail VariantDataset
+  */
 class HailFeatureSource(val vds: VariantDataset) extends FeatureSource {
   
   def sampleNames:List[String] = vds.sampleIds.map(_.toString()).toList
@@ -18,7 +24,9 @@ class HailFeatureSource(val vds: VariantDataset) extends FeatureSource {
 
 object HailFeatureSource {
   
-  def hailLineToFeature(variant:Variant, genotypes:Iterable[Genotype]):Feature = {    
+  def apply(vds: VariantDataset) = new HailFeatureSource(vds)
+  
+  private def hailLineToFeature(variant:Variant, genotypes:Iterable[Genotype]):Feature = {    
     Feature(variant.contig + "_" + variant.start, genotypes.map(genotypeToHamming).toArray)
   }
   

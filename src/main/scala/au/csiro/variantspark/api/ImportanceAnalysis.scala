@@ -74,7 +74,7 @@ class ImportanceAnalysis(val sqlContext:SQLContext, val featureSource:FeatureSou
 
 
 object ImportanceAnalysis {
-  
+
   def apply(featureSource:FeatureSource, labelSource:LabelSource, rfParams: RandomForestParams = RandomForestParams(), nTrees:Int = 500, rfBatchSize:Int = 100, varOrdinalLevels:Int = 3)
-        (implicit vsContext:VSContext) = new ImportanceAnalysis(vsContext.sqlContext, featureSource, labelSource, rfParams, nTrees, rfBatchSize, varOrdinalLevels)  
+        (implicit vsContext:SqlContextHolder) = new ImportanceAnalysis(vsContext.sqlContext, featureSource, labelSource, rfParams, nTrees, rfBatchSize, varOrdinalLevels)  
 }
