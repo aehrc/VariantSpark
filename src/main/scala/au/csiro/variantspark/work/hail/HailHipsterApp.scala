@@ -24,8 +24,6 @@ object HailHipsterApp {
     
     println("Samples schema annotated: " + annotatedVcf.saSignature)
        
-    val c = annotatedVcf.xxx()
-    println(c)    
     val fs = new HailFeatureSource(annotatedVcf)
     println(fs.sampleNames)
     fs.features().take(10).map(f => (f.label, f.values.toList)).foreach(println)

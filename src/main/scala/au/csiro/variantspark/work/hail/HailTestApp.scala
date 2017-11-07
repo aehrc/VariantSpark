@@ -34,10 +34,6 @@ object HailTestApp {
     val row  = res2.asInstanceOf[Row]
     println("Row: " + row)
     println(annotatedVcf.saSignature.query(List("pheno", "x22_16050408"))(row))
-    
-    
-    val c = vcf.xxx()
-    println(c)    
     val fs = new HailFeatureSource(vcf)
     println(fs.sampleNames)
     fs.features().take(10).map(f => (f.label, f.values.toList)).foreach(println)

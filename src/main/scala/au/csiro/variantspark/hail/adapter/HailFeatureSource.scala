@@ -26,8 +26,10 @@ object HailFeatureSource {
   
   def apply(vds: VariantDataset) = new HailFeatureSource(vds)
   
+  def variantToFeatureName(variant:Variant) = variant.contig + "_" + variant.start
+  
   private def hailLineToFeature(variant:Variant, genotypes:Iterable[Genotype]):Feature = {    
-    Feature(variant.contig + "_" + variant.start, genotypes.map(genotypeToHamming).toArray)
+    Feature(variantToFeatureName(variant), genotypes.map(genotypeToHamming).toArray)
   }
   
   private def genotypeToHamming(gt:Genotype):Byte = if (!gt.isCalled || gt.isHomRef) 0 else if (gt.isHomVar) 2 else 1
