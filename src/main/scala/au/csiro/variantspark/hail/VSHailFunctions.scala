@@ -11,9 +11,10 @@ class VSHailFunctions(val vds:VariantDataset) extends AnyVal {
   //    fatal(s"method `$methodName' requires a split dataset. Use `split_multi' or `filter_multi' first.")
   //}
   
-  def importanceAnalysis(y: String, root: String = "va.rf", nTopVariables:Int = 1000):VariantDataset = {
+  def importanceAnalysis(y: String, nTrees:Int=1000, 
+        mtryFraction:Option[Double] = None, seed: Option[Long] = None, batchSize:Int = 100):RfImportanceAnalysis = {
     //requireSplit("logistic regression")
-    RfImportanceAnalysis(vds, y, root, nTopVariables)
+    RfImportanceAnalysis(vds, y, nTrees, mtryFraction, seed, batchSize)
   }
 }
 

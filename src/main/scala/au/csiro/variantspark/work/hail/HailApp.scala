@@ -4,8 +4,17 @@ import is.hail.HailContext
 import is.hail.expr._
 import au.csiro.variantspark.hail.adapter._
 import au.csiro.variantspark.api.ImportanceAnalysis
+import is.hail.keytable.KeyTable
+import org.apache.spark.sql.functions.udf
+import is.hail.variant.Locus
+import org.apache.spark.sql.Row
 
 object HailApp {
+  
+  def toLocus(label:String):Locus = {
+    val contigAndPosition = label.split("_")
+    Locus(contigAndPosition(0),contigAndPosition(1).toInt)
+  }
   
   def main(args:Array[String]) = {
     println("Hello")
@@ -29,5 +38,13 @@ object HailApp {
     implicit val vsContext = HailContextAdapter(hc)
     val ia = ImportanceAnalysis(fs, ls)
     ia.importantVariables(100).foreach(println)
+    val df = ia.variableImportance
+    
+    val impSignature = TStruct(("locus", TLocus), ("importance",TDouble))
+    
+    val importanceKeyTable = KeyTable.apply(hc, df.rdd.map(r =>  
+      Row(toLocus(r.getString(0)), r.getDouble(1))), impSignature, Array("locus"))
+    val xxx = annotatedVcf.annotateVariantsTable(importanceKeyTable, null, "va.gini")
+    println(xxx.vaSignature)
   }
 }
