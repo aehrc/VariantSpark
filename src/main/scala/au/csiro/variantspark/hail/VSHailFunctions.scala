@@ -12,9 +12,9 @@ class VSHailFunctions(val vds:VariantDataset) extends AnyVal {
   //}
   
   def importanceAnalysis(y: String, nTrees:Int=1000, 
-        mtryFraction:Option[Double] = None, seed: Option[Long] = None, batchSize:Int = 100):RfImportanceAnalysis = {
+        mtryFraction:Option[Double] = None, oob:Boolean = true, seed: Option[Long] = None, batchSize:Int = 100):RfImportanceAnalysis = {
     //requireSplit("logistic regression")
-    RfImportanceAnalysis(vds, y, nTrees, mtryFraction, seed, batchSize)
+    RfImportanceAnalysis(vds, y, nTrees, mtryFraction, oob,  seed, batchSize)
   }
 }
 

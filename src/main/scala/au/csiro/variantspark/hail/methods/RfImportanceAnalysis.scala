@@ -32,6 +32,8 @@ class RfImportanceAnalysis(val hc: HailContext, importanceAnalysis: ImportanceAn
 
 object RfImportanceAnalysis {
   
+  val defaultRFParams = RandomForestParams()
+  
   val impSignature = TStruct(("locus", TLocus), ("importance",TDouble))
   
   def labelToLocus(label:String):Locus = {
@@ -43,17 +45,17 @@ object RfImportanceAnalysis {
     ("giniImportance", TDouble)
   )
     
-  def apply(vds: VariantDataset, yExpr:String, nTrees:Int, mtryFraction:Option[Double], 
+  def apply(vds: VariantDataset, yExpr:String, nTrees:Int, mtryFraction:Option[Double], oob:Boolean, 
         seed: Option[Long] , batchSize:Int):RfImportanceAnalysis = {
     require(vds.wasSplit)
     val featureSource = HailFeatureSource(vds)
     val labelSource = HailLabelSource(vds, yExpr)
     implicit val vsContext = HailContextAdapter(vds.hc)
-    val defRFParams = RandomForestParams()
     new RfImportanceAnalysis(vds.hc, ImportanceAnalysis(featureSource, labelSource, 
         rfParams = RandomForestParams(
-              nTryFraction = mtryFraction.getOrElse(defRFParams.nTryFraction), 
-              seed =  seed.getOrElse(defRFParams.seed)
+              nTryFraction = mtryFraction.getOrElse(defaultRFParams.nTryFraction), 
+              seed =  seed.getOrElse(defaultRFParams.seed), 
+              oob = oob
           ),
           nTrees = nTrees,
           rfBatchSize = batchSize      
