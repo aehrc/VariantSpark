@@ -6,4 +6,9 @@
 <path>/${PROJECT_DIR_NAME}/src/test/python</path>
 <path>/${PROJECT_DIR_NAME}/python</path>
 </pydev_pathproperty>
+<pydev_pathproperty name="org.python.pydev.PROJECT_EXTERNAL_SOURCE_PATH">
+<path>/Users/szu004/dev/variant-spark/tmp/hail/hail-py_2.0.2.zip</path>
+<path>/opt/spark-2.0.2-bin-hadoop2.7/python/lib/py4j-0.10.3-src.zip</path>
+<path>/opt/spark-2.0.2-bin-hadoop2.7/python/lib/pyspark.zip</path>
+</pydev_pathproperty>
 </pydev_project>
