@@ -13,3 +13,10 @@ mvn package -B
 
 # make build info
 env | tee "target/buildinfo" 
+
+# build the python distribution
+
+pushd  ${FWDIR}/python
+python setup.py sdist --formats zip
+popd 
+

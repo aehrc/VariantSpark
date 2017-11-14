@@ -53,3 +53,8 @@ variant-spark_2.11.iml
 
 *.pyc
 *.egg-info
+.pydevproject
+
+
+build
+dist
