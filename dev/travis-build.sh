@@ -17,6 +17,7 @@ env | tee "target/buildinfo"
 # build the python distribution
 
 pushd  ${FWDIR}/python
-python setup.py sdist --formats zip
+python setup.py sdist
+python setup.py bdist_egg
 popd 
 

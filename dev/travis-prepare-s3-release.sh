@@ -38,7 +38,8 @@ cp target/buildinfo "${S3_BUILD_RELEASE_DIR}/buildinfo"
 cp target/variant-spark_*.jar "${S3_BUILD_RELEASE_DIR}/lib"
 
 mkdir -p "${S3_BUILD_RELEASE_DIR}/python"
-cp python/dist/*.zip "${S3_BUILD_RELEASE_DIR}/python"
+cp python/dist/*.tar.gz "${S3_BUILD_RELEASE_DIR}/python"
+cp python/dist/*.egg "${S3_BUILD_RELEASE_DIR}/python"
 
 # deploy boostrap scripts 
 mkdir -p "${S3_BUILD_RELEASE_DIR}/bootstrap"
