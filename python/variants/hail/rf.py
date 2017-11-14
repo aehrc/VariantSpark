@@ -23,7 +23,7 @@ class ImportanceAnalysis:
         
         :param: int n_limit: the limit of the number of loci to return
         
-        :return: A KeyTable with the locus in the first column and importance in the second.
+        :return: A KeyTable with the variant in the first column and importance in the second.
         :rtype: :py:class:`KeyTable`
         """
         return KeyTable(self.hc, self._jia.variantImportance(n_limit))

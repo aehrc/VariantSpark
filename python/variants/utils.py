@@ -4,8 +4,6 @@ Created on 10 Nov 2017
 @author: szu004
 '''
 
-
-
 import inspect
 
 def merge_inits(*inits):

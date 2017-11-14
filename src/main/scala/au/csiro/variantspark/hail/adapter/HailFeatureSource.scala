@@ -26,7 +26,8 @@ object HailFeatureSource {
   
   def apply(vds: VariantDataset) = new HailFeatureSource(vds)
   
-  def variantToFeatureName(variant:Variant) = variant.contig + "_" + variant.start
+  def variantToFeatureName(variant:Variant) = List(variant.contig, variant.start,
+        variant.ref, variant.alt).mkString(":")
   
   private def hailLineToFeature(variant:Variant, genotypes:Iterable[Genotype]):Feature = {    
     Feature(variantToFeatureName(variant), genotypes.map(genotypeToHamming).toArray)

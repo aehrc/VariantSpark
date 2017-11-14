@@ -15,6 +15,7 @@ import is.hail.utils._
 import is.hail.keytable.KeyTable
 import is.hail.HailContext
 import is.hail.expr.TLocus
+import is.hail.expr.TVariant
 import org.apache.spark.sql.Row
 import au.csiro.variantspark.algo.RandomForestParams
 
@@ -25,26 +26,27 @@ class RfImportanceAnalysis(val hc: HailContext, importanceAnalysis: ImportanceAn
   
   def variantImportance(nLimit:Int = 1000): KeyTable  = {    
     val importantVariants = importanceAnalysis.importantVariables(nLimit)
-      .map { case (label, importance) => Row(RfImportanceAnalysis.labelToLocus(label), importance) }
-    KeyTable(hc, hc.sc.parallelize(importantVariants), RfImportanceAnalysis.impSignature, Array("locus"))
+      .map { case (label, importance) => Row(RfImportanceAnalysis.labelToVariant(label), importance) }
+    KeyTable(hc, hc.sc.parallelize(importantVariants), RfImportanceAnalysis.impSignature, Array("variant"))
   }
 }
 
 object RfImportanceAnalysis {
   
   val defaultRFParams = RandomForestParams()
-  
-  val impSignature = TStruct(("locus", TLocus), ("importance",TDouble))
-  
-  def labelToLocus(label:String):Locus = {
-    val contigAndPosition = label.split("_")
-    Locus(contigAndPosition(0),contigAndPosition(1).toInt)
+ 
+  val impSignature = TStruct(("variant", TVariant), ("importance",TDouble))
+   
+  def labelToVariant(label:String):Variant = {
+    val contiPositionRefAlt = label.split(":")
+    Variant(contiPositionRefAlt(0), contiPositionRefAlt(1).toInt, 
+        contiPositionRefAlt(2), contiPositionRefAlt(3))
   }
   
   val schema: Type = TStruct(
     ("giniImportance", TDouble)
   )
-    
+  
   def apply(vds: VariantDataset, yExpr:String, nTrees:Int, mtryFraction:Option[Double], oob:Boolean, 
         seed: Option[Long] , batchSize:Int):RfImportanceAnalysis = {
     require(vds.wasSplit)
@@ -60,32 +62,5 @@ object RfImportanceAnalysis {
           nTrees = nTrees,
           rfBatchSize = batchSize      
         ))
-  }
-  
-  def annotateImportance(vds: VariantDataset, yExpr:String, root:String, nTopVariables:Int):VariantDataset = {
-    
-    require(vds.wasSplit)
-  
-    val featureSource = HailFeatureSource(vds)
-    val labelSource = HailLabelSource(vds, yExpr)
-    implicit val vsContext = HailContextAdapter(vds.hc)
-    val ia = ImportanceAnalysis(featureSource, labelSource)  
-      
-    val br_importantVariables = vds.hc.sc.broadcast(ia.importantVariables(nTopVariables).toMap)
-    
-    val pathVA = Parser.parseAnnotationRoot(root, Annotation.VARIANT_HEAD)
-    val (newVAS, inserter) = vds.insertVA(RfImportanceAnalysis.schema, pathVA)
-    
-    vds.copy(rdd = vds.rdd.mapPartitions( { it =>
-      it.map { case (v, (va, gs)) =>
-        
-        val rfAnnotation = Annotation(br_importantVariables.value.getOrElse(
-            HailFeatureSource.variantToFeatureName(v), 0.0))
-        
-        val newAnnotation = inserter(va, rfAnnotation)
-        assert(newVAS.typeCheck(newAnnotation))
-        (v, (newAnnotation, gs))
-      }
-    }, preservesPartitioning = true).asOrderedRDD).copy(vaSignature = newVAS)
   }
 }

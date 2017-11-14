@@ -23,6 +23,6 @@ class HailAdapterIntegrationTest extends SparkTest {
     implicit val vsContext = HailContextAdapter(hc)
     val ia = ImportanceAnalysis(fs, ls)
     val top10 = ia.importantVariables(10)
-    assertTrue(top10.map(_._1).toSet.contains("22_16051480"))
+    assertTrue(top10.map(_._1).toSet.contains("22:16051480:T:C"))
   } 
 }

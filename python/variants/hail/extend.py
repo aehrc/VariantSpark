@@ -27,7 +27,7 @@ class VariantsDatasetFunctions:
         :param int n_trees: The number of trees to build in the forest.
         :param float mtry_fraction: The fraction of variables to try at each split.
         :param bool oob: Should OOB error be calculated.
-        :param float seed: Random seed to use 
+        :param long seed: Random seed to use 
         :param int batch_size: The number of trees to build in one batch. 
 
         :return: Importance analysis model.
@@ -35,4 +35,5 @@ class VariantsDatasetFunctions:
         """    
         return ImportanceAnalysis(self.hc, 
             self._vshf_cache.importanceAnalysis(y_expr, n_trees, joption(mtry_fraction), 
-                                                oob, joption(seed), batch_size))
+                        oob, joption(long(seed) if seed is not None else None), 
+                        batch_size))
