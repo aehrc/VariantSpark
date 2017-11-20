@@ -11,7 +11,7 @@ branches:
   - /^v\d+\..*$/
 # command to install dependencies
 install:
-  - dev/py-setup.sh
+  - sudo dev/py-setup.sh
 script: dev/travis-build.sh
 before_deploy: dev/travis-prepare-s3-release.sh
 deploy:
