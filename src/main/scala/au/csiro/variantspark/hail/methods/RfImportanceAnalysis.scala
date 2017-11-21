@@ -53,14 +53,14 @@ object RfImportanceAnalysis {
     val featureSource = HailFeatureSource(vds)
     val labelSource = HailLabelSource(vds, yExpr)
     implicit val vsContext = HailContextAdapter(vds.hc)
-    new RfImportanceAnalysis(vds.hc, ImportanceAnalysis(featureSource, labelSource, 
+    new RfImportanceAnalysis(vds.hc, ImportanceAnalysis.fromParams(featureSource, labelSource, 
         rfParams = RandomForestParams(
               nTryFraction = mtryFraction.getOrElse(defaultRFParams.nTryFraction), 
               seed =  seed.getOrElse(defaultRFParams.seed), 
               oob = oob
           ),
           nTrees = nTrees,
-          rfBatchSize = batchSize      
+          batchSize = batchSize      
         ))
   }
 }

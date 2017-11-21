@@ -1,26 +1,36 @@
 package au.csiro.variantspark.api
 
+import org.apache.spark.sql.functions._
 import au.csiro.variantspark.test.SparkTest
 import org.junit.Test
+import org.junit.Assert._
+import au.csiro.variantspark.api._
 
 class ImportanceApiTest extends SparkTest {
   @Test
-  def testCreateContext() {
-
-    //TODO[TEST]: Remove printing and add assertions.
+  def testImportanceAnalysisLegacyApi() {
     implicit val vsContext = VSContext(spark)
     val fs = vsContext.featureSource("data/chr22_1000.vcf")
-    println(fs.sampleNames)
-    val ls = vsContext.labelSource("data/chr22-labels.csv", "22_16050408")
-    println(ls.getLabels(fs.sampleNames).toList)
-
-    val importanceAnalysis = ImportanceAnalysis(fs, ls)
+    assertEquals(1092, fs.sampleNames.size)
+    val ls = vsContext.loadLabel("data/chr22-labels.csv", "22_16050408")
+    assertEquals(1092, ls.getLabels(fs.sampleNames).length)
+    val importanceAnalysis = ImportanceAnalysis(fs, ls, nTrees = 100, seed = Some(13L))
     val importanceDF = importanceAnalysis.variableImportance
-    println("DF count")
+    import importanceDF.sqlContext._
     importanceDF.cache()
-    println(importanceDF.count())
-    importanceDF.registerTempTable("importance")
-    spark.sql("SELECT * FROM importance ORDER BY importance DESC limit 10").collect().foreach(println _)
-
+    val top10Variables = importanceDF.orderBy(desc("importance")).limit(10).collect()
+    assertEquals(10, top10Variables.size)
+    assertEquals("22_16050408", top10Variables.head.getString(0))
+  }
+  
+  @Test
+  def testImportanceAnalysisNewApi() {    
+    implicit val vsContext = VSContext(spark)
+    val features = vsContext.importVCF("data/chr22_1000.vcf")
+    val label = vsContext.loadLabel("data/chr22-labels.csv", "22_16050408")
+    val impAnalysis = features.importanceAnalysis(label, nTrees = 100, seed = Some(13L))
+    val top20Variables = impAnalysis.importantVariables(20)
+    assertEquals(20, top20Variables.size)
+    assertEquals("22_16050408", top20Variables.head._1)
   }
 }
