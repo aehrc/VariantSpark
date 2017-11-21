@@ -7,7 +7,8 @@ from variants.utils import extend_cls
 from hail import VariantDataset
 from . extend import VariantsDatasetFunctions
 
-"""
-    Pimp methods from VariantsDatasetFunctions to VariantDataset
-"""
+#
+# Pimp methods from VariantsDatasetFunctions to VariantDataset
+#
+
 extend_cls(VariantDataset, VariantsDatasetFunctions)

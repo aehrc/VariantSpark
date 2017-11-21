@@ -27,11 +27,25 @@ To learn more watch this video from Spark Summit.
 
 ### Building
 
-variant-spark requires java jdk 1.8+ and maven 3+
+_variant-spark_ requires java jdk 1.8+ and maven 3+
 
 In order to build the binaries use:
 
 	mvn clean install
+	
+For python _variant-spark_ requires python 2.7 with pip. 
+The other packages required for development are listed in `dev/dev-requirements.txt` and can be installed with:
+
+    pip install -r dev/dev-requirements.txt
+    
+or with: 
+    
+    ./dev/py-setup.sh
+
+    
+The complete built including all check can be run with:
+
+    ./dev/build.sh
 	
 ### Running
 
