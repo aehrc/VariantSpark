@@ -38,6 +38,11 @@ The other packages required for development are listed in `dev/dev-requirements.
 
     pip install -r dev/dev-requirements.txt
     
+or with: 
+    
+    ./dev/py-setup.sh
+
+    
 The complete built including all check can be run with:
 
     ./dev/build.sh
