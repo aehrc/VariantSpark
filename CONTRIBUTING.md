@@ -21,27 +21,16 @@ Generally, _VariantSpark_ uses _Github Issues_ to track logical issues, includin
     * The PR title should be of the form `[#XXXX] Title`, where `#XXXX` is the relevant _Github Issue_ number, and Title may be the issue title or a more specific title describing the PR itself.
     * If the pull request is still a work in progress, and so is not ready to be merged, but needs to be pushed to Github to facilitate review, then add [WIP] after the issue number.
     
-6. The related JIRA, if any, will be marked as “In Progress” and your pull request will automatically be linked to it. There is no need to be the Assignee of the JIRA to work on it, though you are welcome to comment that you have begun work.
+6. Your our pull request will automatically be linked to an issue. There is no need to be the Assignee of the issue to work on it, though you are welcome to comment that you have begun work.
 7. The Travis-CI automatic pull request builder will test your changes
 8. After about 10 minues, Travic-CI will post the results of the test to the pull request, along with a link to the full results on Jenkins.
 9. Watch for the results, and investigate and fix failures promptly
    * Fixes can simply be pushed to the same branch from which you opened your pull request
    * Travis-CI will automatically re-test when new commits are pushed
 
-1. one
-  * nested
+## Closing Your Pull Request / Issue
 
-2. two
-   * nested
-
-3. three
-   * nested
-
-
-## Closing Your Pull Request / JIRA
-
-* If a change is accepted, it will be merged and the pull request will automatically be closed, along with the associated JIRA if any
-* If your pull request is ultimately rejected, please close it promptly because committers can’t close PRs directly
+* If a change is accepted, it will be merged and the pull request will automatically be closed, along with the associated issue if any
 
 ## Code Style Guide
 
