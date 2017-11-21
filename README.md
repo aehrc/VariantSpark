@@ -1,6 +1,8 @@
 Variant Spark
 ==============
 
+![Travis-Build](https://travis-ci.org/aehrc/VariantSpark.svg?branch=master)
+
 _variant-spark_ is a scalable toolkit for genome-wide association studies optimized for GWAS like datasets. 
 
 Machine learning methods and, in particular, random forests (RFs) are a promising alternative to standard single SNP analyses in genome-wide association studies (GWAS). RFs provide variable importance measures to rank SNPs according to their predictive power.
