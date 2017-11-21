@@ -1,7 +1,6 @@
 Contributing to VariantSpark
 =============================
 
-
 # Contributing Code Changes
 Please review the preceding section before proposing a code change. This section documents how to do so.
 
