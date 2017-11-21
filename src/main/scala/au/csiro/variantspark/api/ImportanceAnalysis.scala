@@ -70,11 +70,41 @@ class ImportanceAnalysis(val sqlContext:SQLContext, val featureSource:FeatureSou
     
     topImportantVariables.map({ case (i, importance) => (index(i), importance)})
   } 
+    
 }
-
 
 object ImportanceAnalysis {
 
-  def apply(featureSource:FeatureSource, labelSource:LabelSource, rfParams: RandomForestParams = RandomForestParams(), nTrees:Int = 500, rfBatchSize:Int = 100, varOrdinalLevels:Int = 3)
-        (implicit vsContext:SqlContextHolder) = new ImportanceAnalysis(vsContext.sqlContext, featureSource, labelSource, rfParams, nTrees, rfBatchSize, varOrdinalLevels)  
+  val defaultRFParams = RandomForestParams()
+  
+  def apply(featureSource:FeatureSource, labelSource:LabelSource, nTrees:Int = 1000, 
+        mtryFraction:Option[Double] = None, oob:Boolean = true,
+        seed: Option[Long] = None, batchSize:Int = 100, varOrdinalLevels:Int = 3)
+        (implicit vsContext:SqlContextHolder): ImportanceAnalysis = {
+    
+    new ImportanceAnalysis(vsContext.sqlContext, featureSource, labelSource, 
+    rfParams = RandomForestParams(
+          nTryFraction = mtryFraction.getOrElse(defaultRFParams.nTryFraction), 
+          seed =  seed.getOrElse(defaultRFParams.seed), 
+          oob = oob
+      ),
+      nTrees = nTrees,
+      rfBatchSize = batchSize, 
+      varOrdinalLevels = varOrdinalLevels
+    )
+  }
+  
+  def fromParams(featureSource:FeatureSource, labelSource:LabelSource, 
+          rfParams: RandomForestParams, nTrees:Int = 1000, 
+         batchSize:Int = 100, varOrdinalLevels:Int = 3)
+        (implicit vsContext:SqlContextHolder): ImportanceAnalysis = {
+    
+    new ImportanceAnalysis(vsContext.sqlContext, featureSource, labelSource, 
+      rfParams = rfParams,
+      nTrees = nTrees,
+      rfBatchSize = batchSize, 
+      varOrdinalLevels = varOrdinalLevels
+    )
+  }
+  
 }
