@@ -18,14 +18,25 @@ Generally, _VariantSpark_ uses _Github Issues_ to track logical issues, includin
 3. Consider whether documentation or tests need to be added or updated as part of the change, and add them as needed.
 4. Run all tests with `./dev/build.sh` to verify that the code still compiles, passes tests, and passes style checks. If style checks fail, review the Code Style Guide below.
 5. Open a pull request against the master branch of aehrc/VariantSpark. (Only in special cases would the PR be opened against other branches.)
-  1. The PR title should be of the form `[#XXXX] Title`, where `#XXXX` is the relevant _Github Issue_ number, and Title may be the issue title or a more specific title describing the PR itself.
-  2. If the pull request is still a work in progress, and so is not ready to be merged, but needs to be pushed to Github to facilitate review, then add [WIP] after the issue number.
+    * The PR title should be of the form `[#XXXX] Title`, where `#XXXX` is the relevant _Github Issue_ number, and Title may be the issue title or a more specific title describing the PR itself.
+    * If the pull request is still a work in progress, and so is not ready to be merged, but needs to be pushed to Github to facilitate review, then add [WIP] after the issue number.
+    
 6. The related JIRA, if any, will be marked as “In Progress” and your pull request will automatically be linked to it. There is no need to be the Assignee of the JIRA to work on it, though you are welcome to comment that you have begun work.
 7. The Travis-CI automatic pull request builder will test your changes
 8. After about 10 minues, Travic-CI will post the results of the test to the pull request, along with a link to the full results on Jenkins.
 9. Watch for the results, and investigate and fix failures promptly
-  1. Fixes can simply be pushed to the same branch from which you opened your pull request
-  2. Jenkins will automatically re-test when new commits are pushed
+   * Fixes can simply be pushed to the same branch from which you opened your pull request
+   * Travis-CI will automatically re-test when new commits are pushed
+
+1. one
+  * nested
+
+2. two
+   * nested
+
+3. three
+   * nested
+
 
 ## Closing Your Pull Request / JIRA
 
