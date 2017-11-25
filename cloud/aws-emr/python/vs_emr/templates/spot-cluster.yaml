@@ -18,7 +18,12 @@ defaults:
     ebsSizeInGB: {{ebsSizeInGB}}
     bidPrice: {{bidPrice}}
   conf:
+    emrClasspath: "/etc/hadoop/conf:/usr/lib/hadoop/*:/usr/lib/hadoop-hdfs/*:/usr/lib/hadoop-yarn/*:/usr/lib/hadoop-lzo/lib/*:/usr/share/aws/aws-java-sdk/*:/usr/share/aws/emr/emrfs/conf:/usr/share/aws/emr/emrfs/lib/*:/usr/share/aws/emr/emrfs/auxlib/*"
     logBucketUri: null
+    hail:
+      enabled: false
+      releaseUrl: null
+      bootstrap: "{{conf.hail.releaseUrl}}/install-hail.sh"
   ec2Attributes: {}
 # these are almost liteally passed to aws emr `create-clustr` as corrsponding option
 # e.g. `name` is  passed as `--name` etc.
@@ -70,7 +75,20 @@ options:
       spark.dynamicAllocation.enabled: "false"
       spark.serializer: "org.apache.spark.serializer.KryoSerializer"
       spark.locality.wait: "10s"
+{{#conf.hail.enabled}}
+      spark.hadoop.io.compression.codecs: "org.apache.hadoop.io.compress.DefaultCodec,is.hail.io.compress.BGzipCodec,org.apache.hadoop.io.compress.GzipCodec,org.apache.hadoop.io.compress.BZip2Codec"
+      spark.executor.extraClassPath: "{{conf.emrClasspath}}:/mnt/hail/hail-all-spark_2.0.2_2.11.jar"
+      spark.driver.extraClassPath: "{{conf.emrClasspath}}:/mnt/hail/hail-all-spark_2.0.2_2.11.jar"
+{{/conf.hail.enabled}}
   bootstrap-actions:
   - Name: "Install Variant Spark"
     Path: {{variantSparkBootstrap}}
     Args: ["--release-url", "{{variantSparkReleaseUrl}}"]
+{{#conf.hail.enabled}}
+  - Name: "Install Hail"
+    Path: {{conf.hail.bootstrap}}
+    Args: ["--release-url", "{{conf.hail.releaseUrl}}"]
+{{/conf.hail.enabled}}
+
+
+

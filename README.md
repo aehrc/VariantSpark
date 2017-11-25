@@ -1,6 +1,8 @@
 Variant Spark
 ==============
 
+[![Travis-Build](https://travis-ci.org/aehrc/VariantSpark.svg?branch=master)](https://travis-ci.org/aehrc/VariantSpark#)
+
 _variant-spark_ is a scalable toolkit for genome-wide association studies optimized for GWAS like datasets. 
 
 Machine learning methods and, in particular, random forests (RFs) are a promising alternative to standard single SNP analyses in genome-wide association studies (GWAS). RFs provide variable importance measures to rank SNPs according to their predictive power.
@@ -27,11 +29,25 @@ To learn more watch this video from Spark Summit.
 
 ### Building
 
-variant-spark requires java jdk 1.8+ and maven 3+
+_variant-spark_ requires java jdk 1.8+ and maven 3+
 
 In order to build the binaries use:
 
 	mvn clean install
+	
+For python _variant-spark_ requires python 2.7 with pip. 
+The other packages required for development are listed in `dev/dev-requirements.txt` and can be installed with:
+
+    pip install -r dev/dev-requirements.txt
+    
+or with: 
+    
+    ./dev/py-setup.sh
+
+    
+The complete built including all check can be run with:
+
+    ./dev/build.sh
 	
 ### Running
 

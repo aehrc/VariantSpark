@@ -6,7 +6,4 @@ set -x
 FWDIR="$(cd "`dirname $0`"/..; pwd)"
 cd "$FWDIR"
 
-. ${FWDIR}/dev/travis-set-ver.sh
-
-/bin/bash ${FWDIR}/dev/build.sh
-
+pip install -r ${FWDIR}/dev/dev-requirements.txt
