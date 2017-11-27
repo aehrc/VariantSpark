@@ -27,5 +27,8 @@ object SharedAltAlleleCount extends AggregablePairwiseOperation {
 }
 
 object AtLeastOneSharedAltAlleleCount extends AggregablePairwiseOperation {
-  def unitOp(b1:Byte,b2:Byte):Long = Math.max(1L, Math.min(b1.toLong, b2.toLong))
+  def unitOp(b1:Byte,b2:Byte):Long = { 
+    val noOfSharedAlt = Math.min(b1.toLong, b2.toLong)
+    if (noOfSharedAlt > 0) 1 else 0
+  }
 }
