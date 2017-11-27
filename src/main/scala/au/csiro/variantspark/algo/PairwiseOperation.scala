@@ -4,30 +4,7 @@ import breeze.linalg.DenseMatrix
 import org.apache.spark.rdd.RDD
 import org.apache.spark.AccumulableParam
 
-trait PairwiseMetric extends Serializable {
-  def unitOp(b1:Byte,b2:Byte):Long
-  def finalOp(result:Array[Long]):Array[Double] = result.map(_.toDouble)
-}
-
-
-object EucledianPairwiseMetric extends PairwiseMetric {
-  def unitOp(b1:Byte,b2:Byte):Long = (b1-b2).toLong * (b1-b2).toLong
-  override def finalOp(result:Array[Long]):Array[Double] = result.map(l => Math.sqrt(l.toDouble))
-}
-
-object ManhattanPairwiseMetric extends PairwiseMetric {
-  def unitOp(b1:Byte,b2:Byte):Long = Math.abs(b1-b2).toLong
-}
-
-object BitwiseAndPairwiseRevMetric extends PairwiseMetric {
-  def unitOp(b1:Byte,b2:Byte):Long = (b1 & b2).toLong
-}
-
-object MultiPairwiseRevMetric extends PairwiseMetric {
-  def unitOp(b1:Byte,b2:Byte):Long = b1.toLong * b2.toLong;
-}
-
-case class PairWiseAggregator(val metric:PairwiseMetric) {
+case class PairWiseAggregator(val metric:AggregablePairwiseOperation) {
     
    def seqOp(result: Array[Long], t: Array[Byte]): Array[Long] = {
       var index = 0
@@ -44,29 +21,32 @@ case class PairWiseAggregator(val metric:PairwiseMetric) {
   }
 }
 
+class UpperTriangMatrix(val value: Array[Double]) extends AnyVal {
+  def toMatrix = ???
+}
 
-class PairwiseDistance(val metric:PairwiseMetric) {
+trait PairwiseOperation {
+  def compute(data: RDD[Array[Byte]]):UpperTriangMatrix
+}
+
+trait AggregablePairwiseOperation extends PairwiseOperation with Serializable {
+  def unitOp(b1:Byte,b2:Byte):Long
+  def finalOp(result:Array[Long]):Array[Double] = result.map(_.toDouble)
   
-  /**
-   * Computes lower triangular part of the pairwise distance matrix with Euclidean distance
-   */
-  def compute(data: RDD[Array[Byte]]):Array[Double] = {
+  def compute(data: RDD[Array[Byte]]):UpperTriangMatrix = {
     val noOfSamples = data.first.length
     // we need to allocate array for upper triangular matrix with diagonal
     // size n*(n+1) /2    
     val outputMatSize = noOfSamples*(noOfSamples+1)/2    
     val zeroVal = Array.fill(outputMatSize)(0L)
-    val pwAggregator = PairWiseAggregator(metric)
+    val pwAggregator = PairWiseAggregator(this)
     val resultAsLong = data.treeAggregate(zeroVal)(pwAggregator.seqOp, pwAggregator.combOp)
-    metric.finalOp(resultAsLong)    
-  }
+    new UpperTriangMatrix(finalOp(resultAsLong))  
+  }  
 }
 
-
-object PairwiseDistance {
-   
-  def apply() = new PairwiseDistance(EucledianPairwiseMetric)
-
+object PairwiseOperation {
+  
   def upperTriangWithDiagToMatrix(upperTriang:Array[Double], matrixSize1D:Int):DenseMatrix[Double] = {
     // need to infer matrix size from lowerTriangSize
     assert(upperTriang.length == (matrixSize1D+1)*matrixSize1D / 2, "Correct dimension passed")
