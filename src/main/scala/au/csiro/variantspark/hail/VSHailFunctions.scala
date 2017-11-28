@@ -2,6 +2,7 @@ package au.csiro.variantspark.hail
 
 import is.hail.variant.VariantDataset
 import au.csiro.variantspark.hail.methods.RfImportanceAnalysis
+import au.csiro.variantspark.algo.PairwiseOperation
 
 
 class VSHailFunctions(val vds:VariantDataset) extends AnyVal {
@@ -16,5 +17,10 @@ class VSHailFunctions(val vds:VariantDataset) extends AnyVal {
     requireSplit("importance analysis")
     RfImportanceAnalysis(vds, y, nTrees, mtryFraction, oob,  seed, batchSize)
   }
+  
+  def pairwiseOperation(op: PairwiseOperation) { 
+    
+  }
+  
 }
 

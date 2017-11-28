@@ -2,6 +2,8 @@ package au.csiro.variantspark.api
 
 import au.csiro.variantspark.input.FeatureSource
 import au.csiro.variantspark.input.LabelSource
+import au.csiro.variantspark.algo.PairwiseOperation
+import au.csiro.variantspark.algo.UpperTriangMatrix
 
 class AnalyticsFunctions(val featureSource: FeatureSource) extends AnyVal {
   
@@ -12,4 +14,9 @@ class AnalyticsFunctions(val featureSource: FeatureSource) extends AnyVal {
     ImportanceAnalysis(featureSource, labelSource,  nTrees,  mtryFraction, 
         oob, seed, batchSize, varOrdinalLevels)
   }
+  
+ def pairwiseOperation(op:PairwiseOperation):UpperTriangMatrix = {
+   op.compute(featureSource.features().map(_.values))
+ }
+ 
 }
