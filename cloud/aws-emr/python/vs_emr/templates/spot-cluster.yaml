@@ -67,6 +67,9 @@ options:
           VolumeType: "gp2"
         VolumesPerInstance: 1
   configurations:
+  - Classification: "emrfs-site"
+    Properties:
+      fs.s3.maxConnections: "500"
   - Classification: "spark"
     Properties:
       maximizeResourceAllocation: "true" 
