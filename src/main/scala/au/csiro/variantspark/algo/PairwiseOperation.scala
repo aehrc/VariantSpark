@@ -1,8 +1,14 @@
 package au.csiro.variantspark.algo
 
 import breeze.linalg.DenseMatrix
+import breeze.linalg._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.AccumulableParam
+import org.apache.spark.mllib.linalg.distributed.IndexedRowMatrix
+import org.apache.spark.mllib.linalg.distributed.IndexedRowMatrix
+import org.apache.spark.mllib.linalg.distributed.IndexedRow
+import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.SparkContext
 
 case class PairWiseAggregator(val metric:AggregablePairwiseOperation) {
     
@@ -22,7 +28,14 @@ case class PairWiseAggregator(val metric:AggregablePairwiseOperation) {
 }
 
 class UpperTriangMatrix(val value: Array[Double]) extends AnyVal {
-  def toMatrix = ???
+  def toMatrix:DenseMatrix[Double] =  PairwiseOperation.upperTriangWithDiagToMatrix(value)
+ 
+  def toIndexedRowMatrix(sc:SparkContext):IndexedRowMatrix =  {
+    val rows = toMatrix(*, ::).iterator.map(dv => Vectors.dense(dv.toArray)).zipWithIndex.map { 
+        case (v,i) => IndexedRow(i.toLong, v) 
+    }
+    new IndexedRowMatrix(sc.parallelize(rows.toSeq))
+  }
 }
 
 trait PairwiseOperation {
@@ -47,9 +60,15 @@ trait AggregablePairwiseOperation extends PairwiseOperation with Serializable {
 
 object PairwiseOperation {
   
-  def upperTriangWithDiagToMatrix(upperTriang:Array[Double], matrixSize1D:Int):DenseMatrix[Double] = {
+  def sizeFromUpperDiagLenght(upperDiagSize: Int) = {
+    val size = ((Math.sqrt(1.0 + 8* upperDiagSize ) - 1.0) / 2.0).toInt
+    require(upperDiagSize ==  size*(size + 1) / 2)
+    size
+  }
+  
+  def upperTriangWithDiagToMatrix(upperTriang:Array[Double]):DenseMatrix[Double] = {
+    val matrixSize1D = sizeFromUpperDiagLenght(upperTriang.length)
     // need to infer matrix size from lowerTriangSize
-    assert(upperTriang.length == (matrixSize1D+1)*matrixSize1D / 2, "Correct dimension passed")
     DenseMatrix.tabulate(matrixSize1D,matrixSize1D) { case (r,c) => 
       if (c >= r ) upperTriang(c*(c+1)/2 + r) else upperTriang(r*(r+1)/2 + c)
     }

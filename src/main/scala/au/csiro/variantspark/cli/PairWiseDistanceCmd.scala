@@ -63,7 +63,7 @@ class PairWiseDistanceCmd extends ArgsApp with FeatureSourceArgs with Logging wi
     val data = featureSource.features().map(_.values)
     echoDataPreview()
     val noOfSamples = data.first.length
-    val resultAsMatrix = PairwiseOperation.upperTriangWithDiagToMatrix(metric.compute(data).value, noOfSamples)
+    val resultAsMatrix = metric.compute(data).toMatrix
     val sampleNames = featureSource.sampleNames
     LoanUtils.withCloseable(CSVWriter.open(new File(outputFile))) { writer =>
       writer.writeRow("" :: sampleNames)
