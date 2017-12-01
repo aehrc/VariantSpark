@@ -15,8 +15,12 @@ class AnalyticsFunctions(val featureSource: FeatureSource) extends AnyVal {
         oob, seed, batchSize, varOrdinalLevels)
   }
   
- def pairwiseOperation(op:PairwiseOperation):UpperTriangMatrix = {
-   op.compute(featureSource.features().map(_.values))
- }
+  def pairwiseOperation(op:PairwiseOperation):UpperTriangMatrix = {
+    op.compute(featureSource.features().map(_.values))
+  }
+ 
+  def pairwiseOperation(operationName: String):UpperTriangMatrix = {
+    CommonPairwiseOperation.withName(operationName).compute(featureSource.features().map(_.values))
+  }
  
 }

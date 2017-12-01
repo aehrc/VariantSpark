@@ -5,6 +5,7 @@ import au.csiro.variantspark.hail.methods.RfImportanceAnalysis
 import au.csiro.variantspark.algo.PairwiseOperation
 import is.hail.methods.KinshipMatrix
 import au.csiro.variantspark.hail.methods.PairwiseComputation
+import au.csiro.variantspark.api.CommonPairwiseOperation
 
 
 class VSHailFunctions(val vds:VariantDataset) extends AnyVal {
@@ -23,6 +24,10 @@ class VSHailFunctions(val vds:VariantDataset) extends AnyVal {
   def pairwiseOperation(op: PairwiseOperation):KinshipMatrix  = { 
     requireSplit("pairwise operation")
     PairwiseComputation(vds, op)
+  }
+
+  def pairwiseOperation(operationName:String):KinshipMatrix = { 
+    pairwiseOperation(CommonPairwiseOperation.withName(operationName))
   }
   
 }

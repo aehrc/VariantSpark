@@ -18,7 +18,7 @@ import au.csiro.sparkle.common.args4j.ArgsApp
 import au.csiro.variantspark.algo.PairwiseOperation
 import au.csiro.variantspark.cli.args.FeatureSourceArgs
 import au.csiro.variantspark.algo.PairwiseOperation
-import au.csiro.variantspark.algo.metrics.EucledianPairwiseMetric
+import au.csiro.variantspark.algo.metrics.EuclideanPairwiseMetric
 import au.csiro.variantspark.algo.metrics.ManhattanPairwiseMetric
 import au.csiro.variantspark.algo.metrics.BitwiseAndPairwiseRevMetric
 import au.csiro.variantspark.algo.metrics.MultiPairwiseRevMetric
@@ -45,7 +45,7 @@ class PairWiseDistanceCmd extends ArgsApp with FeatureSourceArgs with Logging wi
       
   def  buildMetricFromName(metricName:String): PairwiseOperation = {
     metricName match {
-      case "euclidean" => EucledianPairwiseMetric
+      case "euclidean" => EuclideanPairwiseMetric
       case "manhattan" => ManhattanPairwiseMetric
       case "invBitAnd" => BitwiseAndPairwiseRevMetric
       case "invMul" => MultiPairwiseRevMetric

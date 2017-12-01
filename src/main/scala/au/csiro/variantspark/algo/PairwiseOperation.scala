@@ -29,9 +29,9 @@ case class PairWiseAggregator(val metric:AggregablePairwiseOperation) {
 
 class UpperTriangMatrix(val value: Array[Double]) extends AnyVal {
   def toMatrix:DenseMatrix[Double] =  PairwiseOperation.upperTriangWithDiagToMatrix(value)
- 
+  def toArray:Array[Array[Double]] = PairwiseOperation.upperTriangWithDiagToArray(value)
   def toIndexedRowMatrix(sc:SparkContext):IndexedRowMatrix =  {
-    val rows = toMatrix(*, ::).iterator.map(dv => Vectors.dense(dv.toArray)).zipWithIndex.map { 
+    val rows = toArray.map(row => Vectors.dense(row)).zipWithIndex.map { 
         case (v,i) => IndexedRow(i.toLong, v) 
     }
     new IndexedRowMatrix(sc.parallelize(rows.toSeq))
@@ -65,6 +65,14 @@ object PairwiseOperation {
     require(upperDiagSize ==  size*(size + 1) / 2)
     size
   }
+  
+  def upperTriangWithDiagToArray(upperTriang:Array[Double]):Array[Array[Double]] = {
+    val matrixSize1D = sizeFromUpperDiagLenght(upperTriang.length)
+    // need to infer matrix size from lowerTriangSize
+    Range(0,matrixSize1D).map { r =>
+      Range(0,matrixSize1D).map(c => if (c >= r ) upperTriang(c*(c+1)/2 + r) else upperTriang(r*(r+1)/2 + c)).toArray
+    }.toArray
+  }  
   
   def upperTriangWithDiagToMatrix(upperTriang:Array[Double]):DenseMatrix[Double] = {
     val matrixSize1D = sizeFromUpperDiagLenght(upperTriang.length)

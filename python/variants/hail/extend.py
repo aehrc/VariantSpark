@@ -4,6 +4,7 @@ Created on 7 Nov 2017
 @author: szu004
 '''
 from hail.java import joption
+from hail import KinshipMatrix
 
 from .rf import ImportanceAnalysis
 
@@ -40,3 +41,14 @@ class VariantsDatasetFunctions(object):
             self._vshf_cache.importanceAnalysis(y_expr, n_trees, joption(mtry_fraction),
                         oob, joption(long(seed) if seed is not None else None),
                         batch_size))
+
+    def pairwise_operation(self, operation_name):
+        """Computes a pairwise operation on encoded genotypes
+
+        :param operation_name: name of the operaiton. One of `manhattan`, `euclidean`
+
+        :return: A symmetric `no_of_samples x no_of_samples` matrix with the results of
+                the pairwise computation.
+        :rtype: :py:class: `KinshipMatrix`
+        """
+        return KinshipMatrix(self._vshf_cache.pairwiseOperation(operation_name))

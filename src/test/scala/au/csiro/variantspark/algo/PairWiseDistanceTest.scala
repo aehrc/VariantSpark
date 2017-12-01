@@ -5,7 +5,7 @@ import au.csiro.variantspark.test.SparkTest
 import breeze.linalg.DenseMatrix
 import org.junit.Assert._
 import org.junit.Test
-import au.csiro.variantspark.algo.metrics.EucledianPairwiseMetric
+import au.csiro.variantspark.algo.metrics.EuclideanPairwiseMetric
 
 class PairWiseDistanceTest extends SparkTest {
 
@@ -31,7 +31,7 @@ class PairWiseDistanceTest extends SparkTest {
   @Test
   def testCorrectlyCalculatesPairWiseDistance2D() {
     val input = sc.parallelize(List(Array[Byte](0, 1), Array[Byte](0, 2), Array[Byte](1, 1)))
-    val result = EucledianPairwiseMetric.compute(input).value
+    val result = EuclideanPairwiseMetric.compute(input).value
     assertEquals(3, result.length)
     assertEquals(Math.sqrt(5), result(1), 1e-10)
   }
@@ -40,7 +40,7 @@ class PairWiseDistanceTest extends SparkTest {
   @Test
   def testCorrectlyCalculatesPairWiseDistance3d() {
     val input = sc.parallelize(List(Array[Byte](0, 1, 1), Array[Byte](0, 2, 0), Array[Byte](0, 1, 0), Array[Byte](0, 2, 1)), 2)
-    val result = EucledianPairwiseMetric.compute(input).value
+    val result = EuclideanPairwiseMetric.compute(input).value
     assertEquals(6, result.length)
     assertArrayEquals(Array(0.0,  Math.sqrt(10), 0.0, Math.sqrt(2), Math.sqrt(6), 0.0), result, 1e-10)
   }

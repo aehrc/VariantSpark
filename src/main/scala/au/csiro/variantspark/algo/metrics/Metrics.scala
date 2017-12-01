@@ -3,7 +3,7 @@ package au.csiro.variantspark.algo.metrics
 import au.csiro.variantspark.algo.AggregablePairwiseOperation
 import au.csiro.variantspark.algo.PairwiseOperation
 
-object EucledianPairwiseMetric extends AggregablePairwiseOperation {
+object EuclideanPairwiseMetric extends AggregablePairwiseOperation {
   def unitOp(b1:Byte,b2:Byte):Long = (b1-b2).toLong * (b1-b2).toLong
   override def finalOp(result:Array[Long]):Array[Double] = result.map(l => Math.sqrt(l.toDouble))
 }
