@@ -4,6 +4,9 @@ import au.csiro.variantspark.input.{CsvLabelSource, FeatureSource, VCFFeatureSou
 import org.apache.hadoop.fs.FileSystem
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.SQLContext
+import au.csiro.variantspark.input.CsvFeatureSource
+import com.github.tototoshi.csv.CSVFormat
+import au.csiro.variantspark.input.DefaultCSVFormatSpec
 
 /**
   * A class to represent an instance of the variant-spark context, or spark sql context
@@ -41,6 +44,16 @@ class VSContext(val spark:SparkSession) extends SqlContextHolder {
     val vcfSource = VCFSource(sc.textFile(inputFile))
     VCFFeatureSource(vcfSource)     
   }
+  
+  /** Import features from a CSV file
+   	* @param inputFile: path to file or directory with VCF files to load
+   	* @param csvFormat: [[com.github.tototoshi.csv.CSVFormat]] row format
+   	* @return FeatureSource loaded from the VCF file or files 
+   	*/
+  def importCSV(inputFile:String, csvFormat:CSVFormat = DefaultCSVFormatSpec):FeatureSource = {
+    CsvFeatureSource(sc.textFile(inputFile), csvFormat)     
+  } 
+  
   
   /** Loads a labels form a column in a CSV file
    	* @param featuresFile path to CSV file with labels
