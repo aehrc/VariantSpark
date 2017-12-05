@@ -15,14 +15,15 @@ import au.csiro.pbdava.ssparkle.common.arg4j.AppRunner
 import au.csiro.pbdava.ssparkle.common.arg4j.TestArgs
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 import au.csiro.sparkle.common.args4j.ArgsApp
-import au.csiro.variantspark.algo.PairwiseDistance
+import au.csiro.variantspark.algo.PairwiseOperation
 import au.csiro.variantspark.cli.args.FeatureSourceArgs
-import au.csiro.variantspark.algo.PairwiseDistance
-import au.csiro.variantspark.algo.PairwiseMetric
-import au.csiro.variantspark.algo.EucledianPairwiseMetric
-import au.csiro.variantspark.algo.ManhattanPairwiseMetric
-import au.csiro.variantspark.algo.BitwiseAndPairwiseRevMetric
-import au.csiro.variantspark.algo.MultiPairwiseRevMetric
+import au.csiro.variantspark.algo.PairwiseOperation
+import au.csiro.variantspark.algo.metrics.EuclideanPairwiseMetric
+import au.csiro.variantspark.algo.metrics.ManhattanPairwiseMetric
+import au.csiro.variantspark.algo.metrics.BitwiseAndPairwiseRevMetric
+import au.csiro.variantspark.algo.metrics.MultiPairwiseRevMetric
+import au.csiro.variantspark.algo.metrics.SharedAltAlleleCount
+import au.csiro.variantspark.algo.metrics.AtLeastOneSharedAltAlleleCount
 
 
 class PairWiseDistanceCmd extends ArgsApp with FeatureSourceArgs with Logging with TestArgs {
@@ -42,12 +43,14 @@ class PairWiseDistanceCmd extends ArgsApp with FeatureSourceArgs with Logging wi
       )
       
       
-  def  buildMetricFromName(metricName:String): PairwiseMetric = {
+  def  buildMetricFromName(metricName:String): PairwiseOperation = {
     metricName match {
-      case "euclidean" => EucledianPairwiseMetric
+      case "euclidean" => EuclideanPairwiseMetric
       case "manhattan" => ManhattanPairwiseMetric
       case "invBitAnd" => BitwiseAndPairwiseRevMetric
       case "invMul" => MultiPairwiseRevMetric
+      case "sharedAltCount" => SharedAltAlleleCount
+      case "anySharedAltCount" => AtLeastOneSharedAltAlleleCount
       case _ => throw new IllegalArgumentException(metricName)
     }
   }
@@ -60,14 +63,13 @@ class PairWiseDistanceCmd extends ArgsApp with FeatureSourceArgs with Logging wi
     val data = featureSource.features().map(_.values)
     echoDataPreview()
     val noOfSamples = data.first.length
-    val resultAsMatrix = PairwiseDistance.upperTriangWithDiagToMatrix(new PairwiseDistance(metric).compute(data), noOfSamples)
+    val resultAsMatrix = metric.compute(data).toMatrix
     val sampleNames = featureSource.sampleNames
     LoanUtils.withCloseable(CSVWriter.open(new File(outputFile))) { writer =>
       writer.writeRow("" :: sampleNames)
       // since the matrix is symmetric does not matter that we output columns as rows
       Range(0, noOfSamples).foreach(i => writer.writeRow(sampleNames(i) :: resultAsMatrix(::,i).toArray.toList))
-    }
-    
+    }   
   }  
 }
 
