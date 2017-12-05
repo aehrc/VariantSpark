@@ -43,7 +43,7 @@ class VariantsDatasetFunctions(object):
                         batch_size))
 
     def pairwise_operation(self, operation_name):
-        """Computes a pairwise operation on encoded genotypes. Currently implemented operations 
+        """Computes a pairwise operation on encoded genotypes. Currently implemented operations
         include:
 
         - `manhattan` : the Manhattan distance
@@ -51,7 +51,7 @@ class VariantsDatasetFunctions(object):
         - `sharedAltAlleleCount`: count of shared alternative alleles
         - `anySharedAltAlleleCount`: count of variants that share at least one alternative allele
 
-        :param operation_name: name of the operaiton. One of `manhattan`, `euclidean`, 
+        :param operation_name: name of the operaiton. One of `manhattan`, `euclidean`,
                 `sharedAltAlleleCount`, `anySharedAltAlleleCount`
 
         :return: A symmetric `no_of_samples x no_of_samples` matrix with the result of
