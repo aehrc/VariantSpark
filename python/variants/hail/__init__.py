@@ -3,7 +3,7 @@ Created on 7 Nov 2017
 
 @author: szu004
 '''
-from variants.utils import extend_cls
+from variants.lang import extend_cls
 from hail import VariantDataset
 from . extend import VariantsDatasetFunctions
 
