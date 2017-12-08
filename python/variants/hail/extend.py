@@ -56,6 +56,6 @@ class VariantsDatasetFunctions(object):
 
         :return: A symmetric `no_of_samples x no_of_samples` matrix with the result of
                 the pairwise computation.
-        :rtype: :py:class: `KinshipMatrix`
+        :rtype: :py:class:`hail.KinshipMatrix`
         """
         return KinshipMatrix(self._vshf_cache.pairwiseOperation(operation_name))

@@ -3,7 +3,7 @@
 PWD=$(cd `dirname "$0"`; pwd)
 
 if [[ $# -gt 0 ]]; then
-    mvn "$@"
+   ${PWD}/dev/build.sh 
 fi
 
 DIST_JAR=$(echo target/variant-spark_*-all.jar)
@@ -25,6 +25,8 @@ DIST_DIR="target/dist/${DIST_NAME}"
 rm -rf target/dist
 mkdir -p ${DIST_DIR}
 mkdir -p ${DIST_DIR}/lib
+mkdir -p ${DIST_DIR}/python
+
 
 cp LICENSE README.md THIRDPARTY ${DIST_DIR}
 
@@ -33,6 +35,8 @@ cp ${DIST_JAR}  ${DIST_DIR}/lib
 cp -r data/ ${DIST_DIR}/data/
 cp -r scripts ${DIST_DIR}/scripts/
 cp -r conf ${DIST_DIR}/conf/
+cp python/dist/variants-0.1.0-py2.7.egg ${DIST_DIR}/python/
+
 
 tar -czf target/dist/${DIST_NAME}.tar.gz -C target/dist ${DIST_NAME}
 
