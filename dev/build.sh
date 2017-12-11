@@ -11,7 +11,7 @@ cd "$FWDIR"
 /bin/bash ${FWDIR}/dev/py-lint.sh
 
 # build and package the project
-mvn package -B
+mvn clean package -B
 
 # make build info
 env | tee "target/buildinfo" 

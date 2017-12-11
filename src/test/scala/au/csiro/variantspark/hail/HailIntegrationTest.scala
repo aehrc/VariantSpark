@@ -7,8 +7,10 @@ import org.junit.Assert._
 import is.hail.HailContext
 import is.hail.expr._
 import au.csiro.variantspark.hail._
+import au.csiro.variantspark.algo.metrics.ManhattanPairwiseMetric
 
-class HailImportanceIntegrationTest extends SparkTest {
+class HailIntegrationTest extends SparkTest {
+ 
   @Test
   def testRunImportanceAnalysis() {
     val hc = HailContext(sc)
@@ -20,4 +22,13 @@ class HailImportanceIntegrationTest extends SparkTest {
     println(importantVariables.signature)
     importantVariables.collect().take(10).foreach(println)
   } 
+
+  @Test
+  def testRunsPaiwiseOperation() {
+    val hc = HailContext(sc)
+    val vcf = hc.importVCF("data/chr22_1000.vcf")   
+    val pairwiseResult = vcf.pairwiseOperation(ManhattanPairwiseMetric)
+    pairwiseResult.exportTSV("target/manhattan.tsv")
+  } 
+
 }

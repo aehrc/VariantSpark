@@ -2,6 +2,7 @@ Variant Spark
 ==============
 
 [![Travis-Build](https://travis-ci.org/aehrc/VariantSpark.svg?branch=master)](https://travis-ci.org/aehrc/VariantSpark#)
+[![Documentation Status](https://readthedocs.org/projects/variantspark/badge/?version=latest)](http://variantspark.readthedocs.io/en/latest/?badge=latest)
 
 _variant-spark_ is a scalable toolkit for genome-wide association studies optimized for GWAS like datasets. 
 

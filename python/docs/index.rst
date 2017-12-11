@@ -12,6 +12,7 @@ Contents:
    :maxdepth: 1
     
    variants.hail
+   variants.utils
 
    
 Indices and tables
