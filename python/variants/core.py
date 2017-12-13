@@ -1,5 +1,7 @@
 import sys
+
 from pyspark.sql import SQLContext
+
 
 class VariantsContext(object):
     """The main entry point for VariantSpark functionality.
