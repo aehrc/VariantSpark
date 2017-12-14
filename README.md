@@ -21,6 +21,11 @@ The potential users include:
 - Medical researchers or clinicians seeking to perform clustering on genomic profiles to stratify large-cohort genomic data
 - General researchers with classification or clustering needs of datasets with millions of features.
 
+### Community
+
+Please feel free to add issues and/or upvote issues you care about. Also join the [Gitter chat](https://gitter.im/VariantSpark/Lobby).
+
+
 ### Learn More
 
 To learn more watch this video from Spark Summit.
@@ -138,7 +143,4 @@ To use an example:
 5. **Attach** the notebook to the cluster
 6. **Run** the sample notebook
 
-### Community
-
-Please feel free to add issues and/or upvote issues you care about. Also join the [Gitter chat](https://gitter.im/VariantSpark/Lobby).
 
