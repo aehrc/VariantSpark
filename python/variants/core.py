@@ -77,8 +77,8 @@ class VCFFeatureSource(object):
         :return: Importance analysis model.
         :rtype: :py:class:`ImportanceAnalysis`
         """
-        rfParams = self._jvm.au.csiro.variantspark.algo.RandomForestParams(bool(oob), float(mtry_fraction),
-                                                                           True, float('nan'), True, long(seed))
+        rfParams = self._jvm.au.csiro.variantspark.algo.RandomForestParams(bool(oob),
+                                  float(mtry_fraction), True, float('nan'), True, long(seed))
         ia = self._vs_api.ImportanceAnalysis(self._jsql, self._jvcffs, labelSource,
                                              rfParams, n_trees, batch_size, varOrdinalLevels)
         return ImportanceAnalysis(ia)
