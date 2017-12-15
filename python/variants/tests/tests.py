@@ -18,5 +18,6 @@ class SampleTestWithPySparkTestCase(ReusedPySparkTestCase):
         most_imp_var = imp_vars.head()._1()
         self.assertEqual(most_imp_var, '22_16050408')
 
+
 if __name__ == '__main__':
-    unittest.main(verbosity = 2)
+    unittest.main(verbosity=2)
