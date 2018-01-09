@@ -1,75 +1,93 @@
 Running VariantSpark on AWS EMR
 ================================
 
-This is a 'working' instruction on running `variant-spark` on Amazon EMR.
+This page contains 'working' instructions for running `variant-spark` on [Amazon EMR](https://aws.amazon.com/emr/).  
 
-### Quick start
+NOTE: It is also possible to run VariantSpark on AWS EC2 with Hadoop/Spark libraries installed, if your team has expertise in managing EC2 and Hadoop clusters. We do **not** provide instructions for this scenario on this page.
 
-This is a simple guide on how to run `variant-spark` importance analysis similar to this described in [HipsterIndex Blog Post](https://databricks.com/blog/2017/07/26/breaking-the-curse-of-dimensionality-in-genomics-using-wide-random-forests.html) on Amazon AWS EMR (Elastic Map Reduce).
+ALTERNATIVE: If you'd prefer to quickly try a working sample of the `variant-spark` importance analysis, then you can use our example on the Databricks platform.  See this  [HipsterIndex Blog Post](https://databricks.com/blog/2017/07/26/breaking-the-curse-of-dimensionality-in-genomics-using-wide-random-forests.html) for detail.  You can sign up for the community edition and use it for one hour at a time for free. See this [link](https://github.com/aehrc/VariantSpark#databricks-notebook-examples) for the 6 quick steps to run this example.
 
-It assumes basic knowledge of python, some AWS services (S3, EC2 and EMR) and ideally familiarity with AWS command line interface.
+### Process and Goal
 
-System requirements include `python2.7+` and `pip`. 
+You will set up both a client and a server.  
 
-Firstly install the AWS command line utility `aws cli` as described in [Installing the AWS Command Line Interface](http://docs.aws.amazon.com/cli/latest/userguide/installing.html). 
+For the client you'll use/set up the following:
+- your terminal
+- `awscli` - the AWS client scripting utility
+- `vs-emr` - a utility wrapper on `aws cli` that simplifies creation of EMR clusters for `variant-spark` and submission of `variant-spark` job steps
+- server configuration file - `config.yaml`
 
-Then configure your `aws cli`, providing your default region, access keys, etc with:
+For the server you'll use/set up the following:
+- several S3 buckets
+- at least one AWS EMR cluster with one master and one or more worker nodes w/Apache Spark
+- an IAM role
 
-    aws configure
+We've included a diagram for your reference:
+
+![AWS EMR Architecture](/images/AWS-EMR-VariantSpark.png)
+### Client Setup 
+
+- **verify** system requirements include `python2.7+` and associated version of  `pip`
+- **install** the AWS command line utility `aws cli` as described in [Installing the AWS Command Line Interface](http://docs.aws.amazon.com/cli/latest/userguide/installing.html). 
+- **configure** your `aws cli` providing your default region, access keys, etc using the `aws configure` command. More info on the configuration process and using the `aws cli` can be found at [AWS CLI User Guide](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html)
+- **download** the VariantSpark client source files, you can just download the entire project as a zip file from Github [here](https://github.com/aehrc/VariantSpark)
+- **unzip** your download and locate the path to `\Variant-Spark\cloud\aws\emr` in your local download
+- **navigate** to that path
+- **run** `pip install --user ./python` to install the the `vs-emr` utility from the path above  
+- **verify** the installation and see the available commands by running this command: `vs-emr --help`
+- **create** the `vs-emr` configuration by running the following two commands:
+    - `mkdir ~/.vs_emr`  
+    - `cp conf/config.min.yaml ~/.vs_emr/config.yaml`  
+- **edit** the configuration in `~/.vs_emr/config.yaml` replacing the values in `<<>>` with appropriate values.
+
+NOTES on `vs-emr` install:  
+- To install `vs-emr` cd to `python` directory and run: `pip install [--user]`   
+- If you use some form of python virtual environment, or want to install `vs-emr` system-wide, you should skip the `--user` option. 
+
+### Server Setup - First Part (for S3)
+- **choose** S3 storage for `variant-spark` output files and for the EMR cluster logs, use existing S3 bucket, or create a new bucket.  We will use:
+- **use** `s3://<your-bucket-name>/variant-spark/output/` as the output location
+- **use** `s3://<your-bucket-name>/variant-spark/logs/` as the cluster log location.
+
+NOTES on S3:
+- Please note the trailing slashes! They are important to designate folders in S3.
+- The sample data for hipsterIndex demo are available at `s3://variant-spark/datasets/hipsterIndex/`.
+
+
+  ### Server Setup - Second Part (for the EMR cluster)
+- **create** a small cluster with two `m4.large` worker instances (as defined in `~/.vs_emr/config.yaml`) by running this command:`vs-emr start-cluster --cluster-id-file /tmp/cluster-id`
     
-(More info on the configuration process and using the `aws cli` can be found at [AWS CLI User Guide](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html)
+NOTES on EMR:
+- This command will start an EMR cluster configured to run `variant-spark` and save its id to `/tmp/cluster-id`.
+- The cluster will auto-terminate after the last step has been completed so we need to submit the steps before the cluster setup has finished (which usually takes between 5 to 8 minutes).
 
-Now we need to choose S3 storage for `variant-spark` output files and for the EMR cluster logs. If you have an existing S3 bucket you can use it or you can create a new bucket.  We will use:
-    
-* `s3://<your-bucket-name>/variant-spark/output/` as the output location
-* `s3://<your-bucket-name>/variant-spark/logs/` as the cluster log location.
 
-Please note the trailing slashes! They are important to designate folders in S3.  
+
+  ### Run the Analysis
+ - **run** the `variant-spark` importance on hipster index data run (use your S3 output bucket name): 
   
-Now we can install the `vs-emr` -   variant spark` cli for AWS EMR - with:
+    `vs-emr submit-cmd --cluster-id-file /tmp/cluster-id  importance -if s3://variant-spark/datasets/hipsterIndex/hipster.vcf.bz2 -ff s3://variant-spark/datasets/hipsterIndex/hipster_labels.txt -fc label -v -rn 1000 -rbs 100 -on 100 -of s3://<your-bucket-name>/variant-spark/output/hipster-importance.csv`
 
-    pip install --user ./python 
-    
-(if you use some form of python virtual environment you can skip the --user option). 
-
-To verify the installation and see the available commands use: 
-
-    vs-emr --help
-    
-Create the `vs-emr` configuration:
-
-    mkdir ~/.vs_emr
-    cp conf/config.min.yaml ~/.vs_emr/config.yaml
-    
-Edit the configuration in `~/.vs_emr/config.yaml` replacing the values in `<<>>` with appropriate values.
-
-The sample data for hipsterIndex demo are available at `s3://variant-spark/datasets/hipsterIndex/`.
-
-To run the demo we first create a small cluster with two `m4.large` worker instances (as defined in `~/.vs_emr/config.yaml`):
-
-    vs-emr start-cluster --cluster-id-file /tmp/cluster-id
-    
-This command will start an EMR cluster configured to run `variant-spark` and save its id to `/tmp/cluster-id`.  The cluster will auto-terminate after the last step has been completed so we need to submit the steps before the cluster setup has finished (which usually takes between 5 to 8 minutes).
-
-To run the `variant-spark` importance on hipster index data run (use your S3 output bucket name): 
-    
-    vs-emr submit-cmd --cluster-id-file /tmp/cluster-id  importance -if s3://variant-spark/datasets/hipsterIndex/hipster.vcf.bz2 -ff s3://variant-spark/datasets/hipsterIndex/hipster_labels.txt -fc label -v -rn 1000 -rbs 100 -on 100 -of s3://<your-bucket-name>/variant-spark/output/hipster-importance.csv
-
-This should complete in about 5 minutes (after the cluster setup has finished) and save the top 100 important variables to `s3://<your-bucket-name>/variant-spark/output/hipster-importance-1.csv`. You can now download the result file from S3 using the AWS console or `aws cli`
+NOTES on Analysis:
+- Run the command above on a single line in your terminal
+- This should complete in about 5 minutes (after the cluster setup has finished).
+- This should save the top 100 important variables to `s3://<your-bucket-name>/variant-spark/output/hipster-importance-1.csv`. 
+- You can now download the result file from S3 using the AWS console or `aws cli`
 
 
+### Alternative Cluster Setup Options
 In this example we use on-demand instances for both the master and the workers. If you prefer to use spot instances at the max price of say $0.1 you can add the `--conf "bidPrice=0.1"` option to `start-cluster` e.g.
     
     vs-emr start-cluster --cluster-id-file /tmp/cluster-id --conf "bidPrice=0.1"
     
 You can examine the cluster configuration and log files using AWS console or  `aws cli` while it's running as well as up to seven days after its termination.
 
-### Distributions 
+## Distributions 
 
 `variant-spark` distributions are available on S3 (local to ap-southeast-2 region)
 
-- develpment builds in `s3://variant-spark/unstable/<version>`
-- relase builds in: `s3://variant-spark/stable/<version>`
+- development builds in `s3://variant-spark/unstable/<version>`
+- release builds in: `s3://variant-spark/stable/<version>`
 
 where `<version>` is:
 
@@ -100,26 +118,6 @@ To add a custom  EMR step for variant spark use:
 
     Jar location: command-runner.jar
     Argument: spark-submit --deploy-mode client --class au.csiro.variantspark.cli.VariantSparkApp /mnt/variant-spark/variant-spark_2.11-all.jar <variant-spark arguments>
-
-
-### Using  `vs-emr`
-
-`vs-emr` is a wrapper on `aws cli` that simplified creation of EMR clusters for `variant-spark` and submission of `variant-spark` steps.
-
-
-#### Installation
-
-To install `vs-emr` cd to `python` directory and run:
-
-    pip install [--user] .
-    
-If you use some form of python virtual environment, or want to install `vs-emr` systrem wide, you should skip the --user option. 
-
-#### Usage
-
-To see available commands use:
-
-    vs-emr  help
 
 #### Configuration
 
