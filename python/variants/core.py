@@ -1,7 +1,7 @@
 import sys
 
-from pyspark.sql import SQLContext
 from typedecorator import params, Nullable, Union, setup_typecheck
+from pyspark.sql import SQLContext
 
 
 class VariantsContext(object):
