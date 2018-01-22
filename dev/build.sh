@@ -21,5 +21,6 @@ env | tee "target/buildinfo"
 pushd  ${FWDIR}/python
 python setup.py sdist
 python setup.py bdist_egg
+python -m unittest discover -v
 popd 
 

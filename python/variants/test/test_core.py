@@ -1,14 +1,31 @@
 import os
 import unittest
 
+from pyspark import SparkConf
 from pyspark.sql import SparkSession
-from pyspark.tests import ReusedPySparkTestCase
 
 from variants import VariantsContext
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
-class VariantSparkAPITestCase(ReusedPySparkTestCase):
+
+class VariantSparkPySparkTestCase(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(self):
+        sconf = SparkConf(loadDefaults=False)\
+            .set("spark.sql.files.openCostInBytes", 53687091200L)\
+            .set("spark.sql.files.maxPartitionBytes", 53687091200L)
+        spark = SparkSession.builder.config(conf=sconf)\
+            .appName("test").master("local").getOrCreate()
+        self.sc = spark.sparkContext
+
+    @classmethod
+    def tearDownClass(self):
+        self.sc.stop()
+
+
+class VariantSparkAPITestCase(VariantSparkPySparkTestCase):
 
     def setUp(self):
         self.spark = SparkSession(self.sc)
@@ -34,7 +51,7 @@ class VariantSparkAPITestCase(ReusedPySparkTestCase):
         self.assertEqual('22_16050408',
                          str(df.orderBy('importance', ascending=False).collect()[0][0]))
         oob_error = imp_analysis.oob_error()
-        self.assertAlmostEqual(0.014652014652014652, oob_error, 3)
+        self.assertAlmostEqual(0.016483516483516484, oob_error, 4)
 
 
 if __name__ == '__main__':
