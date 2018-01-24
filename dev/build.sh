@@ -13,6 +13,13 @@ cd "$FWDIR"
 # build and package the project
 mvn clean package -B
 
+# run python tests
+
+pushd  ${FWDIR}/python
+python setup.py test
+popd
+
+
 # make build info
 env | tee "target/buildinfo" 
 
