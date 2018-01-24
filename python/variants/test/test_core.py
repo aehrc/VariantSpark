@@ -5,9 +5,9 @@ from pyspark import SparkConf
 from pyspark.sql import SparkSession
 
 from variants import VariantsContext
+from variants.test import find_variants_jar
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-
 
 class VariantSparkPySparkTestCase(unittest.TestCase):
 
@@ -15,7 +15,8 @@ class VariantSparkPySparkTestCase(unittest.TestCase):
     def setUpClass(self):
         sconf = SparkConf(loadDefaults=False)\
             .set("spark.sql.files.openCostInBytes", 53687091200L)\
-            .set("spark.sql.files.maxPartitionBytes", 53687091200L)
+            .set("spark.sql.files.maxPartitionBytes", 53687091200L)\
+            .set("spark.driver.extraClassPath", find_variants_jar())
         spark = SparkSession.builder.config(conf=sconf)\
             .appName("test").master("local").getOrCreate()
         self.sc = spark.sparkContext
