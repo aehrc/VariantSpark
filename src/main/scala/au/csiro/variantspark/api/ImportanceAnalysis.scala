@@ -1,19 +1,15 @@
 package au.csiro.variantspark.api
 
-import au.csiro.variantspark.input.FeatureSource
-import au.csiro.variantspark.input.LabelSource
-import au.csiro.variantspark.algo.RandomForestParams
-import au.csiro.variantspark.algo.ByteRandomForest
-import au.csiro.variantspark.data.BoundedOrdinal
 import au.csiro.pbdava.ssparkle.spark.SparkUtils
-import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.types.StructField
-import org.apache.spark.sql.types.StringType
-import org.apache.spark.sql.types.DoubleType
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.Row
+import au.csiro.variantspark.algo.{ByteRandomForest, RandomForestParams}
+import au.csiro.variantspark.data.BoundedOrdinal
+import au.csiro.variantspark.input.{FeatureSource, LabelSource}
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
+import org.apache.spark.sql.{Row, SQLContext}
+import org.apache.spark.sql.types.{DoubleType, StringType, StructField, StructType}
+
 import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 /**
   * A class to represent an instance of the Importance Analysis
@@ -47,7 +43,9 @@ class ImportanceAnalysis(val sqlContext:SQLContext, val featureSource:FeatureSou
     val trainingData = inputData.map{ case (f, i) => (f.values, i)}
     rf.batchTrain(trainingData, dataType, labels, nTrees, rfBatchSize)
   }
-  
+
+  val oobError: Double  = rfModel.oobError
+
   private lazy val br_normalizedVariableImportance = {
     val indexImportance = rfModel.normalizedVariableImportance()   
     sc.broadcast(new Long2DoubleOpenHashMap(indexImportance.asInstanceOf[Map[java.lang.Long, java.lang.Double]]))
@@ -69,8 +67,13 @@ class ImportanceAnalysis(val sqlContext:SQLContext, val featureSource:FeatureSou
     }
     
     topImportantVariables.map({ case (i, importance) => (index(i), importance)})
-  } 
-    
+  }
+
+  def importantVariablesJavaMap(nTopLimit:Int = 100) = {
+    val impVarMap = collection.mutable.Map(importantVariables(nTopLimit).toMap.toSeq: _*)
+    impVarMap.map{ case (k, v) => k -> double2Double(v) }
+    impVarMap.asJava
+  }
 }
 
 object ImportanceAnalysis {
