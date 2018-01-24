@@ -5,7 +5,7 @@ from pyspark import SparkConf
 from pyspark.sql import SparkSession
 
 from variants import VariantsContext
-from variants.test import find_variants_jar
+from variants.test import find_variants_jar, PROJECT_DIR
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -39,9 +39,9 @@ class VariantSparkAPITestCase(VariantSparkPySparkTestCase):
                          str(cm.exception))
 
     def test_importance_analysis_from_vcf(self):
-        label_data_path = os.path.join(THIS_DIR, os.pardir, '../../data/chr22-labels.csv')
+        label_data_path = os.path.join(PROJECT_DIR, 'data/chr22-labels.csv')
         label = self.vc.load_label(label_file_path=label_data_path, col_name='22_16050408')
-        feature_data_path = os.path.join(THIS_DIR, os.pardir, '../../data/chr22_1000.vcf')
+        feature_data_path = os.path.join(PROJECT_DIR, 'data/chr22_1000.vcf')
         features = self.vc.import_vcf(vcf_file_path=feature_data_path)
 
         imp_analysis = features.importance_analysis(label, 100, float('nan'), True, 13, 100, 3)
