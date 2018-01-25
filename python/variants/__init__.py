@@ -3,4 +3,3 @@ try:
 except:
     pass
 from variants.setup import find_jar
-

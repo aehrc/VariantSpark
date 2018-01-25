@@ -4,5 +4,3 @@ from variants import find_jar
 
 def cli():
     print(find_jar())
-    
-    
