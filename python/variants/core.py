@@ -5,19 +5,21 @@ from pyspark.sql import SQLContext
 from variants.setup import find_jar
 
 class VariantsContext(object):
+    """The main entry point for VariantSpark functionality.
+    """
 
     @classmethod
     def spark_conf(cls, conf  = SparkConf()):
-        return conf.set("spark.driver.extraClassPath", find_jar())
-
-    """The main entry point for VariantSpark functionality.
-
-    :param ss: SparkSession
-    :type ss: :class:`.pyspark.SparkSession`
-
-    """
+        """ Adds the necessary option to the spark configuration.
+        Note: In client mode these need to be setup up using --jars or --driver-class-path
+        """
+        return conf.set("spark.jars", find_jar())
 
     def __init__(self, ss=None):
+        """The main entry point for VariantSpark functionality.
+        :param ss: SparkSession
+        :type ss: :class:`.pyspark.SparkSession`
+        """
         self.sc = ss.sparkContext
         self.sql = SQLContext.getOrCreate(self.sc)
         self._jsql = self.sql._jsqlContext
