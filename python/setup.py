@@ -47,9 +47,8 @@ try:
         os.symlink(JARS_PATH, JARS_TARGET)
 
     setup(
-        name='variants',
-        version='0.1.0',
-        description='VariantSpark Python API',
+        name='variant-spark',
+        version='0.2.0.dev1',    
         packages=find_packages(exclude=["*.test"]) + ['variants.jars'], 
         install_requires=['typedecorator'],
 #        test_suite = 'variants.test',
@@ -67,6 +66,28 @@ try:
         [console_scripts]
         variants-jar=variants.cli:cli
         ''',
+        # metadata for upload to PyPI
+        description='VariantSpark Python API',
+        long_description=("variant-spark is a scalable toolkit for "
+                        "genome-wide association studies optimized for GWAS like datasets"),
+        author='Piotr Szul et. al',
+        author_email='piotr.szul@csiro.au',
+        license='CSIRO Non-Commercial Source Code Licence Agreement v1.0',
+        keywords='gwas vcf random forest association studies variant variants',
+        classifiers=[
+            'Development Status :: 2 - Pre-Alpha',
+    
+            'Intended Audience :: Science/Research',
+            'Topic :: Scientific/Engineering :: Bio-Informatics',
+    
+            "Programming Language :: Python :: 2.7"
+        ],
+        url='https://bioinformatics.csiro.au/variantspark',   # project home page, if any
+        project_urls={
+            'Bug Tracker': 'https://github.com/aehrc/VariantSpark/issues',
+            'Documentation': 'http://variantspark.readthedocs.io/en/latest',
+            'Source Code': 'https://code.example.com/HelloWorld/',
+        },
     )
 finally:
     # We only cleanup the symlink farm if we were in Spark, otherwise we are installing rather than
