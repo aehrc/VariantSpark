@@ -52,10 +52,10 @@ try:
         description='VariantSpark Python API',
         packages=find_packages(exclude=["*.test"]) + ['variants.jars'], 
         install_requires=['typedecorator'],
-        test_suite = 'variants.test',
-        test_requires = [
-            'pyspark>=2.1.0'
-        ],
+#        test_suite = 'variants.test',
+#        test_requires = [
+#            'pyspark>=2.1.0'
+#        ],
         include_package_data=True,
         package_dir={
             'variants.jars': 'target/jars',
