@@ -1,10 +1,16 @@
 import sys
 
+import pyspark
 from typedecorator import params, Nullable, Union, setup_typecheck
 from pyspark.sql import SQLContext
-
+from variants.setup import find_jar
 
 class VariantsContext(object):
+    
+    @classmethod
+    def spark_conf(cls, conf  = pyspark.SparkConf()):
+        return conf.set("spark.driver.extraClassPath", find_jar())
+    
     """The main entry point for VariantSpark functionality.
 
     :param ss: SparkSession
