@@ -19,7 +19,7 @@ def dist_mat_to_array(dist_mat):
     elif IndexedRowMatrix == type(dist_mat):
         return dist_mat_to_array(dist_mat.toRowMatrix())
     else:
-        raise Exception("Cannot convert distributed matrix of type %s", type(dist_mat))
+        raise Exception("Cannot convert distributed matrix of type %s" % type(dist_mat))
 
 def array_to_dataframe(ndarray, labels = None):
     """ Converts a square numpy array to a pandas dataframe with index and column names
