@@ -3,7 +3,13 @@ Created on 7 Nov 2017
 
 @author: szu004
 '''
-from variants.lang import extend_cls
+# Ensure backwards compatibility with Python 2
+from __future__ import (
+    absolute_import,
+    division,
+    print_function)
+
+from varspark.lang import extend_cls
 from hail import VariantDataset
 from . extend import VariantsDatasetFunctions
 

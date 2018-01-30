@@ -9,7 +9,5 @@ cd "$FWDIR"
 # check code with pylint
 
 pushd python
-
-export PYTHONPATH=$PYTHONPATH:./deps/hail-py-0.1-src.zip
-pylint varspark
+python -m unittest varspark.test.test_core
 popd

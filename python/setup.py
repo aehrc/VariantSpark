@@ -15,7 +15,7 @@ ROOT_DIR = os.path.abspath("../")
 
 # Provide guidance about how to use setup.py
 incorrect_invocation_message = """
-If you are installing variants from variant-spark source, you must first build variant-spark  and
+If you are installing varspark from variant-spark source, you must first build variant-spark  and
 run sdist.
     To build  with maven you can run:
       ./build/mvn -DskipTests clean package
@@ -49,22 +49,22 @@ try:
     setup(
         name='variant-spark',
         version='0.2.0.dev1',    
-        packages=find_packages(exclude=["*.test"]) + ['variants.jars'], 
+        packages=find_packages(exclude=["*.test"]) + ['varspark.jars'], 
         install_requires=['typedecorator'],
-#        test_suite = 'variants.test',
+#        test_suite = 'varspark.test',
 #        test_requires = [
 #            'pyspark>=2.1.0'
 #        ],
         include_package_data=True,
         package_dir={
-            'variants.jars': 'target/jars',
+            'varspark.jars': 'target/jars',
         },
         package_data={
-            'variants.jars': ['*-all.jar'],
+            'varspark.jars': ['*-all.jar'],
         },
         entry_points='''
         [console_scripts]
-        variants-jar=variants.cli:cli
+        varspark-jar=varspark.cli:cli
         ''',
         # metadata for upload to PyPI
         description='VariantSpark Python API',
@@ -73,7 +73,7 @@ try:
         author='Piotr Szul et. al',
         author_email='piotr.szul@csiro.au',
         license='CSIRO Non-Commercial Source Code Licence Agreement v1.0',
-        keywords='gwas vcf random forest association studies variant variants',
+        keywords='gwas vcf random forest association studies variant',
         classifiers=[
             'Development Status :: 2 - Pre-Alpha',
     
