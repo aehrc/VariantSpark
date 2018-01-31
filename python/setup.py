@@ -2,17 +2,44 @@ from __future__ import print_function
 from setuptools import setup, find_packages
 import sys
 import os
+import re
+import time
 
 if sys.version_info < (2, 7):
     print("Python versions prior to 2.7 are not supported.", file=sys.stderr)
     exit(-1)
- 
 
-#VERSION = __version__
-# A temporary path so we can access above the Python project root and fetch scripts and jars we need
+HERE = os.path.dirname(__file__)
+ROOT_DIR = os.path.abspath(os.path.join(HERE, os.pardir))
 TEMP_PATH = "target"
-ROOT_DIR = os.path.abspath("../")
 
+in_src = os.path.isfile(os.path.join(ROOT_DIR, "pom.xml"))
+
+def get_version():  
+    def version_from_file(fname, pattern):
+        if os.path.isfile(fname):
+            with open(fname, "r") as pom_f:
+                pom = pom_f.read()
+            version_match  = re.search(pattern, pom)
+            if not version_match:
+                print("Could not find version in file: %s" % fname, file = sys.stderr)
+                exit(-1)
+            pom_version = version_match.group(1)
+            package_version = pom_version.replace("-SNAPSHOT", ".dev%s" % int(time.time()))
+            return package_version
+        else:
+            return None
+
+    version =  version_from_file(os.path.join(ROOT_DIR, "pom.xml"), "<version>(.*)</version>") \
+        or version_from_file(os.path.join(HERE, "PKG-INFO"), "[\s]Version: ([\S]*)")  
+        
+    if not version:
+        print("Could not find neither pom.xml nor PKG-INFO", file = sys.stderr)
+        exit(-1)
+    return version
+        
+VERSION = get_version()    
+    
 # Provide guidance about how to use setup.py
 incorrect_invocation_message = """
 If you are installing varspark from variant-spark source, you must first build variant-spark  and
@@ -26,8 +53,6 @@ run sdist.
 
 JARS_PATH = os.path.join(ROOT_DIR, "target")
 JARS_TARGET = os.path.join(TEMP_PATH, "jars")
-
-in_src = os.path.isfile("../pom.xml") 
 
 if (in_src):
     # Construct links for setup
@@ -48,7 +73,7 @@ try:
 
     setup(
         name='variant-spark',
-        version='0.2.0.dev1',    
+        version= VERSION,    
         packages=find_packages(exclude=["*.test"]) + ['varspark.jars'], 
         install_requires=['typedecorator'],
 #        test_suite = 'varspark.test',
