@@ -55,6 +55,11 @@ try:
 #        test_requires = [
 #            'pyspark>=2.1.0'
 #        ],
+        extras_require = {
+            'test': [ 
+                'pyspark==2.1.2', 
+            ],
+        },
         include_package_data=True,
         package_dir={
             'varspark.jars': 'target/jars',
@@ -64,7 +69,8 @@ try:
         },
         entry_points='''
         [console_scripts]
-        varspark-jar=varspark.cli:cli
+        varspark-jar=varspark.cli:varspark_jar
+        varspark-submit=varspark.cli:varspark_submit
         ''',
         # metadata for upload to PyPI
         description='VariantSpark Python API',

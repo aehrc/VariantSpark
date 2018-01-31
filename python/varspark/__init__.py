@@ -1,5 +1,5 @@
 try:
     from varspark.core import VariantsContext
-except:
+except Exception:
     pass
-from varspark.setup import find_jar
+from varspark.etc import find_jar

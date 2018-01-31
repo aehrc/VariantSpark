@@ -8,7 +8,7 @@ import sys
 from typedecorator import params, Nullable, Union, setup_typecheck
 from pyspark import SparkConf
 from pyspark.sql import SQLContext
-from varspark.setup import find_jar
+from varspark.etc import find_jar
 
 class VariantsContext(object):
     """The main entry point for VariantSpark functionality.
