@@ -4,13 +4,15 @@ Created on 24 Jan 2018
 @author: szu004
 '''
 import os
-from variants import VariantsContext
+from varspark import VariantsContext
 from pyspark.sql import SparkSession
 
 PROJECT_DIR=os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
 
 def main():
-    spark = SparkSession.builder.appName("HipsterIndex") \
+    spark = SparkSession.builder\
+        .config(conf=VariantsContext.spark_conf()) \
+        .appName("HipsterIndex") \
         .getOrCreate()
     vs = VariantsContext(spark)
     features = vs.import_vcf(os.path.join(PROJECT_DIR, 'data/chr22_1000.vcf'))

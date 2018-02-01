@@ -49,7 +49,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'VariantS'
+project = u'variant-spark'
 copyright = u'2017, Piotr Szul'
 author = u'Piotr Szul'
 

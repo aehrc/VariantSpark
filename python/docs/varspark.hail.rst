@@ -1,4 +1,4 @@
-package variants.hail
+package varspark.hail
 =====================
 
 This package contains variant spark integration with Hail.
@@ -6,7 +6,7 @@ This package contains variant spark integration with Hail.
 ::
     
     from hail import *
-    import variants.hail
+    import varspark.hail
     hc = HailContext(sc)    
     vds = hc.import_vcf(...)
     ...
@@ -14,16 +14,16 @@ This package contains variant spark integration with Hail.
 
 
 
-module variants.hail.extend
+module varspark.hail.extend
 ---------------------------
 
-.. automodule:: variants.hail.extend
+.. automodule:: varspark.hail.extend
     :members:
     :undoc-members:
 
-module variants.hail.rf
+module varspark.hail.rf
 -----------------------
 
-.. automodule:: variants.hail.rf
+.. automodule:: varspark.hail.rf
     :members:
     :undoc-members:
