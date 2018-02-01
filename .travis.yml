@@ -20,7 +20,7 @@ install:
 script: 
   - dev/travis-build.sh
   - dev/travis-py-dist.sh
-  - dev/variant-spark/dev/travis-py-pypi.sh
+  - dev/travis-py-pypi.sh
 before_deploy: 
   - dev/travis-prepare-s3-release.sh
 deploy:
