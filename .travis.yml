@@ -16,7 +16,7 @@ install:
   - python --version
   - dev/py-setup.sh
 script: 
-  - dev/travis-build.sh
+#  - dev/travis-build.sh
   - dev/travis-py-dist.sh
 before_deploy: 
   - dev/travis-prepare-s3-release.sh
