@@ -14,31 +14,8 @@ ROOT_DIR = os.path.abspath(os.path.join(HERE, os.pardir))
 TEMP_PATH = "target"
 
 in_src = os.path.isfile(os.path.join(ROOT_DIR, "pom.xml"))
-
-def get_version():  
-    def version_from_file(fname, pattern):
-        if os.path.isfile(fname):
-            with open(fname, "r") as pom_f:
-                pom = pom_f.read()
-            version_match  = re.search(pattern, pom)
-            if not version_match:
-                print("Could not find version in file: %s" % fname, file = sys.stderr)
-                exit(-1)
-            pom_version = version_match.group(1)
-            package_version = pom_version.replace("-SNAPSHOT", ".dev%s" % int(time.time()))
-            return package_version
-        else:
-            return None
-
-    version =  version_from_file(os.path.join(ROOT_DIR, "pom.xml"), "<version>(.*)</version>") \
-        or version_from_file(os.path.join(HERE, "PKG-INFO"), "[\s]Version: ([\S]*)")  
         
-    if not version:
-        print("Could not find neither pom.xml nor PKG-INFO", file = sys.stderr)
-        exit(-1)
-    return version
-        
-VERSION = get_version()    
+VERSION = '0.2.0a0'    
     
 # Provide guidance about how to use setup.py
 incorrect_invocation_message = """
