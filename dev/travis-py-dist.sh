@@ -9,7 +9,7 @@ set -x
 FWDIR="$(cd "`dirname $0`"/..; pwd)"
 cd "$FWDIR"
 
-. ${FWDIR}/dev/travis-set-ver.sh
+export CI_PYTHON_TAG=".dev${TRAVIS_BUILD_NUMBER}"
 
 pushd  ${FWDIR}/python
 python setup.py egg_info -b "${CI_PYTHON_TAG}" sdist
