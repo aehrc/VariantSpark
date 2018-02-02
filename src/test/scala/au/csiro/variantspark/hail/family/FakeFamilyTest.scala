@@ -53,7 +53,7 @@ class FakeFamilyTest extends SparkTest {
     val hc = HailContext(sc)
     val vcf = hc.importVCFGenericEx("data/chr22_1000.vcf")
     println(vcf.count())
-    ExportVCFEx(vcf, "target/genericPhasedO.vcf")
+    vcf.exportVCFEx("target/genericPhasedO.vcf")
    }
    
 
@@ -74,45 +74,7 @@ class FakeFamilyTest extends SparkTest {
     val offsrings = parents.copy(rdd =transRdd.asOrderedRDD, sampleIds = newIDS.toIndexedSeq, 
         sampleAnnotations =  Annotation.emptyIndexedSeq(newIDS.length))
     
-    ExportVCFEx(offsrings, "target/phasedOffspring.vcf")
+    offsrings.exportVCFEx("target/phasedOffspring.vcf")
   }
 
-  
-//  @Test
-//  def testRunImportanceAnalysis() {
-//    val hc = HailContext(sc)
-//    val vcf = hc.importVCF("data/chr22_1000.vcf")
-//    val parents = vcf.filterSamplesList(Set("HG00096",	"HG00097"))
-//    print(parents.count())
-//   
-//    val sampleIds:List[String] = parents.sampleIds.toList.asInstanceOf[List[String]]
-//    val newIDS = "dsdsdsds" ::  sampleIds
-//    
-//    val transRdd = parents.rdd.mapPartitions(x => x.map { case (v, (a, g)) =>
-//        (v, (a,FakeFamily.createOffspring(v, g))) }, preservesPartitioning = true)  
-//    val offsrings = parents.copy(rdd =transRdd.asOrderedRDD, sampleIds = newIDS.toIndexedSeq, 
-//        sampleAnnotations =  Annotation.emptyIndexedSeq(newIDS.length))
-//    
-//    offsrings.exportVCF("target/output.vcf")
-///*
-// * 
-// * 
-//    //val v: Variant = null;
-//    //val gb = new GenotypeBuilder(v.nAlleles, false)
-//    //gb.clear()
-//    val pair = GTPair(1,0)
-//    println(pair)
-//    val gt = Genotype.gtIndex(pair)
-//    
-//    val gtt = Genotype(gt)
-//    val pair1 = GTPair(0,1)
-//    println(pair1)
-//    val gt1 = Genotype.gtIndex(pair1)
-//    //val gsb = new GenotypeStreamBuilder(v.nAlleles, isLinearScale = false)
-//    //gsb.write(gb)
-//    //val result = gsb.result()
-//  
-//     */
-//  }
-  
 }
