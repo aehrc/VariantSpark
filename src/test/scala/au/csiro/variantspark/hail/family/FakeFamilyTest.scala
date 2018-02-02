@@ -44,81 +44,6 @@ object FakeFamily {
     gsb.write(gb)
     gsb.result() 
   }  
-  
-  
-//    def importVCF(hc: HailContext, file: String, force: Boolean = false,
-//    forceBGZ: Boolean = false,
-//    headerFile: Option[String] = None,
-//    nPartitions: Option[Int] = None,
-//    dropSamples: Boolean = false,
-//    storeGQ: Boolean = false,
-//    ppAsPL: Boolean = false,
-//    skipBadAD: Boolean = false): VariantDataset = {
-//    importVCFs(hc, List(file), force, forceBGZ, headerFile, nPartitions, dropSamples,
-//      storeGQ, ppAsPL, skipBadAD)
-//  }
-//
-//  def importVCFs(hc:HailContext, files: Seq[String], force: Boolean = false,
-//    forceBGZ: Boolean = false,
-//    headerFile: Option[String] = None,
-//    nPartitions: Option[Int] = None,
-//    dropSamples: Boolean = false,
-//    storeGQ: Boolean = false,
-//    ppAsPL: Boolean = false,
-//    skipBadAD: Boolean = false): VariantDataset = {
-//
-//    val inputs = LoadVCF.globAllVCFs(hc.hadoopConf.globAll(files), hc.hadoopConf, force || forceBGZ)
-//
-//    val header = headerFile.getOrElse(inputs.head)
-//
-//    val codecs = hc.sc.hadoopConfiguration.get("io.compression.codecs")
-//
-//    if (forceBGZ)
-//      hc.hadoopConf.set("io.compression.codecs",
-//        codecs.replaceAllLiterally("org.apache.hadoop.io.compress.GzipCodec", "is.hail.io.compress.BGzipCodecGZ"))
-//
-//    val settings = VCFSettings(storeGQ, dropSamples, ppAsPL, skipBadAD)
-//    val reader = new PhasedGenericRecordReader() //(settings)
-//    val vds = LoadVCF(hc, reader, header, inputs, nPartitions, dropSamples)
-//
-//    hc.hadoopConf.set("io.compression.codecs", codecs)
-//
-//    vds
-//  }
-
-   def importVCFGeneric(hc:HailContext,  file: String, force: Boolean = false,
-    forceBGZ: Boolean = false,
-    headerFile: Option[String] = None,
-    nPartitions: Option[Int] = None,
-    dropSamples: Boolean = false,
-    callFields: Set[String] = Set.empty[String]): GenericDataset = {
-    importVCFsGeneric(hc, List(file), force, forceBGZ, headerFile, nPartitions, dropSamples, callFields)
-  }
-
-  def importVCFsGeneric(hc:HailContext, files: Seq[String], force: Boolean = false,
-    forceBGZ: Boolean = false,
-    headerFile: Option[String] = None,
-    nPartitions: Option[Int] = None,
-    dropSamples: Boolean = false,
-    callFields: Set[String] = Set.empty[String]): GenericDataset = {
-
-    val inputs = LoadVCF.globAllVCFs(hc.hadoopConf.globAll(files), hc.hadoopConf, force || forceBGZ)
-
-    val header = headerFile.getOrElse(inputs.head)
-
-    val codecs = hc.sc.hadoopConfiguration.get("io.compression.codecs")
-
-    if (forceBGZ)
-      hc.hadoopConf.set("io.compression.codecs",
-        codecs.replaceAllLiterally("org.apache.hadoop.io.compress.GzipCodec", "is.hail.io.compress.BGzipCodecGZ"))
-
-    val reader = new PhasedGenericRecordReader(callFields)
-    val gds = LoadVCF(hc, reader, header, inputs, nPartitions, dropSamples)
-
-    hc.hadoopConf.set("io.compression.codecs", codecs)
-
-    gds
-  } 
 }
 
 class FakeFamilyTest extends SparkTest {
@@ -126,7 +51,7 @@ class FakeFamilyTest extends SparkTest {
   @Test
   def testLoadPhased() {
     val hc = HailContext(sc)
-    val vcf = FakeFamily.importVCFGeneric(hc, "data/chr22_1000.vcf")
+    val vcf = hc.importVCFGenericEx("data/chr22_1000.vcf")
     println(vcf.count())
     ExportVCFEx(vcf, "target/genericPhasedO.vcf")
    }
@@ -135,7 +60,7 @@ class FakeFamilyTest extends SparkTest {
   @Test
   def testProduceOffspring() {
     val hc = HailContext(sc)
-    val vcf = FakeFamily.importVCFGeneric(hc, "data/chr22_1000.vcf")
+    val vcf = hc.importVCFGenericEx("data/chr22_1000.vcf")
     println(vcf.count())
     val parents = vcf.filterSamplesList(Set("HG00096",	"HG00097"))
     print(parents.count())
