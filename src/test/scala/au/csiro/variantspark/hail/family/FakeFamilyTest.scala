@@ -21,6 +21,8 @@ import is.hail.io.vcf.LoadVCF
 import au.csiro.variantspark.hail.variant.phased.PhasedGenericRecordReader
 import is.hail.io.vcf.GenericRecordReader
 import au.csiro.variantspark.hail.variant.io.ExportVCFEx
+import org.apache.spark.sql.Row
+import au.csiro.variantspark.hail.variant.phased.BiCall
 
 
 object FakeFamily {
@@ -28,9 +30,17 @@ object FakeFamily {
   def createOffspringGeneric(v:Variant, genotypes:Iterable[Annotation]): Iterable[Annotation] = {
    
     // genotypes is iterable od row
+    // create a random mixtue of parents
+   
+    val parentGenotypes = genotypes.toArray
+    val motherGenotype = new BiCall(parentGenotypes(0).asInstanceOf[Row].getInt(0))
+    val fatherGenotype = new BiCall(parentGenotypes(1).asInstanceOf[Row].getInt(0))
     
-    val parentGenotypes = genotypes.toList
-    val offspringAndParent = Annotation(1) :: parentGenotypes
+    
+    // here come the randomisation
+    val offspringGenotype = GTPair(motherGenotype(0), fatherGenotype(1))
+    
+    val offspringAndParent = Annotation(offspringGenotype.p) :: parentGenotypes.toList
     offspringAndParent
   } 
   

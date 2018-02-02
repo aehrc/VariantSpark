@@ -1,37 +1,55 @@
 package au.csiro.variantspark.hail.family
 
-import is.hail.variant.VariantDataset
+import is.hail.variant.GenericDataset
 import is.hail.variant.Genotype
 import au.csiro.variantspark.pedigree.OffspringSpec
 import au.csiro.variantspark.pedigree.GenomicPos
+import is.hail.variant.Variant
+import is.hail.annotations.Annotation
+import au.csiro.variantspark.hail.variant.phased.BiCall
+import org.apache.spark.sql.Row
+import is.hail.variant.GTPair
+import is.hail.variant._
+import is.hail.utils._
+import is.hail.expr._
+
+
+object GenerateOffspring {
+  
+  def createOffspringGeneric(v:Variant, genotypes:Iterable[Annotation]): Iterable[Annotation] = {
+   
+    // genotypes is iterable od row
+    // create a random mixtue of parents
+   
+    val parentGenotypes = genotypes.toArray
+    val motherGenotype = new BiCall(parentGenotypes(0).asInstanceOf[Row].getInt(0))
+    val fatherGenotype = new BiCall(parentGenotypes(1).asInstanceOf[Row].getInt(0))
+    
+    
+    // here come the randomisation
+    val offspringGenotype = GTPair(motherGenotype(0), fatherGenotype(1))
+    
+    val offspringAndParent = Annotation(offspringGenotype.p) :: parentGenotypes.toList
+    offspringAndParent
+  } 
+
+}
 
 class GenerateOffspring(val offspringSpec:OffspringSpec) {
   
-  private def genotypeToHamming(gt:Genotype) {
-    
-  }
-  
-  def apply(vds:VariantDataset): VariantDataset =  {
+
+  def apply(gds:GenericDataset): GenericDataset =  {
     
     // later on we can probably add all in the form of annotations
+    val sampleIds:List[String] = gds.sampleIds.toList.asInstanceOf[List[String]]
+    val newIDS = "dsdsdsds" ::  sampleIds
     
-    vds.rdd.map { 
-      case (variant, (x, genotypes)) => 
-      // so based on the variant position we need to determine which part of the genotype to include in the offspring
-      // so esentially need to create the offspring genotype from the spec
-      // I coiuld technicall operate on the allele indexes rather then actual variants
-      // I first need to find both alleles of the parents
-      val motherGenotype = ??? //diploid must be phased
-      val fatherGenotype = ??? //diploid must be phased
-      val position = GenomicPos(variant.contig, variant.start)
-      val childGenotype = offspringSpec.genotypeAt(position, motherGenotype, fatherGenotype)
-      // onece we have that we need to add it to the list of genotypes for this sample
-      // look at join to see how
-      None
-    }
-    
-  
-    
+    val transRdd = gds.rdd.mapPartitions(x => x.map { case (v, (a, g)) =>
+        (v, (a, GenerateOffspring.createOffspringGeneric(v, g))) }, preservesPartitioning = true)  
+        
+    val offsrings = gds.copy(rdd = transRdd.asOrderedRDD, sampleIds = newIDS.toIndexedSeq, 
+        sampleAnnotations =  Annotation.emptyIndexedSeq(newIDS.length))
+
     return null
   }
   
