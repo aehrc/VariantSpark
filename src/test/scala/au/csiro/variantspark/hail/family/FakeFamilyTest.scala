@@ -23,6 +23,9 @@ import is.hail.io.vcf.GenericRecordReader
 import au.csiro.variantspark.hail.variant.io.ExportVCFEx
 import org.apache.spark.sql.Row
 import au.csiro.variantspark.hail.variant.phased.BiCall
+import au.csiro.variantspark.pedigree.OffspringSpec
+import au.csiro.variantspark.pedigree.HomozigoteSpec
+import au.csiro.variantspark.pedigree.MeiosisSpec
 
 
 object FakeFamily {
@@ -72,18 +75,15 @@ class FakeFamilyTest extends SparkTest {
     val hc = HailContext(sc)
     val vcf = hc.importVCFGenericEx("data/chr22_1000.vcf")
     println(vcf.count())
-    val parents = vcf.filterSamplesList(Set("HG00096",	"HG00097"))
+    val parents:GenericDataset = vcf.filterSamplesList(Set("HG00096",	"HG00097"))
     print(parents.count())
-   
-    val sampleIds:List[String] = parents.sampleIds.toList.asInstanceOf[List[String]]
-    val newIDS = "dsdsdsds" ::  sampleIds
     
-    val transRdd = parents.rdd.mapPartitions(x => x.map { case (v, (a, g)) =>
-        (v, (a,FakeFamily.createOffspringGeneric(v, g))) }, preservesPartitioning = true)  
-        
-    val offsrings = parents.copy(rdd =transRdd.asOrderedRDD, sampleIds = newIDS.toIndexedSeq, 
-        sampleAnnotations =  Annotation.emptyIndexedSeq(newIDS.length))
+    val offspringSpec = OffspringSpec(
+        motherZigote = HomozigoteSpec(Map("22" -> MeiosisSpec(Array(17680651L)))),
+        fatherZigote = HomozigoteSpec(Map("22" -> MeiosisSpec(Array(17796925L))))
+    )
     
+    val offsrings = parents.generateOffspring(offspringSpec)
     offsrings.exportVCFEx("target/phasedOffspring.vcf")
   }
 
