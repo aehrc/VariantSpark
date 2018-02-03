@@ -27,7 +27,7 @@ case class GenomicPos(val contig:ContigID, pos:Long)
  * for crossingOvers(1) <= pos < crossingOvers(2) -> chromosome 0 
  * etc ...
  */
-case class MeiosisSpec(crossingOvers:Array[Long]) {
+case class MeiosisSpec(crossingOvers:List[Long]) {
   
   def getChromosomeAt(pos:Long):Int  = {
     // the meiosis spec array should be sorted so essentially 
@@ -58,6 +58,12 @@ case class HomozigoteSpec(val splits:Map[ContigID, MeiosisSpec])  {
   }
 }
 
+trait HomozigotSpecFactory {
+  //TODO: Add gender distintion
+  def createHomozigoteSpec():HomozigoteSpec
+}
+
+
 case class OffspringSpec(val motherZigote: HomozigoteSpec, val fatherZigote: HomozigoteSpec) {
   
   def genotypeAt[A](position:GenomicPos, motherGenotype:GenotypeSpec[A], fatherGenotype:GenotypeSpec[A]):GenotypeSpec[A] = {
@@ -66,7 +72,18 @@ case class OffspringSpec(val motherZigote: HomozigoteSpec, val fatherZigote: Hom
   }
 }
 
+object OffspringSpec {  
+  def create(hsf: HomozigotSpecFactory)  = OffspringSpec(
+      motherZigote = hsf.createHomozigoteSpec(), 
+      fatherZigote = hsf.createHomozigoteSpec()
+  )
+}
 
+case class SimpleHomozigotSpecFactory(val contigSet:ContigSet) extends HomozigotSpecFactory {
+  def createHomozigoteSpec(): HomozigoteSpec = {
+    //TODO: Use a different seeded generator
+    HomozigoteSpec(contigSet.contigs.map(cs => (cs.id, MeiosisSpec(List((cs.length * Math.random()).toLong)))).toMap)  }
+}
 
 
 
