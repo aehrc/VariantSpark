@@ -22,7 +22,6 @@ object GenerateOffspring {
   
   def apply(offspringSpec:OffspringSpec) = new GenerateOffspring(offspringSpec)
   
-  implicit def fromVariantToGenomicPos(v: Variant): GenomicPos = GenomicPos(v.contig, v.start)
   implicit def fromBiCallToGenotypeSpec(bc: BiCall): GenotypeSpec[Int] = IndexedBiGenotypeSpec(bc(0), bc(1))
   implicit def fromGenotypeSpecToBiCall(gs: GenotypeSpec[Int]): BiCall =  BiCall(GTPair.apply(gs(0), gs(1)))
   
