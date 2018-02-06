@@ -16,6 +16,11 @@ case class Offspring(override val id:String, val father: Individual, val mother:
 case class FamilyTrio(val child:IndividualID, val mother:IndividualID, val father:IndividualID)
 
 
+object ParentalRole extends Enumeration {
+  type ParentalRole = Value
+  val Mother, Father = Value
+}
+
 /**
  * Looks like this best coiuld be represented by a graph.
  * Graph library from: http://www.scala-graph.org/guides/core-introduction.html
@@ -39,9 +44,13 @@ class PedigreeTree(tree: Graph[IndividualID, LDiEdge]) {
 
 object PedigreeTree {
   
+  import ParentalRole._
+ 
+  
   def apply(trios: Seq[FamilyTrio]): PedigreeTree =  {
     
-    val edges = trios.flatMap(t => List(LDiEdge(t.father, t.child)("father"), LDiEdge(t.father, t.child)("mother")))
+    val edges = trios.flatMap(t => List(LDiEdge(t.father, t.child)(Father),
+        LDiEdge(t.father, t.child)(Mother)))
     new PedigreeTree(Graph(edges.toArray:_*)) 
   }
 }
