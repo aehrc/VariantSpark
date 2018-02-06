@@ -24,9 +24,9 @@ import au.csiro.variantspark.pedigree.IndividualID
 
 
 case class OffspringTrio(val trio: FamilyTrio, val offspring: OffspringSpec)  {
-  def offspringID = trio.child
+  def offspringID = trio.id
   def makeGenotype(position: GenomicPos, population: HashMap[IndividualID, GenotypeSpec[Int]]):GenotypeSpec[Int] = {
-    offspring.genotypeAt(position, population(trio.mother), population(trio.father))
+    offspring.genotypeAt(position, population(trio.maternalId.get), population(trio.paternalId.get))
   }
 }
 
