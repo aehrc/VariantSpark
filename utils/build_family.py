@@ -18,14 +18,17 @@ def relatives(ped, depth, no_children):
     male_founder_ids  = list(ped[ped['Gender'] == MALE]['Individual ID'].sample(depth))
     female_founder_ids  = list(ped[ped['Gender'] == FEMALE]['Individual ID'].sample(depth))
     def offspring(male_founder_ids, female_founder_ids):
-        mate = Individual(male_founder_ids.pop(), MALE)
+        nestor = Individual(male_founder_ids.pop(), MALE)
+        yield [(nestor.id, '0', '0', nestor.gender)]
         for i in range(1, depth):
-            father  = mate if mate.gender == MALE else Individual(male_founder_ids.pop(), MALE)
-            mother  = mate if mate.gender == FEMALE else Individual(female_founder_ids.pop(), FEMALE)
-            
+            spouse = Individual(female_founder_ids.pop(), FEMALE) if nestor.gender == MALE \
+                    else Individual(male_founder_ids.pop(), MALE)
+            yield [(spouse.id, '0', '0', spouse.gender)]
+            father  = nestor if nestor.gender == MALE else spouse
+            mother  = nestor if nestor.gender == FEMALE else spouse
             children = [ Individual("OF%05d_%02d" %(i,k),random_gender()) for k in range(0, no_children)]
             yield [(child.id, father.id, mother.id, child.gender ) for child in children]
-            mate = children[-1]
+            nestor = children[-1]
     return pd.DataFrame(list(chain(*list(offspring(male_founder_ids, female_founder_ids)))), 
                        columns = ['Individual ID', 'Paternal ID', 'Maternal ID', 'Gender'])
 
