@@ -80,9 +80,6 @@ object OffspringSpec {
 }
 
 
-
-
-
 case class SimpleHomozigotSpecFactory(val contigSet:ContigSet) extends HomozigotSpecFactory {
   def createHomozigoteSpec(): HomozigoteSpec = {
     //TODO: Use a different seeded generator

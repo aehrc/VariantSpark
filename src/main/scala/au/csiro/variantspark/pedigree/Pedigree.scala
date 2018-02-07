@@ -41,6 +41,9 @@ trait Individual {
 case class FamilyTrio(val id:IndividualID, val gender: Gender, 
     paternalId:Option[IndividualID] = None, maternalId: Option[IndividualID] = None) extends Individual {
   
+  def isFounder = paternalId.isEmpty && maternalId.isEmpty
+  def isFullOffspring = paternalId.isDefined && maternalId.isDefined
+  
   def parents:List[(IndividualID, ParentalRole)] = List(
       paternalId.map(id=> (id,Father)), 
       maternalId.map(id=> (id,Mother))
@@ -79,12 +82,25 @@ object FamilyTrio {
  * Looks like this best coiuld be represented by a graph.
  * Graph library from: http://www.scala-graph.org/guides/core-introduction.html
  */
-class PedigreeTree(val tree: Graph[IndividualID, LDiEdge]) {
+class PedigreeTree(val trios: Seq[FamilyTrio]) {
   
   /**
    * Get all the founders that is individuals who are not children in this tree
-   */
+   */ 
+  lazy val triosById:Map[IndividualID, FamilyTrio] = trios.map(t => (t.id, t)).toMap
+  lazy val graph: Graph[IndividualID, LDiEdge] = {
+        val edges = trios.flatMap(t => t.parents.map(p => LDiEdge(p._1, t.id)(p._2)))
+        Graph(edges.toArray:_*)
+  }
+  lazy val orderedTrioIds = graph.topologicalSort.fold(cycleNode => throw new RuntimeException(),
+          order => order).map(_.value).toList
+          
+  lazy val orderedTrios = orderedTrioIds.map(triosById(_))
+  
   def founders:Seq[IndividualID] = ???
+
+  
+  //lazy val topoOrder = 
   
   /**
    * The othe thing I need is essentialy to be able to
@@ -98,11 +114,9 @@ class PedigreeTree(val tree: Graph[IndividualID, LDiEdge]) {
 object PedigreeTree {
   
   import ParentalRole._
- 
-  
+   
   def apply(trios: Seq[FamilyTrio]): PedigreeTree =  {
-    val edges = trios.flatMap(t => t.parents.map(p => LDiEdge(p._1, t.id)(p._2)))
-    new PedigreeTree(Graph(edges.toArray:_*)) 
+    new PedigreeTree(trios) 
   }
   
   def loadPed(pathToPedFile: String): PedigreeTree = {

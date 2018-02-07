@@ -18,9 +18,9 @@ case class Offspring(val trio: FamilyTrio, val offspring: OffspringSpec) extends
 /**
  * Looks like a graf of Offspring Specs tied to the pedigree tree.
  */
-class FamilySpec(val members:List[FamilyMember]) extends Serializable {
+class FamilySpec(val members:Seq[FamilyMember]) extends Serializable {
 
-  def memberIds:List[IndividualID] =  members.map(_.id)
+  def memberIds:List[IndividualID] =  members.map(_.id).toList
   
   def produceGenotypePool(position: GenomicPos, initialPool:GenotypePool):GenotypePool = {
     
@@ -33,3 +33,21 @@ class FamilySpec(val members:List[FamilyMember]) extends Serializable {
     outputPool.toMap
   }
 }
+
+object FamilySpec {
+  
+  /**
+   * Constuct Family spec from a Pedgree Tree and some form of Offspring Producer
+   */
+  
+  def apply(pedigreeTree: PedigreeTree, gameteFactory: HomozigotSpecFactory):FamilySpec = {
+    // get the trios in topological order and map them to FamilyMembers
+    val familyMembers:Seq[FamilyMember] = pedigreeTree.orderedTrios.map{ trio =>
+      if (trio.isFullOffspring) Offspring(trio, OffspringSpec.create(gameteFactory))
+      else if (trio.isFounder) Founder(trio.id)
+      else throw new IllegalArgumentException("PedigreeTree contatins incomplete trios")
+    }
+    new FamilySpec(familyMembers)
+  }
+}
+
