@@ -21,7 +21,7 @@ import au.csiro.variantspark.pedigree.FamilyTrio
 import scala.collection.mutable.HashMap
 import au.csiro.variantspark.pedigree.IndividualID
 import au.csiro.variantspark.pedigree.FamilySpec
-import au.csiro.variantspark.pedigree.OffspringTrio
+import au.csiro.variantspark.pedigree.GenotypePool
 
 
 /**
@@ -29,31 +29,21 @@ import au.csiro.variantspark.pedigree.OffspringTrio
  * @param founderIds: list of ids for founder samples 
  * @param offspring: topologically sorted list of offsprings 
  */
-class FamilyVariantBuilder(val sampleIds:IndexedSeq[Annotation], val founderIds:List[Annotation],
-      val offspring: List[OffspringTrio] ) extends Serializable {
+class FamilyVariantBuilder(val sampleIds:IndexedSeq[Annotation], val familySpec: FamilySpec) extends Serializable {
   
   def buildVariant(v: Variant, g: Iterable[Annotation]):Iterable[Annotation] =  {
     
-    // TODO: OPTIMIZE: Make a version that works on indexes
-    val allGenotypes =  HashMap[IndividualID, GenotypeSpec[Int]]()
-    // index all genotypes with their idss
-    val genotypeBySampleId = sampleIds.zip(g).toMap.mapValues(a => new BiCall(a.asInstanceOf[Row].getInt(0)))
+    // construct the initial pool from genotype samples
+    val initialPool:GenotypePool = sampleIds.map(_.asInstanceOf[String])
+      .zip(g).toMap.mapValues(a => new BiCall(a.asInstanceOf[Row].getInt(0)))
     
-    // add founder genotypes to the pool
-    founderIds.foreach { fid => 
-      allGenotypes.put(fid.asInstanceOf[IndividualID], genotypeBySampleId(fid))
-    }
-    // the construct all offsprings incrementally using updaing the map
-    // this probably can be done with fold as well
-    offspring.foreach { ot => 
-      allGenotypes.put(ot.offspringID, ot.makeGenotype(v, allGenotypes))
-    }
+    // create the output pool for this family
+    val outputPool = familySpec.produceGenotypePool(v, initialPool)
     
-    // TODO: add also offspring here
-    founderIds.map(fid => Annotation.apply(allGenotypes(fid.asInstanceOf[IndividualID]).p))
+    // convert the pool back to list in the oder of family members
+    familySpec.memberIds.map(mid => Annotation.apply(outputPool(mid.asInstanceOf[IndividualID]).p))
   }
 }
-
 
 object GenerateFamily {
   def apply(familySpec:FamilySpec) = new GenerateFamily(familySpec)  
@@ -66,15 +56,9 @@ class GenerateFamily(val familySpec: FamilySpec) {
     // and later that they have correct sex (for their roles?) 
     
     val sampleIds:IndexedSeq[Annotation] = gds.sampleIds
-    val founders = familySpec.founders 
-    //assert(gds.sampleIds.toSet.
-    val familyIDs:List[String] = familySpec.individuals
+    val familyIDs:List[String] = familySpec.memberIds
     
-    val variantBuilder = new FamilyVariantBuilder(
-        sampleIds = sampleIds, 
-        founderIds = familySpec.founders.asInstanceOf[List[Annotation]],
-        offspring = familySpec.offspring
-    )
+    val variantBuilder = new FamilyVariantBuilder(sampleIds, familySpec)
     val br_variantBuilder = gds.rdd.sparkContext.broadcast(variantBuilder)
     val familyRdd = gds.rdd.mapPartitions({it => 
         val localVariantBuilder = br_variantBuilder.value
