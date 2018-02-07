@@ -10,11 +10,13 @@ trait SparkApp extends Logging {
   Logger.getLogger("org").setLevel(Level.OFF)
   Logger.getLogger("akka").setLevel(Level.OFF)
   
-  lazy val conf = { 
+  def createConf: SparkConf =  {
       val conf = new SparkConf(!System.getProperty("sparkle.local","false").toBoolean)
         .setAppName(getClass().getSimpleName)
       if (conf.contains("spark.master")) conf else conf.setMaster(defaultMasterUrl) 
-    } 
+  } 
+  
+  lazy val conf = createConf
 
   implicit lazy val spark = {
     logDebug("Spark conf: " + conf.toDebugString)

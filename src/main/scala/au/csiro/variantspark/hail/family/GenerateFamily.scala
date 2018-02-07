@@ -67,6 +67,9 @@ class GenerateFamily(val familySpec: FamilySpec) {
         }
       },preservesPartitioning = true)
             
+    //TODO: Optimization: Filter out all base variant call (there will be may since we 
+    // we narow down the initial population
+      
     gds.copy(rdd = familyRdd.asOrderedRDD, sampleIds = familyIDs.toIndexedSeq, 
         sampleAnnotations =  Annotation.emptyIndexedSeq(familyIDs.length))
   }  
