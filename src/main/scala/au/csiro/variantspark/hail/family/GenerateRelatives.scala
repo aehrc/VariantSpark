@@ -20,78 +20,70 @@ import scala.collection.mutable.ArrayBuffer
 import au.csiro.variantspark.pedigree.FamilyTrio
 import scala.collection.mutable.HashMap
 import au.csiro.variantspark.pedigree.IndividualID
+import au.csiro.variantspark.pedigree.FamilySpec
+import au.csiro.variantspark.pedigree.OffspringTrio
 
 
-
-case class OffspringTrio(val trio: FamilyTrio, val offspring: OffspringSpec)  {
-  def offspringID = trio.id
-  def makeGenotype(position: GenomicPos, population: HashMap[IndividualID, GenotypeSpec[Int]]):GenotypeSpec[Int] = {
-    offspring.genotypeAt(position, population(trio.maternalId.get), population(trio.paternalId.get))
-  }
-}
-
-
-class FamilyVariantBuilder {
+/**
+ * @param sampleIds: list of the ids all genotypes
+ * @param founderIds: list of ids for founder samples 
+ * @param offspring: topologically sorted list of offsprings 
+ */
+class FamilyVariantBuilder(val sampleIds:IndexedSeq[Annotation], val founderIds:List[Annotation],
+      val offspring: List[OffspringTrio] ) extends Serializable {
   
-  // here assume it's sorted topologically
-  val offspring: List[OffspringTrio] = ???
-  
-  def buildVariant(v: Variant, g: Iterable[Annotation]) {
+  def buildVariant(v: Variant, g: Iterable[Annotation]):Iterable[Annotation] =  {
     
-    // wouild be nice if all that could be just done on indexes
-    
+    // TODO: OPTIMIZE: Make a version that works on indexes
     val allGenotypes =  HashMap[IndividualID, GenotypeSpec[Int]]()
+    // index all genotypes with their idss
+    val genotypeBySampleId = sampleIds.zip(g).toMap.mapValues(a => new BiCall(a.asInstanceOf[Row].getInt(0)))
     
-    // first add all funders genotypes
-    
+    // add founder genotypes to the pool
+    founderIds.foreach { fid => 
+      allGenotypes.put(fid.asInstanceOf[IndividualID], genotypeBySampleId(fid))
+    }
     // the construct all offsprings incrementally using updaing the map
     // this probably can be done with fold as well
     offspring.foreach { ot => 
       allGenotypes.put(ot.offspringID, ot.makeGenotype(v, allGenotypes))
     }
     
-    // so now the only thing left would be to order the genotypes based on the expeced output labels
-    // and the only challenge here is that indeed I need the genotype with  
+    // TODO: add also offspring here
+    founderIds.map(fid => Annotation.apply(allGenotypes(fid.asInstanceOf[IndividualID]).p))
   }
 }
 
 
 object GenerateFamily {
-  
-  def apply(offspringSpec:OffspringSpec) = new GenerateOffspring(offspringSpec)
-  
-  implicit def fromBiCallToGenotypeSpec(bc: BiCall): GenotypeSpec[Int] = IndexedBiGenotypeSpec(bc(0), bc(1))
-  implicit def fromGenotypeSpecToBiCall(gs: GenotypeSpec[Int]): BiCall =  BiCall(GTPair.apply(gs(0), gs(1)))
-  
-  def mapOffspring(rdd: OrderedRDD[Locus, Variant, (Any, Iterable[Annotation])],
-      offspringSpec:OffspringSpec):RDD[(Variant, (Any, Iterable[Annotation]))] = {
-    
-    rdd.mapPartitions(x => x.map { case (v, (a, g)) =>  
-      val parentGenotypes = g.toArray
-      val motherGenotype = new BiCall(parentGenotypes(0).asInstanceOf[Row].getInt(0))
-      val fatherGenotype = new BiCall(parentGenotypes(1).asInstanceOf[Row].getInt(0))
-      val offspringGenotype:BiCall =  offspringSpec.genotypeAt(v, motherGenotype, fatherGenotype)
-      val offspringAndParent = Annotation.apply(offspringGenotype.p) :: parentGenotypes.toList
-      (v, (a,  offspringAndParent)) }, 
-    preservesPartitioning = true)  
-  }
+  def apply(familySpec:FamilySpec) = new GenerateFamily(familySpec)  
 }
 
-class GenerateFamily(val offspringSpec:OffspringSpec) {
+class GenerateFamily(val familySpec: FamilySpec) {
   
   def apply(gds:GenericDataset): GenericDataset =  {
+    // Check if all the founders  are avaliable in the family 
+    // and later that they have correct sex (for their roles?) 
     
-    /**
-     * I need some notion of the entire family specification
-     * Technically this couild be someting like a graf of family trios
-     * Maybe a graf then (with keyed labels)
-     */
+    val sampleIds:IndexedSeq[Annotation] = gds.sampleIds
+    val founders = familySpec.founders 
+    //assert(gds.sampleIds.toSet.
+    val familyIDs:List[String] = familySpec.individuals
     
-    // later on we can probably add all in the form of annotations
-    val sampleIds:List[String] = gds.sampleIds.toList.asInstanceOf[List[String]]
-    val newIDS = "dsdsdsds" ::  sampleIds
-    val transRdd = GenerateFamily.mapOffspring(gds.rdd, offspringSpec)
-    gds.copy(rdd = transRdd.asOrderedRDD, sampleIds = newIDS.toIndexedSeq, 
-        sampleAnnotations =  Annotation.emptyIndexedSeq(newIDS.length))
+    val variantBuilder = new FamilyVariantBuilder(
+        sampleIds = sampleIds, 
+        founderIds = familySpec.founders.asInstanceOf[List[Annotation]],
+        offspring = familySpec.offspring
+    )
+    val br_variantBuilder = gds.rdd.sparkContext.broadcast(variantBuilder)
+    val familyRdd = gds.rdd.mapPartitions({it => 
+        val localVariantBuilder = br_variantBuilder.value
+        it.map { case (v, (a, g)) => 
+          (v, (a, localVariantBuilder.buildVariant(v, g)))
+        }
+      },preservesPartitioning = true)
+            
+    gds.copy(rdd = familyRdd.asOrderedRDD, sampleIds = familyIDs.toIndexedSeq, 
+        sampleAnnotations =  Annotation.emptyIndexedSeq(familyIDs.length))
   }  
 }
