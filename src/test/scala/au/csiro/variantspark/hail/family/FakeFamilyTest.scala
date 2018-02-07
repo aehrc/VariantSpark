@@ -26,8 +26,8 @@ import au.csiro.variantspark.hail.variant.phased.BiCall
 import au.csiro.variantspark.pedigree.OffspringSpec
 import au.csiro.variantspark.pedigree.HomozigoteSpec
 import au.csiro.variantspark.pedigree.MeiosisSpec
-import au.csiro.variantspark.pedigree.ReferenceContigSet
 import au.csiro.variantspark.pedigree.SimpleHomozigotSpecFactory
+import au.csiro.variantspark.pedigree.ReferenceContigSet
 
 
 object FakeFamily {
@@ -86,7 +86,7 @@ class FakeFamilyTest extends SparkTest {
 //        fatherZigote = HomozigoteSpec(Map("22" -> MeiosisSpec(Array(17796925L))))
 //    )
     
-    val hsf = SimpleHomozigotSpecFactory(ReferenceContigSet)
+    val hsf = SimpleHomozigotSpecFactory(ReferenceContigSet.b37)
     val offspringSpec = OffspringSpec.create(hsf)
     println("Offspring spec: " + offspringSpec)
     val offsrings = parents.generateOffspring(offspringSpec)

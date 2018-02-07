@@ -1,5 +1,9 @@
 package au.csiro.variantspark.pedigree
 
+import java.io.InputStream
+import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
+import scala.io.Source
+
 /**
 ##contig=<ID=1,length=249250621,assembly=b37>
 ##contig=<ID=2,length=243199373,assembly=b37>
@@ -28,10 +32,38 @@ package au.csiro.variantspark.pedigree
 **/
 
 case class ContigSpec(val id:String, val length:Long, val assembly:Option[String] = None) 
-case class ContigSet(contigs: Seq[ContigSpec])
 
-object ReferenceContigSet extends ContigSet(List(
-    ContigSpec("1", 249250621L),
-    ContigSpec("22", 51304566)
-))
+object ContigSpec {
+  private val contigHeader = raw"##contig=<ID=(\w+),length=(\d+),assembly=(\w+)>".r
+  
+  def parseVcfHeaderLine(headerLine:String):ContigSpec =  {
+    headerLine match {
+      case contigHeader(contig, length, assembly) => ContigSpec(contig, length.toLong, Some(assembly))
+    }
+  }
+}
+
+case class ContigSet(val contigs: Seq[ContigSpec])
+
+object ContigSet {
+  
+  def fromResource(resourcePath:String): ContigSet = {
+    fromVcfHeader(getClass.getClassLoader.getResourceAsStream(resourcePath))
+  }
+  
+  def fromVcfHeader(input: =>InputStream): ContigSet = {   
+    val contigs = LoanUtils.withCloseable(input) { is =>
+      Source.fromInputStream(is).getLines()
+        .filter(_.startsWith("##contig="))
+        .map(ContigSpec.parseVcfHeaderLine).toList
+    }
+    ContigSet(contigs)
+  }
+}
+
+object ReferenceContigSet {
+  val b37  = ContigSet.fromResource("ref-contigs/b37.vcf")
+}
+
+
 
