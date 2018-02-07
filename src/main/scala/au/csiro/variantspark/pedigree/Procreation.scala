@@ -79,12 +79,6 @@ object OffspringSpec {
   )
 }
 
-case class SimpleGameteSpecFactory(val contigSet:ContigSet) extends GameteSpecFactory {
-  def createHomozigoteSpec(): GameteSpec = {
-    //TODO: Use a different seeded generator
-    GameteSpec(contigSet.contigs.map(cs => (cs.id, MeiosisSpec(List((cs.length * Math.random()).toLong)))).toMap)  }
-}
-
 
 
 

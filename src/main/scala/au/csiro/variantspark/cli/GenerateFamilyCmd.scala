@@ -19,7 +19,7 @@ import au.csiro.variantspark.pedigree.ReferenceContigSet
 import is.hail.HailContext
 import au.csiro.variantspark.hail.family.GenerateFamily
 import au.csiro.variantspark.pedigree.FamilySpec
-import au.csiro.variantspark.pedigree.SimpleGameteSpecFactory
+import au.csiro.variantspark.pedigree.impl.SimpleGameteSpecFactory
 import au.csiro.variantspark.pedigree.PedigreeTree
 import au.csiro.variantspark.hail._
 
