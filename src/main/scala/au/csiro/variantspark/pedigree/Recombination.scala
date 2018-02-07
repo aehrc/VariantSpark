@@ -44,7 +44,7 @@ case class MeiosisSpec(crossingOvers:List[Long]) {
  * Full specification a homozigote recombination patterns.
  * This can be now used to create the parental homozigore from the actual chromosome information
  */
-case class HomozigoteSpec(val splits:Map[ContigID, MeiosisSpec])  {
+case class GameteSpec(val splits:Map[ContigID, MeiosisSpec])  {
   
   def homozigoteAt[A](position: GenomicPos, genotype: GenotypeSpec[A]):A = {
     // depending on the recombination pattersn return the allele from either the first 
@@ -58,32 +58,31 @@ case class HomozigoteSpec(val splits:Map[ContigID, MeiosisSpec])  {
   }
 }
 
-trait HomozigotSpecFactory {
+trait GameteSpecFactory {
   //TODO: Add gender distintion
-  def createHomozigoteSpec():HomozigoteSpec
+  def createHomozigoteSpec():GameteSpec
 }
 
 
-case class OffspringSpec(val motherZigote: HomozigoteSpec, val fatherZigote: HomozigoteSpec) {
+case class OffspringSpec(val fatherGamete: GameteSpec, val motherGamete: GameteSpec) {
   
-  def genotypeAt[A](position:GenomicPos, motherGenotype:GenotypeSpec[A], fatherGenotype:GenotypeSpec[A]):GenotypeSpec[A] = {
-    motherGenotype.buildNew(motherZigote.homozigoteAt(position, motherGenotype), 
-        fatherZigote.homozigoteAt(position, fatherGenotype))
+  def genotypeAt[A](position:GenomicPos, fatherGenotype:GenotypeSpec[A], motherGenotype:GenotypeSpec[A]):GenotypeSpec[A] = {
+    motherGenotype.buildNew(motherGamete.homozigoteAt(position, motherGenotype), 
+        fatherGamete.homozigoteAt(position, fatherGenotype))
   }
 }
 
 object OffspringSpec {  
-  def create(hsf: HomozigotSpecFactory)  = OffspringSpec(
-      motherZigote = hsf.createHomozigoteSpec(), 
-      fatherZigote = hsf.createHomozigoteSpec()
+  def create(hsf: GameteSpecFactory)  = OffspringSpec(
+      motherGamete = hsf.createHomozigoteSpec(), 
+      fatherGamete = hsf.createHomozigoteSpec()
   )
 }
 
-
-case class SimpleHomozigotSpecFactory(val contigSet:ContigSet) extends HomozigotSpecFactory {
-  def createHomozigoteSpec(): HomozigoteSpec = {
+case class SimpleGameteSpecFactory(val contigSet:ContigSet) extends GameteSpecFactory {
+  def createHomozigoteSpec(): GameteSpec = {
     //TODO: Use a different seeded generator
-    HomozigoteSpec(contigSet.contigs.map(cs => (cs.id, MeiosisSpec(List((cs.length * Math.random()).toLong)))).toMap)  }
+    GameteSpec(contigSet.contigs.map(cs => (cs.id, MeiosisSpec(List((cs.length * Math.random()).toLong)))).toMap)  }
 }
 
 

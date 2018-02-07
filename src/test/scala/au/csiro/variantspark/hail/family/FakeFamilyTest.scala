@@ -24,9 +24,9 @@ import au.csiro.variantspark.hail.variant.io.ExportVCFEx
 import org.apache.spark.sql.Row
 import au.csiro.variantspark.hail.variant.phased.BiCall
 import au.csiro.variantspark.pedigree.OffspringSpec
-import au.csiro.variantspark.pedigree.HomozigoteSpec
+import au.csiro.variantspark.pedigree.GameteSpec
 import au.csiro.variantspark.pedigree.MeiosisSpec
-import au.csiro.variantspark.pedigree.SimpleHomozigotSpecFactory
+import au.csiro.variantspark.pedigree.SimpleGameteSpecFactory
 import au.csiro.variantspark.pedigree.ReferenceContigSet
 
 
@@ -71,26 +71,4 @@ class FakeFamilyTest extends SparkTest {
     vcf.exportVCFEx("target/genericPhasedO.vcf")
    }
    
-
-  @Test
-  def testProduceOffspring() {
-    val hc = HailContext(sc)
-    val vcf = hc.importVCFGenericEx("data/chr22_1000.vcf")
-    println(" globalSignature: "  + vcf.globalSignature)
-    println(vcf.count())
-    val parents:GenericDataset = vcf.filterSamplesList(Set("HG00096",	"HG00097"))
-    print(parents.count())
-    
-//    val offspringSpec = OffspringSpec(
-//        motherZigote = HomozigoteSpec(Map("22" -> MeiosisSpec(Array(17680651L)))),
-//        fatherZigote = HomozigoteSpec(Map("22" -> MeiosisSpec(Array(17796925L))))
-//    )
-    
-    val hsf = SimpleHomozigotSpecFactory(ReferenceContigSet.b37)
-    val offspringSpec = OffspringSpec.create(hsf)
-    println("Offspring spec: " + offspringSpec)
-    val offsrings = parents.generateOffspring(offspringSpec)
-    offsrings.exportVCFEx("target/phasedOffspring.vcf")
-  }
-
 }

@@ -11,7 +11,7 @@ case class Founder(val id:IndividualID) extends FamilyMember
 case class Offspring(val trio: FamilyTrio, val offspring: OffspringSpec) extends FamilyMember {
   def id =  trio.id
   def makeGenotype(position: GenomicPos, pool: GenotypePool):GenotypeSpec[Int] = {
-    offspring.genotypeAt(position, pool(trio.maternalId.get), pool(trio.paternalId.get))
+    offspring.genotypeAt(position, pool(trio.paternalId.get), pool(trio.maternalId.get))
   }  
 }
 
@@ -40,7 +40,7 @@ object FamilySpec {
    * Constuct Family spec from a Pedgree Tree and some form of Offspring Producer
    */
   
-  def apply(pedigreeTree: PedigreeTree, gameteFactory: HomozigotSpecFactory):FamilySpec = {
+  def apply(pedigreeTree: PedigreeTree, gameteFactory: GameteSpecFactory):FamilySpec = {
     // get the trios in topological order and map them to FamilyMembers
     val familyMembers:Seq[FamilyMember] = pedigreeTree.orderedTrios.map{ trio =>
       if (trio.isFullOffspring) Offspring(trio, OffspringSpec.create(gameteFactory))
