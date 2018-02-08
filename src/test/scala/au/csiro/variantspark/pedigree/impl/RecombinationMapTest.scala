@@ -19,7 +19,7 @@ class RecombinationMapTest {
    
     implicit val formats = Serialization.formats(NoTypeHints)
 
-    for (i <- 0 to 10) {    
+    for (i <- 0 until 10) {    
       val gameteSpec = HapMapGameteSpecFactory(rm).createHomozigoteSpec()
       val ser = write(gameteSpec)
       println(ser)

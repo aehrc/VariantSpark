@@ -12,6 +12,7 @@ import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.Buffer
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.ListBuffer
 
 /**
  * Create crossing over points based on the provided recombination frequency 
@@ -33,8 +34,17 @@ case class ContigRecombinationMap(val bins:Array[Long], val recombFreq:Array[Dou
    * Draw splits from this distribution
    */
   def drawSplits(rng:XorShift1024StarRandomGenerator):List[Long] = {
-    val temp = p.toStream.zip(Stream.continually(rng.nextDouble())).zipWithIndex
-    temp.filter({ case ((p,r),i) => r <= p*(bins(i+1) -bins(i))}).map(_._2.toLong).toList
+    
+    // mutable version for better performance
+    val result = ListBuffer[Long]()
+    for (i <- 0 until p.length) {
+      if ( p(i)*(bins(i+1)-bins(i)) >= rng.nextDouble()) {
+        result+= splitFromBin(i, rng)
+      }
+    }
+    result.toList
+    //val temp = p.toStream.zip(Stream.continually(rng.nextDouble())).zipWithIndex
+    //temp.filter({ case ((p,r),i) => r <= p*(bins(i+1) -bins(i))}).map(_._2.toLong).toList
   }
   
   /**
