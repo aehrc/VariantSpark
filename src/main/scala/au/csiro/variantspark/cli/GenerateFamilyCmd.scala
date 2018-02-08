@@ -14,6 +14,7 @@ import au.csiro.sparkle.common.args4j.ArgsApp
 import au.csiro.pbdava.ssparkle.spark.SparkApp
 import au.csiro.variantspark.cmd.EchoUtils._
 import au.csiro.variantspark.cmd.Echoable
+import au.csiro.variantspark.utils.defRng
 
 import au.csiro.variantspark.pedigree.ReferenceContigSet
 import is.hail.HailContext
@@ -37,6 +38,12 @@ class GenerateFamilyCmd extends ArgsApp with SparkApp with Logging with TestArgs
 
   @Option(name="-pf", required=true, usage="Path to pedigree file", aliases=Array("--ped-file"))
   val pedFile:String = null
+
+  @Option(name="-bf", required=true, usage="Path bed file with recombination map", aliases=Array("--bed-file"))
+  val bedFile:String = null
+  
+  @Option(name="-sr", required=false, usage="Random seed to use (def=<random>)", aliases=Array("--seed"))
+  val randomSeed: Long = defRng.nextLong
   
   @Override
   def testArgs = Array("-if", "data/hipsterIndex/hipster.vcf.bgz", 
