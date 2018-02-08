@@ -116,6 +116,12 @@
 		    <artifactId>graph-core_2.11</artifactId>
 		    <version>1.12.3</version>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.json4s/json4s-native -->
+		<dependency>
+		    <groupId>org.json4s</groupId>
+		    <artifactId>json4s-native_2.11</artifactId>
+		    <version>3.5.3</version>
+		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
