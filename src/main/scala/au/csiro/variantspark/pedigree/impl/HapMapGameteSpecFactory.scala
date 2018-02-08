@@ -27,25 +27,30 @@ import scala.collection.mutable.ArrayBuffer
  */
 case class ContigRecombinationMap(val bins:Array[Long], val recombFreq:Array[Double]) {
   assert(bins.length == recombFreq.length + 1)
-  val p = recombFreq.map(rf => rf/1e-8).toArray
+  val p = recombFreq.map(rf => rf*1e-8).toArray
   
   /**
    * Draw splits from this distribution
    */
   def drawSplits(rng:XorShift1024StarRandomGenerator):List[Long] = {
-    val temp = p.toStream.zip(Stream.fill(p.length)(rng.nextDouble())).zipWithIndex
-    temp.filter({ case ((p,r),_) => r <= p}).map(_._2.toLong).toList
+    val temp = p.toStream.zip(Stream.continually(rng.nextDouble())).zipWithIndex
+    temp.filter({ case ((p,r),i) => r <= p*(bins(i+1) -bins(i))}).map(_._2.toLong).toList
   }
   
   /**
    * Draw a random positon from the bin
    */
   private def splitFromBin(binIndex: Int, rng:XorShift1024StarRandomGenerator):Long =  {
-    bins(binIndex) + rng.nextLong(bins(binIndex + 1) - bins(binIndex))
+    bins(binIndex) + (bins(binIndex + 1) - bins(binIndex))/2
   }
 }
 
-case class RecombinationMap(val contigMap: Map[ContigID, ContigRecombinationMap]) 
+case class RecombinationMap(val contigMap: Map[ContigID, ContigRecombinationMap])  {
+  
+    def crossingOver(rng: XorShift1024StarRandomGenerator):Map[ContigID, MeiosisSpec] = {
+      contigMap.mapValues(cm => MeiosisSpec(cm.drawSplits(rng)))
+    }
+}
 
 object RecombinationMap {
   /**
@@ -80,6 +85,6 @@ object RecombinationMap {
 case class HapMapGameteSpecFactory(map: RecombinationMap, seed: Long = defRng.nextLong) extends GameteSpecFactory {
   def createHomozigoteSpec(): GameteSpec = {
     val rng = new XorShift1024StarRandomGenerator(seed)
-    GameteSpec(map.contigMap.mapValues(cm => MeiosisSpec(cm.drawSplits(rng))))
+    GameteSpec(map.crossingOver(rng))
   }
 }
