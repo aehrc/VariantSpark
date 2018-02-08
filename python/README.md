@@ -54,6 +54,12 @@ Using `spark-submit`:
 
     spark-submit --jars `varspark-jar` examples/hipster_index.py
 
+**NOTE:** You must upload the sample files to your cluster to run these examples.  
+You may need to edit the path to these files in the JOB definition file, depending on your upload location.   
+
+  -- JOB definition file - **`hipster_index.py`** (in the `/VariantSpark/python/examples` directory)  
+  -- DATA files - **`chr22_1000.vcf`** and **`chr22-labels.csv`**  (in the `/VariantSpark/data/` directory)
+
 ## Dev Install
 
 Install **variant-spark** for development using:

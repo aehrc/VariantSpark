@@ -1,19 +1,20 @@
 // Databricks notebook source
 // MAGIC %md
-// MAGIC ![VariantSpark](https://s3.us-east-2.amazonaws.com/csiro-graphics/variant-spark.png)  
-// MAGIC * [**VariantSpark**](http://bioinformatics.csiro.au/variantspark) is a machine learning library for real-time genomic data analysis (for thousands of samples and millions of variants) and is...  
-// MAGIC   * Built on top of Apache Spark
-// MAGIC   * Written in Scala
-// MAGIC   * Authored by the team at [CSIRO Bioinformatics](http://bioinformatics.csiro.au/) in Australia
-// MAGIC   * Uses a custom machine learning **random forest** implementation to find the most *important* variants attributing to a phenotype of interest   
-// MAGIC * This demo...  
-// MAGIC   * Includes a dataset with a subset of the samples and variants (in VCF format) from the 1000 Genomes Project  
-// MAGIC   * Uses a synthetic phenotype called *HipsterIndex* (in CSV format) factoring various real phenotypes (monobrow, beard, etc.)
+// MAGIC ## About the [**VariantSpark**](http://bioinformatics.csiro.au/variantspark) Demo
+// MAGIC * A custom machine learning library for real-time genomic data analysis 
+// MAGIC   * Works with thousands of samples and **millions** of variants 
+// MAGIC   * Implements a custom **random forest** algorithm built on Apache Spark
+// MAGIC   * Authored in Scala by the team at [CSIRO Bioinformatics](http://bioinformatics.csiro.au/) Australia
+// MAGIC   
+// MAGIC * Finds the most *important* variants attributing to a phenotype of interest 
+// MAGIC   * Uses a synthetic phenotype called *HipsterIndex* 
+// MAGIC   * Includes a dataset with a subset of the samples and variants 
+// MAGIC   * Uses VCF format - from the 1000 Genomes Project 
 
 // COMMAND ----------
 
 // MAGIC %md
-// MAGIC ## HipsterIndex
+// MAGIC ## About the Hipster Index
 // MAGIC The synthetic HipsterIndex was created using the following genotypes and formular:
 // MAGIC 
 // MAGIC | ID |SNP ID     | chromosome | position | phenotype | reference |
@@ -27,25 +28,27 @@
 // MAGIC 
 // MAGIC   GT stands for the genotype at this location with *homozygote* reference encoded as 0, *heterozygote* as 1 and *homozygote alternative* as 2. We then label individuals with a HipsterIndex score above 10 as hipsters, and the rest non-hipsters. By doing so, we created a binary annotation for the individuals in the 1000 Genome Project.
 // MAGIC 
-// MAGIC In the rest of this notebook, we will demonstrate the usage of VariantSpark to reverse-engineer the association of the selected SNPs to the phenotype of insterest (i.e. being a hipster).
+// MAGIC In this notebook, we demonstrate the usage of VariantSpark to **reverse-engineer** the association of the selected SNPs to the phenotype of insterest (i.e. being a hipster).
 
 // COMMAND ----------
 
 // MAGIC %md
-// MAGIC ###0. SETUP -- Databricks (Spark) cluster setup steps for VariantSpark:  
+// MAGIC ###0. SETUP -- Databricks Spark cluster and VariantSpark:  
 // MAGIC 
-// MAGIC 1. **Download** VariantSpark java libraries to your computer from...   
-// MAGIC   https://academics.cloud.databricks.com/files/jars/b2f93143_eddd_4346_9184_19ff3e1c39e1-variant_spark_0_0_1_1_6_1_SNAPSHOT_all-2fadb.jar
-// MAGIC 2. **Import** the libary into your Databricks instance by...  
-// MAGIC   On the Databricks interface, navigate to `Workspace > Users > Username` and select `Import` from the Username drop-down menu.   
-// MAGIC   At the bottom of `Import Notebooks` window, click the link in `(To import a library, such as a jar or egg,click here)`.   
-// MAGIC   Upload  the .jar file using this interface, using any names you like. Make sure that the option `Attach automatically to all clusters` is checked in the success dialog.
-// MAGIC 3. **Create** a cluster by...  
-// MAGIC   Next click the `Clusters` icon on the left sidebar and then `+Create Cluster.` For `Apache Spark Version`, select `Spark 1.6.2 (Hadoop 2)`.  
-// MAGIC 4. **Attach** this notebook to your cluster by clicking on your cluster name in menu `Detached` at the top left of this workbook. 
-// MAGIC 
-// MAGIC NOTES: The VariantSpark libary works on Databricks academic or community cluster `Spark 1.6.3` running Hadoop 2 and Scala 2.10      
-// MAGIC IMPORTANT: The VariantSpark library does not yet work with `Spark 2.0`
+// MAGIC 1. **Import** the variant-spark libary into your Databricks instance by...  
+// MAGIC   - Navigate to `Workspace > Users > Username` and select `Create > Library`    
+// MAGIC   - Click on `maven coordinates` in the source list in the 'Create Library' page
+// MAGIC   - Enter `au.csiro.aehrc.variant-spark:variant-spark_2.11:0.0.2-SNAPSHOT` in the coordinate text box
+// MAGIC   - Click `advanced` and enter `https://oss.sonatype.org/content/repositories/snapshots` in repository text box
+// MAGIC   - Click the `create library` button
+// MAGIC   - Verify that the option `automatically attach to all clusters` is checked in the libraries page
+// MAGIC 2. **Create** a cluster by...  
+// MAGIC   - Click the `Clusters` icon on the left sidebar and then `Create Cluster.` 
+// MAGIC   - Enter any text, i.e `demo` into the cluster name text box
+// MAGIC   - Select the `Apache Spark Version` value `Spark 2.2.0 (scala 2.11)`  
+// MAGIC   - Click the `create cluster` button and wait for your cluster to be provisioned
+// MAGIC 3. **Attach** this notebook to your cluster by...   
+// MAGIC   - Click on your cluster name in menu `Detached` at the top left of this workbook to attach it to this workbook 
 
 // COMMAND ----------
 
@@ -70,7 +73,7 @@
 // MAGIC ###2. LOAD VARIANTS using VariantSpark     
 // MAGIC 
 // MAGIC 1. Use Scala to import the VSContext and ImportanceAnalysis objects from the VariantSpark library  
-// MAGIC 2. Create an instance of the VSContext object, passing in an instance of the Spark SQLContext object to it  
+// MAGIC 2. Create an instance of the VSContext object, passing in an instance of the Spark Context object to it  
 // MAGIC 3. Call the featureSource method on the instance of the vsContext object and pass in the path the the demo feature file  
 // MAGIC      to load the variants from the vcf file
 // MAGIC 4. Display the first 10 sample names
@@ -79,7 +82,7 @@
 
 import au.csiro.variantspark.api.VSContext
 import au.csiro.variantspark.api.ImportanceAnalysis
-implicit val vsContext = VSContext(sqlContext)
+implicit val vsContext = VSContext(spark)
 
 val featureSource = vsContext.featureSource("/vs-datasets/hipsterIndex/hipster.vcf.bz2")
 println("Names of loaded samples:")
@@ -116,14 +119,11 @@ val importanceAnalysis = ImportanceAnalysis(featureSource, labelSource, nTrees =
 // MAGIC %md
 // MAGIC ###5. RUN ANALYSIS using VariantSpark   
 // MAGIC 
-// MAGIC Unlike other statistical approaches, random forests have the advantage of not needing the data to be extensively pre-processed, so the analysis can be triggered on the loaded data directly. 
+// MAGIC Unlike other statistical approaches, random forests have the advantage of not needing the data to be extensively pre-processed, so the analysis can be triggered on the loaded data directly. The analysis will take around 4 minutes on a Databricks community (one node) cluster.  
 // MAGIC 
-// MAGIC 1. Use Scala to call the variableImportance method on the instance of the ImportanceAnalysis object  
-// MAGIC     to calcuate the variant importance attributing to the phenotype
+// MAGIC 1. Use Scala to call the `variableImportance` method on the instance of the `ImportanceAnalysis` object to calcuate the variant importance attributing to the phenotype
 // MAGIC 2. Cache the analysis results into a SparkSQL table  
 // MAGIC 3. Display the tabular results    
-// MAGIC *Note: The next section runs a large number of Spark jobs, up to 1409 jobs and takes 4 minutes to run on the DataBricks community edition.   
-// MAGIC It took 4 minutes and ran 944 jobs on the academic cluster.* 
 
 // COMMAND ----------
 
@@ -144,18 +144,36 @@ display(variableImportance)
 // COMMAND ----------
 
 // MAGIC %md
-// MAGIC ###6. VISUALIZE ANALYSIS using Python  
+// MAGIC ###6a. VISUALIZE ANALYSIS using SparkSQL
+// MAGIC 1. Query the SparkSQL table to display the top 25 results in descending order 
+// MAGIC 2. Plot the results into a bar chart using the visualization feature in Databricks
 // MAGIC 
-// MAGIC 1. Query the SparkSQL table to display the top 100 results in descending order 
+// MAGIC *Note: the Hipster-Index is constructed from 4 SNPs so we expect the importance to be limited to these SNPs and the ones on [linkage disequilibrium (LD)](https://en.wikipedia.org/wiki/Linkage_disequilibrium) with them.* 
+
+// COMMAND ----------
+
+// MAGIC %sql
+// MAGIC select * from importance order by importance desc limit 25
+
+// COMMAND ----------
+
+// MAGIC %md
+// MAGIC ###6b. VISUALIZE ANALYSIS using Python  
+// MAGIC 
+// MAGIC 1. Query the SparkSQL table to display the top 25 results in descending order 
 // MAGIC 2. Plot the results into a line chart using the visualization feature in the python libraries
 
 // COMMAND ----------
 
 // MAGIC %python
 // MAGIC import matplotlib.pyplot as plt
-// MAGIC importance = sqlContext.sql("select * from importance order by importance desc limit 100")
+// MAGIC importance = sqlContext.sql("select * from importance order by importance desc limit 25")
 // MAGIC importanceDF = importance.toPandas()
-// MAGIC importanceDF.plot()
+// MAGIC ax = importanceDF.plot(x="variable", y="importance",lw=3,colormap='Reds_r',title='Importance in Descending Order', fontsize=9)
+// MAGIC ax.set_xlabel("variable")
+// MAGIC ax.set_ylabel("importance")
+// MAGIC plt.xticks(rotation=12)
+// MAGIC plt.grid(True)
 // MAGIC plt.show()
 // MAGIC display()
 
@@ -170,7 +188,8 @@ display(variableImportance)
 // COMMAND ----------
 
 // MAGIC %r
-// MAGIC importance_df_full  = collect(sql(sqlContext,'SELECT * FROM importance ORDER BY importance DESC'))
+// MAGIC library(SparkR)
+// MAGIC importance_df_full  = collect(sql('SELECT * FROM importance ORDER BY importance DESC'))
 // MAGIC head(importance_df_full)
 
 // COMMAND ----------
@@ -186,7 +205,7 @@ display(variableImportance)
 
 // MAGIC %r
 // MAGIC library(ggplot2)
-// MAGIC importance_df  = collect(sql(sqlContext,'SELECT * FROM importance ORDER BY importance DESC limit 25'))
+// MAGIC importance_df  = collect(sql('SELECT * FROM importance ORDER BY importance DESC limit 20'))
 // MAGIC ggplot(importance_df, aes(x=variable, y=importance)) + geom_bar(stat='identity') + scale_x_discrete(limits=importance_df[order(importance_df$importance), "variable"]) + coord_flip()
 
 // COMMAND ----------
@@ -195,7 +214,7 @@ display(variableImportance)
 // MAGIC ##Results interpretation
 // MAGIC The plot above shows that VariantSpark has recovered the correct genotypes of this multivariate phenotype with interacting features (multiplicative and additive effects). 
 // MAGIC 
-// MAGIC ![Hipster-Index](https://s3.us-east-2.amazonaws.com/csiro-graphics/HistperSignatureGraphic-01.png)
+// MAGIC ![Hipster-Index](https://s3.us-east-2.amazonaws.com/csiro-graphics/HipsterSignatureGraphic-new.png)
 // MAGIC 
 // MAGIC 1. __chr2_223034082__ (rs2218065) encoding for monobrow is the most important feature 
 // MAGIC 2. a group of SNPs encoding for the MEGF10 gene (__chr5_126626044__), which is involved in Retina horizontal cell formation   
@@ -252,7 +271,7 @@ display(hailDF)
 // COMMAND ----------
 
 // MAGIC %r
-// MAGIC hail_pvals <- read.df(sqlContext, "/vs-datasets/hipsterIndex/hail_pvals.csv", source="csv", header="true", inferSchema="true")
+// MAGIC hail_pvals <- read.df("/vs-datasets/hipsterIndex/hail_pvals.csv", source="csv", header="true", inferSchema="true")
 // MAGIC hail_pvals <- as.data.frame(hail_pvals)
 // MAGIC 
 // MAGIC hail_df <- aggregate(hail_pvals$pvals, by=list(hail_pvals$snp), min)
@@ -261,7 +280,7 @@ display(hailDF)
 // COMMAND ----------
 
 // MAGIC %r
-// MAGIC importance_df_full  = collect(sql(sqlContext,'SELECT * FROM importance ORDER BY importance DESC'))
+// MAGIC importance_df_full  = collect(sql('SELECT * FROM importance ORDER BY importance DESC'))
 // MAGIC importance_df_agg <- aggregate(importance_df_full$importance, by=list(importance_df_full$variable), max)
 // MAGIC rownames(importance_df_agg) <- as.vector(importance_df_agg$Group.1)
 // MAGIC importance_df_agg$hail_pv <- hail_df[as.vector(importance_df_agg$Group.1), "x"]
@@ -280,11 +299,13 @@ display(hailDF)
 // COMMAND ----------
 
 // MAGIC %md
-// MAGIC While HAIL identified the correct variables their order is not consistent with their weight in the formular. More generally, HAIL has identified a large number of variables as associated with the label that VariantSpark scores with a low Importance socre. Utilizing VariantSpark random forests allows us to reduce the noise and extract the signal with the correct ordering. 
+// MAGIC ###Summary
+// MAGIC While HAIL identified the correct variables their order is not consistent with their weight in the formular. More generally, HAIL has identified a large number of variables as associated with the label that VariantSpark scores with a low Importance score. Utilizing VariantSpark random forests allows us to reduce the noise and extract the signal with the correct ordering. 
 
 // COMMAND ----------
 
 // MAGIC %md
 // MAGIC ###Credit
 // MAGIC 
+// MAGIC ![VariantSpark](https://s3.us-east-2.amazonaws.com/csiro-graphics/variant-spark.png)  
 // MAGIC Transformational Bioinformatics team has developed VariantSpark and put together this illustrative example. Thank you to Lynn Langit for input on the presentation of this notebook. 
