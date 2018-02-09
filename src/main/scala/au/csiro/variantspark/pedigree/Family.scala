@@ -4,20 +4,32 @@ import scala.collection.mutable.HashMap
 import scala.io.Source
 import org.json4s._
 import org.json4s.jackson.Serialization
-import org.json4s.jackson.Serialization.{read, write}
+import org.json4s.jackson.Serialization.{read, write, writePretty}
 import java.io.Writer
+import au.csiro.variantspark.pedigree.Gender._
 
 
 trait FamilyMember extends Serializable {
   def id: IndividualID
+  def gender: Gender
 }
 
-case class Founder(val id:IndividualID) extends FamilyMember 
+case class Founder(val id:IndividualID, val gender:Gender) extends FamilyMember {
+  def this(trio: FamilyTrio) {
+    this(trio.id, trio.gender)
+    assert(trio.isFounder)
+  }
+}
 
-case class Offspring(val trio: FamilyTrio, val offspring: OffspringSpec) extends FamilyMember {
-  def id =  trio.id
+case class Offspring(val id:IndividualID, val gender:Gender, val paternalId:IndividualID, maternalId:IndividualID, 
+          val offspring: OffspringSpec) extends FamilyMember {
+  
+  def this(trio: FamilyTrio, offspring: OffspringSpec) {
+    this(trio.id, trio.gender, trio.paternalId.get, trio.maternalId.get, offspring)
+    assert(trio.isFullOffspring)
+  }
   def makeGenotype(position: GenomicPos, pool: GenotypePool):GenotypeSpec[Int] = {
-    offspring.genotypeAt(position, pool(trio.paternalId.get), pool(trio.maternalId.get))
+    offspring.genotypeAt(position, pool(paternalId), pool(maternalId))
   }  
 }
 
@@ -42,7 +54,7 @@ class FamilySpec(val members:Seq[FamilyMember]) extends Serializable {
   def toJson(w:Writer)  {
     implicit val formats = Serialization.formats(ShortTypeHints(List(classOf[Founder], 
         classOf[Offspring]))) + new org.json4s.ext.EnumNameSerializer(Gender)
-    w.append(write(this))
+    w.append(writePretty(this))
   }
 }
 
@@ -58,8 +70,8 @@ object FamilySpec {
   def apply(pedigreeTree: PedigreeTree, gameteFactory: GameteSpecFactory):FamilySpec = {
     // get the trios in topological order and map them to FamilyMembers
     val familyMembers:Seq[FamilyMember] = pedigreeTree.orderedTrios.map{ trio =>
-      if (trio.isFullOffspring) Offspring(trio, OffspringSpec.create(gameteFactory))
-      else if (trio.isFounder) Founder(trio.id)
+      if (trio.isFullOffspring) new Offspring(trio, OffspringSpec.create(gameteFactory))
+      else if (trio.isFounder) new Founder(trio)
       else throw new IllegalArgumentException("PedigreeTree contatins incomplete trios")
     }
     new FamilySpec(familyMembers)
