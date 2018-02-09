@@ -45,22 +45,27 @@ class GenerateFamilyCmd extends ArgsApp with SparkApp with Logging with TestArgs
   
   @Option(name="-sr", required=false, usage="Random seed to use (def=<random>)", aliases=Array("--seed"))
   val randomSeed: Long = defRng.nextLong
+
+  @Option(name="-mp", required=false, usage="Min partition to use for input dataset(default=spark.default.pararellism)"
+      , aliases=Array("--min-partitions"))
+  val minPartitions: Int = -1
   
   @Override
   def testArgs = Array("-if", "data/hipsterIndex/hipster.vcf.bgz", 
-      "-of", "target/g1k_ceu_family_15_2.vcf",
+      "-of", "target/g1k_ceu_family_15_2.vcf.bgz",
       "-pf", "data/relatedness/g1k_ceu_family_15_2.ped", 
       "-bf", "data/relatedness/genetic_map_GRCh37_1Mb.bed.gz",
-      "-sr", "13"
+      "-sr", "13",
+      "-mp", "4"
       )      
   
   @Override
   def run():Unit = {
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
     val hc = HailContext(sc)
-    val minPartitions = sc.defaultParallelism * 2
-    echo(s"Loadig vcf from ${inputFile} with ${minPartitions} partitions")
-    val gds = hc.importVCFGenericEx(inputFile, nPartitions = Some(minPartitions))
+    val actualMinPartitions = if (minPartitions > 0) minPartitions else  sc.defaultParallelism 
+    echo(s"Loadig vcf from ${inputFile} with ${actualMinPartitions} partitions")
+    val gds = hc.importVCFGenericEx(inputFile, nPartitions = Some(actualMinPartitions))
     echo(s"Loading pedigree from: ${pedFile}")     
     val tree = PedigreeTree.loadPed(pedFile)
     

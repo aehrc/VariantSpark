@@ -31,17 +31,25 @@ import au.csiro.variantspark.pedigree.GenotypePool
  */
 class FamilyVariantBuilder(val sampleIds:IndexedSeq[Annotation], val familySpec: FamilySpec) extends Serializable {
   
-  def buildVariant(v: Variant, g: Iterable[Annotation]):Iterable[Annotation] =  {
+  def buildVariant(v: Variant, g: Iterable[Annotation]):Option[Iterable[Annotation]] =  {
     
     // construct the initial pool from genotype samples
     val initialPool:GenotypePool = sampleIds.map(_.asInstanceOf[String])
       .zip(g).toMap.mapValues(a => new BiCall(a.asInstanceOf[Row].getInt(0)))
-    
-    // create the output pool for this family
+
+    // filter out positions with no variants in initial pool
+    // TODO: Optmization: Do this before computing the genotypes
     val outputPool = familySpec.produceGenotypePool(v, initialPool)
+    val hasNoVariants = outputPool.values.forall(gs => gs(0) == 0 && gs(1) == 0) 
     
-    // convert the pool back to list in the oder of family members
-    familySpec.memberIds.map(mid => Annotation.apply(outputPool(mid.asInstanceOf[IndividualID]).p))
+    if (hasNoVariants) {
+      None
+    } else {
+      // create the output pool for this family
+      // convert the pool back to list in the oder of family members
+      Some(familySpec.memberIds.map(mid => Annotation.apply(outputPool(mid.asInstanceOf[IndividualID]).p)))
+    }
+    
   }
 }
 
@@ -62,8 +70,8 @@ class GenerateFamily(val familySpec: FamilySpec) {
     val br_variantBuilder = gds.rdd.sparkContext.broadcast(variantBuilder)
     val familyRdd = gds.rdd.mapPartitions({it => 
         val localVariantBuilder = br_variantBuilder.value
-        it.map { case (v, (a, g)) => 
-          (v, (a, localVariantBuilder.buildVariant(v, g)))
+        it.flatMap { case (v, (a, g)) => 
+          localVariantBuilder.buildVariant(v, g).map(i => (v, (a, i))) 
         }
       },preservesPartitioning = true)
             
