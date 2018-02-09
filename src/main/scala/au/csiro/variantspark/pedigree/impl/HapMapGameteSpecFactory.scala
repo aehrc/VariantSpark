@@ -56,10 +56,11 @@ case class ContigRecombinationMap(val bins:Array[Long], val recombFreq:Array[Dou
 }
 
 case class RecombinationMap(val contigMap: Map[ContigID, ContigRecombinationMap])  {
-  
-    def crossingOver(rng: XorShift1024StarRandomGenerator):Map[ContigID, MeiosisSpec] = {
-      contigMap.mapValues(cm => MeiosisSpec(cm.drawSplits(rng)))
-    }
+   assert(contigMap.isInstanceOf[Serializable])
+ 
+  def crossingOver(rng: XorShift1024StarRandomGenerator):Map[ContigID, MeiosisSpec] = {
+    contigMap.mapValues(cm => MeiosisSpec(cm.drawSplits(rng)))
+  }
 }
 
 object RecombinationMap {
@@ -71,9 +72,13 @@ object RecombinationMap {
    */
   
   def fromSource(source:Source): RecombinationMap = {
+
+    // TODO: Maybe use map builder here or when making a copy
     val mutableContigMap = new HashMap[String, (Buffer[Long], Buffer[Double])]()
     source.getLines().foreach { line => line.split("\t") match {
-        case Array(contig, start, end, rr, pos) => 
+        //TODO: change to use regex
+        case Array(chr, start, end, rr, pos) => 
+          val contig = chr.substring(3)
           val (bins, rates) = mutableContigMap.getOrElseUpdate(contig, (new ArrayBuffer[Long](), new ArrayBuffer[Double]()))
           if (bins.isEmpty) {
             bins+=start.toLong
@@ -83,8 +88,10 @@ object RecombinationMap {
         case _ => throw new RuntimeException("Illegal line in bed file")
       }
     }
-    RecombinationMap(mutableContigMap.toMap
-      .mapValues(binsAndRates => ContigRecombinationMap(binsAndRates._1.toArray, binsAndRates._2.toArray)))     
+    val mapLike = mutableContigMap
+      .mapValues(binsAndRates => ContigRecombinationMap(binsAndRates._1.toArray, binsAndRates._2.toArray))
+    // make a copy to  create a serializable Map
+    RecombinationMap(Map(mapLike.toArray: _*))
   }
   
   def fromBedFile(pathToBedFile: String): RecombinationMap = {
@@ -93,8 +100,17 @@ object RecombinationMap {
 }
 
 case class HapMapGameteSpecFactory(map: RecombinationMap, seed: Long = defRng.nextLong) extends GameteSpecFactory {
-  def createHomozigoteSpec(): GameteSpec = {
-    val rng = new XorShift1024StarRandomGenerator(seed)
-    GameteSpec(map.crossingOver(rng))
+  
+  val rng = new XorShift1024StarRandomGenerator(seed)  
+  def createHomozigoteSpec(): GameteSpec = {   
+    // Make sure to create a serializable map
+    // TODO: Make a utility function for that
+    GameteSpec(map.crossingOver(rng).toSeq.toMap)
+  }
+}
+
+object HapMapGameteSpecFactory {
+  def fromBedFile(pathToBedFile: String, seed: Long = defRng.nextLong): HapMapGameteSpecFactory = {
+    HapMapGameteSpecFactory(RecombinationMap.fromBedFile(pathToBedFile), seed)
   }
 }

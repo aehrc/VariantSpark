@@ -23,6 +23,7 @@ import au.csiro.variantspark.pedigree.FamilySpec
 import au.csiro.variantspark.pedigree.impl.SimpleGameteSpecFactory
 import au.csiro.variantspark.pedigree.PedigreeTree
 import au.csiro.variantspark.hail._
+import au.csiro.variantspark.pedigree.impl.HapMapGameteSpecFactory
 
 class GenerateFamilyCmd extends ArgsApp with SparkApp with Logging with TestArgs with Echoable {
 
@@ -48,7 +49,9 @@ class GenerateFamilyCmd extends ArgsApp with SparkApp with Logging with TestArgs
   @Override
   def testArgs = Array("-if", "data/hipsterIndex/hipster.vcf.bgz", 
       "-of", "target/g1k_ceu_family_15_2.vcf",
-      "-pf", "data/relatedness/g1k_ceu_family_15_2.ped"
+      "-pf", "data/relatedness/g1k_ceu_family_15_2.ped", 
+      "-bf", "data/relatedness/genetic_map_GRCh37_1Mb.bed.gz",
+      "-sr", "13"
       )      
   
   @Override
@@ -57,11 +60,15 @@ class GenerateFamilyCmd extends ArgsApp with SparkApp with Logging with TestArgs
     val hc = HailContext(sc)
     echo(s"Loadig vcf from ${inputFile}")
     val gds = hc.importVCFGenericEx(inputFile)
-    echo(s"Loading pedigree from: ${pedFile}") 
-    
+    echo(s"Loading pedigree from: ${pedFile}")     
     val tree = PedigreeTree.loadPed(pedFile)
-    val gameteFactory  = new SimpleGameteSpecFactory(ReferenceContigSet.b37)
+    
+    echo(s"Loading genetic map from: ${bedFile}") 
+    val gameteFactory = HapMapGameteSpecFactory.fromBedFile(bedFile, randomSeed)
+    //val gameteFactory  = new SimpleGameteSpecFactory(ReferenceContigSet.b37)
     val familySpec = FamilySpec.apply(tree, gameteFactory)
+    echo("Using family spec")
+    familySpec.members.foreach(println _)
     val familyGds = GenerateFamily(familySpec)(gds)
     echo(s"Saving family vcf to: ${outputFile}")
     familyGds.exportVCFEx(outputFile)

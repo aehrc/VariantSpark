@@ -45,6 +45,7 @@ case class MeiosisSpec(crossingOvers:List[Long]) {
  * This can be now used to create the parental homozigore from the actual chromosome information
  */
 case class GameteSpec(val splits:Map[ContigID, MeiosisSpec])  {
+  assert(splits.isInstanceOf[Serializable])
   
   def homozigoteAt[A](position: GenomicPos, genotype: GenotypeSpec[A]):A = {
     // depending on the recombination pattersn return the allele from either the first 

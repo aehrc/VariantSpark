@@ -11,8 +11,8 @@ import au.csiro.variantspark.utils.defRng
  */
 case class SimpleGameteSpecFactory(val contigSet:ContigSet, seed:Long = defRng.nextLong) extends GameteSpecFactory {
   
-  def createHomozigoteSpec(): GameteSpec = {
-    val rng = new XorShift1024StarRandomGenerator(seed)
+  val rng = new XorShift1024StarRandomGenerator(seed)
+  def createHomozigoteSpec(): GameteSpec = { 
     GameteSpec(contigSet.contigs.map(cs => (cs.id, MeiosisSpec(List(rng.nextLong(cs.length))))).toMap)  
   }
 }
