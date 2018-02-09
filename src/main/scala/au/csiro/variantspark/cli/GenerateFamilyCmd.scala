@@ -58,8 +58,9 @@ class GenerateFamilyCmd extends ArgsApp with SparkApp with Logging with TestArgs
   def run():Unit = {
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
     val hc = HailContext(sc)
-    echo(s"Loadig vcf from ${inputFile}")
-    val gds = hc.importVCFGenericEx(inputFile)
+    val minPartitions = sc.defaultParallelism * 2
+    echo(s"Loadig vcf from ${inputFile} with ${minPartitions} partitions")
+    val gds = hc.importVCFGenericEx(inputFile, nPartitions = Some(minPartitions))
     echo(s"Loading pedigree from: ${pedFile}")     
     val tree = PedigreeTree.loadPed(pedFile)
     
