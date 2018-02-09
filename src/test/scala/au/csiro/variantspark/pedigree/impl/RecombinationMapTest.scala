@@ -9,6 +9,6 @@ class RecombinationMapTest {
   
   @Test
   def testLoadBedFile() {
-    val rm = RecombinationMap.fromBedFile("tmp/HapMap/hg19/genetic_map_GRCh37.bed.gz")
+    val rm = RecombinationMap.fromBedFile("data/relatedness/genetic_map_GRCh37_1Mb.bed.gz")
   }
 }
