@@ -65,7 +65,7 @@ class GenerateFamilyCmd extends ArgsApp with SparkApp with Logging with TestArgs
     val hc = HailContext(sc)
     val actualMinPartitions = if (minPartitions > 0) minPartitions else  sc.defaultParallelism 
     echo(s"Loadig vcf from ${inputFile} with ${actualMinPartitions} partitions")
-    val gds = hc.importVCFGenericEx(inputFile, nPartitions = Some(actualMinPartitions))
+    val gds = hc.importVCFsGenericEx(inputFile.split(","), nPartitions = Some(actualMinPartitions))
     echo(s"Loading pedigree from: ${pedFile}")     
     val tree = PedigreeTree.loadPed(pedFile)
     
