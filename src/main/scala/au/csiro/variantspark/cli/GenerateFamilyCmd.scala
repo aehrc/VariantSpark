@@ -24,6 +24,8 @@ import au.csiro.variantspark.pedigree.impl.SimpleGameteSpecFactory
 import au.csiro.variantspark.pedigree.PedigreeTree
 import au.csiro.variantspark.hail._
 import au.csiro.variantspark.pedigree.impl.HapMapGameteSpecFactory
+import scala.io.Source
+import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 
 class GenerateFamilyCmd extends ArgsApp with SparkApp with Logging with TestArgs with Echoable {
 
@@ -37,15 +39,19 @@ class GenerateFamilyCmd extends ArgsApp with SparkApp with Logging with TestArgs
   @Option(name="-of", required=true, usage="Path to output vcf file", aliases=Array("--output-file"))
   val outputFile:String = null
 
-  @Option(name="-pf", required=true, usage="Path to pedigree file", aliases=Array("--ped-file"))
-  val pedFile:String = null
+//  @Option(name="-pf", required=true, usage="Path to pedigree file", aliases=Array("--ped-file"))
+//  val pedFile:String = null
 
-  @Option(name="-bf", required=true, usage="Path bed file with recombination map", aliases=Array("--bed-file"))
-  val bedFile:String = null
+//  @Option(name="-bf", required=true, usage="Path bed file with recombination map", aliases=Array("--bed-file"))
+//  val bedFile:String = null
   
-  @Option(name="-sr", required=false, usage="Random seed to use (def=<random>)", aliases=Array("--seed"))
-  val randomSeed: Long = defRng.nextLong
+//  @Option(name="-sr", required=false, usage="Random seed to use (def=<random>)", aliases=Array("--seed"))
+//  val randomSeed: Long = defRng.nextLong
 
+  
+  @Option(name="-sf", required=true, usage="Path the population spec file", aliases=Array("--spec-file"))
+  val specFile:String = null
+  
   @Option(name="-mp", required=false, usage="Min partition to use for input dataset(default=spark.default.pararellism)"
       , aliases=Array("--min-partitions"))
   val minPartitions: Int = -1
@@ -53,9 +59,10 @@ class GenerateFamilyCmd extends ArgsApp with SparkApp with Logging with TestArgs
   @Override
   def testArgs = Array("-if", "data/hipsterIndex/hipster.vcf.bgz", 
       "-of", "target/g1k_ceu_family_15_2.vcf.bgz",
-      "-pf", "data/relatedness/g1k_ceu_family_15_2.ped", 
-      "-bf", "data/relatedness/genetic_map_GRCh37_1Mb.bed.gz",
-      "-sr", "13",
+//      "-pf", "data/relatedness/g1k_ceu_family_15_2.ped", 
+//      "-bf", "data/relatedness/genetic_map_GRCh37_1Mb.bed.gz",
+//      "-sr", "13",
+      "-sf", "target/g1k_ceu_family_15_2.spec.json",
       "-mp", "4"
       )      
   
@@ -66,13 +73,15 @@ class GenerateFamilyCmd extends ArgsApp with SparkApp with Logging with TestArgs
     val actualMinPartitions = if (minPartitions > 0) minPartitions else  sc.defaultParallelism 
     echo(s"Loadig vcf from ${inputFile} with ${actualMinPartitions} partitions")
     val gds = hc.importVCFsGenericEx(inputFile.split(","), nPartitions = Some(actualMinPartitions))
-    echo(s"Loading pedigree from: ${pedFile}")     
-    val tree = PedigreeTree.loadPed(pedFile)
+//    echo(s"Loading pedigree from: ${pedFile}")     
+//    val tree = PedigreeTree.loadPed(pedFile)
     
-    echo(s"Loading genetic map from: ${bedFile}") 
-    val gameteFactory = HapMapGameteSpecFactory.fromBedFile(bedFile, randomSeed)
-    //val gameteFactory  = new SimpleGameteSpecFactory(ReferenceContigSet.b37)
-    val familySpec = FamilySpec.apply(tree, gameteFactory)
+//    echo(s"Loading genetic map from: ${bedFile}") 
+//    val gameteFactory = HapMapGameteSpecFactory.fromBedFile(bedFile, randomSeed)
+//    val gameteFactory  = new SimpleGameteSpecFactory(ReferenceContigSet.b37)
+//    val familySpec = FamilySpec.apply(tree, gameteFactory)
+    println(s"Loading family spec from ${specFile}")
+    val familySpec = LoanUtils.withSource(Source.fromFile(specFile))(s => FamilySpec.fromJson(s))
     echo("Using family spec")
     familySpec.members.foreach(println _)
     val familyGds = GenerateFamily(familySpec)(gds)

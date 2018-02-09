@@ -1,6 +1,12 @@
 package au.csiro.variantspark.pedigree
 
 import scala.collection.mutable.HashMap
+import scala.io.Source
+import org.json4s._
+import org.json4s.jackson.Serialization
+import org.json4s.jackson.Serialization.{read, write}
+import java.io.Writer
+
 
 trait FamilyMember extends Serializable {
   def id: IndividualID
@@ -32,9 +38,18 @@ class FamilySpec(val members:Seq[FamilyMember]) extends Serializable {
     }
     outputPool.toMap
   }
+ 
+  def toJson(w:Writer)  {
+    implicit val formats = Serialization.formats(ShortTypeHints(List(classOf[Founder], 
+        classOf[Offspring]))) + new org.json4s.ext.EnumNameSerializer(Gender)
+    w.append(write(this))
+  }
 }
 
 object FamilySpec {
+  
+  implicit val formats = Serialization.formats(ShortTypeHints(List(classOf[Founder], 
+      classOf[Offspring]))) + new org.json4s.ext.EnumNameSerializer(Gender)
   
   /**
    * Constuct Family spec from a Pedgree Tree and some form of Offspring Producer
@@ -48,6 +63,10 @@ object FamilySpec {
       else throw new IllegalArgumentException("PedigreeTree contatins incomplete trios")
     }
     new FamilySpec(familyMembers)
+  }
+  
+  def fromJson(src:Source):FamilySpec = {
+    read[FamilySpec](src.mkString)
   }
 }
 

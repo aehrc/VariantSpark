@@ -113,15 +113,15 @@
 		</dependency>
 		<dependency>
 		    <groupId>org.scala-graph</groupId>
-		    <artifactId>graph-core_2.11</artifactId>
+		    <artifactId>graph-core_${scala.binary.version}</artifactId>
 		    <version>1.12.3</version>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.json4s/json4s-native -->
-		<!-- dependency>
+		<!-- https://mvnrepository.com/artifact/org.json4s/json4s-ext -->
+		<dependency>
 		    <groupId>org.json4s</groupId>
-		    <artifactId>json4s-native_2.11</artifactId>
-		    <version>3.5.3</version>
-		</dependency-->
+		    <artifactId>json4s-ext_${scala.binary.version}</artifactId>
+		    <version>3.2.11</version>
+		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
