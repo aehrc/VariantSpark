@@ -132,13 +132,13 @@ Note: if you installed the data to a non default location the `VS_DATA_DIR` need
 #### Databricks notebook examples
 
 For convenience we have also provided a sample end-to-end variant-spark workflow
-in a Databricks (Jupyter-style) notebook for either Spark 1.6 or Spark 2.x.  The examples, using a synthetic phenotype (Hipster-index)
+in a Databricks (Jupyter-style) notebook for Spark 2.2.  The examples, using a synthetic phenotype (Hipster-index)
 can be found in the `notebook-examples` folder of this repository.
 
 To use an example:
 1. **Create** a free, community [Databricks](https://databricks.com/) account
-2. **Download** the `VariantSpark_HipsterIndex.scala` or `VariantSpark_HipsterIndex_Spark2.scala` file.  First notebook is for Spark 1.6, second one is for Spark 2.x
-3. **Import** the notebook file into your Databricks instance. Read the instructions in the notebook on how to import a new library to use the variant-spark library.
+2. **Download** the `VariantSpark_HipsterIndex_Spark2.2.scala` file. Databricks notebook is for Spark 2.2 (scala 2.11)
+3. **Import** the notebook file into your Databricks instance. Read the instructions in the notebook on how to import a new library to use the `variant-spark` library.
 4. **Start** a cluster (be sure to select the version of Spark and Scala specified in the notebook)
 5. **Attach** the notebook to the cluster
 6. **Run** the sample notebook
