@@ -55,7 +55,11 @@ class GenerateFamilyCmd extends ArgsApp with SparkApp with Logging with TestArgs
   @Option(name="-mp", required=false, usage="Min partition to use for input dataset(default=spark.default.pararellism)"
       , aliases=Array("--min-partitions"))
   val minPartitions: Int = -1
-  
+
+  @Option(name="-sp", required=false, usage="Save bgz in parallel"
+      , aliases=Array("--min-partitions"))
+  val saveParallel: Boolean = false
+
   @Override
   def testArgs = Array("-if", "data/hipsterIndex/hipster.vcf.bgz", 
       "-of", "target/g1k_ceu_family_15_2.vcf.bgz",
@@ -86,7 +90,7 @@ class GenerateFamilyCmd extends ArgsApp with SparkApp with Logging with TestArgs
     familySpec.members.foreach(println _)
     val familyGds = GenerateFamily(familySpec)(gds)
     echo(s"Saving family vcf to: ${outputFile}")
-    familyGds.exportVCFEx(outputFile, true)
+    familyGds.exportVCFEx(outputFile, saveParallel)
   }
 }
 
