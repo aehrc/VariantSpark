@@ -45,7 +45,7 @@ class FamilySpec(val members:Seq[FamilyMember]) extends Serializable {
     val outputPool =  HashMap[IndividualID, IndexedGenotypeSpec]()
     members.foreach {  m =>  m match {
       case founder:Founder => outputPool.put(founder.id, initialPool(founder.id))
-      case offspring: Offspring => outputPool.put(offspring.id, offspring.makeGenotype(position, outputPool.toMap))
+      case offspring: Offspring => outputPool.put(offspring.id, offspring.makeGenotype(position, outputPool))
       }   
     }
     outputPool.toMap

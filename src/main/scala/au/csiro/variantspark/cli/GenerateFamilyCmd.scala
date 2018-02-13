@@ -86,7 +86,7 @@ class GenerateFamilyCmd extends ArgsApp with SparkApp with Logging with TestArgs
     familySpec.members.foreach(println _)
     val familyGds = GenerateFamily(familySpec)(gds)
     echo(s"Saving family vcf to: ${outputFile}")
-    familyGds.coalesce(1, true).exportVCFEx(outputFile)
+    familyGds.exportVCFEx(outputFile)
   }
 }
 

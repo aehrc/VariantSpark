@@ -4,5 +4,5 @@ package object pedigree {
   type ContigID = String
   type IndividualID = String
   type IndexedGenotypeSpec = GenotypeSpec[Int]
-  type GenotypePool = Map[IndividualID, IndexedGenotypeSpec]
+  type GenotypePool = scala.collection.Map[IndividualID, IndexedGenotypeSpec]
 }
