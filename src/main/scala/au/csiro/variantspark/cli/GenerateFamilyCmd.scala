@@ -57,7 +57,7 @@ class GenerateFamilyCmd extends ArgsApp with SparkApp with Logging with TestArgs
   val minPartitions: Int = -1
 
   @Option(name="-sp", required=false, usage="Save bgz in parallel"
-      , aliases=Array("--min-partitions"))
+      , aliases=Array("--save-parallel"))
   val saveParallel: Boolean = false
 
   @Override
