@@ -11,8 +11,9 @@ import is.hail.expr._
 import au.csiro.variantspark.hail._
 import au.csiro.variantspark.pedigree.PedigreeTree
 import au.csiro.variantspark.pedigree.FamilySpec
-import au.csiro.variantspark.pedigree.impl.SimpleGameteSpecFactory
+import au.csiro.variantspark.pedigree.impl.SimpleMeiosisSpecFactory
 import au.csiro.variantspark.pedigree.ReferenceContigSet
+import au.csiro.variantspark.pedigree.GameteSpecFactory
 
 class GenerateFamilyTest extends SparkTest {
   
@@ -24,7 +25,8 @@ class GenerateFamilyTest extends SparkTest {
     println(gds.count())
     
     val tree = PedigreeTree.loadPed("data/relatedness/g1k_ceu_family_15_2.ped")
-    val gameteFactory  = new SimpleGameteSpecFactory(ReferenceContigSet.b37)
+    val meiosisFactory  = new SimpleMeiosisSpecFactory(ReferenceContigSet.b37)
+    val gameteFactory = GameteSpecFactory(meiosisFactory)
     val familySpec = FamilySpec.apply(tree, gameteFactory)
 
     val familyGds = GenerateFamily(familySpec)(gds)

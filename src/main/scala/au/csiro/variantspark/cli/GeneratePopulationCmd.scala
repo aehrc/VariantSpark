@@ -20,12 +20,13 @@ import au.csiro.variantspark.pedigree.ReferenceContigSet
 import is.hail.HailContext
 import au.csiro.variantspark.hail.family.GenerateFamily
 import au.csiro.variantspark.pedigree.FamilySpec
-import au.csiro.variantspark.pedigree.impl.SimpleGameteSpecFactory
+import au.csiro.variantspark.pedigree.impl.SimpleMeiosisSpecFactory
 import au.csiro.variantspark.pedigree.PedigreeTree
 import au.csiro.variantspark.hail._
-import au.csiro.variantspark.pedigree.impl.HapMapGameteSpecFactory
+import au.csiro.variantspark.pedigree.impl.HapMapMeiosisSpecFactory
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 import java.io.FileWriter
+import au.csiro.variantspark.pedigree.GameteSpecFactory
 
 /**
  * Generates specification of a synthetic population based on 
@@ -60,7 +61,8 @@ class GeneratePopulationCmd extends ArgsApp with Logging with TestArgs with Echo
     echo(s"Loading pedigree from: ${pedFile}")     
     val tree = PedigreeTree.loadPed(pedFile)    
     echo(s"Loading genetic map from: ${bedFile}") 
-    val gameteFactory = HapMapGameteSpecFactory.fromBedFile(bedFile, randomSeed)
+    val meiosisFactory = HapMapMeiosisSpecFactory.fromBedFile(bedFile, randomSeed)
+    val gameteFactory = GameteSpecFactory(meiosisFactory)
     //val gameteFactory  = new SimpleGameteSpecFactory(ReferenceContigSet.b37)
     val familySpec = FamilySpec.apply(tree, gameteFactory)
     echo(s"Writing population spec to: ${outputFile}")

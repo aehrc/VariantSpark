@@ -9,11 +9,9 @@ import au.csiro.variantspark.utils.defRng
  * Very basic factory that just generates once random crossing over 
  * in each contig
  */
-case class SimpleGameteSpecFactory(val contigSet:ContigSet, seed:Long = defRng.nextLong) extends GameteSpecFactory {
+case class SimpleMeiosisSpecFactory(val contigSet:ContigSet, seed:Long = defRng.nextLong) extends MeiosisSpecFactory {
   
   val rng = new XorShift1024StarRandomGenerator(seed)
-  def createHomozigoteSpec(): GameteSpec = { 
-    GameteSpec(contigSet.contigs.map(cs => (cs.id, 
-        MeiosisSpec(List(rng.nextLong(cs.length)), rng.nextInt(2)))).toMap)  
-  }
+  def createMeiosisSpec(): Map[ContigID, MeiosisSpec] = contigSet.contigs.map(cs => (cs.id, 
+        MeiosisSpec(List(rng.nextLong(cs.length)), rng.nextInt(2)))).toMap
 }

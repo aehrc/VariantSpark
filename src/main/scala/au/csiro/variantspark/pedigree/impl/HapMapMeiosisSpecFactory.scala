@@ -99,18 +99,14 @@ object RecombinationMap {
   }
 }
 
-case class HapMapGameteSpecFactory(map: RecombinationMap, seed: Long = defRng.nextLong) extends GameteSpecFactory {
+case class HapMapMeiosisSpecFactory(map: RecombinationMap, seed: Long = defRng.nextLong) extends MeiosisSpecFactory {
   
   val rng = new XorShift1024StarRandomGenerator(seed)  
-  def createHomozigoteSpec(): GameteSpec = {   
-    // Make sure to create a serializable map
-    // TODO: Make a utility function for that
-    GameteSpec(map.crossingOver(rng).toSeq.toMap)
-  }
+  def createMeiosisSpec(): Map[ContigID, MeiosisSpec] = map.crossingOver(rng).toSeq.toMap
 }
 
-object HapMapGameteSpecFactory {
-  def fromBedFile(pathToBedFile: String, seed: Long = defRng.nextLong): HapMapGameteSpecFactory = {
-    HapMapGameteSpecFactory(RecombinationMap.fromBedFile(pathToBedFile), seed)
+object HapMapMeiosisSpecFactory {
+  def fromBedFile(pathToBedFile: String, seed: Long = defRng.nextLong): HapMapMeiosisSpecFactory = {
+    HapMapMeiosisSpecFactory(RecombinationMap.fromBedFile(pathToBedFile), seed)
   }
 }

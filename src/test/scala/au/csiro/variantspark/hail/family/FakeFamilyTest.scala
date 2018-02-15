@@ -26,7 +26,7 @@ import au.csiro.variantspark.hail.variant.phased.BiCall
 import au.csiro.variantspark.pedigree.OffspringSpec
 import au.csiro.variantspark.pedigree.GameteSpec
 import au.csiro.variantspark.pedigree.MeiosisSpec
-import au.csiro.variantspark.pedigree.impl.SimpleGameteSpecFactory
+import au.csiro.variantspark.pedigree.impl.SimpleMeiosisSpecFactory
 import au.csiro.variantspark.pedigree.ReferenceContigSet
 
 

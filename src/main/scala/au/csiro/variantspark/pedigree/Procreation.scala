@@ -50,7 +50,7 @@ case class MeiosisSpec(crossingOvers:List[Long], startWith:Int = 0) {
  * Full specification a homozigote recombination patterns.
  * This can be now used to create the parental homozigore from the actual chromosome information
  */
-case class GameteSpec(val splits:Map[ContigID, MeiosisSpec])  {
+case class GameteSpec(val splits:Map[ContigID, MeiosisSpec], val mutations:MutationSet =  MutationSet.Empty)  {
   assert(splits.isInstanceOf[Serializable])
   
   def homozigoteAt(position: GenomicPos, genotype: GenotypeSpec):Int = {
@@ -65,11 +65,15 @@ case class GameteSpec(val splits:Map[ContigID, MeiosisSpec])  {
   }
 }
 
-trait GameteSpecFactory {
-  //TODO: Add gender distintion
-  def createHomozigoteSpec():GameteSpec
+trait MeiosisSpecFactory {
+  def createMeiosisSpec(): Map[ContigID, MeiosisSpec]
 }
 
+case class GameteSpecFactory(msf: MeiosisSpecFactory)  {
+  //TODO: Add gender distintion
+  def createGameteSpec():GameteSpec = GameteSpec(msf.createMeiosisSpec())
+ 
+}
 
 case class OffspringSpec(val fatherGamete: GameteSpec, val motherGamete: GameteSpec) {
   
@@ -80,9 +84,9 @@ case class OffspringSpec(val fatherGamete: GameteSpec, val motherGamete: GameteS
 }
 
 object OffspringSpec {  
-  def create(hsf: GameteSpecFactory)  = OffspringSpec(
-      motherGamete = hsf.createHomozigoteSpec(), 
-      fatherGamete = hsf.createHomozigoteSpec()
+  def create(gsf: GameteSpecFactory)  = OffspringSpec(
+      motherGamete = gsf.createGameteSpec(), 
+      fatherGamete = gsf.createGameteSpec()
   )
 }
 
