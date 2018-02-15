@@ -69,10 +69,10 @@ trait MeiosisSpecFactory {
   def createMeiosisSpec(): Map[ContigID, MeiosisSpec]
 }
 
-case class GameteSpecFactory(msf: MeiosisSpecFactory)  {
+case class GameteSpecFactory(msf: MeiosisSpecFactory, mf: Option[MutationSetFactory] = None)  {
   //TODO: Add gender distintion
-  def createGameteSpec():GameteSpec = GameteSpec(msf.createMeiosisSpec())
- 
+  def createGameteSpec():GameteSpec = GameteSpec(msf.createMeiosisSpec(),
+        mf.map(_.create()).getOrElse(MutationSet.Empty))
 }
 
 case class OffspringSpec(val fatherGamete: GameteSpec, val motherGamete: GameteSpec) {

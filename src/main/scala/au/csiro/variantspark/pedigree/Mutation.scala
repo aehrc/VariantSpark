@@ -17,11 +17,9 @@ object MutationSet {
   val Empty =  MutationSet(Seq.empty)
 }
 
-
 trait MutationSetFactory {
   def create(): MutationSet
 }
-
 
 trait MutationSetBatchFactory extends MutationSetFactory {
   def createBatch(batchSize: Int): Seq[MutationSet]

@@ -31,8 +31,12 @@ object DatasetMutationFactory {
  * Also this will create non overlapping mutations all offspring (which may be ok)
  * 
  */
-class DatasetMutationFactory(vgs: GenericDataset) extends MutationSetBatchFactory {
+class DatasetMutationFactory(vgs: GenericDataset, size:Int) extends MutationSetBatchFactory {
  
+  lazy val mutationsIterator  = createBatch(size).toIterator
+  
+  override def create() = mutationsIterator.next()
+   
   def createBatch(batchSize: Int): Seq[MutationSet] = {
     
     import DatasetMutationFactory._
