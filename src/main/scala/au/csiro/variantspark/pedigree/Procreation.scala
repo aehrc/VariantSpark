@@ -31,8 +31,9 @@ case class GenomicPos(val contig:ContigID, pos:Long)
  * for crossingOvers(0) <= pos < crossingOvers(1) -> chromosome 1
  * for crossingOvers(1) <= pos < crossingOvers(2) -> chromosome 0 
  * etc ...
+ * @param startWith: which chromosome in the pair to start with ( 0 or 1)
  */
-case class MeiosisSpec(crossingOvers:List[Long]) {
+case class MeiosisSpec(crossingOvers:List[Long], startWith:Int = 0) {
   
   def getChromosomeAt(pos:Long):Int  = {
     // the meiosis spec array should be sorted so essentially 
@@ -41,7 +42,7 @@ case class MeiosisSpec(crossingOvers:List[Long]) {
     val noOfCrossOvers = crossingOvers.zipWithIndex.find(_._1 >  pos)
           .map(_._2).getOrElse(crossingOvers.length)
     // now an even number means first chromosome and an odd number the second
-    noOfCrossOvers % 2
+    (noOfCrossOvers + startWith)  % 2
   }
 }
 

@@ -59,7 +59,7 @@ case class RecombinationMap(val contigMap: Map[ContigID, ContigRecombinationMap]
    assert(contigMap.isInstanceOf[Serializable])
  
   def crossingOver(rng: XorShift1024StarRandomGenerator):Map[ContigID, MeiosisSpec] = {
-    contigMap.mapValues(cm => MeiosisSpec(cm.drawSplits(rng)))
+    contigMap.mapValues(cm => MeiosisSpec(cm.drawSplits(rng), rng.nextInt(2)))
   }
 }
 

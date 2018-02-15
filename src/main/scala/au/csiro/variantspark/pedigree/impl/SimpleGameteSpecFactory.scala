@@ -13,6 +13,7 @@ case class SimpleGameteSpecFactory(val contigSet:ContigSet, seed:Long = defRng.n
   
   val rng = new XorShift1024StarRandomGenerator(seed)
   def createHomozigoteSpec(): GameteSpec = { 
-    GameteSpec(contigSet.contigs.map(cs => (cs.id, MeiosisSpec(List(rng.nextLong(cs.length))))).toMap)  
+    GameteSpec(contigSet.contigs.map(cs => (cs.id, 
+        MeiosisSpec(List(rng.nextLong(cs.length)), rng.nextInt(2)))).toMap)  
   }
 }
