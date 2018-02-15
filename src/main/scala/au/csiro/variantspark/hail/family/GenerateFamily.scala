@@ -21,6 +21,8 @@ import scala.collection.mutable.HashMap
 import au.csiro.variantspark.pedigree.IndividualID
 import au.csiro.variantspark.pedigree.FamilySpec
 import au.csiro.variantspark.pedigree.GenotypePool
+import au.csiro.variantspark.pedigree.MutableVariant
+import au.csiro.variantspark.pedigree.DefMutableVariant
 
 
 /**
@@ -36,9 +38,12 @@ class FamilyVariantBuilder(val sampleIds:IndexedSeq[Annotation], val familySpec:
     val initialPool:GenotypePool = sampleIds.map(_.asInstanceOf[String])
       .zip(g).toMap.mapValues(a => new BiCall(a.asInstanceOf[Row].getInt(0)))
 
+      
+    val mv = new DefMutableVariant(GenomicPos(v.contig, v.start), v.ref, v.altAlleles.map(_.alt))
     // filter out positions with no variants in initial pool
     // TODO: Optmization: Do this before computing the genotypes
-    val outputPool = familySpec.produceGenotypePool(v, initialPool)
+    // TODO: Func: Update the variant if needed
+    val outputPool = familySpec.produceGenotypePool(mv, initialPool)
     val hasNoVariants = outputPool.values.forall(gs => gs(0) == 0 && gs(1) == 0) 
     
     if (hasNoVariants) {

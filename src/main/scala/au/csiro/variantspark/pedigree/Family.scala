@@ -28,8 +28,8 @@ case class Offspring(val id:IndividualID, val gender:Gender, val paternalId:Indi
     this(trio.id, trio.gender, trio.paternalId.get, trio.maternalId.get, offspring)
     assert(trio.isFullOffspring)
   }
-  def makeGenotype(position: GenomicPos, pool: GenotypePool):GenotypeSpec = {
-    offspring.genotypeAt(position, pool(paternalId), pool(maternalId))
+  def makeGenotype(v: MutableVariant, pool: GenotypePool):GenotypeSpec = {
+    offspring.genotypeAt(v, pool(paternalId), pool(maternalId))
   }  
 }
 
@@ -40,12 +40,12 @@ class FamilySpec(val members:Seq[FamilyMember]) extends Serializable {
 
   def memberIds:List[IndividualID] =  members.map(_.id).toList
   
-  def produceGenotypePool(position: GenomicPos, initialPool:GenotypePool):GenotypePool = {
+  def produceGenotypePool(v: MutableVariant, initialPool:GenotypePool):GenotypePool = {
     
     val outputPool =  HashMap[IndividualID, GenotypeSpec]()
     members.foreach {  m =>  m match {
       case founder:Founder => outputPool.put(founder.id, initialPool(founder.id))
-      case offspring: Offspring => outputPool.put(offspring.id, offspring.makeGenotype(position, outputPool))
+      case offspring: Offspring => outputPool.put(offspring.id, offspring.makeGenotype(v, outputPool))
       }   
     }
     outputPool.toMap

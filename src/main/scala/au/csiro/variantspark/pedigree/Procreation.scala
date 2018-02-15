@@ -1,11 +1,16 @@
 package au.csiro.variantspark.pedigree
 
+import scala.collection.mutable.HashMap
+import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.Buffer
+
 // I need some recombination pattern of the specific recombination chosen for 
 // for each homozigote (from one parent each)
 // So essentially for each chromosome I need to model how many and where the recombination happened
 
 /**
  * Represents a diplod indexed genotype
+ * TODO: Rename to include diploid
  */
 case class GenotypeSpec(val p:Int) extends AnyVal {
   def _0: Int = p & ((p << 16) -1)
@@ -21,8 +26,30 @@ object GenotypeSpec {
     
 }
 
-
 case class GenomicPos(val contig:ContigID, pos:Long)
+
+
+trait MutableVariant {
+  def pos: GenomicPos
+  def base: BasesVariant
+  def alts: IndexedSeq[BasesVariant]
+  def getOrElseUpdate(alt: BasesVariant):IndexedVariant
+}
+
+class DefMutableVariant(val pos: GenomicPos,  
+      val base: BasesVariant, initialAlts: IndexedSeq[BasesVariant])  extends  MutableVariant {
+  private val mutableAlts: Buffer[BasesVariant] = initialAlts.toBuffer
+  
+  def getOrElseUpdate(alt: BasesVariant):IndexedVariant  = {
+    val indexOfAlt = mutableAlts.indexOf(alt)
+    if (indexOfAlt >=0) indexOfAlt else (mutableAlts+=alt).size -1
+  }
+
+  def alts: IndexedSeq[BasesVariant] = {
+    mutableAlts.toIndexedSeq
+  }
+}
+
 
 /**
  * List of cross-over points for a single contig (chromosome)
@@ -53,14 +80,14 @@ case class MeiosisSpec(crossingOvers:List[Long], startWith:Int = 0) {
 case class GameteSpec(val splits:Map[ContigID, MeiosisSpec], val mutations:MutationSet =  MutationSet.Empty)  {
   assert(splits.isInstanceOf[Serializable])
   
-  def homozigoteAt(position: GenomicPos, genotype: GenotypeSpec):Int = {
+  def homozigoteAt(v: MutableVariant, genotype: GenotypeSpec):Int = {
     // depending on the recombination pattersn return the allele from either the first 
     // or the second chromosome
     
     //TODO: what to do if the contig is not listed
-    val meiosisSpec = splits(position.contig)
+    val meiosisSpec = splits(v.pos.contig)
     // the meiosis spec array should be sorted
-    val chrosomeIndex = meiosisSpec.getChromosomeAt(position.pos)
+    val chrosomeIndex = meiosisSpec.getChromosomeAt(v.pos.pos)
     return genotype(chrosomeIndex)
   }
 }
@@ -77,9 +104,9 @@ case class GameteSpecFactory(msf: MeiosisSpecFactory, mf: Option[MutationSetFact
 
 case class OffspringSpec(val fatherGamete: GameteSpec, val motherGamete: GameteSpec) {
   
-  def genotypeAt(position:GenomicPos, fatherGenotype:GenotypeSpec, motherGenotype:GenotypeSpec):GenotypeSpec = {
-    GenotypeSpec(motherGamete.homozigoteAt(position, motherGenotype), 
-        fatherGamete.homozigoteAt(position, fatherGenotype))
+  def genotypeAt(v:MutableVariant, fatherGenotype:GenotypeSpec, motherGenotype:GenotypeSpec):GenotypeSpec = {
+    GenotypeSpec(motherGamete.homozigoteAt(v, motherGenotype), 
+        fatherGamete.homozigoteAt(v, fatherGenotype))
   }
 }
 
