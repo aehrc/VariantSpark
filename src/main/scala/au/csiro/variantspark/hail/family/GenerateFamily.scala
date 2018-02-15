@@ -15,7 +15,6 @@ import is.hail.utils._
 import is.hail.expr._
 import is.hail.sparkextras.OrderedRDD
 import au.csiro.variantspark.pedigree.GenotypeSpec
-import au.csiro.variantspark.pedigree.IndexedBiGenotypeSpec
 import scala.collection.mutable.ArrayBuffer
 import au.csiro.variantspark.pedigree.FamilyTrio
 import scala.collection.mutable.HashMap
