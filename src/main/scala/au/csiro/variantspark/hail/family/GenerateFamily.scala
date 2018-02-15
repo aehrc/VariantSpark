@@ -22,8 +22,30 @@ import au.csiro.variantspark.pedigree.IndividualID
 import au.csiro.variantspark.pedigree.FamilySpec
 import au.csiro.variantspark.pedigree.GenotypePool
 import au.csiro.variantspark.pedigree.MutableVariant
-import au.csiro.variantspark.pedigree.DefMutableVariant
+import au.csiro.variantspark.pedigree.ContigID
+import au.csiro.variantspark.pedigree.BasesVariant
+import au.csiro.variantspark.pedigree.IndexedVariant
 
+class HailMutableVariantAdapter(v: Variant) extends MutableVariant {
+  def contig: ContigID = v.contig
+  def pos: Long  = v.start
+  def ref: BasesVariant = v.ref
+  private var mutated = false
+  private lazy val altBuffer = v.altAlleles.map(_.alt).toBuffer
+  
+  def getOrElseUpdate(alt: BasesVariant): IndexedVariant = {
+    val index = altBuffer.indexOf(alt)
+    if (index >= 0) index else {
+      mutated = true
+      (altBuffer+=alt).size -1
+    }
+  }
+ 
+  def toVariant: Variant = {
+    if (mutated) Variant(v.contig, v.start, v.ref, altBuffer.toArray) else v
+  }
+  
+}
 
 /**
  * @param sampleIds: list of the ids all genotypes
@@ -32,17 +54,16 @@ import au.csiro.variantspark.pedigree.DefMutableVariant
  */
 class FamilyVariantBuilder(val sampleIds:IndexedSeq[Annotation], val familySpec: FamilySpec) extends Serializable {
   
-  def buildVariant(v: Variant, g: Iterable[Annotation]):Option[Iterable[Annotation]] =  {
+  def buildVariant(v: Variant, g: Iterable[Annotation]):Option[(Variant, Iterable[Annotation])] =  {
     
     // construct the initial pool from genotype samples
     val initialPool:GenotypePool = sampleIds.map(_.asInstanceOf[String])
       .zip(g).toMap.mapValues(a => new BiCall(a.asInstanceOf[Row].getInt(0)))
 
       
-    val mv = new DefMutableVariant(GenomicPos(v.contig, v.start), v.ref, v.altAlleles.map(_.alt))
+    val mv = new HailMutableVariantAdapter(v)
     // filter out positions with no variants in initial pool
     // TODO: Optmization: Do this before computing the genotypes
-    // TODO: Func: Update the variant if needed
     val outputPool = familySpec.produceGenotypePool(mv, initialPool)
     val hasNoVariants = outputPool.values.forall(gs => gs(0) == 0 && gs(1) == 0) 
     
@@ -51,7 +72,8 @@ class FamilyVariantBuilder(val sampleIds:IndexedSeq[Annotation], val familySpec:
     } else {
       // create the output pool for this family
       // convert the pool back to list in the oder of family members
-      Some(familySpec.memberIds.map(mid => Annotation.apply(outputPool(mid.asInstanceOf[IndividualID]).p)))
+      Some((mv.toVariant, 
+          familySpec.memberIds.map(mid => Annotation.apply(outputPool(mid.asInstanceOf[IndividualID]).p))))
     }
     
   }
@@ -75,7 +97,7 @@ class GenerateFamily(val familySpec: FamilySpec) {
     val familyRdd = gds.rdd.mapPartitions({it => 
         val localVariantBuilder = br_variantBuilder.value
         it.flatMap { case (v, (a, g)) => 
-          localVariantBuilder.buildVariant(v, g).map(i => (v, (a, i))) 
+          localVariantBuilder.buildVariant(v, g).map(i => (i._1, (a, i._2))) 
         }
       },preservesPartitioning = true)
             

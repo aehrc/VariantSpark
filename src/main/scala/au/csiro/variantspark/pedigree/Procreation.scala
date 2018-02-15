@@ -22,34 +22,17 @@ object GenotypeSpec {
   def apply(p0:Int, p1: Int) = {
     assert(p0 <  (1<<16) && p1 < (1<<16))
     new GenotypeSpec(p0 & (p1 << 16))
-  }
-    
+  }   
 }
 
 case class GenomicPos(val contig:ContigID, pos:Long)
 
-
 trait MutableVariant {
-  def pos: GenomicPos
-  def base: BasesVariant
-  def alts: IndexedSeq[BasesVariant]
+  def contig: ContigID
+  def pos: Long
+  def ref: BasesVariant
   def getOrElseUpdate(alt: BasesVariant):IndexedVariant
 }
-
-class DefMutableVariant(val pos: GenomicPos,  
-      val base: BasesVariant, initialAlts: IndexedSeq[BasesVariant])  extends  MutableVariant {
-  private val mutableAlts: Buffer[BasesVariant] = initialAlts.toBuffer
-  
-  def getOrElseUpdate(alt: BasesVariant):IndexedVariant  = {
-    val indexOfAlt = mutableAlts.indexOf(alt)
-    if (indexOfAlt >=0) indexOfAlt else (mutableAlts+=alt).size -1
-  }
-
-  def alts: IndexedSeq[BasesVariant] = {
-    mutableAlts.toIndexedSeq
-  }
-}
-
 
 /**
  * List of cross-over points for a single contig (chromosome)
@@ -84,11 +67,11 @@ case class GameteSpec(val splits:Map[ContigID, MeiosisSpec], val mutations:Mutat
     // depending on the recombination pattersn return the allele from either the first 
     // or the second chromosome
     
-    //TODO: what to do if the contig is not listed
-    val meiosisSpec = splits(v.pos.contig)
-    // the meiosis spec array should be sorted
-    val chrosomeIndex = meiosisSpec.getChromosomeAt(v.pos.pos)
-    return genotype(chrosomeIndex)
+    // check first for mutations
+    mutations.get(GenomicPos(v.contig,v.pos)).map(m => {
+      assert(v.ref == m.ref)
+      v.getOrElseUpdate(m.alt)
+    }).getOrElse(genotype(splits(v.contig).getChromosomeAt(v.pos)))   
   }
 }
 

@@ -11,7 +11,10 @@ package au.csiro.variantspark.pedigree
 
 
 case class Mutation(pos: GenomicPos, ref: String, alt: String)
-case class MutationSet(mutations: Seq[Mutation])
+case class MutationSet(mutations: Seq[Mutation]) {
+  private lazy val map = mutations.map(m => (m.pos, m)).toMap
+  def get(pos: GenomicPos):Option[Mutation] = map.get(pos)
+}
 
 object MutationSet {
   val Empty =  MutationSet(Seq.empty)
