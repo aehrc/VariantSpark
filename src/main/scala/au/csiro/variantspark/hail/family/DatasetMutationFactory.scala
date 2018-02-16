@@ -18,8 +18,8 @@ object DatasetMutationFactory {
     // assume it's possible to do one
     // need to filter out the existing alleles 
     // select a random from available fones
-    val altSnps = v.altAlleles.filter(_.isSNP).map(_.alt).toSet
-    val mutationSnps =  bases.diff(altSnps)
+    val usedSnps = v.altAlleles.filter(_.isSNP).map(_.alt).toSet + v.ref
+    val mutationSnps =  bases.diff(usedSnps)
     assert(!mutationSnps.isEmpty, "Need a non empty mutation set")
     //TODO: select a random mutation
     Mutation(v, v.ref, mutationSnps.iterator.next)
@@ -43,7 +43,7 @@ class DatasetMutationFactory(vgs: GenericDataset, size:Int) extends MutationSetB
     // in principle I could just generate a single stream and then split it into sets
     val allMutations = vgs.rdd.map(_._1)
      .filter(allSNP)
-     .filter(_.nAltAlleles <= 2) // at least  a few new variants to choose from
+     .filter(_.nAltAlleles <= 2) // at least one base to choose from (ref and two alts are used)
      .map(snpMutation).collect()
   
     // split mutations to sets

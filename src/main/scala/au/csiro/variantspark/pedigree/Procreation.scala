@@ -20,7 +20,7 @@ case class GenotypeSpec(val p:Int) extends AnyVal {
 
 object GenotypeSpec {
   def apply(p0:Int, p1: Int) = {
-    assert(p0 <  (1<<16) && p1 < (1<<16))
+    assert(p0 >=0 && p0 < (1<<16) && p1 >=0 && p1 < (1<<16),s"p0=${p0}, p1=${p1}")
     new GenotypeSpec(p0 & (p1 << 16))
   }   
 }
@@ -68,10 +68,12 @@ case class GameteSpec(val splits:Map[ContigID, MeiosisSpec], val mutations:Mutat
     // or the second chromosome
     
     // check first for mutations
-    mutations.get(GenomicPos(v.contig,v.pos)).map(m => {
-      assert(v.ref == m.ref)
-      v.getOrElseUpdate(m.alt)
-    }).getOrElse(genotype(splits(v.contig).getChromosomeAt(v.pos)))   
+    // TODO: it appears that even thought the vcf is muliallelic
+    // there are still possibilites for repeated positions with different references
+    // e.g. one for SNPs and one for deletions
+    mutations.get(GenomicPos(v.contig,v.pos)).flatMap(m =>
+      if (m.ref == v.ref) Some(v.getOrElseUpdate(m.alt)) else None
+    ).getOrElse(genotype(splits(v.contig).getChromosomeAt(v.pos)))   
   }
 }
 
