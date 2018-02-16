@@ -28,9 +28,9 @@ Please feel free to add issues and/or upvote issues you care about. Also join th
 
 ### Learn More
 
-To learn more watch this video from Spark Summit.
+To learn more watch this video from YOW! Brisbane 2017.
 
-[![variant-spark talk at Spark Summit East 2017](/images/vs-spark-summit-2017.png?raw=true)](https://www.youtube.com/watch?v=iDshsTWqGzw)
+[![variant-spark YOW! Brisbane 2017](/images/YOW__Conference_2017_Lynn_Langit___Denis_Bauer_-_Cloud_Data_Pipelines_-_YouTube.png?raw=true)](https://www.youtube.com/watch?v=0nw5nQ5T27E)
 
 
 ### Building
