@@ -1,78 +1,80 @@
-# variant-spark
-### Python API for VariantSpark
+# Python API for VariantSpark
 
-variant-spark is a scalable toolkit for genome-wide association studies optimized for GWAS like datasets
-build on top of Apache Spark.
+VariantSpark is a scalable, custom machine learning API for genome-wide association studies (i.e. optimized for GWAS-sized datasets).
+VariantSpark is built on top of Apache Spark core. It implements a supervised, wide random forest machine learning algorthim. 
 
-## Installation
+### 1. Install VariantSpark
 
-To install **variant-spark** use:
+    pip install variant-spark  
+    
+NOTES and TIPS: 
+ - Expects Python 2.x or better to be correctly installed on your system prior to installing VariantSpark.  
+ - You may need to run this command as 'sudo'.
+ - Expects that you have installed Python 'pip' package manager prior to running this command.
 
-    pip install variant-spark
+### 2. Verify VariantSpark
 
-## Usage
+    variant-spark --help
 
-The code below illustates the basic use of variant-spark:
+### 3. Submit a Job to VariantSpark
+
+VariantSpark Python API is a wrapper written around a custom ML libary written on  Apache Spark core library (original library is written in Scala). This Scala jar file needs to be passed to `spark-submit` to run VariantSpark using the Pyhton API.
+
+3a. Find the location of the VariantSpark jar file by running this command:
+
+    varspark-jar
+    
+3b. Use one of two commands to submit a job to VariantSpark.  
+
+    varspark-submit ...
+    varspark-submit examples/hipster_index.py  
+    --OR--
+    spark-submit --jars `varspark-jar` ... 
+    spark-submit --jars `varspark-jar` examples/hipster_index.py
+
+**NOTES and TIPS:**   
+  - Upload the sample files (from the \examples directory) to your cluster to run these examples. 
+  - Edit the path to these files in the JOB definition file, depending on your upload location.   
+  - Locate the JOB definition file - **`hipster_index.py`** (in the `/VariantSpark/python/examples` directory)  
+  - Locate the DATA files - **`chr22_1000.vcf`** and **`chr22-labels.csv`**  (in the `/VariantSpark/data/` directory)
+  - You may need to use the complete path when running this command
+
+### Code Example
+
+The code below shows using the Python API for VariantSpark with an example analysis using the HipsterIndex synthetic phenotype:
 
     from varspark import VariantsContext
     from pyspark.sql import SparkSession
 
-    spark = SparkSession.builder\
+    spark = SparkSession.builder \
         .appName("HipsterIndex") \
         .getOrCreate()
         
     vs = VariantsContext(spark)
     features = vs.import_vcf(VCF_FILE)
     labels = vs.load_label(LABEL_FILE, LABEL_NAME)
-    model  = features.importance_analysis(labels, mtry_fraction = 0.1, seed = 13, n_trees = 200)
-    print("Oob = %s" % model.oob_error())
+    model  = features \
+        .importance_analysis(labels, mtry_fraction = 0.1, seed = 13, n_trees = 200)
+    print("Out of bag error = %s" % model.oob_error())
     
+**NOTES and TIPS:**
+   - You may wish to set other values for the input parameters to the importanceAnalysis function
+   - These include the following: mtry_fraction, seed and n_trees
 
-### Submitting jobs to spark
+#### Other Information
 
-**variant-spark** is a wrapper on a scala library and the it's jar needs to be passed to `spark-submit`
+For more information about how the VariantSpark wide random forest algorithm works, see the main README.md page of this repository.
 
-The location of the jar can be obtained by running:
+##### Development Install
 
-    varspark-jar
-    
-To submit a variant-spark file you can either use:
-
-    spark-submit --jars ` varspark-jar` ... 
-    
-or the a simple wrapper that adds the requied options for you:
-
-    varspark-submit ...
-  
-### Example: Compute variable importance on a small dataset
-
-Using `varspark-submit`:
-
-    varspark-submit examples/hipster_index.py
-    
-Using `spark-submit`:
-
-    spark-submit --jars `varspark-jar` examples/hipster_index.py
-
-**NOTE:** You must upload the sample files to your cluster to run these examples.  
-You may need to edit the path to these files in the JOB definition file, depending on your upload location.   
-
-  -- JOB definition file - **`hipster_index.py`** (in the `/VariantSpark/python/examples` directory)  
-  -- DATA files - **`chr22_1000.vcf`** and **`chr22-labels.csv`**  (in the `/VariantSpark/data/` directory)
-
-## Dev Install
-
-Install **variant-spark** for development using:
+Install VariantSpark for development using this command:
 
     git https://github.com/aehrc/VariantSpark.git
     cd VariantSpark/python
     pip install -e .
 
-Running the tests after a dev install above:
+Run the tests after a dev install above, using this command:
 
     pip install variant-spark[test]
     python -m unittest varspark.test.test_core
     
-## Resources
-
-TBP
