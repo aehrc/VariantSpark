@@ -33,11 +33,13 @@ class HailMutableVariantAdapter(v: Variant) extends MutableVariant {
   private var mutated = false
   private lazy val altBuffer = v.altAlleles.map(_.alt).toBuffer
   
-  def getOrElseUpdate(alt: BasesVariant): IndexedVariant = {
-    val index = altBuffer.indexOf(alt)
-    if (index >= 0) index else {
-      mutated = true
-      (altBuffer+=alt).size -1
+  def getOrElseUpdate(base: BasesVariant): IndexedVariant = {
+    if (ref == base) 0 else {
+      val index = altBuffer.indexOf(base)
+      if (index >= 0) index + 1 else {
+        mutated = true
+        (altBuffer+=base).size
+      }
     }
   }
  

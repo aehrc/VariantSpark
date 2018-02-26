@@ -14,10 +14,7 @@ class RecombinationMapTest {
   
   @Test
   def testLoadBedFile() {
-    println("Hello")
     val rm = RecombinationMap.fromBedFile("data/relatedness/genetic_map_GRCh37_1Mb.bed.gz")    
-    implicit val formats = Serialization.formats(NoTypeHints)
-    val ser = write(rm)
-    println(ser)
+    assertEquals(22, rm.contigMap.size)
   }
 }

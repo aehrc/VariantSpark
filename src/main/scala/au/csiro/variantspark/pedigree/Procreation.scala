@@ -13,15 +13,15 @@ import scala.collection.mutable.Buffer
  * TODO: Rename to include diploid
  */
 case class GenotypeSpec(val p:Int) extends AnyVal {
-  def _0: Int = p & ((p << 16) -1)
+  def _0: Int = p & ((1 << 16) -1)
   def _1: Int = (p >> 16)
   def apply(index:Int): Int = if (index == 0) _0 else if (index == 1) _1 else throw new IllegalArgumentException()
 }
 
 object GenotypeSpec {
   def apply(p0:Int, p1: Int) = {
-    assert(p0 >=0 && p0 < (1<<16) && p1 >=0 && p1 < (1<<16),s"p0=${p0}, p1=${p1}")
-    new GenotypeSpec(p0 & (p1 << 16))
+    assert(p0 >=0 && p0 < (1<<15) && p1 >=0 && p1 < (1<<15), s"p0=${p0}, p1=${p1}")
+    new GenotypeSpec(p0 | (p1 << 16))
   }   
 }
 
@@ -71,9 +71,11 @@ case class GameteSpec(val splits:Map[ContigID, MeiosisSpec], val mutations:Mutat
     // TODO: it appears that even thought the vcf is muliallelic
     // there are still possibilites for repeated positions with different references
     // e.g. one for SNPs and one for deletions
+    
+    
     mutations.get(GenomicPos(v.contig,v.pos)).flatMap(m =>
       if (m.ref == v.ref) Some(v.getOrElseUpdate(m.alt)) else None
-    ).getOrElse(genotype(splits(v.contig).getChromosomeAt(v.pos)))   
+    ).getOrElse(genotype(splits(v.contig).getChromosomeAt(v.pos)))
   }
 }
 
