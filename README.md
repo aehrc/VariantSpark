@@ -139,7 +139,7 @@ To use an example:
 1. **Create** a free, community [Databricks](https://databricks.com/) account
 2. **Download** the `VariantSpark_HipsterIndex_Spark2.2.scala` file. Databricks notebook is for Spark 2.2 (scala 2.11)
 3. **Import** the notebook file into your Databricks instance. Read the instructions in the notebook on how to import a new library to use the `variant-spark` library.
-4. **Start** a cluster (be sure to select the version of Spark and Scala specified in the notebook)
+4. **Start** a cluster (be sure to select the version of Spark and Scala specified in the notebook). Wait up to 5 minutes for the cluster to be ready.
 5. **Attach** the notebook to the cluster
 6. **Run** the sample notebook
 
