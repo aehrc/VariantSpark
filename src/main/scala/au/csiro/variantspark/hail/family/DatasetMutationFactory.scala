@@ -17,7 +17,7 @@ object DatasetMutationFactory {
   def snpMutation(v: Variant): Mutation  = {
     // assume it's possible to do one
     // need to filter out the existing alleles 
-    // select a random from available fones
+    // select a random from available ones
     val usedSnps = v.altAlleles.filter(_.isSNP).map(_.alt).toSet + v.ref
     val mutationSnps =  bases.diff(usedSnps)
     assert(!mutationSnps.isEmpty, "Need a non empty mutation set")

@@ -6,4 +6,5 @@ package object pedigree {
   type GenotypePool = scala.collection.Map[IndividualID, GenotypeSpec]
   type IndexedVariant = Int
   type BasesVariant = String
+  type DNABase = String
 }
