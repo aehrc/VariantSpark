@@ -8,6 +8,7 @@ import au.csiro.variantspark.pedigree.Mutation
 import au.csiro.variantspark.pedigree.ContigSet
 import au.csiro.pbdava.ssparkle.common.utils.Logging
 import au.csiro.variantspark.utils.defRng
+import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 
 
 object DatasetMutationFactory {
@@ -37,6 +38,7 @@ object DatasetMutationFactory {
 class DatasetMutationFactory(vgs: GenericDataset, 
     mutationRate: Double, contigSet:ContigSet, seed:Long =  defRng.nextLong) extends MutationSetBatchFactory with Logging {
   
+  implicit private val rng = new XorShift1024StarRandomGenerator(seed)
   import DatasetMutationFactory._
   // in principle I could just generate a single stream and then split it into sets
   lazy val allMutations = vgs.rdd.map(_._1)
@@ -56,7 +58,7 @@ class DatasetMutationFactory(vgs: GenericDataset,
     if (samplingFraction > 1) {
       logWarning("There is not enough mutation canditates to draw ${mutationRate * contigSet.totalLenght} mutations")
     }
-    MutationSet(allMutations.sample(false, samplingFraction, seed).collect()) 
+    MutationSet(allMutations.sample(false, samplingFraction, rng.nextLong()).collect()) 
   }
   
     // split mutations to sets
