@@ -5,6 +5,10 @@ import au.csiro.variantspark.pedigree.MutationSetBatchFactory
 import au.csiro.variantspark.pedigree.MutationSet
 import is.hail.variant.Variant
 import au.csiro.variantspark.pedigree.Mutation
+import au.csiro.variantspark.pedigree.ContigSet
+import au.csiro.pbdava.ssparkle.common.utils.Logging
+import au.csiro.variantspark.utils.defRng
+
 
 object DatasetMutationFactory {
   
@@ -14,15 +18,14 @@ object DatasetMutationFactory {
     v.altAlleles.forall { x => x.isSNP }
   }
   
-  def snpMutation(v: Variant): Mutation  = {
+  def snpMutation(v: Variant): Iterator[Mutation]  = {
     // assume it's possible to do one
     // need to filter out the existing alleles 
     // select a random from available ones
     val usedSnps = v.altAlleles.filter(_.isSNP).map(_.alt).toSet + v.ref
     val mutationSnps =  bases.diff(usedSnps)
     assert(!mutationSnps.isEmpty, "Need a non empty mutation set")
-    //TODO: select a random mutation
-    Mutation(v, v.ref, mutationSnps.iterator.next)
+    mutationSnps.iterator.map(Mutation(v, v.ref,_))
   }
 }
 
@@ -31,25 +34,34 @@ object DatasetMutationFactory {
  * Also this will create non overlapping mutations all offspring (which may be ok)
  * 
  */
-class DatasetMutationFactory(vgs: GenericDataset, size:Int) extends MutationSetBatchFactory {
- 
-  lazy val mutationsIterator  = createBatch(size).toIterator
+class DatasetMutationFactory(vgs: GenericDataset, 
+    mutationRate: Double, contigSet:ContigSet, seed:Long =  defRng.nextLong) extends MutationSetBatchFactory with Logging {
   
-  override def create() = mutationsIterator.next()
+  import DatasetMutationFactory._
+  // in principle I could just generate a single stream and then split it into sets
+  lazy val allMutations = vgs.rdd.map(_._1)
+   .filter(allSNP)
+   .filter(_.nAltAlleles <= 2) // at least one base to choose from (ref and two alts are used)
+   .flatMap(snpMutation).cache()
    
-  def createBatch(batchSize: Int): Seq[MutationSet] = {
+  // these are all available mutations 
+  lazy val mutationCount = allMutations.count()  
+  
+  override def create():MutationSet = {
     
-    import DatasetMutationFactory._
-    // in principle I could just generate a single stream and then split it into sets
-    val allMutations = vgs.rdd.map(_._1)
-     .filter(allSNP)
-     .filter(_.nAltAlleles <= 2) // at least one base to choose from (ref and two alts are used)
-     .map(snpMutation).collect()
+    logInfo(s"Found ${mutationCount} mutation candidates")
+    val samplingFraction:Double = mutationRate * contigSet.totalLenght / mutationCount
+    logInfo(s"Samplig mutations with: ${samplingFraction} rate")
+    
+    if (samplingFraction > 1) {
+      logWarning("There is not enough mutation canditates to draw ${mutationRate * contigSet.totalLenght} mutations")
+    }
+    MutationSet(allMutations.sample(false, samplingFraction, seed).collect()) 
+  }
   
     // split mutations to sets
     // here or couild be done in parallel as well
     // zip with stream of randomm ints
-    allMutations.map(m => (m, (Math.random() * batchSize).toInt)).groupBy(_._2)
-      .valuesIterator.map(a => MutationSet(a.unzip._1.toSeq)).toSeq
-  }
+    //allMutations.map(m => (m, (Math.random() * batchSize).toInt)).groupBy(_._2)
+    //  .valuesIterator.map(a => MutationSet(a.unzip._1.toSeq)).toSeq
 }

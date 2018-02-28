@@ -43,7 +43,9 @@ object ContigSpec {
   }
 }
 
-case class ContigSet(val contigs: Seq[ContigSpec])
+case class ContigSet(val contigs: Seq[ContigSpec]) {
+  def totalLenght:Long = contigs.map(_.length).sum
+}
 
 object ContigSet {
   

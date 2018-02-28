@@ -18,6 +18,7 @@ case class Mutation(pos: GenomicPos, ref: String, alt: String)
 
 object Mutation {
   def makeRandom(pos: GenomicPos, ref: DNABase)(implicit rng: RandomGenerator): Mutation = {
+    //TODO: add actual geneation of mutation
     Mutation(pos, ref, ref)
   }
 }
@@ -36,6 +37,6 @@ trait MutationSetFactory {
 }
 
 trait MutationSetBatchFactory extends MutationSetFactory {
-  def createBatch(batchSize: Int): Seq[MutationSet]
-  def create() = createBatch(0).head
+  //def createBatch(batchSize: Int): Seq[MutationSet]
+  //def create() = createBatch(0).head
 }
