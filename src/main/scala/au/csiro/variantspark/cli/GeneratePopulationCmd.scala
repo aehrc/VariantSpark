@@ -77,8 +77,9 @@ class GeneratePopulationCmd extends ArgsApp  with SparkApp with Logging with Tes
     val actualMinPartitions = if (minPartitions > 0) minPartitions else  sc.defaultParallelism 
     echo(s"Loadig mutations from vcf from ${inputFile} with ${actualMinPartitions} partitions")
     val hc = HailContext(sc)
-    val gds = hc.importVCFsGenericEx(inputFile.split(","), nPartitions = Some(actualMinPartitions))
-    new DatasetMutationFactory(gds, mutationRate = Defaults.humanMutationRate, contigSet = ReferenceContigSet.b37, randomSeed)
+    val variantsRDD = hc.importVCFSnps(inputFile.split(","), nPartitions = Some(actualMinPartitions))
+    new DatasetMutationFactory(variantsRDD, mutationRate = Defaults.humanMutationRate, 
+        contigSet = ReferenceContigSet.b37, randomSeed)
   }
       
   @Override

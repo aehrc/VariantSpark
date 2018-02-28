@@ -9,6 +9,7 @@ import au.csiro.variantspark.pedigree.ContigSet
 import au.csiro.pbdava.ssparkle.common.utils.Logging
 import au.csiro.variantspark.utils.defRng
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
+import org.apache.spark.rdd.RDD
 
 
 object DatasetMutationFactory {
@@ -35,13 +36,13 @@ object DatasetMutationFactory {
  * Also this will create non overlapping mutations all offspring (which may be ok)
  * 
  */
-class DatasetMutationFactory(vgs: GenericDataset, 
+class DatasetMutationFactory(variantsRDD: RDD[Variant], 
     mutationRate: Double, contigSet:ContigSet, seed:Long =  defRng.nextLong) extends MutationSetBatchFactory with Logging {
   
   implicit private val rng = new XorShift1024StarRandomGenerator(seed)
   import DatasetMutationFactory._
   // in principle I could just generate a single stream and then split it into sets
-  lazy val allMutations = vgs.rdd.map(_._1)
+  lazy val allMutations = variantsRDD
    .filter(allSNP)
    .filter(_.nAltAlleles <= 2) // at least one base to choose from (ref and two alts are used)
    .flatMap(snpMutation).cache()
