@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-
 import click
 import pandas as pd
 from itertools import chain
