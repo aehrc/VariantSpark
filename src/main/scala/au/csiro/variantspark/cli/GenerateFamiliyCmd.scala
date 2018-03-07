@@ -34,8 +34,12 @@ import au.csiro.variantspark.cli.args.HailArgs
 
 /**
  * Generates specification of a synthetic population based on 
- * provided pedigree and genomic map for recombination. 
+ * provided pedigree and recombination map. 
+ * The recombination map defines the genome build to use (at least to the extend that it defined the contigs 
+ * and their lengths)
  * Optionally it also generates mutations based on provided VCF file as a source of mutation variants.
+ * The file needs to use the build (contig spec as the genomic map)
+ * Currently only autosomes are supported.
  */
 class GenerateFamilyCmd extends ArgsApp  with SparkApp with HailArgs with Logging with TestArgs with Echoable {
   

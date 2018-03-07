@@ -31,23 +31,41 @@ import scala.io.Source
 ##contig=<ID=Y,length=59373566,assembly=b37>
 **/
 
-case class ContigSpec(val id:String, val length:Long, val assembly:Option[String] = None) 
+case class ContigSpec(val id:String, val length:Long)  {
+  
+  def isAutosome:Boolean = id match { case ContigSpec.autosome() => true case _  => false }
+  def isSex:Boolean = ("X" == id || "Y" == id)
+  def isChromosome = isAutosome || isSex
+}
 
 object ContigSpec {
+ 
+  private val autosome = raw"\d+".r
   private val contigHeader = raw"##contig=<ID=(\w+),length=(\d+),assembly=(\w+)>".r
   
   def parseVcfHeaderLine(headerLine:String):ContigSpec =  {
     headerLine match {
-      case contigHeader(contig, length, assembly) => ContigSpec(contig, length.toLong, Some(assembly))
+      case contigHeader(contig, length, assembly) => ContigSpec(contig, length.toLong)
     }
   }
 }
 
 case class ContigSet(val contigs: Seq[ContigSpec]) {
   def totalLenght:Long = contigs.map(_.length).sum
+  def filter(predicate: ContigSpec=> Boolean):ContigSet = ContigSet(contigs.filter(predicate))
+  def onlyAutosomes() = filter(_.isAutosome)
+  def onlyChromosomes() = filter(_.isChromosome)
 }
 
 object ContigSet {
+
+  implicit case object ContigSpecOrdering extends Ordering[ContigSpec] {
+    def compare(x: ContigSpec, y: ContigSpec): Int = {
+      if (x.isAutosome && y.isAutosome) x.id.toInt.compareTo(y.id.toInt) else x.id.compareTo(y.id)
+    }
+  }
+
+  def fromUnsorted(contigs: Seq[ContigSpec]) = apply(contigs.sorted)
   
   def fromResource(resourcePath:String): ContigSet = {
     fromVcfHeader(getClass.getClassLoader.getResourceAsStream(resourcePath))

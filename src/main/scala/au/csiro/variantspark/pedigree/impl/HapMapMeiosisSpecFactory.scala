@@ -43,9 +43,9 @@ case class ContigRecombinationMap(val bins:Array[Long], val recombFreq:Array[Dou
       }
     }
     result.toList
-    //val temp = p.toStream.zip(Stream.continually(rng.nextDouble())).zipWithIndex
-    //temp.filter({ case ((p,r),i) => r <= p*(bins(i+1) -bins(i))}).map(_._2.toLong).toList
   }
+  
+  def length  = bins.last
   
   /**
    * Draw a random positon from the bin
@@ -60,6 +60,11 @@ case class RecombinationMap(val contigMap: Map[ContigID, ContigRecombinationMap]
  
   def crossingOver(rng: XorShift1024StarRandomGenerator):Map[ContigID, MeiosisSpec] = {
     contigMap.mapValues(cm => MeiosisSpec(cm.drawSplits(rng), rng.nextInt(2)))
+  }
+   
+  def toContigSpecSet:ContigSet = {
+    val contigSpecs = contigMap.map({ case (kid, krm) => new ContigSpec(kid, krm.length)});
+    ContigSet.fromUnsorted(contigSpecs.toSeq);
   }
 }
 
