@@ -1,4 +1,4 @@
-package au.csiro.variantspark.pedigree
+package au.csiro.variantspark.genomics
 
 import scala.collection.mutable.HashMap
 import scala.io.Source
@@ -6,7 +6,7 @@ import org.json4s._
 import org.json4s.jackson.Serialization
 import org.json4s.jackson.Serialization.{read, write, writePretty}
 import java.io.Writer
-import au.csiro.variantspark.pedigree.Gender._
+import au.csiro.variantspark.genomics.Gender._
 
 
 trait FamilyMember extends Serializable {

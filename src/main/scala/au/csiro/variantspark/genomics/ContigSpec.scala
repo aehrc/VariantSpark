@@ -1,4 +1,4 @@
-package au.csiro.variantspark.pedigree
+package au.csiro.variantspark.genomics
 
 import java.io.InputStream
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils

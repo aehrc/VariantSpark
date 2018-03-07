@@ -1,11 +1,11 @@
 package au.csiro.variantspark.hail.family
 
 import is.hail.variant.GenericDataset
-import au.csiro.variantspark.pedigree.MutationSetBatchFactory
-import au.csiro.variantspark.pedigree.MutationSet
+import au.csiro.variantspark.genomics.MutationSetBatchFactory
+import au.csiro.variantspark.genomics.MutationSet
 import is.hail.variant.Variant
-import au.csiro.variantspark.pedigree.Mutation
-import au.csiro.variantspark.pedigree.ContigSet
+import au.csiro.variantspark.genomics.Mutation
+import au.csiro.variantspark.genomics.ContigSet
 import au.csiro.pbdava.ssparkle.common.utils.Logging
 import au.csiro.variantspark.utils.defRng
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator

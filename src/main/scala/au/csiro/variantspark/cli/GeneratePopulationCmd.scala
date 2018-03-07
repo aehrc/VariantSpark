@@ -16,14 +16,14 @@ import au.csiro.variantspark.cmd.EchoUtils._
 import au.csiro.variantspark.cmd.Echoable
 import au.csiro.variantspark.utils.defRng
 
-import au.csiro.variantspark.pedigree.ReferenceContigSet
+import au.csiro.variantspark.genomics.ReferenceContigSet
 import is.hail.HailContext
 import au.csiro.variantspark.hail.family.GenerateFamily
-import au.csiro.variantspark.pedigree.FamilySpec
-import au.csiro.variantspark.pedigree.impl.SimpleMeiosisSpecFactory
-import au.csiro.variantspark.pedigree.PedigreeTree
+import au.csiro.variantspark.genomics.FamilySpec
+import au.csiro.variantspark.genomics.impl.SimpleMeiosisSpecFactory
+import au.csiro.variantspark.genomics.PedigreeTree
 import au.csiro.variantspark.hail._
-import au.csiro.variantspark.pedigree.impl.HapMapMeiosisSpecFactory
+import au.csiro.variantspark.genomics.impl.HapMapMeiosisSpecFactory
 import scala.io.Source
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 import au.csiro.variantspark.cli.args.HailArgs

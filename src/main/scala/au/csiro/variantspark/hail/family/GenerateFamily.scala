@@ -2,8 +2,8 @@ package au.csiro.variantspark.hail.family
 
 import is.hail.variant.GenericDataset
 import is.hail.variant.Genotype
-import au.csiro.variantspark.pedigree.OffspringSpec
-import au.csiro.variantspark.pedigree.GenomicPos
+import au.csiro.variantspark.genomics.OffspringSpec
+import au.csiro.variantspark.genomics.GenomicPos
 import is.hail.variant.Variant
 import is.hail.annotations.Annotation
 import au.csiro.variantspark.hail.variant.phased.BiCall
@@ -14,17 +14,17 @@ import is.hail.variant._
 import is.hail.utils._
 import is.hail.expr._
 import is.hail.sparkextras.OrderedRDD
-import au.csiro.variantspark.pedigree.GenotypeSpec
+import au.csiro.variantspark.genomics.GenotypeSpec
 import scala.collection.mutable.ArrayBuffer
-import au.csiro.variantspark.pedigree.FamilyTrio
+import au.csiro.variantspark.genomics.FamilyTrio
 import scala.collection.mutable.HashMap
-import au.csiro.variantspark.pedigree.IndividualID
-import au.csiro.variantspark.pedigree.FamilySpec
-import au.csiro.variantspark.pedigree.GenotypePool
-import au.csiro.variantspark.pedigree.MutableVariant
-import au.csiro.variantspark.pedigree.ContigID
-import au.csiro.variantspark.pedigree.BasesVariant
-import au.csiro.variantspark.pedigree.IndexedVariant
+import au.csiro.variantspark.genomics.IndividualID
+import au.csiro.variantspark.genomics.FamilySpec
+import au.csiro.variantspark.genomics.GenotypePool
+import au.csiro.variantspark.genomics.MutableVariant
+import au.csiro.variantspark.genomics.ContigID
+import au.csiro.variantspark.genomics.BasesVariant
+import au.csiro.variantspark.genomics.IndexedVariant
 
 class HailMutableVariantAdapter(v: Variant) extends MutableVariant {
   def contig: ContigID = v.contig

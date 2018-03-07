@@ -16,23 +16,23 @@ import au.csiro.variantspark.cmd.EchoUtils._
 import au.csiro.variantspark.cmd.Echoable
 import au.csiro.variantspark.utils.defRng
 
-import au.csiro.variantspark.pedigree.ReferenceContigSet
+import au.csiro.variantspark.genomics.ReferenceContigSet
 import is.hail.HailContext
 import au.csiro.variantspark.hail.family.GenerateFamily
-import au.csiro.variantspark.pedigree.FamilySpec
-import au.csiro.variantspark.pedigree.impl.SimpleMeiosisSpecFactory
-import au.csiro.variantspark.pedigree.PedigreeTree
+import au.csiro.variantspark.genomics.FamilySpec
+import au.csiro.variantspark.genomics.impl.SimpleMeiosisSpecFactory
+import au.csiro.variantspark.genomics.PedigreeTree
 import au.csiro.variantspark.hail._
-import au.csiro.variantspark.pedigree.impl.HapMapMeiosisSpecFactory
+import au.csiro.variantspark.genomics.impl.HapMapMeiosisSpecFactory
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 import java.io.FileWriter
-import au.csiro.variantspark.pedigree.GameteSpecFactory
-import au.csiro.variantspark.pedigree.MutationSetFactory
+import au.csiro.variantspark.genomics.GameteSpecFactory
+import au.csiro.variantspark.genomics.MutationSetFactory
 import au.csiro.variantspark.hail.family.DatasetMutationFactory
-import au.csiro.variantspark.pedigree.Defaults
+import au.csiro.variantspark.genomics.Defaults
 import au.csiro.variantspark.cli.args.HailArgs
-import au.csiro.variantspark.pedigree.ContigSet
-import au.csiro.variantspark.pedigree.impl.RecombinationMap
+import au.csiro.variantspark.genomics.ContigSet
+import au.csiro.variantspark.genomics.impl.RecombinationMap
 
 /**
  * Generates specification of a synthetic population based on 

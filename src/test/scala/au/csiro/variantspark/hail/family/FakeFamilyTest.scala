@@ -23,11 +23,11 @@ import is.hail.io.vcf.GenericRecordReader
 import au.csiro.variantspark.hail.variant.io.ExportVCFEx
 import org.apache.spark.sql.Row
 import au.csiro.variantspark.hail.variant.phased.BiCall
-import au.csiro.variantspark.pedigree.OffspringSpec
-import au.csiro.variantspark.pedigree.GameteSpec
-import au.csiro.variantspark.pedigree.MeiosisSpec
-import au.csiro.variantspark.pedigree.impl.SimpleMeiosisSpecFactory
-import au.csiro.variantspark.pedigree.ReferenceContigSet
+import au.csiro.variantspark.genomics.OffspringSpec
+import au.csiro.variantspark.genomics.GameteSpec
+import au.csiro.variantspark.genomics.MeiosisSpec
+import au.csiro.variantspark.genomics.impl.SimpleMeiosisSpecFactory
+import au.csiro.variantspark.genomics.ReferenceContigSet
 
 
 object FakeFamily {

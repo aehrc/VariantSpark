@@ -1,4 +1,4 @@
-package au.csiro.variantspark.pedigree
+package au.csiro.variantspark.genomics
 
 import scalax.collection.Graph
 import scalax.collection.edge.LDiEdge     // labeled directed edge

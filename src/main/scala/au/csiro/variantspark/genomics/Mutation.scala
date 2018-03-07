@@ -1,4 +1,4 @@
-package au.csiro.variantspark.pedigree
+package au.csiro.variantspark.genomics
 
 import org.apache.commons.math3.random.RandomGenerator
 

@@ -1,14 +1,14 @@
-package au.csiro.variantspark.pedigree.impl
+package au.csiro.variantspark.genomics.impl
 
-import au.csiro.variantspark.pedigree.MutationSetFactory
-import au.csiro.variantspark.pedigree.MutationSet
-import au.csiro.variantspark.pedigree.GenomicPos
-import au.csiro.variantspark.pedigree.DNABase
-import au.csiro.variantspark.pedigree.ContigSet
-import au.csiro.variantspark.pedigree.Defaults
+import au.csiro.variantspark.genomics.MutationSetFactory
+import au.csiro.variantspark.genomics.MutationSet
+import au.csiro.variantspark.genomics.GenomicPos
+import au.csiro.variantspark.genomics.DNABase
+import au.csiro.variantspark.genomics.ContigSet
+import au.csiro.variantspark.genomics.Defaults
 import au.csiro.variantspark.utils.Sampling
 import org.apache.commons.math3.random.RandomGenerator
-import au.csiro.variantspark.pedigree.Mutation
+import au.csiro.variantspark.genomics.Mutation
 import org.apache.commons.math3.distribution.PoissonDistribution
 
 

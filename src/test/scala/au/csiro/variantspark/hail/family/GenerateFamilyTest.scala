@@ -9,11 +9,11 @@ import is.hail.variant._
 import is.hail.utils._
 import is.hail.expr._
 import au.csiro.variantspark.hail._
-import au.csiro.variantspark.pedigree.PedigreeTree
-import au.csiro.variantspark.pedigree.FamilySpec
-import au.csiro.variantspark.pedigree.impl.SimpleMeiosisSpecFactory
-import au.csiro.variantspark.pedigree.ReferenceContigSet
-import au.csiro.variantspark.pedigree.GameteSpecFactory
+import au.csiro.variantspark.genomics.PedigreeTree
+import au.csiro.variantspark.genomics.FamilySpec
+import au.csiro.variantspark.genomics.impl.SimpleMeiosisSpecFactory
+import au.csiro.variantspark.genomics.ReferenceContigSet
+import au.csiro.variantspark.genomics.GameteSpecFactory
 
 
 class HailMutableVariantAdapterTest {

@@ -1,9 +1,9 @@
 package au.csiro.variantspark.hail
 
 import is.hail.variant.Variant
-import au.csiro.variantspark.pedigree.GenomicPos
+import au.csiro.variantspark.genomics.GenomicPos
 import au.csiro.variantspark.hail.variant.phased.BiCall
-import au.csiro.variantspark.pedigree.GenotypeSpec
+import au.csiro.variantspark.genomics.GenotypeSpec
 import is.hail.variant.GTPair
 
 package object family {

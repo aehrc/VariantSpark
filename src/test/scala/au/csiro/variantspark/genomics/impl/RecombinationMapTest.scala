@@ -1,4 +1,4 @@
-package au.csiro.variantspark.pedigree.impl
+package au.csiro.variantspark.genomics.impl
 
 
 import org.junit.Assert._
@@ -8,8 +8,8 @@ import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 
 import org.json4s._
 import org.json4s.jackson.Serialization
-import org.json4s.jackson.Serialization.{read, write}
-import au.csiro.variantspark.pedigree.ReferenceContigSet
+
+import au.csiro.variantspark.genomics.ReferenceContigSet
 
 class RecombinationMapTest {
   
