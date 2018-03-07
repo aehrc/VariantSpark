@@ -34,11 +34,12 @@ import au.csiro.variantspark.cli.args.HailArgs
 
 /**
  * Generates specification of a synthetic population based on 
- * provided pedigree and genomic map for recombination
+ * provided pedigree and genomic map for recombination. 
+ * Optionally it also generates mutations based on provided VCF file as a source of mutation variants.
  */
 class GenerateFamilyCmd extends ArgsApp  with SparkApp with HailArgs with Logging with TestArgs with Echoable {
   
-  @Option(name="-of", required=true, usage="Path to output speficification file", aliases=Array("--output-file"))
+  @Option(name="-of", required=true, usage="Path to output population spec file", aliases=Array("--output-file"))
   val outputFile:String = null
 
   @Option(name="-pf", required=true, usage="Path to pedigree file", aliases=Array("--ped-file"))
@@ -47,10 +48,14 @@ class GenerateFamilyCmd extends ArgsApp  with SparkApp with HailArgs with Loggin
   @Option(name="-bf", required=true, usage="Path bed file with recombination map", aliases=Array("--bed-file"))
   val bedFile:String = null
   
-  @Option(name="-vf", required=false, usage="Path to input vcf file to draw mutations from", 
+  @Option(name="-vf", required=false, usage="Optional path to a vcf file to draw mutations from (default=None)", 
         aliases=Array("--variant-file"))
   val variantFile:String = null
-    
+
+  @Option(name="-mr", required=false, usage="Mutation rate in [bps/generation] (default = 1.1e-8)", 
+        aliases=Array("--mutation-rate"))
+  val mutationRate:Double = 1.1e-8
+
   @Option(name="-sr", required=false, usage="Random seed to use (def=<random>)", aliases=Array("--seed"))
   val randomSeed: Long = defRng.nextLong
 
@@ -65,22 +70,25 @@ class GenerateFamilyCmd extends ArgsApp  with SparkApp with HailArgs with Loggin
  
       
   def loadMutationsFactory(inputFile:String):DatasetMutationFactory = {  
-    echo(s"Loadig mutations from vcf from ${inputFile} with ${actualMinPartitions} partitions")
+    echo(s"Loadig mutations from vcf:  ${inputFile} with ${actualMinPartitions} partitions")
     val variantsRDD = hc.importVCFSnps(inputFile.split(","), nPartitions = Some(actualMinPartitions))
-    new DatasetMutationFactory(variantsRDD, mutationRate = Defaults.humanMutationRate, 
+    new DatasetMutationFactory(variantsRDD, mutationRate = mutationRate, 
         contigSet = ReferenceContigSet.b37, randomSeed)
   }
       
   @Override
   def run():Unit = {
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
-    echo(s"Loading pedigree from: ${pedFile}")     
+    echo(s"Loading pedigree from: ${pedFile}")
+    //TODO: load from HDFS
     val tree = PedigreeTree.loadPed(pedFile)    
     echo(s"Loading genetic map from: ${bedFile}") 
+    //TODO: load from HDFS
     val meiosisFactory = HapMapMeiosisSpecFactory.fromBedFile(bedFile, randomSeed)
-    
-    //DatasetMutationFactory
-    val mutationsFactory =  SOption(variantFile).map(loadMutationsFactory _) 
+    val mutationsFactory = SOption(variantFile).map(loadMutationsFactory _) 
+    if (mutationsFactory.isEmpty) {
+      echo("Mutation source not provided - skpping mutations")
+    }
     val gameteFactory = GameteSpecFactory(meiosisFactory, mutationsFactory)
     val familySpec = FamilySpec.apply(tree, gameteFactory)
     echo(s"Writing population spec to: ${outputFile}")

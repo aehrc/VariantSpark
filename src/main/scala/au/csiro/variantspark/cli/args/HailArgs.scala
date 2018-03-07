@@ -4,7 +4,9 @@ import org.kohsuke.args4j.Option
 import au.csiro.pbdava.ssparkle.spark.SparkApp
 import is.hail.HailContext
 
-
+/**
+ * Common options and properties for applications using Hail.
+ */
 trait HailArgs extends SparkApp {
 
   override def createConf = super.createConf
