@@ -30,17 +30,13 @@ import au.csiro.variantspark.pedigree.GameteSpecFactory
 import au.csiro.variantspark.pedigree.MutationSetFactory
 import au.csiro.variantspark.hail.family.DatasetMutationFactory
 import au.csiro.variantspark.pedigree.Defaults
+import au.csiro.variantspark.cli.args.HailArgs
 
 /**
  * Generates specification of a synthetic population based on 
  * provided pedigree and genomic map for recombination
  */
-class GenerateFamilyCmd extends ArgsApp  with SparkApp with Logging with TestArgs with Echoable {
-
-  override def createConf = super.createConf
-    .set("spark.sql.files.openCostInBytes", "53687091200") // 50GB : min for hail 
-    .set("spark.sql.files.maxPartitionBytes", "53687091200") // 50GB : min for hail 
-
+class GenerateFamilyCmd extends ArgsApp  with SparkApp with HailArgs with Logging with TestArgs with Echoable {
   
   @Option(name="-of", required=true, usage="Path to output speficification file", aliases=Array("--output-file"))
   val outputFile:String = null
@@ -54,15 +50,10 @@ class GenerateFamilyCmd extends ArgsApp  with SparkApp with Logging with TestArg
   @Option(name="-vf", required=false, usage="Path to input vcf file to draw mutations from", 
         aliases=Array("--variant-file"))
   val variantFile:String = null
-  
-  
+    
   @Option(name="-sr", required=false, usage="Random seed to use (def=<random>)", aliases=Array("--seed"))
   val randomSeed: Long = defRng.nextLong
 
-  @Option(name="-mp", required=false, usage="Min partition to use for input dataset(default=spark.default.pararellism)"
-      , aliases=Array("--min-partitions"))
-  val minPartitions: Int = -1
-  
   @Override
   def testArgs = Array(
       "-of", "target/g1k_ceu_family_15_2.spec.json",
@@ -74,9 +65,7 @@ class GenerateFamilyCmd extends ArgsApp  with SparkApp with Logging with TestArg
  
       
   def loadMutationsFactory(inputFile:String):DatasetMutationFactory = {  
-    val actualMinPartitions = if (minPartitions > 0) minPartitions else  sc.defaultParallelism 
     echo(s"Loadig mutations from vcf from ${inputFile} with ${actualMinPartitions} partitions")
-    val hc = HailContext(sc)
     val variantsRDD = hc.importVCFSnps(inputFile.split(","), nPartitions = Some(actualMinPartitions))
     new DatasetMutationFactory(variantsRDD, mutationRate = Defaults.humanMutationRate, 
         contigSet = ReferenceContigSet.b37, randomSeed)
@@ -103,6 +92,6 @@ class GenerateFamilyCmd extends ArgsApp  with SparkApp with Logging with TestArg
 
 object GenerateFamilyCmd  {
   def main(args:Array[String]) {
-    AppRunner.mains[GeneratePopulationCmd](args)
+    AppRunner.mains[GenerateFamilyCmd](args)
   }
 }

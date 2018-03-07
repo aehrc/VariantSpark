@@ -38,6 +38,10 @@ case class Offspring(val id:IndividualID, val gender:Gender, val paternalId:Indi
  */
 class FamilySpec(val members:Seq[FamilyMember]) extends Serializable {
 
+  case class Summary(val noFounders:Int, val noOffspring:Int) {
+    def total = noFounders  + noOffspring
+  }
+  
   def memberIds:List[IndividualID] =  members.map(_.id).toList
   
   def produceGenotypePool(v: MutableVariant, initialPool:GenotypePool):GenotypePool = {
@@ -50,11 +54,16 @@ class FamilySpec(val members:Seq[FamilyMember]) extends Serializable {
     }
     outputPool.toMap
   }
- 
+  
   def toJson(w:Writer)  {
     implicit val formats = Serialization.formats(ShortTypeHints(List(classOf[Founder], 
         classOf[Offspring]))) + new org.json4s.ext.EnumNameSerializer(Gender)
     w.append(writePretty(this))
+  }
+  
+  def summary: Summary = {
+    val noFounders  = members.filter(p => p.isInstanceOf[Founder]).toIterable.size;
+    Summary(noFounders, members.size - noFounders)
   }
 }
 
