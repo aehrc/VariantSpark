@@ -7,7 +7,8 @@ from itertools import combinations, chain
 
 def ped_to_graph(ped_df):
     tree = nx.DiGraph()
-    for _,offspring, father, mother, _ in ped_df.to_records():
+    for r in ped_df.to_records():
+        _,_,offspring, father, mother   = tuple(r)[0:5]
         if father!='0':
             tree.add_edge(father,offspring, rel='father')
         if mother!='0':

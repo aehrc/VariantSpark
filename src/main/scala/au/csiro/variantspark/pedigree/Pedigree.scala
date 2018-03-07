@@ -54,25 +54,24 @@ case class FamilyTrio(val id:IndividualID, val gender: Gender,
 object FamilyTrio {
   
   def fromPedLine(splitLine: Seq[String]):FamilyTrio = {
-    val pl = splitLine.toIndexedSeq 
-    FamilyTrio(id = pl(0) ,
-        gender = Gender.fromPedCode(pl(3).toInt), 
-        paternalId = IndividualID.fromPedId(pl(1)),
-        maternalId = IndividualID.fromPedId(pl(2)))     
+    val Seq(_, individualID, paternalID, maternalID, gender) =  splitLine.take(5)
+    FamilyTrio(id = individualID ,
+        gender = Gender.fromPedCode(gender.toInt), 
+        paternalId = IndividualID.fromPedId(paternalID),
+        maternalId = IndividualID.fromPedId(maternalID))     
   }
   
   /**
-   * for now just assume:
-   * - header 'Individual ID' 'Parental ID'  'Mathernal ID', 'Gender'
-   * - tab separated
+   * Loads a ped file in the LINKAGE format (see; https://www.broadinstitute.org/haploview/input-file-formats) 
+   * except that that it expects a header line: 'Family ID', 'Individual ID' 'Parental ID'  'Maternal ID', 'Gender',...
+   * Fields after `Gender` are ignored
    */
   def loadPed(pathToPedFile: String):List[FamilyTrio] = {
     implicit object PedTSVFormat extends TSVFormat {
     }
-    
     LoanUtils.withCloseable(CSVReader.open(new FileReader(pathToPedFile))) { reader => 
+      //TODO: add auto detection if header is presnet
       val header = reader.readNext().get
-      println(s"PED header: ${header}")
       reader.iterator.map(fromPedLine).toList
     }
   }  
@@ -122,7 +121,6 @@ object PedigreeTree {
   def loadPed(pathToPedFile: String): PedigreeTree = {
     PedigreeTree(FamilyTrio.loadPed(pathToPedFile))
   }
-  
 }
 
 
