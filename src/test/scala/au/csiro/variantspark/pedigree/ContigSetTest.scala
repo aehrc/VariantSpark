@@ -9,7 +9,7 @@ class ContigSetTest {
   def testParseVcfHeaderLine() {
     val line = "##contig=<ID=1,length=249250621,assembly=b37>"
     val contigSpec = ContigSpec.parseVcfHeaderLine(line)
-    assertEquals(ContigSpec("1", 249250621L, Some("b37")), contigSpec)
+    assertEquals(ContigSpec("1", 249250621L), contigSpec)
   }
   
   @Test 
