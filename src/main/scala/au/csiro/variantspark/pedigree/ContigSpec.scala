@@ -55,6 +55,7 @@ case class ContigSet(val contigs: Seq[ContigSpec]) {
   def filter(predicate: ContigSpec=> Boolean):ContigSet = ContigSet(contigs.filter(predicate))
   def onlyAutosomes() = filter(_.isAutosome)
   def onlyChromosomes() = filter(_.isChromosome)
+  def contigIds:Set[ContigID] = contigs.map(_.id).toSet
 }
 
 object ContigSet {

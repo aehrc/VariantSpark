@@ -31,6 +31,8 @@ import au.csiro.variantspark.pedigree.MutationSetFactory
 import au.csiro.variantspark.hail.family.DatasetMutationFactory
 import au.csiro.variantspark.pedigree.Defaults
 import au.csiro.variantspark.cli.args.HailArgs
+import au.csiro.variantspark.pedigree.ContigSet
+import au.csiro.variantspark.pedigree.impl.RecombinationMap
 
 /**
  * Generates specification of a synthetic population based on 
@@ -72,12 +74,12 @@ class GenerateFamilyCmd extends ArgsApp  with SparkApp with HailArgs with Loggin
       "-sr", "13"
       )      
  
-      
-  def loadMutationsFactory(inputFile:String):DatasetMutationFactory = {  
+          
+  def loadMutationsFactory(contigSet:ContigSet)(inputFile:String):DatasetMutationFactory = {  
     echo(s"Loadig mutations from vcf:  ${inputFile} with ${actualMinPartitions} partitions")
     val variantsRDD = hc.importVCFSnps(inputFile.split(","), nPartitions = Some(actualMinPartitions))
     new DatasetMutationFactory(variantsRDD, mutationRate = mutationRate, 
-        contigSet = ReferenceContigSet.b37, randomSeed)
+        contigSet = contigSet, randomSeed)
   }
       
   @Override
@@ -86,10 +88,13 @@ class GenerateFamilyCmd extends ArgsApp  with SparkApp with HailArgs with Loggin
     echo(s"Loading pedigree from: ${pedFile}")
     //TODO: load from HDFS
     val tree = PedigreeTree.loadPed(pedFile)    
-    echo(s"Loading genetic map from: ${bedFile}") 
+    val contigSet = ReferenceContigSet.b37.onlyAutosomes()
+    echo(s"Using contig set: ${contigSet}")
     //TODO: load from HDFS
-    val meiosisFactory = HapMapMeiosisSpecFactory.fromBedFile(bedFile, randomSeed)
-    val mutationsFactory = SOption(variantFile).map(loadMutationsFactory _) 
+    echo(s"Loading genetic map from: ${bedFile}")     
+    val recombinationMap = RecombinationMap.fromBedFile(bedFile).filter(contigSet)
+    val meiosisFactory = HapMapMeiosisSpecFactory.apply(recombinationMap, randomSeed)
+    val mutationsFactory = SOption(variantFile).map(loadMutationsFactory(contigSet)) 
     if (mutationsFactory.isEmpty) {
       echo("Mutation source not provided - skpping mutations")
     }

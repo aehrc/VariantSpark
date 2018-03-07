@@ -66,6 +66,10 @@ case class RecombinationMap(val contigMap: Map[ContigID, ContigRecombinationMap]
     val contigSpecs = contigMap.map({ case (kid, krm) => new ContigSpec(kid, krm.length)});
     ContigSet.fromUnsorted(contigSpecs.toSeq);
   }
+
+  def filter(contigSet: ContigSet):RecombinationMap = {
+     RecombinationMap(Map(contigMap.filterKeys(contigSet.contigIds.contains(_)).toArray: _*))
+   }
 }
 
 object RecombinationMap {
@@ -110,8 +114,3 @@ case class HapMapMeiosisSpecFactory(map: RecombinationMap, seed: Long = defRng.n
   def createMeiosisSpec(): Map[ContigID, MeiosisSpec] = map.crossingOver(rng).toSeq.toMap
 }
 
-object HapMapMeiosisSpecFactory {
-  def fromBedFile(pathToBedFile: String, seed: Long = defRng.nextLong): HapMapMeiosisSpecFactory = {
-    HapMapMeiosisSpecFactory(RecombinationMap.fromBedFile(pathToBedFile), seed)
-  }
-}
