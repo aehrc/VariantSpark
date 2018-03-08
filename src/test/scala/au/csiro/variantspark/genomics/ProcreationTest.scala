@@ -116,7 +116,7 @@ class GameteSpecTest {
   @Test 
   def testExisingContigWithMutationWithMatchingBase {
     val spec = GameteSpec(Map("1" -> MeiosisSpec(List(13L)), "2"-> MeiosisSpec(List(13L),1)), 
-        MutationSet(Seq(Mutation(GenomicPos("1", 12L), "C", "G"))))
+        MutationSet(Seq(Mutation(GenomicCoord("1", 12L), "C", "G"))))
     val mutationVariant = new TestMutableVariant("1", 12L, "C")
     assertEquals(13, spec.homozigoteAt(mutationVariant, GenotypeSpec(1,2)))
     assertEquals(Some("G"), mutationVariant.altVariant)
@@ -125,7 +125,7 @@ class GameteSpecTest {
   @Test 
   def testExisingContigWithMutationWithMismatchBase {
     val spec = GameteSpec(Map("1" -> MeiosisSpec(List(13L)), "2"-> MeiosisSpec(List(13L),1)), 
-        MutationSet(Seq(Mutation(GenomicPos("1", 12L), "C", "G"))))
+        MutationSet(Seq(Mutation(GenomicCoord("1", 12L), "C", "G"))))
     val mutationVariant = new TestMutableVariant("1", 12L, "T")
     assertEquals(1, spec.homozigoteAt(mutationVariant, GenotypeSpec(1,2)))
     assertEquals(None, mutationVariant.altVariant)

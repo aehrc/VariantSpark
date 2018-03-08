@@ -8,3 +8,4 @@ object Defaults {
   val humanMutationRate:Double = 1.1e-8
 }
 
+case class GenomicCoord(val contig:ContigID, pos:Long)

@@ -2,7 +2,7 @@ package au.csiro.variantspark.genomics.impl
 
 import au.csiro.variantspark.genomics.MutationSetFactory
 import au.csiro.variantspark.genomics.MutationSet
-import au.csiro.variantspark.genomics.GenomicPos
+import au.csiro.variantspark.genomics.GenomicCoord
 import au.csiro.variantspark.genomics.DNABase
 import au.csiro.variantspark.genomics.ContigSet
 import au.csiro.variantspark.genomics.Defaults
@@ -17,7 +17,7 @@ trait ReferenceSequence {
   /**
    * Get get reference base at given position
    */
-  def apply(pos:GenomicPos):DNABase 
+  def apply(pos:GenomicCoord):DNABase 
   def contigSet: ContigSet
 }
 
@@ -52,7 +52,7 @@ class BamMutationFactory(val refSeq: ReferenceSequence,
       //TODO: how to plug in my rng
       val noOfMutations = poissonDist.sample()
       val mutationPositions = Sampling.subsample(noOfMutations, contigSpec.length.toInt, false)
-      mutationPositions.map(GenomicPos.apply(contigSpec.id,_))
+      mutationPositions.map(GenomicCoord.apply(contigSpec.id,_))
         .map(gp => Mutation.makeRandom(gp, refSeq(gp)))
     }
     MutationSet(mutations)

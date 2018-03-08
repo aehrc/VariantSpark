@@ -1,15 +1,9 @@
-package au.csiro.variantspark.genomics.impl
+package au.csiro.variantspark.genomics
 
 
 import org.junit.Assert._
 import org.junit.Test
-import it.unimi.dsi.util.XorShift1024StarRandomGenerator
-
-
 import org.json4s._
-import org.json4s.jackson.Serialization
-
-import au.csiro.variantspark.genomics.ReferenceContigSet
 
 class RecombinationMapTest {
   

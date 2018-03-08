@@ -14,18 +14,18 @@ import org.apache.commons.math3.random.RandomGenerator
  * see:  (https://en.wikipedia.org/wiki/Mutation_rate)
  */
 
-case class Mutation(pos: GenomicPos, ref: String, alt: String)
+case class Mutation(coord: GenomicCoord, ref: String, alt: String)
 
 object Mutation {
-  def makeRandom(pos: GenomicPos, ref: DNABase)(implicit rng: RandomGenerator): Mutation = {
+  def makeRandom(pos: GenomicCoord, ref: DNABase)(implicit rng: RandomGenerator): Mutation = {
     //TODO: add actual geneation of mutation
     Mutation(pos, ref, ref)
   }
 }
 
 case class MutationSet(mutations: Seq[Mutation]) {
-  private lazy val map = mutations.map(m => (m.pos, m)).toMap
-  def get(pos: GenomicPos):Option[Mutation] = map.get(pos)
+  private lazy val map = mutations.map(m => (m.coord, m)).toMap
+  def get(pos: GenomicCoord):Option[Mutation] = map.get(pos)
 }
 
 object MutationSet {

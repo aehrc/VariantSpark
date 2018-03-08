@@ -3,7 +3,7 @@ package au.csiro.variantspark.hail.family
 import is.hail.variant.GenericDataset
 import is.hail.variant.Genotype
 import au.csiro.variantspark.genomics.OffspringSpec
-import au.csiro.variantspark.genomics.GenomicPos
+import au.csiro.variantspark.genomics.GenomicCoord
 import is.hail.variant.Variant
 import is.hail.annotations.Annotation
 import au.csiro.variantspark.hail.variant.phased.BiCall

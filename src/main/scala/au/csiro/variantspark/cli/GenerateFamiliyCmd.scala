@@ -32,7 +32,7 @@ import au.csiro.variantspark.hail.family.DatasetMutationFactory
 import au.csiro.variantspark.genomics.Defaults
 import au.csiro.variantspark.cli.args.HailArgs
 import au.csiro.variantspark.genomics.ContigSet
-import au.csiro.variantspark.genomics.impl.RecombinationMap
+import au.csiro.variantspark.genomics.RecombinationMap
 
 /**
  * Generates specification of a synthetic population based on 

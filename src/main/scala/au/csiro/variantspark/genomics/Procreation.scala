@@ -25,8 +25,6 @@ object GenotypeSpec {
   }   
 }
 
-case class GenomicPos(val contig:ContigID, pos:Long)
-
 trait MutableVariant {
   def contig: ContigID
   def pos: Long
@@ -60,7 +58,7 @@ case class MeiosisSpec(crossingOvers:List[Long], startWith:Int = 0) {
  * Full specification a homozigote recombination patterns.
  * This can be now used to create the parental homozigore from the actual chromosome information
  */
-case class GameteSpec(val splits:Map[ContigID, MeiosisSpec], val mutations:MutationSet =  MutationSet.Empty)  {
+case class GameteSpec(val splits:Map[ContigID, MeiosisSpec], val mutationSet:MutationSet =  MutationSet.Empty)  {
   assert(splits.isInstanceOf[Serializable])
   
   def homozigoteAt(v: MutableVariant, genotype: GenotypeSpec):Int = {
@@ -73,7 +71,7 @@ case class GameteSpec(val splits:Map[ContigID, MeiosisSpec], val mutations:Mutat
     // e.g. one for SNPs and one for deletions
     
     
-    mutations.get(GenomicPos(v.contig,v.pos)).flatMap(m =>
+    mutationSet.get(GenomicCoord(v.contig,v.pos)).flatMap(m =>
       if (m.ref == v.ref) Some(v.getOrElseUpdate(m.alt)) else None
     ).getOrElse(genotype(splits(v.contig).getChromosomeAt(v.pos)))
   }
