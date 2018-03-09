@@ -21,7 +21,7 @@ import is.hail.HailContext
 import au.csiro.variantspark.hail.family.GenerateFamily
 import au.csiro.variantspark.genomics.family.FamilySpec
 import au.csiro.variantspark.genomics.impl.SimpleMeiosisSpecFactory
-import au.csiro.variantspark.genomics.PedigreeTree
+import au.csiro.variantspark.genomics.family.PedigreeTree
 import au.csiro.variantspark.hail._
 import au.csiro.variantspark.genomics.impl.HapMapMeiosisSpecFactory
 import scala.io.Source

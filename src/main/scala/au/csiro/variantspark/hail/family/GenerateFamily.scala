@@ -16,7 +16,7 @@ import is.hail.expr._
 import is.hail.sparkextras.OrderedRDD
 import au.csiro.variantspark.genomics.GenotypeSpec
 import scala.collection.mutable.ArrayBuffer
-import au.csiro.variantspark.genomics.FamilyTrio
+import au.csiro.variantspark.genomics.family.FamilyTrio
 import scala.collection.mutable.HashMap
 import au.csiro.variantspark.genomics.IndividualID
 import au.csiro.variantspark.genomics.family.FamilySpec

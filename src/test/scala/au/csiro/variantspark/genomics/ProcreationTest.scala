@@ -2,6 +2,8 @@ package au.csiro.variantspark.genomics
 
 import org.junit.Assert._
 import org.junit.Test
+import au.csiro.variantspark.genomics.reprod.MutationSet
+import au.csiro.variantspark.genomics.reprod.Mutation
 
 class GenotypeSpecTest {
   

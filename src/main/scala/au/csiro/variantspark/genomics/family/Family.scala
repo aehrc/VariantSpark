@@ -7,15 +7,11 @@ import org.json4s.jackson.Serialization
 import org.json4s.jackson.Serialization.{read, writePretty}
 import java.io.Writer
 import au.csiro.variantspark.genomics._
-import au.csiro.variantspark.genomics.Gender._
-import au.csiro.variantspark.genomics.FamilyTrio
 import au.csiro.variantspark.genomics.GameteSpecFactory
-import au.csiro.variantspark.genomics.Gender
 import au.csiro.variantspark.genomics.GenotypeSpec
 import au.csiro.variantspark.genomics.MutableVariant
 import au.csiro.variantspark.genomics.OffspringSpec
-import au.csiro.variantspark.genomics.PedigreeTree
-
+import au.csiro.variantspark.genomics.family.Gender._
 
 trait FamilyMember extends Serializable {
   def id: IndividualID

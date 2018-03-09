@@ -9,7 +9,7 @@ import is.hail.variant._
 import is.hail.utils._
 import is.hail.expr._
 import au.csiro.variantspark.hail._
-import au.csiro.variantspark.genomics.PedigreeTree
+import au.csiro.variantspark.genomics.family.PedigreeTree
 import au.csiro.variantspark.genomics.family.FamilySpec
 import au.csiro.variantspark.genomics.impl.SimpleMeiosisSpecFactory
 import au.csiro.variantspark.genomics.ReferenceContigSet

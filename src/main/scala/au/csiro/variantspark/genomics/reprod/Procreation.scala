@@ -3,6 +3,8 @@ package au.csiro.variantspark.genomics
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.Buffer
+import au.csiro.variantspark.genomics.reprod.MutationSetFactory
+import au.csiro.variantspark.genomics.reprod.MutationSet
 
 // I need some recombination pattern of the specific recombination chosen for 
 // for each homozigote (from one parent each)

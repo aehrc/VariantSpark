@@ -4,7 +4,7 @@ import org.junit.Assert._
 import org.junit.Test
 import au.csiro.variantspark.genomics.OffspringSpec
 import au.csiro.variantspark.genomics.GameteSpec
-import au.csiro.variantspark.genomics.Gender
+import au.csiro.variantspark.genomics.family.Gender
 import au.csiro.variantspark.genomics._
 
 class OffspringTest  {

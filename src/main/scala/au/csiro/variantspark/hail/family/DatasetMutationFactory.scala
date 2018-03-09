@@ -1,15 +1,15 @@
 package au.csiro.variantspark.hail.family
 
 import is.hail.variant.GenericDataset
-import au.csiro.variantspark.genomics.MutationSet
+import au.csiro.variantspark.genomics.reprod.MutationSet
 import is.hail.variant.Variant
-import au.csiro.variantspark.genomics.Mutation
+import au.csiro.variantspark.genomics.reprod.Mutation
 import au.csiro.variantspark.genomics.ContigSet
 import au.csiro.pbdava.ssparkle.common.utils.Logging
 import au.csiro.variantspark.utils.defRng
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 import org.apache.spark.rdd.RDD
-import au.csiro.variantspark.genomics.MutationSetFactory
+import au.csiro.variantspark.genomics.reprod.MutationSetFactory
 
 
 object DatasetMutationFactory {

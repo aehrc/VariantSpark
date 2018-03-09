@@ -1,19 +1,19 @@
-package au.csiro.variantspark.genomics
+package au.csiro.variantspark.genomics.family
+
 
 import scalax.collection.Graph
-import scalax.collection.edge.LDiEdge     // labeled directed edge
-import scalax.collection.edge.Implicits._ // shortcuts
+import scalax.collection.edge.LDiEdge
+import scalax.collection.edge.Implicits._
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 import com.github.tototoshi.csv.CSVReader
 import java.io.FileReader
-import com.github.tototoshi.csv.CSVFormat
+import au.csiro.variantspark.genomics._
+import com.github.tototoshi.csv.TSVFormat
 
 object ParentalRole extends Enumeration {
   type ParentalRole = Value
   val Father, Mother = Value
 }
-
-import ParentalRole._
 
 object IndividualID {
   def fromPedId(pedId: String):Option[IndividualID] = if (pedId == "0") None else Some(pedId)
@@ -30,8 +30,7 @@ object Gender extends Enumeration {
 }
 
 import Gender._
-import com.github.tototoshi.csv.DefaultCSVFormat
-import com.github.tototoshi.csv.TSVFormat
+import ParentalRole._
 
 trait Individual {
   def id:IndividualID

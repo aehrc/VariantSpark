@@ -4,10 +4,12 @@ import org.junit.Assert._
 import org.junit.Test
 import au.csiro.variantspark.genomics.OffspringSpec
 import au.csiro.variantspark.genomics.GameteSpec
-import au.csiro.variantspark.genomics.Gender
+import au.csiro.variantspark.genomics.family.Gender
 import au.csiro.variantspark.genomics._
 import org.easymock.EasyMockSupport
 import org.easymock.EasyMock
+import au.csiro.variantspark.genomics.family.PedigreeTree
+import au.csiro.variantspark.genomics.family.FamilyTrio
 
 class FamilySpecTest  {
   

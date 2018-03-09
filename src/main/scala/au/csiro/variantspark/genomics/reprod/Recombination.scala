@@ -1,9 +1,7 @@
-package au.csiro.variantspark.genomics
+package au.csiro.variantspark.genomics.reprod
 
 import au.csiro.variantspark.genomics._
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
-import au.csiro.variantspark.utils.defRng
-import org.apache.commons.math3.random.RandomGenerator
 import java.util.zip.GZIPInputStream
 import scala.io.Source
 import java.io.FileInputStream
@@ -12,6 +10,8 @@ import scala.collection.mutable.HashMap
 import scala.collection.mutable.Buffer
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
+import au.csiro.variantspark.genomics.ContigSet
+import au.csiro.variantspark.genomics.MeiosisSpec
 
 /**
  * Create crossing over points based on the provided recombination frequency 

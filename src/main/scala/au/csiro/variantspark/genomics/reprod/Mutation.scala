@@ -1,6 +1,7 @@
-package au.csiro.variantspark.genomics
+package au.csiro.variantspark.genomics.reprod
 
 import org.apache.commons.math3.random.RandomGenerator
+import au.csiro.variantspark.genomics._
 
 
 /** 

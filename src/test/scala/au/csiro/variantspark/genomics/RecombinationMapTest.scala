@@ -4,6 +4,7 @@ package au.csiro.variantspark.genomics
 import org.junit.Assert._
 import org.junit.Test
 import org.json4s._
+import au.csiro.variantspark.genomics.reprod.RecombinationMap
 
 class RecombinationMapTest {
   

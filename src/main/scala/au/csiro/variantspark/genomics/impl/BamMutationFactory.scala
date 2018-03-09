@@ -1,14 +1,14 @@
 package au.csiro.variantspark.genomics.impl
 
-import au.csiro.variantspark.genomics.MutationSetFactory
-import au.csiro.variantspark.genomics.MutationSet
+import au.csiro.variantspark.genomics.reprod.MutationSetFactory
+import au.csiro.variantspark.genomics.reprod.MutationSet
 import au.csiro.variantspark.genomics.GenomicCoord
 import au.csiro.variantspark.genomics.DNABase
 import au.csiro.variantspark.genomics.ContigSet
 import au.csiro.variantspark.genomics.Defaults
 import au.csiro.variantspark.utils.Sampling
 import org.apache.commons.math3.random.RandomGenerator
-import au.csiro.variantspark.genomics.Mutation
+import au.csiro.variantspark.genomics.reprod.Mutation
 import org.apache.commons.math3.distribution.PoissonDistribution
 
 

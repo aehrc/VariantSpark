@@ -21,18 +21,18 @@ import is.hail.HailContext
 import au.csiro.variantspark.hail.family.GenerateFamily
 import au.csiro.variantspark.genomics.family.FamilySpec
 import au.csiro.variantspark.genomics.impl.SimpleMeiosisSpecFactory
-import au.csiro.variantspark.genomics.PedigreeTree
+import au.csiro.variantspark.genomics.family.PedigreeTree
 import au.csiro.variantspark.hail._
 import au.csiro.variantspark.genomics.impl.HapMapMeiosisSpecFactory
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 import java.io.FileWriter
 import au.csiro.variantspark.genomics.GameteSpecFactory
-import au.csiro.variantspark.genomics.MutationSetFactory
+import au.csiro.variantspark.genomics.reprod.MutationSetFactory
 import au.csiro.variantspark.hail.family.DatasetMutationFactory
 import au.csiro.variantspark.genomics.Defaults
 import au.csiro.variantspark.cli.args.HailArgs
 import au.csiro.variantspark.genomics.ContigSet
-import au.csiro.variantspark.genomics.RecombinationMap
+import au.csiro.variantspark.genomics.reprod.RecombinationMap
 
 /**
  * Generates specification of a synthetic population based on 
