@@ -63,7 +63,7 @@ case class RecombinationMap(val contigMap: Map[ContigID, ContigRecombinationMap]
    
   def toContigSpecSet:ContigSet = {
     val contigSpecs = contigMap.map({ case (kid, krm) => new ContigSpec(kid, krm.length)});
-    ContigSet.fromUnsorted(contigSpecs.toSeq);
+    ContigSet.apply(contigSpecs.toSeq);
   }
 
   def filter(contigSet: ContigSet):RecombinationMap = {

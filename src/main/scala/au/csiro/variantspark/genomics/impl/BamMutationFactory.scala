@@ -47,7 +47,7 @@ class BamMutationFactory(val refSeq: ReferenceSequence,
   def create(): MutationSet = {
     // so that would  be for each contig independently draw mutation points 
     // based on the mutation rate  (need a function to sample without replacement from k out of n)
-    val mutations = refSeq.contigSet.contigs.flatMap { contigSpec => 
+    val mutations = refSeq.contigSet.toSeq.flatMap { contigSpec => 
       val poissonDist = new PoissonDistribution(contigSpec.length * mutationRate)
       //TODO: how to plug in my rng
       val noOfMutations = poissonDist.sample()

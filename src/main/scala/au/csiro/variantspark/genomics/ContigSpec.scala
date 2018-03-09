@@ -29,12 +29,18 @@ object ContigSpec {
 /**
  * A set of contig specifications
  */
-case class ContigSet(val contigs: Seq[ContigSpec]) {
+case class ContigSet(val contigs: Set[ContigSpec]) {
+  
+  
   def totalLenght:Long = contigs.map(_.length).sum
   def filter(predicate: ContigSpec=> Boolean):ContigSet = ContigSet(contigs.filter(predicate))
   def onlyAutosomes() = filter(_.isAutosome)
   def onlyChromosomes() = filter(_.isChromosome)
   def contigIds:Set[ContigID] = contigs.map(_.id).toSet
+  def toSeq:Seq[ContigSpec] = contigs.toSeq
+  def toCannonicalSeq:Seq[ContigSpec] = {
+    toSeq.sorted(ContigSet.ContigSpecOrdering)
+  }
 }
 
 object ContigSet {
@@ -45,7 +51,7 @@ object ContigSet {
     }
   }
 
-  def fromUnsorted(contigs: Seq[ContigSpec]) = apply(contigs.sorted)
+  def apply(contigs: Seq[ContigSpec]):ContigSet = apply(contigs.toSet)
   
   def fromResource(resourcePath:String): ContigSet = {
     fromVcfHeader(getClass.getClassLoader.getResourceAsStream(resourcePath))

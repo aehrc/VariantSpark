@@ -37,10 +37,16 @@ class ContigSetTest {
     assertEquals(testContigSet, 
         ContigSet.fromVcfHeader(new ByteArrayInputStream(testVcfHeader.getBytes)));
   }
+ 
+  @Test 
+  def testCannonicalOrdering() {
+    assertEquals(Seq(ContigSpec("1",1L), ContigSpec("2",2L), ContigSpec("MC23232",4L), ContigSpec("X",3L)),
+        testContigSet.toCannonicalSeq)
+  }
   
   @Test 
   def testReference_b37_loaded() {
-    assertEquals(24,  ReferenceContigSet.b37.contigs.length)
+    assertEquals(24,  ReferenceContigSet.b37.contigs.size)
   }
 }
 
