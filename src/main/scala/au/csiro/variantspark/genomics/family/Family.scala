@@ -1,12 +1,20 @@
-package au.csiro.variantspark.genomics
+package au.csiro.variantspark.genomics.family
 
 import scala.collection.mutable.HashMap
 import scala.io.Source
 import org.json4s._
 import org.json4s.jackson.Serialization
-import org.json4s.jackson.Serialization.{read, write, writePretty}
+import org.json4s.jackson.Serialization.{read, writePretty}
 import java.io.Writer
+import au.csiro.variantspark.genomics._
 import au.csiro.variantspark.genomics.Gender._
+import au.csiro.variantspark.genomics.FamilyTrio
+import au.csiro.variantspark.genomics.GameteSpecFactory
+import au.csiro.variantspark.genomics.Gender
+import au.csiro.variantspark.genomics.GenotypeSpec
+import au.csiro.variantspark.genomics.MutableVariant
+import au.csiro.variantspark.genomics.OffspringSpec
+import au.csiro.variantspark.genomics.PedigreeTree
 
 
 trait FamilyMember extends Serializable {
@@ -36,11 +44,7 @@ case class Offspring(val id:IndividualID, val gender:Gender, val paternalId:Indi
 /**
  * Looks like a graf of Offspring Specs tied to the pedigree tree.
  */
-class FamilySpec(val members:Seq[FamilyMember]) extends Serializable {
-
-  case class Summary(val noFounders:Int, val noOffspring:Int) {
-    def total = noFounders  + noOffspring
-  }
+case class FamilySpec(val members:Seq[FamilyMember]) extends Serializable {
   
   def memberIds:List[IndividualID] =  members.map(_.id).toList
   
@@ -61,13 +65,16 @@ class FamilySpec(val members:Seq[FamilyMember]) extends Serializable {
     w.append(writePretty(this))
   }
   
-  def summary: Summary = {
+  def summary: FamilySpec.Summary = {
     val noFounders  = members.filter(p => p.isInstanceOf[Founder]).toIterable.size;
-    Summary(noFounders, members.size - noFounders)
+    FamilySpec.Summary(noFounders, members.size - noFounders)
   }
 }
 
 object FamilySpec {
+  case class Summary(val noFounders:Int, val noOffspring:Int) {
+    def total = noFounders  + noOffspring
+  }
   
   implicit val formats = Serialization.formats(ShortTypeHints(List(classOf[Founder], 
       classOf[Offspring]))) + new org.json4s.ext.EnumNameSerializer(Gender)

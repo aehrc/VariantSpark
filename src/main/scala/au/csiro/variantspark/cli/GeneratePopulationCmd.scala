@@ -19,7 +19,7 @@ import au.csiro.variantspark.utils.defRng
 import au.csiro.variantspark.genomics.ReferenceContigSet
 import is.hail.HailContext
 import au.csiro.variantspark.hail.family.GenerateFamily
-import au.csiro.variantspark.genomics.FamilySpec
+import au.csiro.variantspark.genomics.family.FamilySpec
 import au.csiro.variantspark.genomics.impl.SimpleMeiosisSpecFactory
 import au.csiro.variantspark.genomics.PedigreeTree
 import au.csiro.variantspark.hail._

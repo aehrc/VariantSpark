@@ -95,19 +95,6 @@ class PedigreeTree(val trios: Seq[FamilyTrio]) {
           order => order).map(_.value).toList
           
   lazy val orderedTrios = orderedTrioIds.map(triosById(_))
-  
-  def founders:Seq[IndividualID] = ???
-
-  
-  //lazy val topoOrder = 
-  
-  /**
-   * The othe thing I need is essentialy to be able to
-   * - create the OffsringSpecs for all all the offspring in this set  
-   * - validate that all offspring can be created (all assuming that all the founders are present)
-   * - sort the Individuals in topological order so that I can either creatre the full IBD tree or 
-   * - run offspring generation on the entire set
-   */ 
 }
 
 object PedigreeTree {

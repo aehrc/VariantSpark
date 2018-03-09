@@ -178,8 +178,13 @@
             <version>0.1-SNAPSHOT</version>
             <scope>provided</scope>
 		</dependency>
-
-    <dependency>
+	<dependency>
+		<groupId>org.easymock</groupId>
+		<artifactId>easymock</artifactId>
+		<version>3.5.1</version>
+		<scope>test</scope>
+	</dependency>
+	<dependency>
       <groupId>org.ow2.asm</groupId>
       <artifactId>asm</artifactId>
       <version>5.1</version>

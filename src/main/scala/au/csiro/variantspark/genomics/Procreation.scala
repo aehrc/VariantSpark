@@ -90,15 +90,14 @@ case class GameteSpecFactory(msf: MeiosisSpecFactory, mf: Option[MutationSetFact
 case class OffspringSpec(val fatherGamete: GameteSpec, val motherGamete: GameteSpec) {
   
   def genotypeAt(v:MutableVariant, fatherGenotype:GenotypeSpec, motherGenotype:GenotypeSpec):GenotypeSpec = {
-    GenotypeSpec(motherGamete.homozigoteAt(v, motherGenotype), 
-        fatherGamete.homozigoteAt(v, fatherGenotype))
+    GenotypeSpec(fatherGamete.homozigoteAt(v, fatherGenotype), motherGamete.homozigoteAt(v, motherGenotype))
   }
 }
 
 object OffspringSpec {  
-  def create(gsf: GameteSpecFactory)  = OffspringSpec(
-      motherGamete = gsf.createGameteSpec(), 
-      fatherGamete = gsf.createGameteSpec()
+  def create(gsf: GameteSpecFactory)  = OffspringSpec( 
+      fatherGamete = gsf.createGameteSpec(),
+      motherGamete = gsf.createGameteSpec()
   )
 }
 

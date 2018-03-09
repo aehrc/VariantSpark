@@ -1,7 +1,6 @@
 package au.csiro.variantspark.hail.family
 
 import is.hail.variant.GenericDataset
-import au.csiro.variantspark.genomics.MutationSetBatchFactory
 import au.csiro.variantspark.genomics.MutationSet
 import is.hail.variant.Variant
 import au.csiro.variantspark.genomics.Mutation
@@ -10,6 +9,7 @@ import au.csiro.pbdava.ssparkle.common.utils.Logging
 import au.csiro.variantspark.utils.defRng
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 import org.apache.spark.rdd.RDD
+import au.csiro.variantspark.genomics.MutationSetFactory
 
 
 object DatasetMutationFactory {
@@ -37,7 +37,7 @@ object DatasetMutationFactory {
  * 
  */
 class DatasetMutationFactory(variantsRDD: RDD[Variant], 
-    mutationRate: Double, contigSet:ContigSet, seed:Long =  defRng.nextLong) extends MutationSetBatchFactory with Logging {
+    mutationRate: Double, contigSet:ContigSet, seed:Long =  defRng.nextLong) extends MutationSetFactory with Logging {
   
   implicit private val rng = new XorShift1024StarRandomGenerator(seed)
   import DatasetMutationFactory._

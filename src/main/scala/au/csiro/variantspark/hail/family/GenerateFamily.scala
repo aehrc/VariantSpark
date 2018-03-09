@@ -19,7 +19,7 @@ import scala.collection.mutable.ArrayBuffer
 import au.csiro.variantspark.genomics.FamilyTrio
 import scala.collection.mutable.HashMap
 import au.csiro.variantspark.genomics.IndividualID
-import au.csiro.variantspark.genomics.FamilySpec
+import au.csiro.variantspark.genomics.family.FamilySpec
 import au.csiro.variantspark.genomics.GenotypePool
 import au.csiro.variantspark.genomics.MutableVariant
 import au.csiro.variantspark.genomics.ContigID

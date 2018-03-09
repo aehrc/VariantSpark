@@ -35,8 +35,3 @@ object MutationSet {
 trait MutationSetFactory {
   def create(): MutationSet
 }
-
-trait MutationSetBatchFactory extends MutationSetFactory {
-  //def createBatch(batchSize: Int): Seq[MutationSet]
-  //def create() = createBatch(0).head
-}
