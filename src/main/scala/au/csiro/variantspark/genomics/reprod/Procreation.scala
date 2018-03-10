@@ -1,31 +1,13 @@
-package au.csiro.variantspark.genomics
+package au.csiro.variantspark.genomics.reprod
 
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.Buffer
-import au.csiro.variantspark.genomics.reprod.MutationSetFactory
-import au.csiro.variantspark.genomics.reprod.MutationSet
+import au.csiro.variantspark.genomics._
 
 // I need some recombination pattern of the specific recombination chosen for 
 // for each homozigote (from one parent each)
 // So essentially for each chromosome I need to model how many and where the recombination happened
-
-/**
- * Represents a diplod indexed genotype
- * TODO: Rename to include diploid
- */
-case class GenotypeSpec(val p:Int) extends AnyVal {
-  def _0: Int = p & ((1 << 16) -1)
-  def _1: Int = (p >> 16)
-  def apply(index:Int): Int = if (index == 0) _0 else if (index == 1) _1 else throw new IllegalArgumentException()
-}
-
-object GenotypeSpec {
-  def apply(p0:Int, p1: Int) = {
-    assert(p0 >=0 && p0 < (1<<15) && p1 >=0 && p1 < (1<<15), s"p0=${p0}, p1=${p1}")
-    new GenotypeSpec(p0 | (p1 << 16))
-  }   
-}
 
 trait MutableVariant {
   def contig: ContigID

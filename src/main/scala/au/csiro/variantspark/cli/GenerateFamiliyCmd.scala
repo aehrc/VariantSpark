@@ -26,7 +26,7 @@ import au.csiro.variantspark.hail._
 import au.csiro.variantspark.genomics.impl.HapMapMeiosisSpecFactory
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 import java.io.FileWriter
-import au.csiro.variantspark.genomics.GameteSpecFactory
+import au.csiro.variantspark.genomics.reprod.GameteSpecFactory
 import au.csiro.variantspark.genomics.reprod.MutationSetFactory
 import au.csiro.variantspark.hail.family.DatasetMutationFactory
 import au.csiro.variantspark.genomics.Defaults

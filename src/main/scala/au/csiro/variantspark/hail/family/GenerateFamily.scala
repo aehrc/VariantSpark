@@ -2,7 +2,6 @@ package au.csiro.variantspark.hail.family
 
 import is.hail.variant.GenericDataset
 import is.hail.variant.Genotype
-import au.csiro.variantspark.genomics.OffspringSpec
 import au.csiro.variantspark.genomics.GenomicCoord
 import is.hail.variant.Variant
 import is.hail.annotations.Annotation
@@ -21,10 +20,10 @@ import scala.collection.mutable.HashMap
 import au.csiro.variantspark.genomics.IndividualID
 import au.csiro.variantspark.genomics.family.FamilySpec
 import au.csiro.variantspark.genomics.GenotypePool
-import au.csiro.variantspark.genomics.MutableVariant
 import au.csiro.variantspark.genomics.ContigID
 import au.csiro.variantspark.genomics.BasesVariant
 import au.csiro.variantspark.genomics.IndexedVariant
+import au.csiro.variantspark.genomics.reprod.MutableVariant
 
 class HailMutableVariantAdapter(v: Variant) extends MutableVariant {
   def contig: ContigID = v.contig

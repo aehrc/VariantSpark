@@ -3,6 +3,8 @@ package au.csiro.variantspark.genomics.impl
 import au.csiro.variantspark.genomics._
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 import au.csiro.variantspark.utils.defRng
+import au.csiro.variantspark.genomics.reprod.MeiosisSpecFactory
+import au.csiro.variantspark.genomics.reprod.MeiosisSpec
 
 
 /**

@@ -31,6 +31,7 @@ object Gender extends Enumeration {
 
 import Gender._
 import ParentalRole._
+import java.io.Reader
 
 trait Individual {
   def id:IndividualID
@@ -65,14 +66,12 @@ object FamilyTrio {
    * except that that it expects a header line: 'Family ID', 'Individual ID' 'Parental ID'  'Maternal ID', 'Gender',...
    * Fields after `Gender` are ignored
    */
-  def loadPed(pathToPedFile: String):List[FamilyTrio] = {
-    implicit object PedTSVFormat extends TSVFormat {
-    }
-    LoanUtils.withCloseable(CSVReader.open(new FileReader(pathToPedFile))) { reader => 
-      //TODO: add auto detection if header is presnet
-      val header = reader.readNext().get
-      reader.iterator.map(fromPedLine).toList
-    }
+  def loadPed(reader: Reader):List[FamilyTrio] = {
+    implicit object PedTSVFormat extends TSVFormat 
+    val csvReader = CSVReader.open(reader)
+    //TODO: add auto detection if header is presnet
+    val header = csvReader.readNext().get
+    csvReader.iterator.map(fromPedLine).toList
   }  
 }
 
@@ -105,7 +104,9 @@ object PedigreeTree {
   }
   
   def loadPed(pathToPedFile: String): PedigreeTree = {
-    PedigreeTree(FamilyTrio.loadPed(pathToPedFile))
+    LoanUtils.withCloseable(new FileReader(pathToPedFile)) { reader =>
+      PedigreeTree(FamilyTrio.loadPed(reader))
+    }
   }
 }
 

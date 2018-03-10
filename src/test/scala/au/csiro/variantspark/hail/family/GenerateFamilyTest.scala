@@ -13,8 +13,7 @@ import au.csiro.variantspark.genomics.family.PedigreeTree
 import au.csiro.variantspark.genomics.family.FamilySpec
 import au.csiro.variantspark.genomics.impl.SimpleMeiosisSpecFactory
 import au.csiro.variantspark.genomics.ReferenceContigSet
-import au.csiro.variantspark.genomics.GameteSpecFactory
-
+import au.csiro.variantspark.genomics.reprod.GameteSpecFactory
 
 class HailMutableVariantAdapterTest {
   

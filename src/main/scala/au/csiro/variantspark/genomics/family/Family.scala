@@ -7,10 +7,9 @@ import org.json4s.jackson.Serialization
 import org.json4s.jackson.Serialization.{read, writePretty}
 import java.io.Writer
 import au.csiro.variantspark.genomics._
-import au.csiro.variantspark.genomics.GameteSpecFactory
-import au.csiro.variantspark.genomics.GenotypeSpec
-import au.csiro.variantspark.genomics.MutableVariant
-import au.csiro.variantspark.genomics.OffspringSpec
+import au.csiro.variantspark.genomics.reprod.GameteSpecFactory
+import au.csiro.variantspark.genomics.reprod.MutableVariant
+import au.csiro.variantspark.genomics.reprod.OffspringSpec
 import au.csiro.variantspark.genomics.family.Gender._
 
 trait FamilyMember extends Serializable {

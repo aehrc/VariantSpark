@@ -11,7 +11,6 @@ import scala.collection.mutable.Buffer
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
 import au.csiro.variantspark.genomics.ContigSet
-import au.csiro.variantspark.genomics.MeiosisSpec
 
 /**
  * Create crossing over points based on the provided recombination frequency 

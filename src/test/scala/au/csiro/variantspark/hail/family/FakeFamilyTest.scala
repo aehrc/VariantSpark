@@ -23,9 +23,6 @@ import is.hail.io.vcf.GenericRecordReader
 import au.csiro.variantspark.hail.variant.io.ExportVCFEx
 import org.apache.spark.sql.Row
 import au.csiro.variantspark.hail.variant.phased.BiCall
-import au.csiro.variantspark.genomics.OffspringSpec
-import au.csiro.variantspark.genomics.GameteSpec
-import au.csiro.variantspark.genomics.MeiosisSpec
 import au.csiro.variantspark.genomics.impl.SimpleMeiosisSpecFactory
 import au.csiro.variantspark.genomics.ReferenceContigSet
 
