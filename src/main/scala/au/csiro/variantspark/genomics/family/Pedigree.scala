@@ -69,9 +69,9 @@ object FamilyTrio {
   def loadPed(reader: Reader):List[FamilyTrio] = {
     implicit object PedTSVFormat extends TSVFormat 
     val csvReader = CSVReader.open(reader)
-    //TODO: add auto detection if header is presnet
+    //TODO: add auto detection if header is present
     val header = csvReader.readNext().get
-    csvReader.iterator.map(fromPedLine).toList
+    csvReader.iterator.filter(_.size > 1).map(fromPedLine).toList
   }  
 }
 
@@ -79,7 +79,7 @@ object FamilyTrio {
  * Looks like this best coiuld be represented by a graph.
  * Graph library from: http://www.scala-graph.org/guides/core-introduction.html
  */
-class PedigreeTree(val trios: Seq[FamilyTrio]) {
+case class PedigreeTree(val trios: Seq[FamilyTrio]) {
   
   /**
    * Get all the founders that is individuals who are not children in this tree
@@ -98,11 +98,7 @@ class PedigreeTree(val trios: Seq[FamilyTrio]) {
 object PedigreeTree {
   
   import ParentalRole._
-   
-  def apply(trios: Seq[FamilyTrio]): PedigreeTree =  {
-    new PedigreeTree(trios) 
-  }
-  
+     
   def loadPed(pathToPedFile: String): PedigreeTree = {
     LoanUtils.withCloseable(new FileReader(pathToPedFile)) { reader =>
       PedigreeTree(FamilyTrio.loadPed(reader))
