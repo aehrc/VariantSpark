@@ -20,6 +20,11 @@ import au.csiro.variantspark.genomics.reprod.ContigRecombinationMap
 
 case class ContigRecombinationDistribution(val bins:Array[Long], val p:Array[Double]) {
   assert(bins.length == p.length + 1)  
+  
+  def crossingOver(rng: RandomGenerator):MeiosisSpec = {
+    MeiosisSpec(drawSplits(rng), rng.nextInt(2))
+  }
+  
   /**
    * Draw splits from this distribution
    */
@@ -41,6 +46,8 @@ case class ContigRecombinationDistribution(val bins:Array[Long], val p:Array[Dou
   private def splitFromBin(binIndex: Int, rng:RandomGenerator):Long =  {
     bins(binIndex) + (bins(binIndex + 1) - bins(binIndex))/2
   }
+  
+  
 }
 
 object ContigRecombinationDistribution {
@@ -60,7 +67,7 @@ case class RecombinationDistribution(val contigMap: Map[ContigID, ContigRecombin
    assert(contigMap.isInstanceOf[Serializable])
  
   def crossingOver(rng: RandomGenerator):Map[ContigID, MeiosisSpec] = {
-    contigMap.mapValues(cm => MeiosisSpec(cm.drawSplits(rng), rng.nextInt(2)))
+    contigMap.mapValues(cm => cm.crossingOver(rng))
   }
 }
 
@@ -69,14 +76,15 @@ object RecombinationDistribution {
      RecombinationDistribution(Map(rm.contigMap.mapValues(ContigRecombinationDistribution.fromRecombiationMap).toArray: _*))
 }
 
-case class HapMapMeiosisSpecFactory(map: RecombinationDistribution, seed: Long) extends MeiosisSpecFactory {
-  val rng = new XorShift1024StarRandomGenerator(seed)  
+case class HapMapMeiosisSpecFactory(map: RecombinationDistribution)(implicit rng: RandomGenerator) extends MeiosisSpecFactory {
   def createMeiosisSpec(): Map[ContigID, MeiosisSpec] = map.crossingOver(rng).toSeq.toMap
 }
 
 object HapMapMeiosisSpecFactory {
-  def apply(map: RecombinationMap, seed: Long = defRng.nextLong):HapMapMeiosisSpecFactory = 
-    HapMapMeiosisSpecFactory(RecombinationDistribution.fromRecombiationMap(map), seed)
+  def apply(map: RecombinationMap, seed: Long = defRng.nextLong):HapMapMeiosisSpecFactory = {
+    implicit val rng = new XorShift1024StarRandomGenerator(seed) 
+    HapMapMeiosisSpecFactory(RecombinationDistribution.fromRecombiationMap(map))
+  }
 }
 
 

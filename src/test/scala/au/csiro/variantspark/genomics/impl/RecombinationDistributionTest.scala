@@ -7,6 +7,7 @@ import org.easymock.EasyMock
 import org.apache.commons.math3.random.RandomGenerator
 import au.csiro.variantspark.genomics.reprod.ContigRecombinationMap
 import au.csiro.variantspark.genomics.reprod.RecombinationMap
+import au.csiro.variantspark.genomics.reprod.MeiosisSpec
 
 
 class RecombinationDistributionTest {
@@ -34,15 +35,17 @@ class RecombinationDistributionTest {
   }
 
   @Test
-  def testDrawsContigSplitsWhenNeed() {
+  def testCreatesCorrectMeiosisSpec() {
     val rng = easymock.createMock(classOf[RandomGenerator])
     EasyMock.expect(rng.nextDouble()).andReturn(0.5).times(3)
+    EasyMock.expect(rng.nextInt(2)).andReturn(1)
     easymock.replayAll();
     val testDistribution = ContigRecombinationDistribution(Array(0L, 2L, 4L, 6L), Array(0.45, 0.55, 0.55))
-    assertEquals(List(3L,5l), testDistribution.drawSplits(rng))        
+    assertEquals(MeiosisSpec(List(3L,5l), 1), testDistribution.crossingOver(rng))        
     easymock.verifyAll();
   }
 
+  
   @Test
   def testConstructCorrectlyFromContigRecombinationMap {
     val testMap = ContigRecombinationMap(Array(0L, 1000000L, 3000000L), Array(0.0, 1.0))
@@ -63,4 +66,21 @@ class RecombinationDistributionTest {
     }
   }
   
+  @Test 
+  def testCrossingOversOnAllContis {
+    val rng = easymock.createMock(classOf[RandomGenerator])
+    EasyMock.expect(rng.nextDouble()).andReturn(0.5).times(3)
+    EasyMock.expect(rng.nextInt(2)).andReturn(1).times(2)
+    easymock.replayAll();
+    val tesDistr = RecombinationDistribution(Map(
+          "1" -> ContigRecombinationDistribution(Array(0, 1000L), Array(0.0)),
+          "2" -> ContigRecombinationDistribution(Array(0, 1000L, 2000L), Array(0.0, 1.0))
+        ))
+    val result = tesDistr.crossingOver(rng) 
+    assertEquals(Map(
+        "1" -> MeiosisSpec(List(), 1),
+        "2" -> MeiosisSpec(List(1500L), 1)
+        ), result)
+    easymock.verifyAll();
+  }  
 }
