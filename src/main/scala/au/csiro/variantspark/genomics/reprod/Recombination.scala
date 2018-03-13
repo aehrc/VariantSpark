@@ -11,6 +11,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
 import au.csiro.variantspark.genomics.ContigSet
 import org.apache.commons.math3.random.RandomGenerator
+import scala.collection.mutable.ArrayBuilder
 
 
 /**
@@ -18,6 +19,16 @@ import org.apache.commons.math3.random.RandomGenerator
  */
 case class ContigRecombinationMap(val bins:Array[Long], val recombFreq:Array[Double]) {  
   def length  = bins.last
+  
+  lazy val binLengths: Array[Long] =  {
+    // mutable version for better performance
+    val builder = ArrayBuilder.make[Long]()
+    builder.sizeHint(bins.length-1)
+    for(i <- 0 until bins.length -1) {
+      builder += bins(i+1) - bins(i)
+    }
+    builder.result()
+  }
 }
 
 /**

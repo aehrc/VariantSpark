@@ -21,6 +21,13 @@ class RecombinationMapTest {
         "2" -> ContigRecombinationMap(Array(0L, 500L), Array(2.0))
       )
    
+      
+  @Test 
+  def testComputeBinSizes() {
+    assertArrayEquals(Array(1000L, 1000L), testRecombinationMap("1").binLengths)
+    assertArrayEquals(Array(500L), testRecombinationMap("2").binLengths)    
+  }
+  
   @Test
   def testLoadBedFromSource() {
     val loadedMap = RecombinationMap.fromSource(Source.fromString(testBedContents))

@@ -28,7 +28,7 @@ case class ContigRecombinationDistribution(val bins:Array[Long], val p:Array[Dou
     // mutable version for better performance
     val result = ListBuffer[Long]()
     for (i <- 0 until p.length) {
-      if ( p(i)*(bins(i+1)-bins(i)) >= rng.nextDouble()) {
+      if ( p(i) >= rng.nextDouble()) {
         result+= splitFromBin(i, rng)
       }
     }
@@ -45,9 +45,15 @@ case class ContigRecombinationDistribution(val bins:Array[Long], val p:Array[Dou
 
 object ContigRecombinationDistribution {
 
+  /**
+   * Recombination rare is in cM per Mbp so the conversion factors is 1e-2 * 1e-6
+   */
   val conversionFactor = 1e-8
-  def fromRecombiationMap(crm:ContigRecombinationMap): ContigRecombinationDistribution = 
-        ContigRecombinationDistribution(crm.bins, crm.recombFreq.map(rf => rf*conversionFactor).toArray)
+  def fromRecombiationMap(crm:ContigRecombinationMap): ContigRecombinationDistribution = {
+    val p:Array[Double] =  crm.recombFreq.map(rf => rf*conversionFactor)
+                .zip(crm.binLengths).map(t => t._1 * t._2)  
+    ContigRecombinationDistribution(crm.bins, p)
+  }
 }
 
 case class RecombinationDistribution(val contigMap: Map[ContigID, ContigRecombinationDistribution])  {
