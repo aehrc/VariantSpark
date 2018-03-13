@@ -83,8 +83,13 @@ case class HapMapMeiosisSpecFactory(map: RecombinationDistribution)(implicit rng
 object HapMapMeiosisSpecFactory {
   def apply(map: RecombinationMap, seed: Long = defRng.nextLong):HapMapMeiosisSpecFactory = {
     implicit val rng = new XorShift1024StarRandomGenerator(seed) 
+    HapMapMeiosisSpecFactory(map)
+  }
+
+  def apply(map: RecombinationMap)(implicit rng: RandomGenerator):HapMapMeiosisSpecFactory = {
     HapMapMeiosisSpecFactory(RecombinationDistribution.fromRecombiationMap(map))
   }
+
 }
 
 
