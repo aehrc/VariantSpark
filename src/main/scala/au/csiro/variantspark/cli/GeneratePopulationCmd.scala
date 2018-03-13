@@ -51,7 +51,7 @@ class GeneratePopulationCmd extends ArgsApp with SparkApp with HailArgs with Log
   val saveParallel: Boolean = false
 
   @Override
-  def testArgs = Array("-if", "data/hipsterIndex/hipster.vcf.bgz", 
+  def testArgs = Array("-if", "data/relatedness/g1k_sample.vcf.bgz", 
       "-of", "target/g1k_ceu_family_15_2.vcf.bgz",
       "-sf", "target/g1k_ceu_family_15_2.spec.json",
       "-mp", "4"
@@ -67,6 +67,13 @@ class GeneratePopulationCmd extends ArgsApp with SparkApp with HailArgs with Log
     val familySpec = LoanUtils.withSource(Source.fromFile(specFile))(s => FamilySpec.fromJson(s))
     val familySpecSummary = familySpec.summary
     echo(s"Population of ${familySpecSummary.total} members => founders: ${familySpecSummary.noFounders}, offspring: ${familySpecSummary.noOffspring}")
+    
+    // check for missing family members
+    val missingFamilyMemberIds = familySpec.founderIds.toSet.diff(gds.sampleIds.toSet)
+    if (!missingFamilyMemberIds.isEmpty) {
+      echo(s"${missingFamilyMemberIds} missing in the vcf file. Exiting...")
+      System.exit(1)
+    }
     val familyGds = GenerateFamily(familySpec)(gds)
     echo(s"Saving population vcf to: ${outputFile}")
     familyGds.exportVCFEx(outputFile, saveParallel)

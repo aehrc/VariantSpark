@@ -91,8 +91,7 @@ class GenerateFamily(val familySpec: FamilySpec) {
     // and later that they have correct sex (for their roles?) 
     
     val sampleIds:IndexedSeq[Annotation] = gds.sampleIds
-    val familyIDs:List[String] = familySpec.memberIds
-    
+    val familyIDs:List[String] = familySpec.memberIds    
     val variantBuilder = new FamilyVariantBuilder(sampleIds, familySpec)
     val br_variantBuilder = gds.rdd.sparkContext.broadcast(variantBuilder)
     val familyRdd = gds.rdd.mapPartitions({it => 

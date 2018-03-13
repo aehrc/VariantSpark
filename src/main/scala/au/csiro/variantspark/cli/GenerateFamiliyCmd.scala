@@ -70,8 +70,9 @@ class GenerateFamilyCmd extends ArgsApp  with SparkApp with HailArgs with Loggin
       "-of", "target/g1k_ceu_family_15_2.spec.json",
       "-pf", "data/relatedness/g1k_ceu_family_15_2.ped", 
       "-bf", "data/relatedness/genetic_map_GRCh37_1Mb.bed.gz",
-      "-vf", "data/hipsterIndex/hipster.vcf.bgz",
-      "-sr", "13"
+      "-vf", "data/relatedness/g1k_sample.vcf.bgz",
+      "-sr", "13", 
+      "-mp", "2"
       )      
  
           

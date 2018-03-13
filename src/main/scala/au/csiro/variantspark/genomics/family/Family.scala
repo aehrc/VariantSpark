@@ -42,6 +42,7 @@ case class Offspring(val id:IndividualID, val gender:Gender, val paternalId:Indi
 case class FamilySpec(val members:Seq[FamilyMember]) extends Serializable {
   
   def memberIds:List[IndividualID] =  members.map(_.id).toList
+  def founderIds:List[IndividualID] = members.filter(p => p.isInstanceOf[Founder]).map(_.id).toList
   
   def produceGenotypePool(v: MutableVariant, initialPool:GenotypePool):GenotypePool = {
     
