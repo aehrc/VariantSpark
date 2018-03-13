@@ -39,4 +39,5 @@ class DatasetMutationFactoryTest extends SparkTest {
           Mutation(GenomicCoord("2", 1), "A", "G")        
         ), mutations)
   }
+  
 }
