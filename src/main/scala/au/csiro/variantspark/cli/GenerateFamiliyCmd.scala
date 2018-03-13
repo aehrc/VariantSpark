@@ -78,7 +78,7 @@ class GenerateFamilyCmd extends ArgsApp  with SparkApp with HailArgs with Loggin
   def loadMutationsFactory(contigSet:ContigSet)(inputFile:String):DatasetMutationFactory = {  
     echo(s"Loadig mutations from vcf:  ${inputFile} with ${actualMinPartitions} partitions")
     val variantsRDD = hc.importVCFSnps(inputFile.split(","), nPartitions = Some(actualMinPartitions))
-    new DatasetMutationFactory(variantsRDD, mutationRate = mutationRate, 
+    DatasetMutationFactory(variantsRDD, mutationRate = mutationRate, 
         contigSet = contigSet, randomSeed)
   }
       

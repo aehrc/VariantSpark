@@ -10,24 +10,32 @@ import au.csiro.variantspark.utils.defRng
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 import org.apache.spark.rdd.RDD
 import au.csiro.variantspark.genomics.reprod.MutationSetFactory
-
+import org.apache.commons.math3.random.RandomGenerator
 
 object DatasetMutationFactory {
-  
-  val bases = Set("C","T","G","A")
-  
+    
   def allSNP(v: Variant):Boolean  = {
     v.altAlleles.forall { x => x.isSNP }
   }
   
   def snpMutation(v: Variant): Iterator[Mutation]  = {
-    // assume it's possible to do one
-    // need to filter out the existing alleles 
-    // select a random from available ones
-    val usedSnps = v.altAlleles.filter(_.isSNP).map(_.alt).toSet + v.ref
-    val mutationSnps =  bases.diff(usedSnps)
-    assert(!mutationSnps.isEmpty, "Need a non empty mutation set")
-    mutationSnps.iterator.map(Mutation(v, v.ref,_))
+    Mutation.makeAll(v, v.ref, v.altAlleles.filter(_.isSNP).map(_.alt).toSet)
+  }
+  
+  def toMutations(variantsRDD: RDD[Variant]):RDD[Mutation] = variantsRDD
+     .filter(allSNP)
+     .filter(_.nAltAlleles <= 2) // at least one base to choose from (ref and two alts are used)
+     .flatMap(snpMutation)
+    
+  def apply(variantsRDD: RDD[Variant],mutationRate: Double, contigSet:ContigSet)
+          (implicit rng:RandomGenerator):DatasetMutationFactory = {
+          new DatasetMutationFactory(toMutations(variantsRDD), mutationRate, contigSet)
+  }
+
+  def apply(variantsRDD: RDD[Variant], 
+    mutationRate: Double, contigSet:ContigSet, seed:Long =  defRng.nextLong):DatasetMutationFactory = {
+    implicit  val rng = new XorShift1024StarRandomGenerator(seed)
+    DatasetMutationFactory(variantsRDD, mutationRate, contigSet)
   }
 }
 
@@ -36,21 +44,13 @@ object DatasetMutationFactory {
  * Also this will create non overlapping mutations all offspring (which may be ok)
  * 
  */
-class DatasetMutationFactory(variantsRDD: RDD[Variant], 
-    mutationRate: Double, contigSet:ContigSet, seed:Long =  defRng.nextLong) extends MutationSetFactory with Logging {
-  
-  implicit private val rng = new XorShift1024StarRandomGenerator(seed)
-  import DatasetMutationFactory._
-  // in principle I could just generate a single stream and then split it into sets
-  lazy val allMutations = variantsRDD
-   .filter(allSNP)
-   .filter(_.nAltAlleles <= 2) // at least one base to choose from (ref and two alts are used)
-   .flatMap(snpMutation).cache()
-   
-  // these are all available mutations 
-  lazy val mutationCount = allMutations.count()  
+class DatasetMutationFactory(val mutations: RDD[Mutation], 
+    val mutationRate: Double, val contigSet:ContigSet)(implicit rng:RandomGenerator) extends MutationSetFactory with Logging {
   
   override def create():MutationSet = {
+    
+    mutations.cache()
+    val mutationCount = mutations.count()
     
     logInfo(s"Found ${mutationCount} mutation candidates")
     val samplingFraction:Double = mutationRate * contigSet.totalLenght / mutationCount
@@ -59,12 +59,7 @@ class DatasetMutationFactory(variantsRDD: RDD[Variant],
     if (samplingFraction > 1) {
       logWarning("There is not enough mutation canditates to draw ${mutationRate * contigSet.totalLenght} mutations")
     }
-    MutationSet(allMutations.sample(false, samplingFraction, rng.nextLong()).collect()) 
+    MutationSet(mutations.sample(false, samplingFraction, rng.nextLong()).collect()) 
   }
   
-    // split mutations to sets
-    // here or couild be done in parallel as well
-    // zip with stream of randomm ints
-    //allMutations.map(m => (m, (Math.random() * batchSize).toInt)).groupBy(_._2)
-    //  .valuesIterator.map(a => MutationSet(a.unzip._1.toSeq)).toSeq
 }

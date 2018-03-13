@@ -18,9 +18,17 @@ import au.csiro.variantspark.genomics._
 case class Mutation(coord: GenomicCoord, ref: String, alt: String)
 
 object Mutation {
+  
+  val bases = Set("C","T","G","A")
+  
   def makeRandom(pos: GenomicCoord, ref: DNABase)(implicit rng: RandomGenerator): Mutation = {
-    //TODO: add actual geneation of mutation
-    Mutation(pos, ref, ref)
+    val possibleVariants = (Set("C","T","G","A") - ref).toIndexedSeq
+    Mutation(pos, ref, possibleVariants(rng.nextInt(possibleVariants.size)))
+  }
+  
+  def makeAll(pos: GenomicCoord, ref: DNABase, alts:Set[DNABase]):Iterator[Mutation] = {
+    val mutationSnps =  bases.diff(alts + ref)
+    mutationSnps.iterator.map(Mutation(pos, ref,_))
   }
 }
 
