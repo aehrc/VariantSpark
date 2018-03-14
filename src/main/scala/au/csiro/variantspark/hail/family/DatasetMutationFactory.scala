@@ -47,9 +47,9 @@ object DatasetMutationFactory {
 class DatasetMutationFactory(val mutations: RDD[Mutation], 
     val mutationRate: Double, val contigSet:ContigSet)(implicit rng:RandomGenerator) extends MutationSetFactory with Logging {
   
+  lazy val mutationCount = mutations.cache().count()
+  
   override def create():MutationSet = {
-    mutations.cache()
-    val mutationCount = mutations.count()
     
     logInfo(s"Found ${mutationCount} mutation candidates")
     val samplingFraction:Double = mutationRate * contigSet.totalLenght / mutationCount
@@ -58,9 +58,7 @@ class DatasetMutationFactory(val mutations: RDD[Mutation],
     if (samplingFraction > 1) {
       logWarning("There is not enough mutation canditates to draw ${mutationRate * contigSet.totalLenght} mutations")
     }
-    val result = MutationSet(mutations.sample(false, samplingFraction, rng.nextLong()).collect()) 
-    mutations.unpersist();
-    result
+    MutationSet(mutations.sample(false, samplingFraction, rng.nextLong()).collect()) 
   }
   
 }
