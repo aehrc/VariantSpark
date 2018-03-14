@@ -1,0 +1,7 @@
+Family ID	Indivdual	IDParental ID	Mathernal ID	Gender	Phenotype
+FAM1	FUN1	0	0	1	0 
+FAM1	FUN2	0	0	2	0
+FAM1	FUN3	0	0	2	0
+FAM1	OFF1	FUN1	FUN2	1	0
+FAM1	OFF2	OFF1	FUN3	2	0
+
