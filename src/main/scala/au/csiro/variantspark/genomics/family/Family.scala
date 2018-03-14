@@ -44,6 +44,8 @@ case class FamilySpec(val members:Seq[FamilyMember]) extends Serializable {
   def memberIds:List[IndividualID] =  members.map(_.id).toList
   def founderIds:List[IndividualID] = members.filter(p => p.isInstanceOf[Founder]).map(_.id).toList
   
+  def offsprings: Seq[Offspring] = members.filter(p => p.isInstanceOf[Offspring]).map(_.asInstanceOf[Offspring])
+  
   def produceGenotypePool(v: MutableVariant, initialPool:GenotypePool):GenotypePool = {
     
     val outputPool =  HashMap[IndividualID, GenotypeSpec]()
