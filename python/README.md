@@ -5,12 +5,16 @@ VariantSpark is built on top of Apache Spark core. It implements a supervised, w
 
 ### 1. Install VariantSpark
 
+Prerequisites: 
+- Python 2.7 with pip (current version of VariantSpark is not compatible with Python 3)
+- PySpark installed in the system either as a python package or from the distribution package. VariantSpark has been tested with Spark 2.1.x
+ 
+Installation:
+ 
     pip install variant-spark  
     
-NOTES and TIPS: 
- - Expects Python 2.x or better to be correctly installed on your system prior to installing VariantSpark.  
- - You may need to run this command as 'sudo'.
- - Expects that you have installed Python 'pip' package manager prior to running this command.
+NOTES and TIPS:  
+ - You may need to run this command as 'sudo', use a python virtual environment system such as conda, or use '--user' option.
 
 ### 2. Verify VariantSpark
 
