@@ -164,6 +164,11 @@
 					<groupId>ch.qos.logback</groupId>
 					<artifactId>logback-classic</artifactId>
 				</exclusion>
+				<!-- confilits with an older version of guava shipped with hadoop -->
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
 			</exclusions>
 		</dependency>
 		<dependency>
