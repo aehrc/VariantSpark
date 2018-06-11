@@ -10,7 +10,7 @@ Welcome to variant-spark documentation!
 
 **variant-spark** is a scalable toolkit for genome-wide association studies optimized for GWAS like datasets. 
 
-Machine learning methods and, in particular, random forests (RFs) are a promising alternative to standard single SNP analyses in genome-wide association studies (GWAS). 
+Machine learning methods and, in particular, random forests (RFs) are a promising alternative to standard single SNP analysis in genome-wide association studies (GWAS). 
 RFs provide variable importance measures to rank SNPs according to their predictive power.
 Although there are number of existing random forest implementations available, some even parallel or distributed such as: Random Jungle, ranger or SparkML,
 most of them are not optimized to deal with GWAS datasets, which usually come with thousands of samples and millions of variables.
@@ -37,7 +37,13 @@ Contents:
    :maxdepth: 2
    
    getting_started
+   overview
+   tutorials
+   cmd_ref
    pyapi
+   deployment
+   development
+   
    
 Indices and tables
 ==================
