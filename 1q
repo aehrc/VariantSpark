@@ -1,0 +1,5 @@
+typedecorator>=0.0.5
+numpy>=1.13.3
+pandas>=0.22.0
+
+

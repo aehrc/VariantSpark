@@ -7,7 +7,7 @@ SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = _build
 
-export PYTHONPATH=$(realpath ..):$(realpath ../deps/hail-py-0.1-src.zip):$(realpath ../deps/py4j-0.10.4-src.zip):$(realpath ../deps/pyspark.zip)
+#export PYTHONPATH=$(realpath ..):$(realpath ../deps/hail-py-0.1-src.zip):$(realpath ../deps/py4j-0.10.4-src.zip):$(realpath ../deps/pyspark.zip)
 
 # User-friendly check for sphinx-build
 ifeq ($(shell which $(SPHINXBUILD) >/dev/null 2>&1; echo $$?), 1)
