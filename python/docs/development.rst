@@ -4,12 +4,45 @@
 Development
 =======================================
 
+**variant-spark** requires:
 
-- setting up dev environment
+- java jdk 1.8+ 
+- maven 3+
 
-- building from sources
+In order to build the binaries use:
 
-- contributing
+::
 
+    mvn clean install
+
+
+For python **variant-spark** requires python 2.7 with pip. 
+
+The other packages required for development are listed in dev/dev-requirements.txt and can be installed with:
+
+::
+
+    pip install -r dev/dev-requirements.txt
+
+or with:
+
+::
+ 
+    ./dev/py-setup.sh
+
+The complete built including all check can be run with:
+
+::
+
+    ./dev/build.sh
+
+
+
+
+TODO: 
+
+- how to make a distribution or build 
+- how to contirbute see: https://github.com/aehrc/VariantSpark/blob/master/CONTRIBUTING.md
+- copy part of the contents from: https://github.com/aehrc/VariantSpark/blob/master/python/README.md
 
 
