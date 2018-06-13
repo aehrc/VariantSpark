@@ -5,9 +5,8 @@ setup(
     version='0.2',
     packages=['vs_emr'],
     install_requires=[
-        'Click', 'PyYAML', 'pystache', 'jsonmerge'
+        'Click', 'PyYAML', 'pystache', 'jsonmerge', 'awscli>=1.11'
     ],
-    #package_data = {'':['*.yaml'], 'templates':['*.yaml']},
     include_package_data=True,
     entry_points='''
         [console_scripts]
