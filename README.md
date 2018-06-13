@@ -102,9 +102,9 @@ There are multiple methods for running variant-spark examples
 
 variant-spark comes with a few example scripts in the `scripts` directory that demonstrate how to run its commands on sample data .
 
-There is a few small data sets in the `data` directory suitable for running in the `--local` mode. The scripts that operate on this data start with the `local-` prefix. For example
+There is a few small data sets in the `data` directory suitable for running on a single machine. For example
 
-	./scripts/local-run-importance-ch22.sh 
+	./scripts/local_run-importance-ch22.sh 
 	
 runs variable importance command on a small sample of the chromosome 22 vcf file (from 1000 Genomes Project)
 
@@ -125,7 +125,7 @@ You can choose a different location by setting the `VS_DATA_DIR` environment var
 
 After the test data has been successfully copied to HDFS you can run examples scripts, e.g.:
 
-	./scripts/run-importance-ch22.sh
+	./scripts/yarn_run-importance-ch22.sh
 
 Note: if you installed the data to a non default location the `VS_DATA_DIR` needs to be set accordingly when running the examples	
 
