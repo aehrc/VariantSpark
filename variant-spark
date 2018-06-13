@@ -1,6 +1,13 @@
 #!/bin/bash
+set -e
 
 PWD=$(cd `dirname "$0"`; pwd)
+
+function fatal_error () {
+	echo "ERROR: $1" 1>&2
+	exit 1
+}
+
 
 if [[ -z "${VARIANT_SPARK_HOME}" ]]; then
 	VARIANT_SPARK_HOME="${PWD}"
@@ -42,15 +49,18 @@ if [[ -n "${VS_DEBUG}" ]]; then
 fi
 
 if [[ "${RUNNER}" == "--spark" ]]; then
+	[[ $(type -P "spark-submit") ]] || fatal_error  "\`spark-submit\` cannot be found. Please make sure it's on your PATH." 
 	spark-submit --class au.csiro.variantspark.cli.VariantSparkApp \
  	--driver-class-path ${VARIANT_SPARK_HOME}/conf \
  	"${SPARK_PARAMS[@]}" \
  	${VS_ASSEMBLY_JAR} "$@"
 elif [[ "${RUNNER}" == "--emr" ]]; then
+	[[ $(type -P "spark-submit") ]] || fatal_error  "\`spark-submit\` cannot be found. Please make sure it's on your PATH." 
 	spark-submit --class au.csiro.variantspark.cli.VariantSparkApp \
  	"${SPARK_PARAMS[@]}" \
  	${VS_ASSEMBLY_JAR} "$@"
 else
+	[[ -n "$SPARK_HOME" ]] || fatal_error "\`SPARK_HOME\` is not defined. Please set it to the root of your Spark installation."
 	SPARK_JARS="${SPARK_HOME}/jars/*"
 	SPARK_CLASSPATH="${VARIANT_SPARK_HOME}/conf:${VS_ASSEMBLY_JAR}:${SPARK_JARS}:/usr/lib/hadoop/lib/*:/usr/lib/hadoop/.//*:/usr/lib/hadoop-hdfs/./:/usr/lib/hadoop-hdfs/lib/*:/usr/lib/hadoop-hdfs/.//*:/usr/lib/hadoop-yarn/lib/*:/usr/lib/hadoop-yarn/.//*:/usr/lib/hadoop-mapreduce/lib/*:/usr/lib/hadoop-mapreduce/.//*"
         echo "$SPARK_CLASSPATH"
