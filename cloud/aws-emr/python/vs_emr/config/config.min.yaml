@@ -1,0 +1,12 @@
+default:
+  variantSparkReleaseUrl: "s3://variant-spark/stable/0.1/0.1.0"
+  instanceType: "m4.large"
+  autoTerminate: true
+  releaseLabel: "emr-5.8.0"
+  ec2Attributes:
+    SubnetId: "{{subnet_id}}"
+    InstanceProfile: "EMR_EC2_DefaultRole"
+  worker:
+    instanceCount: 2
+  conf:
+    {{#log_bucket_uri}}logBucketUri: "{{log_bucket_uri}}"{{/log_bucket_uri}}
