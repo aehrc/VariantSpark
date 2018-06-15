@@ -333,8 +333,8 @@ def configure():
         click.confirm("A configuration file `%s` already exists and will be overwritten. A copy of the current config will be created with `.bak` extension.\nDo you want to continue" % config_file, abort=True)    
         shutil.copyfile(config_file, "%s.bak" % config_file)
     
-    subnet_id = click.prompt("Subnet id", type = str, default=None)
-    log_bucket_uri = str_none(click.prompt("Log bucket uri (`s3://`)", type = str, default="None"))
+    subnet_id = click.prompt("Subnet Id of the AWS subnet to create the EMR cluster in", type = str, default=None)
+    log_bucket_uri = str_none(click.prompt("S3 URL (`s3://`) of the bucket for EMR log. If not set logging will be disabled", type = str, default="None"))
     
     config_template_path = resource_filename(__name__, os.path.join('config','config.min.yaml'))
     print(config_template_path) 
