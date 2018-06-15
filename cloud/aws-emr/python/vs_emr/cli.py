@@ -330,23 +330,25 @@ def configure():
     config_dir = os.path.join(os.environ['HOME'], '.vs_emr') 
     config_file = os.path.join(config_dir, 'config.yaml')
     if (os.path.exists(config_file)):
-        click.confirm("A configuration file `%s` already exists and will be overwritten. A copy of the current config will be created with `.bak` extension.\nDo you want to continue" % config_file, abort=True)    
+        click.confirm("A configuration file `%s` already exists and will be overwritten. A copy of the current config will be saved.\nDo you want to continue" % config_file, abort=True)    
         shutil.copyfile(config_file, "%s.bak" % config_file)
+        click.echo("Copy of vs-emr configuration saved in: %s.bak" % config_file)    
+    
     
     subnet_id = click.prompt("Subnet Id of the AWS subnet to create the EMR cluster in", type = str, default=None)
     log_bucket_uri = str_none(click.prompt("S3 URL (`s3://`) of the bucket for EMR log. If not set logging will be disabled", type = str, default="None"))
     
     config_template_path = resource_filename(__name__, os.path.join('config','config.min.yaml'))
-    print(config_template_path) 
     with open(config_template_path, 'r') as config_template_f:
         config_template  = config_template_f.read()    
     config = pystache.render(config_template, {'subnet_id': subnet_id, 'log_bucket_uri': log_bucket_uri})
 
     if not os.path.isdir(config_dir):
         os.mkdir(config_dir) 
-    print(config)
     with open(config_file, "w") as config_f:
         print(config, file=config_f)
+    click.echo("vs-emr configuration written to: %s" % config_file)    
+        
 
 if __name__ == '__main__':
     cli()
