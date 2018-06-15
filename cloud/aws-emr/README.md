@@ -30,18 +30,12 @@ We've included a diagram for your reference:
 - **verify** system requirements include `python2.7+` and associated version of  `pip`
 - **install** the AWS command line utility `aws cli` as described in [Installing the AWS Command Line Interface](http://docs.aws.amazon.com/cli/latest/userguide/installing.html). 
 - **configure** your `aws cli` providing your default region, access keys, etc using the `aws configure` command. More info on the configuration process and using the `aws cli` can be found at [AWS CLI User Guide](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html)
-- **download** the VariantSpark client source files, you can just download the entire project as a zip file from Github [here](https://github.com/aehrc/VariantSpark)
-- **unzip** your download and locate the path to `\Variant-Spark\cloud\aws\emr` in your local download
-- **navigate** to that path
-- **run** `pip install --user ./python` to install the the `vs-emr` utility from the path above  
+- **run** `pip install --user vs-emr` to install the the `vs-emr` utility   
 - **verify** the installation and see the available commands by running this command: `vs-emr --help`
-- **create** the `vs-emr` configuration by running the following two commands:
-    - `mkdir ~/.vs_emr`  
-    - `cp conf/config.min.yaml ~/.vs_emr/config.yaml`  
-- **edit** the configuration in `~/.vs_emr/config.yaml` replacing the values in `<<>>` with appropriate values.
+- **configure** `vs-emr` by running: 
+   - `vs-emr configure`  
 
 NOTES on `vs-emr` install:  
-- To install `vs-emr` cd to `python` directory and run: `pip install [--user]`   
 - If you use some form of python virtual environment, or want to install `vs-emr` system-wide, you should skip the `--user` option. 
 
 ### Server Setup - First Part (for S3)
