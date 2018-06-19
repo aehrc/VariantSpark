@@ -38,10 +38,10 @@ Contents:
    
    getting_started
    overview
+   installation
    tutorials
    cmd_ref
    pyapi
-   deployment
    development
    
    

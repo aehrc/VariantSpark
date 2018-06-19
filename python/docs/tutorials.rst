@@ -10,6 +10,16 @@ Tutorials
 
 TBP: 
 
+Introduction to Python API
+=======================================
+
+This notebook demostrates the use of Variant-Spark Python API for importance analysis.
+
+.. toctree::
+    :maxdepth: 2
+
+    Python API <tutorials/PythonAPIDirect.ipynb>
+
 ??? GWS with python API
 ------------------------
 

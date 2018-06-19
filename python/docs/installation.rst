@@ -1,7 +1,7 @@
-.. _sec-deployment:
+.. _sec-installation:
 
 =======================================
-Deployment
+Installation
 =======================================
 
 
