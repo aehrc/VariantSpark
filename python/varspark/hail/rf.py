@@ -9,6 +9,7 @@ from __future__ import (
     division,
     print_function)
 
+from typedecorator import params, Nullable
 from hail import  KeyTable
 
 class ImportanceAnalysis(object):
@@ -26,6 +27,8 @@ class ImportanceAnalysis(object):
         """
         return self._jia.oobError()
 
+
+    @params(self=object, n_limit=Nullable(int))
     def important_variants(self, n_limit=1000):
         """ Gets the top n most important loci.
 
