@@ -1,4 +1,11 @@
+# Ensure backwards compatibility with Python 2
+from __future__ import (
+    absolute_import,
+    division,
+    print_function)
+
 import os
+import sys
 import unittest
 
 from pyspark import SparkConf
@@ -6,6 +13,9 @@ from pyspark.sql import SparkSession
 
 from varspark import VariantsContext
 from varspark.test import find_variants_jar, PROJECT_DIR
+
+if sys.version_info > (3,):
+    long = int
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 

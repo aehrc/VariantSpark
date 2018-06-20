@@ -9,10 +9,14 @@ from __future__ import (
     division,
     print_function)
 
+import sys
+from typedecorator import params, Nullable, Union
 from hail.java import joption
 from hail import KinshipMatrix
-
 from .rf import ImportanceAnalysis
+
+if sys.version_info > (3,):
+    long = int
 
 
 class VariantsDatasetFunctions(object):
@@ -28,6 +32,9 @@ class VariantsDatasetFunctions(object):
         vsh = getattr(self.hc._jvm, 'au.csiro.variantspark.hail')
         self._vshf_cache = vsh.VSHailFunctions(self._jvds)
 
+
+    @params(self=object, y_expr=str, n_trees=Nullable(int), mtry_fraction=Nullable(float),
+            oob=Nullable(bool), seed=Nullable(Union(int, long)), batch_size=Nullable(int))
     def importance_analysis(self, y_expr, n_trees=1000, mtry_fraction=None, oob=True, seed=None,
                       batch_size=100):
         """Builds random forest classifier for the response variable defined with y_expr.
@@ -48,6 +55,7 @@ class VariantsDatasetFunctions(object):
                         oob, joption(long(seed) if seed is not None else None),
                         batch_size))
 
+    @params(self=object, operation_name=str)
     def pairwise_operation(self, operation_name):
         """Computes a pairwise operation on encoded genotypes. Currently implemented operations
         include:
