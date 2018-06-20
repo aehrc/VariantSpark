@@ -10,14 +10,13 @@ from __future__ import (
     print_function)
 
 import sys
-if sys.version_info > (3,):
-    long = int
-
 from typedecorator import params, Nullable, Union
 from hail.java import joption
 from hail import KinshipMatrix
-
 from .rf import ImportanceAnalysis
+
+if sys.version_info > (3,):
+    long = int
 
 
 class VariantsDatasetFunctions(object):

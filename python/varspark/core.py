@@ -5,15 +5,15 @@ from __future__ import (
     print_function)
 
 import sys
-if sys.version_info > (3,):
-    long = int
-
 from random import randint
 from typedecorator import params, Nullable, Union, setup_typecheck
 from pyspark import SparkConf
 from pyspark.sql import SQLContext
 from varspark.etc import find_jar
 from varspark import java
+
+if sys.version_info > (3,):
+    long = int
 
 
 class VariantsContext(object):
@@ -29,7 +29,7 @@ class VariantsContext(object):
 
     def __init__(self, ss, silent = False):
         """The main entry point for VariantSpark functionality.
-        :param ss: SparkSession       
+        :param ss: SparkSession
         :type ss: :class:`.pyspark.SparkSession`
         :param bool silent: Do not produce welcome info.
         """
@@ -47,7 +47,8 @@ class VariantsContext(object):
         if not self.silent:
             sys.stderr.write('Running on Apache Spark version {}\n'.format(self.sc.version))
             if self.sc._jsc.sc().uiWebUrl().isDefined():
-                sys.stderr.write('SparkUI available at {}\n'.format(self.sc._jsc.sc().uiWebUrl().get()))
+                sys.stderr.write('SparkUI available at {}\n'.format(
+                        self.sc._jsc.sc().uiWebUrl().get()))
             sys.stderr.write(
                 'Welcome to\n'
                 ' _    __           _             __  _____                  __    \n'
@@ -109,7 +110,8 @@ class FeatureSource(object):
         :rtype: :py:class:`ImportanceAnalysis`
         """
         jrf_params = self._jvm.au.csiro.variantspark.algo.RandomForestParams(bool(oob),
-                                java.jfloat_or(mtry_fraction), True, java.NAN, True, java.jlong_or(seed, randint(java.MIN_LONG, java.MAX_LONG)))
+                                java.jfloat_or(mtry_fraction), True, java.NAN, True,
+                                java.jlong_or(seed, randint(java.MIN_LONG, java.MAX_LONG)))
         jia = self._vs_api.ImportanceAnalysis(self._jsql, self._jfs, label_source,
                                               jrf_params, n_trees, batch_size, var_ordinal_levels)
         return ImportanceAnalysis(jia, self.sql)
@@ -141,9 +143,10 @@ class ImportanceAnalysis(object):
 
     def variable_importance(self):
         """ Returns a DataFrame with the gini importance of variables.
+
         The DataFrame has two columns:
-            - variable: string - variable name
-            - importance: double - gini importance
+        - variable: string - variable name
+        - importance: double - gini importance
         """
         jdf = self._jia.variableImportance()
         jdf.count()
