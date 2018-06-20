@@ -69,7 +69,7 @@ try:
             ]
         },
         dependency_links = [
-            'https://s3-ap-southeast-2.amazonaws.com/variant-spark/deps/hail-0.1/latest/hail-python.zip#egg=hail-devel'
+            'https://s3-ap-southeast-2.amazonaws.com/variant-spark/deps/hail-0.1/latest/hail-devel.tar.gz#egg=hail-devel'
         ],
         include_package_data=True,
         package_dir={
