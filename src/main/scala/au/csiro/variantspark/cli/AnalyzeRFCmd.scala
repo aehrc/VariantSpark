@@ -11,14 +11,12 @@ import org.kohsuke.args4j.Option
 
 import au.csiro.pbdava.ssparkle.common.arg4j.AppRunner
 import au.csiro.pbdava.ssparkle.common.arg4j.TestArgs
-import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 import au.csiro.sparkle.common.args4j.ArgsApp
 import au.csiro.variantspark.cmd.EchoUtils._
 import au.csiro.variantspark.cmd.Echoable
 import au.csiro.variantspark.utils.IndexedRDDFunction._
 import au.csiro.variantspark.utils.VectorRDDFunction._
 import au.csiro.variantspark.utils.defRng
-import com.github.tototoshi.csv.CSVWriter
 import au.csiro.variantspark.algo.RandomForestModel
 import au.csiro.variantspark.cli.args.FeatureSourceArgs
 import au.csiro.pbdava.ssparkle.spark.SparkUtils
@@ -26,6 +24,8 @@ import org.apache.spark.serializer.JavaSerializer
 import au.csiro.variantspark.cli.args.SparkArgs
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap
 import au.csiro.variantspark.cli.args.LabelSourceArgs
+import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
+import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 
 class AnalyzeRFCmd extends ArgsApp with FeatureSourceArgs with Echoable with Logging with TestArgs {
 
@@ -82,7 +82,7 @@ class AnalyzeRFCmd extends ArgsApp with FeatureSourceArgs with Echoable with Log
   
     if (outputOobError != null) {
       echo(s"Writing oob errors to : ${outputOobError}") 
-      LoanUtils.withCloseable(CSVWriter.open(outputOobError)) { writer =>
+      CSVUtils.withPath(outputOobError) { writer =>
         writer.writeRow(List("treeNo","oob"))
         rfModel.oobErrors.zipWithIndex.map(_.swap).map(_.productIterator.toSeq).foreach(writer.writeRow)
       }
@@ -91,7 +91,7 @@ class AnalyzeRFCmd extends ArgsApp with FeatureSourceArgs with Echoable with Log
     if (outputOobPerTree != null) {
       echo(s"Writing per tree oob : ${outputOobPerTree}") 
       val samples = featureSource.sampleNames
-      LoanUtils.withCloseable(CSVWriter.open(outputOobPerTree)) { writer =>
+      CSVUtils.withPath(outputOobPerTree) { writer =>
         writer.writeRow(samples)
         rfModel.members.map(m => m.oobIndexes.zip(m.oobPred).toMap)
           .map(m => samples.indices.map(i => m.getOrElse(i, null))).foreach(writer.writeRow)
@@ -100,7 +100,7 @@ class AnalyzeRFCmd extends ArgsApp with FeatureSourceArgs with Echoable with Log
     
     if (outputImportance != null) {
       echo(s"Writing per tree importance to: ${outputImportance}") 
-      LoanUtils.withCloseable(CSVWriter.open(outputImportance)) { writer =>
+      CSVUtils.withPath(outputImportance) { writer =>
         rfModel.trees.map(_.variableImportance()).map(_.toSeq.map(t => t._1 + ":" + t._2)).foreach(writer.writeRow)
       }
     }  
@@ -109,7 +109,7 @@ class AnalyzeRFCmd extends ArgsApp with FeatureSourceArgs with Echoable with Log
       echo(s"Writing top  per tree importance to: ${outputTopImportance}") 
       val topImportantVariables = rfModel.normalizedVariableImportance().toSeq.sortBy(-_._2).take(outputTopImportanceNumber).map(_._1).sorted
       
-      LoanUtils.withCloseable(CSVWriter.open(outputTopImportance)) { writer =>
+      CSVUtils.withPath(outputTopImportance) { writer =>
         writer.writeRow(topImportantVariables.map(variableIndex.get))
         rfModel.trees.map(_.variableImportance()).map(vi => topImportantVariables.map(i => vi.getOrElse(i, null))).foreach(writer.writeRow)
       }

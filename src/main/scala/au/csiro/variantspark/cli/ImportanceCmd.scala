@@ -37,6 +37,7 @@ import java.io.ObjectOutputStream
 import java.io.FileOutputStream
 import org.apache.hadoop.conf.Configuration
 import au.csiro.variantspark.utils.HdfsPath
+import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
 
 class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
@@ -228,7 +229,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
 
     val importantVariableData = if (includeData) trainingData.collectAtIndexes(topImportantVariableIndexes) else null
     
-    LoanUtils.withCloseable(if (outputFile != null ) CSVWriter.open(HdfsPath(outputFile).create())else CSVWriter.open(ReusablePrintStream.stdout)) { writer =>
+    CSVUtils.withStream(if (outputFile != null ) HdfsPath(outputFile).create() else ReusablePrintStream.stdout) { writer =>
       val header = List("variable","importance") ::: (if (includeData) source.sampleNames else Nil)
       writer.writeRow(header)
       writer.writeAll(topImportantVariables.map({case (i, importance) => 
