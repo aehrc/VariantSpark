@@ -52,6 +52,12 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
       , aliases=Array("--input-var-ordinal"))
   val varOrdinalLevels:Int = 3
 
+  @Option(name="-ivb", required=false, usage="Input vcf is biallelic (def=false)", aliases=Array("--input-vcf-biallelic"))
+  val inputVcfBiallelic:Boolean = false
+
+  @Option(name="-ivs", required=false, usage="The separator to use to produce labels for variants from vcf file.(def='_')", aliases=Array("--input-vcf-sep"))
+  val inputVcfSeparator:String = "_"
+
   @Option(name="-ff", required=true, usage="Path to feature file", aliases=Array("--feature-file"))
   val featuresFile:String = null
 
@@ -111,14 +117,14 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
   val sparkPar = 0
  
   @Override
-  def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ro", "-om", "target/ch22-model.ser" )
+  def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ro", "-om", "target/ch22-model.ser", "-sr", "13")
   
   def loadVCF() = {
     echo(s"Loading header from VCF file: ${inputFile}")
     val vcfSource = VCFSource(sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
     verbose(s"VCF Version: ${vcfSource.version}")
     verbose(s"VCF Header: ${vcfSource.header}")    
-    VCFFeatureSource(vcfSource)    
+    VCFFeatureSource(vcfSource, inputVcfBiallelic, inputVcfSeparator)    
   }
   
   def loadCSV() = {
