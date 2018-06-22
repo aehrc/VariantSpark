@@ -5,16 +5,44 @@ import htsjdk.variant.variantcontext.Genotype
 import htsjdk.variant.variantcontext.VariantContext
 import collection.JavaConverters._
 
-class VCFFeatureSource(vcfSource:VCFSource) extends FeatureSource {
+
+trait VariantToFeatureConverter {
+  def convert(v:VariantContext):Feature
+}
+
+case class DefVariantToFeatureConverter(biallelic:Boolean = false, separator:String = "_") extends VariantToFeatureConverter {
+  def convert(vc:VariantContext):Feature = {
+    Feature(convertLabel(vc), vc.getGenotypes.iterator().asScala.map(convertGenotype).toArray)
+  }
   
+  def convertLabel(vc:VariantContext):String = {
+   
+    if (biallelic && !vc.isBiallelic()) {
+      throw new IllegalArgumentException(s"Variant ${vc.toStringWithoutGenotypes()} is not biallelic!")
+    }
+    val labelBuilder = new StringBuilder()
+    labelBuilder.append(vc.getContig()).append(separator).append(vc.getStart())
+    if (biallelic) {
+      labelBuilder.append(separator).append(vc.getReference().getBaseString())
+    }
+    labelBuilder.toString()
+  }
+  
+  def convertGenotype(gt:Genotype):Byte = {
+    if (!gt.isCalled() || gt.isHomRef()) 0 else if (gt.isHomVar() || gt.isHetNonRef()) 2 else 1
+  }
+}
+
+class VCFFeatureSource(vcfSource:VCFSource, converter: VariantToFeatureConverter) extends FeatureSource {
   override lazy val sampleNames:List[String] = vcfSource.header.getGenotypeSamples().asScala.toList
-  override def features():RDD[Feature] = vcfSource.genotypes().map(VCFFeatureSource.variantToFeature(VCFFeatureSource.hammingConversion)) 
+  override def features():RDD[Feature] = {
+    val converterRef = converter
+    vcfSource.genotypes().map(converterRef.convert) 
+  }
 }
 
 object VCFFeatureSource {
-  
-  def apply(vcfSource:VCFSource) = new VCFFeatureSource(vcfSource)
-  
-  private def variantToFeature(f:Genotype=>Byte)(vc:VariantContext) =  Feature(vc.getContig() + "_" + vc.getStart(), vc.getGenotypes.iterator().asScala.map(f).toArray)
-  private def hammingConversion(gt:Genotype):Byte = if (!gt.isCalled() || gt.isHomRef()) 0 else if (gt.isHomVar()) 2 else 1
+  def apply(vcfSource:VCFSource, biallelic:Boolean = false, separator:String = "_") = {
+    new VCFFeatureSource(vcfSource, DefVariantToFeatureConverter(biallelic, separator))
+  }
 }
