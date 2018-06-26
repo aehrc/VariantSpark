@@ -195,22 +195,16 @@ case class DeterministicMerger() extends Merger {
 
 /** Utilizes the Randomized Decision Tree model found here: [[https://en.wikipedia.org/wiki/Decision_tree_model#Randomized_decision_tree]]
   * Extends the [[au.csiro.variantspark.algo.Merger]] class
+  * 
+  * Xorting the index of a variable with a random seed provides predicateble random ordering
+  * or variables.  
   *
   * @param seed: input a seed value to initialize the random number generator for rnd
   */
 case class RandomizingMerger(seed:Long) extends Merger {
 
-  lazy val rnd  = new  XorShift1024StarRandomGenerator(seed ^ TaskContext.getPartitionId())
-
   def chooseEqual(s1:VarSplitInfo, s2:VarSplitInfo):VarSplitInfo =  {
-    if (rnd.nextBoolean()) {
-      // pick the one with smaller index
-      if (s1.variableIndex < s2.variableIndex) s1 else s2
-    } else {
-      // pick the oner with larger index
-      if (s1.variableIndex > s2.variableIndex) s1 else s2
-    }
-    // equal case it not possible    
+      if ((s1.variableIndex ^ seed) < (s2.variableIndex ^ seed)) s1 else s2
   }
   
   /** Operates a merging function utilizing two arrays of the class [[au.csiro.variantspark.algo.VarSplitInfo]]
