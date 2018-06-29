@@ -3,3 +3,4 @@ pylint==1.8.1
 twine>=1.9.1
 sphinx_rtd_theme
 decorator==4.1.2
+nbsphinx

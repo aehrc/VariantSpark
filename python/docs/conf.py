@@ -41,7 +41,8 @@ sys.path+=glob.glob(os.path.join(PYTHON_ROOT, 'deps', '*.zip'))
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
-    'sphinx.ext.viewcode'
+    'sphinx.ext.viewcode',
+    'nbsphinx',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
