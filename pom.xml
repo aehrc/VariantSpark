@@ -71,7 +71,7 @@
 		<encoding>UTF-8</encoding>
 		<scala.binary.version>2.11</scala.binary.version>
 		<scala.version>2.11.8</scala.version>
-		<spark.version>2.1.0</spark.version>
+		<spark.version>2.3.0</spark.version>
         <sonata.autorelease>false</sonata.autorelease>
 	</properties>
 
@@ -164,6 +164,11 @@
 					<groupId>ch.qos.logback</groupId>
 					<artifactId>logback-classic</artifactId>
 				</exclusion>
+				<!-- confilits with an older version of guava shipped with hadoop -->
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
 			</exclusions>
 		</dependency>
 		<dependency>
