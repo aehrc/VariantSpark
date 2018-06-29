@@ -16,7 +16,6 @@ import au.csiro.pbdava.ssparkle.common.utils.Logging
 import org.apache.commons.lang3.builder.ToStringBuilder
 import au.csiro.variantspark.cmd.EchoUtils._
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
-import com.github.tototoshi.csv.CSVWriter
 import au.csiro.pbdava.ssparkle.common.arg4j.TestArgs
 import org.apache.hadoop.fs.FileSystem
 import au.csiro.variantspark.algo.WideDecisionTree
@@ -35,6 +34,8 @@ import au.csiro.variantspark.algo.ByteRandomForest
 import au.csiro.variantspark.utils.IndexedRDDFunction._
 import au.csiro.variantspark.stats.CochranArmitageTestScorer
 import au.csiro.variantspark.stats.CochranArmitageTestCalculator
+import au.csiro.variantspark.utils.HdfsPath
+import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
 
 class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
@@ -157,7 +158,7 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
 
     val importantVariableData = if (includeData) trainingData.collectAtIndexes(topImportantVariableIndexes) else null
     
-    LoanUtils.withCloseable(if (outputFile != null ) CSVWriter.open(outputFile) else CSVWriter.open(ReusablePrintStream.stdout)) { writer =>
+    CSVUtils.withStream(if (outputFile != null ) HdfsPath(outputFile).create() else ReusablePrintStream.stdout) { writer =>
       val header = List("variable","importance") ::: (if (includeData) source.sampleNames else Nil)
       writer.writeRow(header)
       writer.writeAll(topImportantVariables.map({case (i, importance) => 

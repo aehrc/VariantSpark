@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+# Ensure backwards compatibility with Python 2
+from __future__ import (
+    absolute_import,
+    division,
+    print_function)
+# from builtins import *
 
 import sys
 import os
@@ -11,6 +17,7 @@ import subprocess
 import jsonmerge
 import functools
 import shlex
+import shutil
 from pkg_resources import resource_filename, resource_string
 
 EMR_TEMPL = "aws emr add-steps --cluster-id %(cluster_id)s --steps Type=Spark,Name='%(step_name)s',ActionOnFailure=%(action_on_failure)s,Args=[%(arg_list)s]"
@@ -124,12 +131,13 @@ def resolve_to_cmd_options(aws_ctx, template_file, user_config):
     with open(template_file, 'r') as template_f:
         template  = template_f.read()
         
-        
+    renderer = pystache.Renderer(escape=lambda u:u)
     unresolved_config = yaml.load(pystache.render(template, {})) 
     unresolved_defaults = unresolved_config.get('defaults') or dict()
-    defaults = yaml.load(pystache.render(template, yamlize_dict(jsonmerge.merge(unresolved_defaults, user_config)))).get('defaults') or dict()
+    config_yaml = renderer.render(template, yamlize_dict(jsonmerge.merge(unresolved_defaults, user_config)))    
+    defaults = yaml.load(config_yaml).get('defaults') or dict()
     config = jsonmerge.merge(defaults, user_config)
-    aws_config = yaml.load(pystache.render(template, config))   
+    aws_config = yaml.load(renderer.render(template, config))   
     aws_ctx.debug("AWS Config: %s" % aws_config)    
     aws_options = aws_config['options']
     cmd_options = [to_cmd_option(*kv) for kv in aws_options.items()]
@@ -311,6 +319,36 @@ def submit_cmd(aws_ctx, cluster_id, cluster_id_file, step_name, action_on_failur
     step_id = aws_ctx.aws_emr_step(cluster_id, step_name, action_on_failure, shlex.split(spark_opts or '') + VS_EMR_ARGS + list(variant_spark_args))
     aws_ctx.echo("Step Id: %s" % step_id)
 
+
+
+@cli.command(name='configure', help='Creates the initial configuration file')
+def configure():
+    
+    def str_none(s):
+        return None if s == "None" else s
+
+    config_dir = os.path.join(os.environ['HOME'], '.vs_emr') 
+    config_file = os.path.join(config_dir, 'config.yaml')
+    if (os.path.exists(config_file)):
+        click.confirm("A configuration file `%s` already exists and will be overwritten. A copy of the current config will be saved.\nDo you want to continue" % config_file, abort=True)    
+        shutil.copyfile(config_file, "%s.bak" % config_file)
+        click.echo("Copy of vs-emr configuration saved in: %s.bak" % config_file)    
+    
+    
+    subnet_id = click.prompt("Subnet Id of the AWS subnet to create the EMR cluster in", type = str, default=None)
+    log_bucket_uri = str_none(click.prompt("S3 URL (`s3://`) of the bucket for EMR log. If not set logging will be disabled", type = str, default="None"))
+    
+    config_template_path = resource_filename(__name__, os.path.join('config','config.min.yaml'))
+    with open(config_template_path, 'r') as config_template_f:
+        config_template  = config_template_f.read()    
+    config = pystache.render(config_template, {'subnet_id': subnet_id, 'log_bucket_uri': log_bucket_uri})
+
+    if not os.path.isdir(config_dir):
+        os.mkdir(config_dir) 
+    with open(config_file, "w") as config_f:
+        print(config, file=config_f)
+    click.echo("vs-emr configuration written to: %s" % config_file)    
+        
 
 if __name__ == '__main__':
     cli()

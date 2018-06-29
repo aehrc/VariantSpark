@@ -195,13 +195,18 @@ case class DeterministicMerger() extends Merger {
 
 /** Utilizes the Randomized Decision Tree model found here: [[https://en.wikipedia.org/wiki/Decision_tree_model#Randomized_decision_tree]]
   * Extends the [[au.csiro.variantspark.algo.Merger]] class
+  * 
+  * Xorting the index of a variable with a random seed provides predicateble random ordering
+  * or variables.  
   *
   * @param seed: input a seed value to initialize the random number generator for rnd
   */
 case class RandomizingMerger(seed:Long) extends Merger {
 
-  lazy val rnd  = new  XorShift1024StarRandomGenerator(seed ^ TaskContext.getPartitionId())
-
+  def chooseEqual(s1:VarSplitInfo, s2:VarSplitInfo):VarSplitInfo =  {
+      if ((s1.variableIndex ^ seed) < (s2.variableIndex ^ seed)) s1 else s2
+  }
+  
   /** Operates a merging function utilizing two arrays of the class [[au.csiro.variantspark.algo.VarSplitInfo]]
     *
     * @param a1: input an array of [[au.csiro.variantspark.algo.VarSplitInfo]] 
@@ -219,7 +224,7 @@ case class RandomizingMerger(seed:Long) extends Merger {
       * @return Returns either s1 or s2 based on the gini impurity calculation
       */
     def mergeSplitInfo(s1:VarSplitInfo, s2:VarSplitInfo) = {
-      if (s1 == null) s2 else if (s2 == null) s1 else if (s1.gini < s2.gini) s1 else if (s2.gini < s1.gini) s2 else if (rnd.nextBoolean()) s1 else s2
+      if (s1 == null) s2 else if (s2 == null) s1 else if (s1.gini < s2.gini) s1 else if (s2.gini < s1.gini) s2 else chooseEqual(s1,s2)
     }
     Range(0,a1.length).foreach(i=> a1(i) = mergeSplitInfo(a1(i), a2(i)))
     a1

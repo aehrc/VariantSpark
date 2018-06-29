@@ -52,7 +52,9 @@ try:
         name='variant-spark',
         version= VERSION,    
         packages=find_packages(exclude=["*.test"]) + ['varspark.jars'], 
-        install_requires=['typedecorator'],
+        install_requires=['typedecorator',
+            'pandas>=0.22.0',
+        ],
 #        test_suite = 'varspark.test',
 #        test_requires = [
 #            'pyspark>=2.1.0'
@@ -61,7 +63,14 @@ try:
             'test': [ 
                 'pyspark==2.1.2', 
             ],
+            'hail': [
+                'decorator==4.1.2',
+                'hail==devel',
+            ]
         },
+        dependency_links = [
+            'https://s3-ap-southeast-2.amazonaws.com/variant-spark/deps/hail-0.1/latest/hail-devel.tar.gz#egg=hail-devel'
+        ],
         include_package_data=True,
         package_dir={
             'varspark.jars': 'target/jars',
@@ -94,7 +103,7 @@ try:
         project_urls={
             'Bug Tracker': 'https://github.com/aehrc/VariantSpark/issues',
             'Documentation': 'http://variantspark.readthedocs.io/en/latest',
-            'Source Code': 'https://code.example.com/HelloWorld/',
+            'Source Code': 'https://github.com/aehrc/VariantSpark',
         },
     )
 finally:

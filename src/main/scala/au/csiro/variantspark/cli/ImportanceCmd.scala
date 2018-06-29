@@ -37,6 +37,7 @@ import java.io.ObjectOutputStream
 import java.io.FileOutputStream
 import org.apache.hadoop.conf.Configuration
 import au.csiro.variantspark.utils.HdfsPath
+import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
 
 class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
@@ -50,6 +51,12 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
   @Option(name="-ivo", required=false, usage="Variable type ordinal with this number of levels (def = 3)" 
       , aliases=Array("--input-var-ordinal"))
   val varOrdinalLevels:Int = 3
+
+  @Option(name="-ivb", required=false, usage="Input vcf is biallelic (def=false)", aliases=Array("--input-vcf-biallelic"))
+  val inputVcfBiallelic:Boolean = false
+
+  @Option(name="-ivs", required=false, usage="The separator to use to produce labels for variants from vcf file.(def='_')", aliases=Array("--input-vcf-sep"))
+  val inputVcfSeparator:String = "_"
 
   @Option(name="-ff", required=true, usage="Path to feature file", aliases=Array("--feature-file"))
   val featuresFile:String = null
@@ -110,14 +117,14 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
   val sparkPar = 0
  
   @Override
-  def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ro", "-om", "target/ch22-model.ser" )
+  def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ro", "-om", "target/ch22-model.ser", "-sr", "13")
   
   def loadVCF() = {
     echo(s"Loading header from VCF file: ${inputFile}")
     val vcfSource = VCFSource(sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
     verbose(s"VCF Version: ${vcfSource.version}")
     verbose(s"VCF Header: ${vcfSource.header}")    
-    VCFFeatureSource(vcfSource)    
+    VCFFeatureSource(vcfSource, inputVcfBiallelic, inputVcfSeparator)    
   }
   
   def loadCSV() = {
@@ -228,7 +235,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
 
     val importantVariableData = if (includeData) trainingData.collectAtIndexes(topImportantVariableIndexes) else null
     
-    LoanUtils.withCloseable(if (outputFile != null ) CSVWriter.open(HdfsPath(outputFile).create())else CSVWriter.open(ReusablePrintStream.stdout)) { writer =>
+    CSVUtils.withStream(if (outputFile != null ) HdfsPath(outputFile).create() else ReusablePrintStream.stdout) { writer =>
       val header = List("variable","importance") ::: (if (includeData) source.sampleNames else Nil)
       writer.writeRow(header)
       writer.writeAll(topImportantVariables.map({case (i, importance) => 

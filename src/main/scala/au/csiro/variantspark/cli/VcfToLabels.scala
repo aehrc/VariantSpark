@@ -12,8 +12,8 @@ import au.csiro.variantspark.input.HashingLabelSource
 import au.csiro.variantspark.algo.WideRandomForest
 import org.apache.spark.mllib.linalg.Vectors
 import java.io.File
-import com.github.tototoshi.csv.CSVWriter
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
+import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
 
 
 class VcfToLabels extends ArgsApp with SparkApp {
@@ -38,7 +38,7 @@ class VcfToLabels extends ArgsApp with SparkApp {
     println(version)
     val source  = VCFFeatureSource(vcfSource)
     val columns = source.features().take(limit)
-    LoanUtils.withCloseable(CSVWriter.open(new File(outputFile))) { writer =>
+    CSVUtils.withFile(new File(outputFile)) { writer =>
       writer.writeRow("" :: columns.map(_.label).toList)
       source.sampleNames.zipWithIndex.foreach { case( row, i) =>
         writer.writeRow(row :: columns.map(_.values(i)).toList)        

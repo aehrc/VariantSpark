@@ -18,7 +18,6 @@ import au.csiro.variantspark.cmd.Echoable
 import au.csiro.variantspark.utils.IndexedRDDFunction._
 import au.csiro.variantspark.utils.VectorRDDFunction._
 import au.csiro.variantspark.utils.defRng
-import com.github.tototoshi.csv.CSVWriter
 import au.csiro.variantspark.algo.RandomForestModel
 import au.csiro.variantspark.cli.args.FeatureSourceArgs
 import au.csiro.pbdava.ssparkle.spark.SparkUtils

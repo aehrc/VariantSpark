@@ -1,1 +1,3 @@
 include vs_emr/templates/*.yaml
+include vs_emr/config/*.yaml
+include README.md

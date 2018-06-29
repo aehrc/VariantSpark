@@ -17,7 +17,6 @@ import au.csiro.pbdava.ssparkle.common.utils.Logging
 import org.apache.commons.lang3.builder.ToStringBuilder
 import au.csiro.variantspark.cmd.EchoUtils._
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
-import com.github.tototoshi.csv.CSVWriter
 import au.csiro.pbdava.ssparkle.common.arg4j.TestArgs
 import org.apache.hadoop.fs.FileSystem
 import au.csiro.variantspark.algo.WideDecisionTree
@@ -38,6 +37,7 @@ import au.csiro.variantspark.input.generate.EffectLabelGenerator
 import java.io.File
 import java.util.ArrayList
 import java.io.PrintStream
+import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
 
 class GenerateLabelsCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
@@ -149,7 +149,7 @@ class GenerateLabelsCmd extends ArgsApp with SparkApp with Echoable with Logging
       }
     } else Map.empty
 
-    LoanUtils.withCloseable(CSVWriter.open(new File(featuresFile))) { writer =>
+    CSVUtils.withFile(new File(featuresFile)) { writer =>
       writer.writeRow(List("", featureColumn) ::: (if (featureContinuousColumn!=null) List(featureContinuousColumn) else Nil) ::: effectVarData.toList.map(_._1))
       val outputColumns = List(featureSource.sampleNames, labels.toList) ::: (if (featureContinuousColumn!=null) List(generator.continouusResponse.data.toList) else Nil) ::: effectVarData.toList.map(_._2.toList)
       writer.writeAll(outputColumns.transpose)

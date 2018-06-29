@@ -17,7 +17,6 @@ import au.csiro.pbdava.ssparkle.common.utils.Logging
 import org.apache.commons.lang3.builder.ToStringBuilder
 import au.csiro.variantspark.cmd.EchoUtils._
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
-import com.github.tototoshi.csv.CSVWriter
 import au.csiro.pbdava.ssparkle.common.arg4j.TestArgs
 import org.apache.hadoop.fs.FileSystem
 import au.csiro.variantspark.algo.WideDecisionTree

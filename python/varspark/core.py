@@ -5,10 +5,16 @@ from __future__ import (
     print_function)
 
 import sys
+from random import randint
 from typedecorator import params, Nullable, Union, setup_typecheck
 from pyspark import SparkConf
 from pyspark.sql import SQLContext
 from varspark.etc import find_jar
+from varspark import java
+
+if sys.version_info > (3,):
+    long = int
+
 
 class VariantsContext(object):
     """The main entry point for VariantSpark functionality.
@@ -21,12 +27,14 @@ class VariantsContext(object):
         """
         return conf.set("spark.jars", find_jar())
 
-    def __init__(self, ss=None):
+    def __init__(self, ss, silent = False):
         """The main entry point for VariantSpark functionality.
         :param ss: SparkSession
         :type ss: :class:`.pyspark.SparkSession`
+        :param bool silent: Do not produce welcome info.
         """
         self.sc = ss.sparkContext
+        self.silent = silent
         self.sql = SQLContext.getOrCreate(self.sc)
         self._jsql = self.sql._jsqlContext
         self._jvm = self.sc._jvm
@@ -36,17 +44,19 @@ class VariantsContext(object):
 
         setup_typecheck()
 
-        sys.stderr.write('Running on Apache Spark version {}\n'.format(self.sc.version))
-        if self.sc._jsc.sc().uiWebUrl().isDefined():
-            sys.stderr.write('SparkUI available at {}\n'.format(self.sc._jsc.sc().uiWebUrl().get()))
-        sys.stderr.write(
-            'Welcome to\n'
-            ' _    __           _             __  _____                  __    \n'
-            '| |  / /___ ______(_)___ _____  / /_/ ___/____  ____ ______/ /__  \n'
-            '| | / / __ `/ ___/ / __ `/ __ \/ __/\__ \/ __ \/ __ `/ ___/ //_/  \n'
-            '| |/ / /_/ / /  / / /_/ / / / / /_ ___/ / /_/ / /_/ / /  / ,<     \n'
-            '|___/\__,_/_/  /_/\__,_/_/ /_/\__//____/ .___/\__,_/_/  /_/|_|    \n'
-            '                                      /_/                         \n')
+        if not self.silent:
+            sys.stderr.write('Running on Apache Spark version {}\n'.format(self.sc.version))
+            if self.sc._jsc.sc().uiWebUrl().isDefined():
+                sys.stderr.write('SparkUI available at {}\n'.format(
+                        self.sc._jsc.sc().uiWebUrl().get()))
+            sys.stderr.write(
+                'Welcome to\n'
+                ' _    __           _             __  _____                  __    \n'
+                '| |  / /___ ______(_)___ _____  / /_/ ___/____  ____ ______/ /__  \n'
+                '| | / / __ `/ ___/ / __ `/ __ \/ __/\__ \/ __ \/ __ `/ ___/ //_/  \n'
+                '| |/ / /_/ / /  / / /_/ / / / / /_ ___/ / /_/ / /_/ / /  / ,<     \n'
+                '|___/\__,_/_/  /_/\__,_/_/ /_/\__//____/ .___/\__,_/_/  /_/|_|    \n'
+                '                                      /_/                         \n')
 
     @params(self=object, vcf_file_path=str)
     def import_vcf(self, vcf_file_path):
@@ -100,7 +110,8 @@ class FeatureSource(object):
         :rtype: :py:class:`ImportanceAnalysis`
         """
         jrf_params = self._jvm.au.csiro.variantspark.algo.RandomForestParams(bool(oob),
-                                float(mtry_fraction), True, float('nan'), True, long(seed))
+                                java.jfloat_or(mtry_fraction), True, java.NAN, True,
+                                java.jlong_or(seed, randint(java.MIN_LONG, java.MAX_LONG)))
         jia = self._vs_api.ImportanceAnalysis(self._jsql, self._jfs, label_source,
                                               jrf_params, n_trees, batch_size, var_ordinal_levels)
         return ImportanceAnalysis(jia, self.sql)
@@ -132,9 +143,10 @@ class ImportanceAnalysis(object):
 
     def variable_importance(self):
         """ Returns a DataFrame with the gini importance of variables.
+
         The DataFrame has two columns:
-            - variable: string - variable name
-            - importance: double - gini importance
+        - variable: string - variable name
+        - importance: double - gini importance
         """
         jdf = self._jia.variableImportance()
         jdf.count()
