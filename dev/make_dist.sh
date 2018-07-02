@@ -1,10 +1,29 @@
 #!/bin/bash
+set -e
 
-PWD=$(cd `dirname "$0"`; pwd)
+PWD=$(cd "`dirname $0`"/..; pwd)
 
-if [[ $# -gt 0 ]]; then
-   ${PWD}/dev/build.sh 
+CLEAN=NO
+#parse command line
+while [[ $# -gt 0 ]]; do
+        case $1 in
+            -c|--clean)
+            CLEAN=YES
+            shift # past argument
+            ;;
+            *)    # unknown option
+            shift # past argument
+            ;;
+        esac
+done
+
+if [ "$CLEAN" == "YES" ]; then
+	echo "Running a clean build"
+	${PWD}/dev/build.sh 
 fi
+
+# Build python source distribution
+${PWD}/dev/py-zip.sh
 
 DIST_JAR=$(echo target/variant-spark_*-all.jar)
 
@@ -20,6 +39,9 @@ DIST_NAME="variant-spark_${DIST_VERSION}"
 echo "Building distribution for version: ${DIST_VERSION}"
 echo "Dist jar: ${DIST_JAR}"
 
+
+cd "${PWD}"
+
 DIST_DIR="target/dist/${DIST_NAME}"
 
 rm -rf target/dist
@@ -30,12 +52,12 @@ mkdir -p ${DIST_DIR}/python
 
 cp LICENSE README.md THIRDPARTY ${DIST_DIR}
 
-cp variant-spark ${DIST_DIR}/variant-spark
+cp -r bin ${DIST_DIR}/bin/
 cp ${DIST_JAR}  ${DIST_DIR}/lib
 cp -r data/ ${DIST_DIR}/data/
-cp -r scripts ${DIST_DIR}/scripts/
+cp -r examples ${DIST_DIR}/examples/
 cp -r conf ${DIST_DIR}/conf/
-cp python/dist/variants-0.1.0-py2.7.egg ${DIST_DIR}/python/
+cp python/dist/varspark-src.zip ${DIST_DIR}/python/
 
 
 tar -czf target/dist/${DIST_NAME}.tar.gz -C target/dist ${DIST_NAME}
