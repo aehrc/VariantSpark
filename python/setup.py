@@ -29,7 +29,9 @@ run sdist.
       pip install dist/*.tar.gz"""
 
 JARS_PATH = os.path.join(ROOT_DIR, "target")
+BIN_PATH = os.path.join(ROOT_DIR, "bin")
 JARS_TARGET = os.path.join(TEMP_PATH, "jars")
+BIN_TARGET = os.path.join(TEMP_PATH, "bin")
 
 if (in_src):
     # Construct links for setup
@@ -47,11 +49,12 @@ try:
         # Construct the symlink farm - this is necessary since we can't refer to the path above the
         # package root and we need to copy the jars and scripts which are up above the python root.
         os.symlink(JARS_PATH, JARS_TARGET)
+        os.symlink(BIN_PATH, BIN_TARGET)
 
     setup(
         name='variant-spark',
         version= VERSION,    
-        packages=find_packages(exclude=["*.test"]) + ['varspark.jars'], 
+        packages=find_packages(exclude=["*.test"]) + ['varspark.jars', 'varspark.bin'], 
         install_requires=['typedecorator',
             'pandas>=0.22.0',
         ],
@@ -60,8 +63,11 @@ try:
 #            'pyspark>=2.1.0'
 #        ],
         extras_require = {
+            'spark': [ 
+                'pyspark==2.2.1', 
+            ],
             'test': [ 
-                'pyspark==2.1.2', 
+                'pyspark==2.2.1', 
             ],
             'hail': [
                 'decorator==4.1.2',
@@ -74,10 +80,15 @@ try:
         include_package_data=True,
         package_dir={
             'varspark.jars': 'target/jars',
+            'varspark.bin': 'target/bin',
         },
         package_data={
             'varspark.jars': ['*-all.jar'],
+            'varspark.bin': ['*'],
         },
+        scripts = [
+            'target/bin/variant-spark'
+        ],
         entry_points='''
         [console_scripts]
         varspark-jar=varspark.cli:varspark_jar
@@ -111,5 +122,6 @@ finally:
     # packaging.
     if (in_src):
         # Depending on cleaning up the symlink farm or copied version
-        os.remove(os.path.join(TEMP_PATH, "jars"))
-        os.rmdir(TEMP_PATH)
+       os.remove(os.path.join(TEMP_PATH, "jars"))
+       os.remove(os.path.join(TEMP_PATH, "bin"))
+       os.rmdir(TEMP_PATH)

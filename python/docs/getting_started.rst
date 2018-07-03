@@ -24,10 +24,10 @@ Untar the distribution after you download it (you may need to change the name of
     tar -xzf variant-spark_2.11-0.2.0.tar.gz
 
 
-Next, edit and copy the below bash commands to set up the VariantSpark environment variables. 
+Next, edit and copy the below bash commands to set up the **VariantSpark** environment variables. 
 You may want to add these to the appropriate dot-file (we recommend ``~/.profile``) so that you don’t need to rerun these commands in each new session.
 
-Here, fill in the path to the un-tared VariantSpark distribution.
+Here, fill in the path to the un-tared **VariantSpark** distribution.
 
 ::
 
@@ -110,7 +110,17 @@ runs variable importance command on a small sample of the chromosome 22 vcf file
 Installing from PyPI
 --------------------
 
-TBP:
+Python users can install **VariantSpark** from PyPI with: 
+::
+
+     pip install variant-spark  
+
+This assumes that a compatible version of Apache Spark is already installed in your Python environment. If not you can install it from the distribution using the information from the beginning of this section, 
+or with
+::
+
+    pop install variant-spark[spark]
+
 
 
 Where to Go from Here
