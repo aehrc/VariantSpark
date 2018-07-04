@@ -2,8 +2,7 @@ from __future__ import print_function
 from setuptools import setup, find_packages
 import sys
 import os
-import re
-import time
+import glob
 
 if sys.version_info < (2, 7):
     print("Python versions prior to 2.7 are not supported.", file=sys.stderr)
@@ -30,8 +29,11 @@ run sdist.
 
 JARS_PATH = os.path.join(ROOT_DIR, "target")
 BIN_PATH = os.path.join(ROOT_DIR, "bin")
+EXAMPLES_PATH = os.path.join(ROOT_DIR, "examples")
+
 JARS_TARGET = os.path.join(TEMP_PATH, "jars")
 BIN_TARGET = os.path.join(TEMP_PATH, "bin")
+EXAMPLES_TARGET = os.path.join(TEMP_PATH, "examples")
 
 if (in_src):
     # Construct links for setup
@@ -50,11 +52,12 @@ try:
         # package root and we need to copy the jars and scripts which are up above the python root.
         os.symlink(JARS_PATH, JARS_TARGET)
         os.symlink(BIN_PATH, BIN_TARGET)
+        os.symlink(EXAMPLES_PATH, EXAMPLES_TARGET)
 
     setup(
         name='variant-spark',
         version= VERSION,    
-        packages=find_packages(exclude=["*.test"]) + ['varspark.jars', 'varspark.bin'], 
+        packages=find_packages(exclude=["*.test"]) + ['varspark.jars'], 
         install_requires=['typedecorator',
             'pandas>=0.22.0',
         ],
@@ -80,12 +83,13 @@ try:
         include_package_data=True,
         package_dir={
             'varspark.jars': 'target/jars',
-            'varspark.bin': 'target/bin',
         },
         package_data={
             'varspark.jars': ['*-all.jar'],
-            'varspark.bin': ['*'],
         },
+        data_files = [
+            ('share/variant-spark/examples', glob.glob('target/examples/*'))
+        ],
         scripts = [
             'target/bin/variant-spark'
         ],
@@ -124,4 +128,5 @@ finally:
         # Depending on cleaning up the symlink farm or copied version
        os.remove(os.path.join(TEMP_PATH, "jars"))
        os.remove(os.path.join(TEMP_PATH, "bin"))
+       os.remove(os.path.join(TEMP_PATH, "examples"))
        os.rmdir(TEMP_PATH)
