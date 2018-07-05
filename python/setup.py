@@ -27,13 +27,20 @@ run sdist.
       python setup.py sdist
       pip install dist/*.tar.gz"""
 
-JARS_PATH = os.path.join(ROOT_DIR, "target")
-BIN_PATH = os.path.join(ROOT_DIR, "bin")
-EXAMPLES_PATH = os.path.join(ROOT_DIR, "examples")
 
-JARS_TARGET = os.path.join(TEMP_PATH, "jars")
-BIN_TARGET = os.path.join(TEMP_PATH, "bin")
-EXAMPLES_TARGET = os.path.join(TEMP_PATH, "examples")
+
+def src_path(src_dir):
+    return os.path.join(ROOT_DIR, src_dir)
+
+def dst_path(dst_dir):
+    return os.path.join(TEMP_PATH, dst_dir)
+
+EXT_DIRS = [
+    ('target', 'jars'),
+    ('bin', 'bin'),
+    ('examples','examples'),    
+    ('data','data')    
+]
 
 if (in_src):
     # Construct links for setup
@@ -50,9 +57,8 @@ try:
     if (in_src):
         # Construct the symlink farm - this is necessary since we can't refer to the path above the
         # package root and we need to copy the jars and scripts which are up above the python root.
-        os.symlink(JARS_PATH, JARS_TARGET)
-        os.symlink(BIN_PATH, BIN_TARGET)
-        os.symlink(EXAMPLES_PATH, EXAMPLES_TARGET)
+        for (src_dir,dst_dir) in EXT_DIRS:
+            os.symlink(src_path(src_dir), dst_path(dst_dir))
 
     setup(
         name='variant-spark',
@@ -88,7 +94,8 @@ try:
             'varspark.jars': ['*-all.jar'],
         },
         data_files = [
-            ('share/variant-spark/examples', glob.glob('target/examples/*'))
+            ('share/variant-spark/examples', glob.glob(os.path.join(dst_path('examples'),'*'))),
+            ('share/variant-spark/data', glob.glob(os.path.join(dst_path('data'),'*'))),
         ],
         scripts = [
             'target/bin/variant-spark'
@@ -126,7 +133,6 @@ finally:
     # packaging.
     if (in_src):
         # Depending on cleaning up the symlink farm or copied version
-       os.remove(os.path.join(TEMP_PATH, "jars"))
-       os.remove(os.path.join(TEMP_PATH, "bin"))
-       os.remove(os.path.join(TEMP_PATH, "examples"))
-       os.rmdir(TEMP_PATH)
+        for (src_dir,dst_dir) in EXT_DIRS:
+            os.remove(dst_path(dst_dir))
+        os.rmdir(TEMP_PATH)
