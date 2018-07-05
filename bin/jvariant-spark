@@ -1,0 +1,21 @@
+#!/bin/bash
+set -e
+
+PWD=$(cd "`dirname $0`"/..; pwd)
+
+function fatal_error () {
+	echo "ERROR: $1" 1>&2
+	exit 1
+}
+
+
+if [[ -z "${VARSPARK_HOME}" ]]; then
+	VARSPARK_HOME="${PWD}"
+fi
+
+[[ $(type -P "pyspark") ]] || fatal_error  "\`pyspark\` cannot be found. Please make sure it's on your PATH."
+
+export PYSPARK_DRIVER_PYTHON='jupyter'
+export PYSPARK_DRIVER_PYTHON_OPTS='notebook'
+
+pyspark
