@@ -45,7 +45,7 @@ Running examples
 ----------------
 
 **VariantSpark** comes with several sample programs and datasets. Command-line and Python Jupyter examples are ``examples`` directory.
-There is a few small data sets in the ``example/data`` directory suitable for running on a single machine. 
+There is a few small data sets in the ``data`` directory suitable for running on a single machine. 
 
 The rest of this section assumes that you are in the ``examples`` directory.
 
@@ -66,7 +66,7 @@ We would expect then that position  *22:16050408* in the VCF file is strongly co
 We can run importance analysis on these data with the following command:
 ::
 
-    variant-spark importance -if data/chr22_1000.vcf -ff data/chr22-labels.csv -fc 22_16050408 -v -rn 500 -rbs 20 -ro -sr 13
+    variant-spark importance -if ../data/chr22_1000.vcf -ff ../data/chr22-labels.csv -fc 22_16050408 -v -rn 500 -rbs 20 -ro -sr 13
 
 alternatively you can just the sample script:
 ::
@@ -103,6 +103,15 @@ or with:
     pip install variant-spark[spark]
 
 
+The code and data samples are installed into the ``<PYTHON_PREFIX>/share/variant-spark`` directory, 
+where ``<PYTHON_PREFIX>`` is he value of Python's ``sys.prefix``.
+
+You can find what your ``<PYTHON_PREFIX>`` is on your system by typing:
+::
+
+    python -c $'import sys\nprint(sys.prefix)'
+
+It's recommend that you make a copy the examples in your home/working directory before using them.
 
 Where to Go from Here
 ----------------------
