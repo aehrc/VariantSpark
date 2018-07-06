@@ -13,9 +13,11 @@ if [[ -z "${VARSPARK_HOME}" ]]; then
 	VARSPARK_HOME="${PWD}"
 fi
 
+VS_ASSEMBLY_JAR="`${VARSPARK_HOME}/bin/find-varspark-jar`"
+
 [[ $(type -P "pyspark") ]] || fatal_error  "\`pyspark\` cannot be found. Please make sure it's on your PATH."
 
 export PYSPARK_DRIVER_PYTHON='jupyter'
 export PYSPARK_DRIVER_PYTHON_OPTS='notebook'
 
-pyspark
+pyspark --jars "${VS_ASSEMBLY_JAR}"

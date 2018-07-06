@@ -17,19 +17,7 @@ if [[ -n "${VS_ECHO_CMDLINE}" ]]; then
 	echo "$0" "$@"
 fi
 
-if [[ -x "${VARSPARK_HOME}/bin/varspark-jar" ]]; then
-    # PyPI installation
-    VS_ASSEMBLY_JAR="`${VARSPARK_HOME}/bin/varspark-jar`"
-else    
-    #Distribution of build installation
-    if [[ -d "${VARSPARK_HOME}/lib" ]]; then 
-    	VS_ASSEMBLY_DIR="${VARSPARK_HOME}/lib"
-    else
-    	VS_ASSEMBLY_DIR="${VARSPARK_HOME}/target"
-    fi 
-    	
-    VS_ASSEMBLY_JAR=$(echo ${VS_ASSEMBLY_DIR}/variant-spark_*-all.jar)
-fi
+VS_ASSEMBLY_JAR="`${VARSPARK_HOME}/bin/find-varspark-jar`"
 
 RUNNER="--spark"
 declare -a SPARK_PARAMS 

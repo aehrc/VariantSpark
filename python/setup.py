@@ -98,7 +98,9 @@ try:
             ('share/variant-spark/data', glob.glob(os.path.join(dst_path('data'),'*'))),
         ],
         scripts = [
-            'target/bin/variant-spark'
+            'target/bin/variant-spark',                   
+            'target/bin/jvariant-spark',
+            'target/bin/find-varspark-jar',
         ],
         entry_points='''
         [console_scripts]
