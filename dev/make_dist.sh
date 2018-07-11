@@ -47,18 +47,20 @@ DIST_DIR="target/dist/${DIST_NAME}"
 rm -rf target/dist
 mkdir -p ${DIST_DIR}
 mkdir -p ${DIST_DIR}/lib
-mkdir -p ${DIST_DIR}/python
-
+mkdir -p ${DIST_DIR}/examples
+mkdir -p ${DIST_DIR}/python/lib
 
 cp LICENSE README.md THIRDPARTY ${DIST_DIR}
 
 cp -r bin ${DIST_DIR}/bin/
 cp ${DIST_JAR}  ${DIST_DIR}/lib
+cp lib/*.jar ${DIST_DIR}/lib
 cp -r data/ ${DIST_DIR}/data/
-cp -r examples ${DIST_DIR}/examples/
+cp examples/*.sh ${DIST_DIR}/examples/
+cp examples/*.ipynb ${DIST_DIR}/examples/
 cp -r conf ${DIST_DIR}/conf/
-cp python/dist/varspark-src.zip ${DIST_DIR}/python/
-
+cp python/dist/varspark-src.zip ${DIST_DIR}/python/lib
+cp python/lib/*.zip ${DIST_DIR}/python/lib
 
 tar -czf target/dist/${DIST_NAME}.tar.gz -C target/dist ${DIST_NAME}
 

@@ -64,7 +64,8 @@ try:
         name='variant-spark',
         version= VERSION,    
         packages=find_packages(exclude=["*.test"]) + ['varspark.jars'], 
-        install_requires=['typedecorator',
+        install_requires=[
+            'typedecorator',
             'pandas>=0.22.0',
         ],
 #        test_suite = 'varspark.test',

@@ -19,10 +19,10 @@ if [[ -x "${VARSPARK_HOME}/bin/varspark-jar" ]]; then
     VS_ASSEMBLY_JAR="`${VARSPARK_HOME}/bin/varspark-jar`"
 else    
     #Distribution of build installation
-    if [[ -d "${VARSPARK_HOME}/lib" ]]; then 
-        VS_ASSEMBLY_DIR="${VARSPARK_HOME}/lib"
-    else
+    if [[ -d "${VARSPARK_HOME}/target" ]]; then 
         VS_ASSEMBLY_DIR="${VARSPARK_HOME}/target"
+    else
+        VS_ASSEMBLY_DIR="${VARSPARK_HOME}/lib"
     fi 
         
     VS_ASSEMBLY_JAR=$(echo ${VS_ASSEMBLY_DIR}/variant-spark_*-all.jar)

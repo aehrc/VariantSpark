@@ -1,0 +1,36 @@
+#!/bin/bash
+set -e
+
+PWD=$(cd "`dirname $0`"/..; pwd)
+
+function fatal_error () {
+    echo "ERROR: $1" 1>&2
+    exit 1
+}
+
+
+if [[ -z "${VARSPARK_HOME}" ]]; then
+    VARSPARK_HOME="${PWD}"
+fi
+
+
+[[ $(type -P "pyspark") ]] || fatal_error  "\`pyspark\` cannot be found. Please make sure it's on your PATH."
+
+SPARK_VERSION=`spark-submit --version 2>&1 | grep -m 1 version | awk -F 'version ' '{print $2}'`
+
+HAIL_VERSION=0.1-74bf1ebb3edc
+
+VS_LIB_DIR="${VARSPARK_HOME}/lib"
+VS_HAIL_JAR="${VS_LIB_DIR}/hail-${HAIL_VERSION}_${SPARK_VERSION}-all.jar"
+
+if [[ ! -f "${VS_HAIL_JAR}" ]]; then
+    echo "Hail jar for your version of Spark: ${SPARK_VERSION} cannot be found in: ${VS_LIB_DIR}" 1>&2
+    echo "You might be able to download a version compiled for AWS Linux from:" 1>&2
+    echo "https://s3-ap-southeast-2.amazonaws.com/variant-spark/deps/hail-${HAIL_VERSION}_${SPARK_VERSION}-all.jar" 1>&2
+    echo "or otherwise build Hail for your OS/Spark" 1>&2
+    echo "For more information please visit the documenation at: http://variantspark.readthedocs.io/" 1>&2
+    exit 1
+fi
+
+
+echo $VS_HAIL_JAR

@@ -63,7 +63,8 @@ class VarsparkContext(object):
         """ Import features from a VCF file.
         """
         return FeatureSource(self._jvm, self._vs_api,
-                             self._jsql, self.sql, self._jvsc.importVCF(vcf_file_path, min_partitions))
+                            self._jsql, self.sql, self._jvsc.importVCF(vcf_file_path,
+                            min_partitions))
 
     @params(self=object, label_file_path=str, col_name=str)
     def load_label(self, label_file_path, col_name):

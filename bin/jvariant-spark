@@ -8,6 +8,20 @@ function fatal_error () {
 	exit 1
 }
 
+WITH_HAIL=NO
+#parse command line
+while [[ $# -gt 0 ]]; do
+        case $1 in
+            -wh|--with-hail)
+            WITH_HAIL=YES
+            shift # past argument
+            ;;
+            *)    # unknown option
+            shift # past argument
+            ;;
+        esac
+done
+
 
 if [[ -z "${VARSPARK_HOME}" ]]; then
 	VARSPARK_HOME="${PWD}"
@@ -15,9 +29,40 @@ fi
 
 VS_ASSEMBLY_JAR="`${VARSPARK_HOME}/bin/find-varspark-jar`"
 
+
 [[ $(type -P "pyspark") ]] || fatal_error  "\`pyspark\` cannot be found. Please make sure it's on your PATH."
+
+
+SPARK_VERSION=`spark-submit --version 2>&1 | grep -m 1 version | awk -F 'version ' '{print $2}'`
+
+if [[ -f "${PWD}/python/lib/varspark-src.zip" ]]; then
+    export PYTHONPATH=$(printf ":%s" `ls ${PWD}/python/lib/*.zip`)
+fi
+
+if [[ -f "${PWD}/python/varspark/__init__.py" ]]; then
+    export PYTHONPATH=${PWD}/python$(printf ":%s" `ls ${PWD}/python/lib/*.zip`)
+fi
 
 export PYSPARK_DRIVER_PYTHON='jupyter'
 export PYSPARK_DRIVER_PYTHON_OPTS='notebook'
 
-pyspark --jars "${VS_ASSEMBLY_JAR}"
+
+if [ "$WITH_HAIL" == "YES" ]; then    
+    VS_HAIL_JAR="`${VARSPARK_HOME}/bin/find-hail-jar`"
+    pyspark \
+    --driver-class-path "${VS_HAIL_JAR}" \
+    --conf "spark.hadoop.io.compression.codecs=org.apache.hadoop.io.compress.DefaultCodec,is.hail.io.compress.BGzipCodec,org.apache.hadoop.io.compress.GzipCodec" \
+    --conf "spark.sql.files.openCostInBytes=53687091200" \
+    --conf "spark.sql.files.maxPartitionBytes=53687091200" \
+    --conf "spark.executor.extraClassPath=${VS_HAIL_JAR}" \
+    --conf "spark.sql.catalogImplementation=in-memory" \
+    --jars "${VS_ASSEMBLY_JAR}" 
+else
+    pyspark --jars "${VS_ASSEMBLY_JAR}" \
+    --conf "spark.sql.catalogImplementation=in-memory" 
+fi
+
+
+
+
+
