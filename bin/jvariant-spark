@@ -47,8 +47,20 @@ export PYSPARK_DRIVER_PYTHON='jupyter'
 export PYSPARK_DRIVER_PYTHON_OPTS='notebook'
 
 
-if [ "$WITH_HAIL" == "YES" ]; then    
-    VS_HAIL_JAR="`${VARSPARK_HOME}/bin/find-hail-jar`"
+if [ "$WITH_HAIL" == "YES" ]; then  
+
+    [[ -n "${HAIL_HOME}" ]] || fatal_error  "\`pyspark\` cannot be found. Please make sure it's on your PATH."
+    if [ -f "${HAIL_HOME}/jars/hail-all-spark.jar" ]; then
+        VS_HAIL_JAR="${HAIL_HOME}/jars/hail-all-spark.jar"
+    elif [ -f "${HAIL_HOME}/build/libs/hail-all-spark.jar" ]; then
+        VS_HAIL_JAR="${HAIL_HOME}/build/libs/hail-all-spark.jar"
+    else
+        fatal "Cannot locate hail-all-spark.jar under ${HAIL_HOME}."
+    fi
+    export PYTHONPATH=$PYTHONPATH:"${HAIL_HOME}/python"
+
+    echo "Hail jar: $VS_HAIL_JAR"
+  
     pyspark \
     --driver-class-path "${VS_HAIL_JAR}" \
     --conf "spark.hadoop.io.compression.codecs=org.apache.hadoop.io.compress.DefaultCodec,is.hail.io.compress.BGzipCodec,org.apache.hadoop.io.compress.GzipCodec" \
