@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-PWD=$(cd `dirname "$0"`; pwd)
+PWD=$(cd "`dirname $0`"/..; pwd)
 
 function fatal_error () {
 	echo "ERROR: $1" 1>&2
@@ -9,21 +9,15 @@ function fatal_error () {
 }
 
 
-if [[ -z "${VARIANT_SPARK_HOME}" ]]; then
-	VARIANT_SPARK_HOME="${PWD}"
+if [[ -z "${VARSPARK_HOME}" ]]; then
+	VARSPARK_HOME="${PWD}"
 fi
 
 if [[ -n "${VS_ECHO_CMDLINE}" ]]; then
 	echo "$0" "$@"
 fi
 
-if [[ -d "${VARIANT_SPARK_HOME}/lib" ]]; then 
-	VS_ASSEMBLY_DIR="${VARIANT_SPARK_HOME}/lib"
-else
-	VS_ASSEMBLY_DIR="${VARIANT_SPARK_HOME}/target"
-fi 
-	
-VS_ASSEMBLY_JAR=$(echo ${VS_ASSEMBLY_DIR}/variant-spark_*-all.jar)
+VS_ASSEMBLY_JAR="`${VARSPARK_HOME}/bin/find-varspark-jar`"
 
 RUNNER="--spark"
 declare -a SPARK_PARAMS 
@@ -43,7 +37,7 @@ if [[ "$1" == "--spark"  || "$1" == "--emr" || "$1" == "--local" ]]; then
 fi
 
 if [[ -n "${VS_DEBUG}" ]]; then
-	echo "Home: ${VARIANT_SPARK_HOME} "
+	echo "Home: ${VARSPARK_HOME} "
 	echo "Runner: ${RUNNER}"
 	echo "Jar: ${VS_ASSEMBLY_JAR}"
 fi
@@ -51,7 +45,7 @@ fi
 if [[ "${RUNNER}" == "--spark" ]]; then
 	[[ $(type -P "spark-submit") ]] || fatal_error  "\`spark-submit\` cannot be found. Please make sure it's on your PATH." 
 	spark-submit --class au.csiro.variantspark.cli.VariantSparkApp \
- 	--driver-class-path ${VARIANT_SPARK_HOME}/conf \
+ 	--driver-class-path ${VARSPARK_HOME}/conf \
  	"${SPARK_PARAMS[@]}" \
  	${VS_ASSEMBLY_JAR} "$@"
 elif [[ "${RUNNER}" == "--emr" ]]; then
@@ -62,7 +56,7 @@ elif [[ "${RUNNER}" == "--emr" ]]; then
 else
 	[[ -n "$SPARK_HOME" ]] || fatal_error "\`SPARK_HOME\` is not defined. Please set it to the root of your Spark installation."
 	SPARK_JARS="${SPARK_HOME}/jars/*"
-	SPARK_CLASSPATH="${VARIANT_SPARK_HOME}/conf:${VS_ASSEMBLY_JAR}:${SPARK_JARS}:/usr/lib/hadoop/lib/*:/usr/lib/hadoop/.//*:/usr/lib/hadoop-hdfs/./:/usr/lib/hadoop-hdfs/lib/*:/usr/lib/hadoop-hdfs/.//*:/usr/lib/hadoop-yarn/lib/*:/usr/lib/hadoop-yarn/.//*:/usr/lib/hadoop-mapreduce/lib/*:/usr/lib/hadoop-mapreduce/.//*"
+	SPARK_CLASSPATH="${VARSPARK_HOME}/conf:${VS_ASSEMBLY_JAR}:${SPARK_JARS}:/usr/lib/hadoop/lib/*:/usr/lib/hadoop/.//*:/usr/lib/hadoop-hdfs/./:/usr/lib/hadoop-hdfs/lib/*:/usr/lib/hadoop-hdfs/.//*:/usr/lib/hadoop-yarn/lib/*:/usr/lib/hadoop-yarn/.//*:/usr/lib/hadoop-mapreduce/lib/*:/usr/lib/hadoop-mapreduce/.//*"
         echo "$SPARK_CLASSPATH"
 	java -cp "${SPARK_CLASSPATH}" "${SPARK_PARAMS[@]}"  au.csiro.variantspark.cli.VariantSparkApp "$@"
 fi

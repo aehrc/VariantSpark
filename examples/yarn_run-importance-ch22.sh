@@ -1,7 +1,7 @@
 #!/bin/bash
 
 PWD=$(cd `dirname "$0"`/..; pwd)
-PATH=${PATH}:${PWD}
+PATH=${PATH}:${PWD}/bin
 
 DATA_ROOT=${VS_DATA_DIR:-.}
 DATA_DIR=${DATA_ROOT}/variant-spark-data

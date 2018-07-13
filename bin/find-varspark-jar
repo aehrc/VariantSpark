@@ -1,0 +1,31 @@
+#!/bin/bash
+set -e
+
+PWD=$(cd "`dirname $0`"/..; pwd)
+
+function fatal_error () {
+    echo "ERROR: $1" 1>&2
+    exit 1
+}
+
+
+if [[ -z "${VARSPARK_HOME}" ]]; then
+    VARSPARK_HOME="${PWD}"
+fi
+
+if [[ -x "${VARSPARK_HOME}/bin/varspark-jar" ]]; then
+    # PyPI installation
+    export VS_FIND_JAR="Yes"
+    VS_ASSEMBLY_JAR="`${VARSPARK_HOME}/bin/varspark-jar`"
+else    
+    #Distribution of build installation
+    if [[ -d "${VARSPARK_HOME}/target" ]]; then 
+        VS_ASSEMBLY_DIR="${VARSPARK_HOME}/target"
+    else
+        VS_ASSEMBLY_DIR="${VARSPARK_HOME}/lib"
+    fi 
+        
+    VS_ASSEMBLY_JAR=$(echo ${VS_ASSEMBLY_DIR}/variant-spark_*-all.jar)
+fi
+
+echo $VS_ASSEMBLY_JAR

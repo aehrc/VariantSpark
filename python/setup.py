@@ -2,8 +2,7 @@ from __future__ import print_function
 from setuptools import setup, find_packages
 import sys
 import os
-import re
-import time
+import glob
 
 if sys.version_info < (2, 7):
     print("Python versions prior to 2.7 are not supported.", file=sys.stderr)
@@ -28,8 +27,20 @@ run sdist.
       python setup.py sdist
       pip install dist/*.tar.gz"""
 
-JARS_PATH = os.path.join(ROOT_DIR, "target")
-JARS_TARGET = os.path.join(TEMP_PATH, "jars")
+
+
+def src_path(src_dir):
+    return os.path.join(ROOT_DIR, src_dir)
+
+def dst_path(dst_dir):
+    return os.path.join(TEMP_PATH, dst_dir)
+
+EXT_DIRS = [
+    ('target', 'jars'),
+    ('bin', 'bin'),
+    ('examples','examples'),    
+    ('data','data')    
+]
 
 if (in_src):
     # Construct links for setup
@@ -46,13 +57,15 @@ try:
     if (in_src):
         # Construct the symlink farm - this is necessary since we can't refer to the path above the
         # package root and we need to copy the jars and scripts which are up above the python root.
-        os.symlink(JARS_PATH, JARS_TARGET)
+        for (src_dir,dst_dir) in EXT_DIRS:
+            os.symlink(src_path(src_dir), dst_path(dst_dir))
 
     setup(
         name='variant-spark',
         version= VERSION,    
         packages=find_packages(exclude=["*.test"]) + ['varspark.jars'], 
-        install_requires=['typedecorator',
+        install_requires=[
+            'typedecorator',
             'pandas>=0.22.0',
         ],
 #        test_suite = 'varspark.test',
@@ -60,8 +73,11 @@ try:
 #            'pyspark>=2.1.0'
 #        ],
         extras_require = {
+            'spark': [ 
+                'pyspark==2.2.1', 
+            ],
             'test': [ 
-                'pyspark==2.1.2', 
+                'pyspark==2.2.1', 
             ],
             'hail': [
                 'decorator==4.1.2',
@@ -78,6 +94,15 @@ try:
         package_data={
             'varspark.jars': ['*-all.jar'],
         },
+        data_files = [
+            ('share/variant-spark/examples', glob.glob(os.path.join(dst_path('examples'),'*'))),
+            ('share/variant-spark/data', glob.glob(os.path.join(dst_path('data'),'*'))),
+        ],
+        scripts = [
+            'target/bin/variant-spark',                   
+            'target/bin/jvariant-spark',
+            'target/bin/find-varspark-jar',
+        ],
         entry_points='''
         [console_scripts]
         varspark-jar=varspark.cli:varspark_jar
@@ -111,5 +136,6 @@ finally:
     # packaging.
     if (in_src):
         # Depending on cleaning up the symlink farm or copied version
-        os.remove(os.path.join(TEMP_PATH, "jars"))
+        for (src_dir,dst_dir) in EXT_DIRS:
+            os.remove(dst_path(dst_dir))
         os.rmdir(TEMP_PATH)

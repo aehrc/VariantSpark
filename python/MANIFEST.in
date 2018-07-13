@@ -1,3 +1,4 @@
 global-exclude *.py[cod] __pycache__ .DS_Store
 recursive-include target/jars *-all.jar
+recursive-include target/bin *
 include README.md

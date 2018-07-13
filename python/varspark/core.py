@@ -16,7 +16,7 @@ if sys.version_info > (3,):
     long = int
 
 
-class VariantsContext(object):
+class VarsparkContext(object):
     """The main entry point for VariantSpark functionality.
     """
 
@@ -58,12 +58,13 @@ class VariantsContext(object):
                 '|___/\__,_/_/  /_/\__,_/_/ /_/\__//____/ .___/\__,_/_/  /_/|_|    \n'
                 '                                      /_/                         \n')
 
-    @params(self=object, vcf_file_path=str)
-    def import_vcf(self, vcf_file_path):
+    @params(self=object, vcf_file_path=str, min_partitions=int)
+    def import_vcf(self, vcf_file_path, min_partitions=0):
         """ Import features from a VCF file.
         """
         return FeatureSource(self._jvm, self._vs_api,
-                             self._jsql, self.sql, self._jvsc.importVCF(vcf_file_path))
+                            self._jsql, self.sql, self._jvsc.importVCF(vcf_file_path,
+                            min_partitions))
 
     @params(self=object, label_file_path=str, col_name=str)
     def load_label(self, label_file_path, col_name):
@@ -80,6 +81,9 @@ class VariantsContext(object):
 
         self.sc.stop()
         self.sc = None
+
+# Deprecated
+VariantsContext = VarsparkContext
 
 
 class FeatureSource(object):

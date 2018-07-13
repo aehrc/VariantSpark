@@ -6,12 +6,12 @@ Tutorials
 
 
 ??? Importance Analysis with command line
---------------------------
+-----------------------------------------
 
 TBP: 
 
 Introduction to Python API
-=======================================
+--------------------------
 
 This notebook demostrates the use of Variant-Spark Python API for importance analysis.
 
