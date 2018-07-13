@@ -16,6 +16,10 @@ It’s easy to run locally on one machine - you need to have Apache Spark instal
 
 - ``spark-submit`` and ``pyspark`` on you system ``PATH``
 
+
+Installing from a distribution
+------------------------------
+
 Get **VariantSpark** distribution from the downloads page of project web site. 
 Un-tar the distribution after you download it (you may need to change the name of the file to match the current version). 
 ::
@@ -40,17 +44,39 @@ Now you should be all setup to run **VariantSpark** command line tool.
 
 The `-h` option displays the help on available commands. To find out more about the command line tool please visit :ref:`sec-cmd_ref`.
 
+**VariantSpark** comes with several sample programs and datasets. Command-line and Python Jupyter examples are ``examples`` directory.
+There is a few small data sets in the ``data`` directory suitable for running on a single machine. 
+
+Installing from PyPI
+--------------------
+
+It's recommended that Python users install **VariantSpark** from PyPI with: 
+::
+
+     pip install variant-spark  
+
+This assumes that a compatible version of Apache Spark is already installed in your Python environment. If not,
+you can install it from the distribution using the information from the beginning of this section, 
+or with:
+::
+
+    pip install variant-spark[spark]
+
+
+The code and data samples are installed into the ``<PYTHON_PREFIX>/share/variant-spark`` directory, 
+where ``<PYTHON_PREFIX>`` is he value of Python's ``sys.prefix``.
+
+You can find what your ``<PYTHON_PREFIX>`` is on your system by typing:
+::
+
+    python -c $'import sys\nprint(sys.prefix)'
+
+It's recommend that you make a copy the examples in your home/working directory before using them.
 
 Running examples 
 ----------------
 
-**VariantSpark** comes with several sample programs and datasets. Command-line and Python Jupyter examples are ``examples`` directory.
-There is a few small data sets in the ``data`` directory suitable for running on a single machine. 
-
 The rest of this section assumes that you are in the ``examples`` directory.
-
-Running importance analysis with command line tool
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 One of the main applications of **VariantSpark** is discovery of genomic variants correlated with a response 
 variable (e.g. case vs control) using random forest gini importance.
@@ -62,6 +88,10 @@ from the `1000 Genomes Project <http://www.internationalgenome.org/>`_.
 In fact the labels directly represent the number of alternative alleles for each sample at a specific genomic position. 
 E.g.: column ``22_16050408`` has labels derived from variants in chromosome 22 position 16050408.
 We would expect then that position  *22:16050408* in the VCF file is strongly correlated with the label ``22_16050408``.
+
+
+Running importance analysis with command line tool
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 We can run importance analysis on these data with the following command:
 ::
@@ -87,38 +117,24 @@ As expected variable ``22_16050408`` representing the variant at position *22:16
 
 To find out about the options for the *importance* command type ``variant-spark importance -h`` or visit :ref:`sec-cmd_ref`.
 
-Installing from PyPI
---------------------
 
-Python users can install **VariantSpark** from PyPI with: 
+Running importance analysis with PythonAPI
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The same analysis can be also performed using **VariantSpark** PythonAP with a Jupyter notebook.
+
+You can start the *VariantSpark* enabled Jupyter notebook server with:
 ::
 
-     pip install variant-spark  
+    jvariant-spark
+    
+Open an run the ``run_importance_chr22.ipynb`` for the PythonAPI example.
+You can check the expected results :ref:`here </examples/run_importance_chr22.ipynb>`.
 
-This assumes that a compatible version of Apache Spark is already installed in your Python environment. If not,
-you can install it from the distribution using the information from the beginning of this section, 
-or with:
-::
+To find out about more about the Python API visit :ref:`sec-pyapi`.
 
-    pip install variant-spark[spark]
-
-
-The code and data samples are installed into the ``<PYTHON_PREFIX>/share/variant-spark`` directory, 
-where ``<PYTHON_PREFIX>`` is he value of Python's ``sys.prefix``.
-
-You can find what your ``<PYTHON_PREFIX>`` is on your system by typing:
-::
-
-    python -c $'import sys\nprint(sys.prefix)'
-
-It's recommend that you make a copy the examples in your home/working directory before using them.
 
 Where to Go from Here
 ----------------------
 
 - If you’d like to build VariantSpark from source, visit :ref:`sec-development`.
-
-
-
-
-

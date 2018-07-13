@@ -50,7 +50,3 @@ I recommend to run with mtry = 0.1 * num_variants (with 10000 trees) as this may
  
 I also recommend to run with low mtry (i.e. 100) and as many trees as possible (500000) as this may change the top hits too (with low mtry tree building is much faster)
 
-Hail Integration
------------------
-
-``TBP``
