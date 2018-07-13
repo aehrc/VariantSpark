@@ -27,7 +27,7 @@ deploy:
     script: dev/travis-py-pypi.sh
     skip_cleanup: true
     on:
-      all_branches: true
+      tags: true
   - provider: s3
     access_key_id: AKIAIHFG2B4BAI47BJ6Q
     secret_access_key:
@@ -38,4 +38,4 @@ deploy:
     acl: public_read
     region: ap-southeast-2
     on:
-      all_branches: true
+      tags: true
