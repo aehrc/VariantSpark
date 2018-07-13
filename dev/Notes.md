@@ -1,3 +1,17 @@
+
+## Release to Maven Central
+
+    export GPG_TTY=$(tty)
+    mvn -DskipTests -P release deploy
+    mvn nexus-staging:release
+    
+    
+    
+More info:  https://central.sonatype.org/pages/apache-maven.html#performing-a-release-deployment-with-the-maven-release-plugin
+
+see: `~/.m2/settting.xml for all the passwords etc`
+
+
 ## Setting up an AWS vm for Hail compilation
 
 
