@@ -14,7 +14,7 @@ TEMP_PATH = "target"
 
 in_src = os.path.isfile(os.path.join(ROOT_DIR, "pom.xml"))
         
-VERSION = '0.2.0a0'    
+VERSION = '0.3.0a0'    
     
 # Provide guidance about how to use setup.py
 incorrect_invocation_message = """
