@@ -54,7 +54,6 @@ cp LICENSE README.md THIRDPARTY ${DIST_DIR}
 
 cp -r bin ${DIST_DIR}/bin/
 cp ${DIST_JAR}  ${DIST_DIR}/lib
-cp lib/*.jar ${DIST_DIR}/lib
 cp -r data/ ${DIST_DIR}/data/
 cp examples/*.sh ${DIST_DIR}/examples/
 cp examples/*.ipynb ${DIST_DIR}/examples/
