@@ -96,7 +96,7 @@ try:
         },
         data_files = [
             ('share/variant-spark/examples', glob.glob(os.path.join(dst_path('examples'),'*'))),
-            ('share/variant-spark/data', glob.glob(os.path.join(dst_path('data'),'*'))),
+            ('share/variant-spark/data', [ p for p in glob.glob(os.path.join(dst_path('data'),'*')) if not os.path.isdir(p)]),
         ],
         scripts = [
             'target/bin/variant-spark',                   
