@@ -16,13 +16,19 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
 
   @Option(name="-it", required=false, usage="Input file type, one of: vcf, csv, parquet (def=vcf)", aliases=Array("--input-type"))
   val inputType:String = "vcf"
+
+  @Option(name="-ivb", required=false, usage="Input vcf is biallelic (def=false)", aliases=Array("--input-vcf-biallelic"))
+  val inputVcfBiallelic:Boolean = false
+
+  @Option(name="-ivs", required=false, usage="The separator to use to produce labels for variants from vcf file.(def='_')", aliases=Array("--input-vcf-sep"))
+  val inputVcfSeparator:String = "_"
   
-   def loadVCF() = {
+  def loadVCF() = {
     echo(s"Loading header from VCF file: ${inputFile}")
     val vcfSource = VCFSource(sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
     verbose(s"VCF Version: ${vcfSource.version}")
     verbose(s"VCF Header: ${vcfSource.header}")    
-    VCFFeatureSource(vcfSource)    
+    VCFFeatureSource(vcfSource, inputVcfBiallelic, inputVcfSeparator)
   }
   
   def loadCSV() = {

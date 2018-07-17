@@ -59,11 +59,6 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs wit
       , aliases=Array("--input-var-ordinal"))
   val varOrdinalLevels:Int = 3
 
-  @Option(name="-ivb", required=false, usage="Input vcf is biallelic (def=false)", aliases=Array("--input-vcf-biallelic"))
-  val inputVcfBiallelic:Boolean = false
-
-  @Option(name="-ivs", required=false, usage="The separator to use to produce labels for variants from vcf file.(def='_')", aliases=Array("--input-vcf-sep"))
-  val inputVcfSeparator:String = "_"
 
   @Option(name="-ff", required=true, usage="Path to feature file", aliases=Array("--feature-file"))
   val featuresFile:String = null
@@ -160,7 +155,6 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs wit
       //TODO: need to actually permutate the labels
       // we can do it in place as a permutatino of a permutation is still a permutation
       // although it might be better to actually get the permutation as oder of indexes
-      MathArrays.shuffle(labels, defRng)
       echo(s"Running permutation ${pn}")  
       verbose(s"The permutation is: ${labels.toList}" )
       echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")  
@@ -188,6 +182,7 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs wit
       }
   
       val result = rf.batchTrain(trainingData, dataType, labels, nTrees, rfBatchSize)
+      MathArrays.shuffle(labels, defRng)
       
       echo(s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s") 
           
