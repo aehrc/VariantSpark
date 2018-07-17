@@ -39,3 +39,4 @@ data
 .cache-test
 
 /target/
+/tmp
