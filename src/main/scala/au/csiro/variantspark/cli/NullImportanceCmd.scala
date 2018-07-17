@@ -39,8 +39,21 @@ import org.apache.hadoop.conf.Configuration
 import au.csiro.variantspark.utils.HdfsPath
 import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
 import au.csiro.variantspark.cli.args.FeatureSourceArgs
+import org.apache.spark.mllib.linalg.distributed.CoordinateMatrix
+import org.apache.spark.mllib.linalg.distributed.MatrixEntry
+import org.apache.commons.math3.util.MathArrays
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.types.StructField
+import org.apache.spark.sql.types.StringType
+import org.apache.spark.sql.types.DoubleType
+import org.apache.spark.sql.SaveMode
 
 class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs with Echoable with Logging with TestArgs {
+  
+  @Option(name="-pn", required=false, usage="Number of permutations to generate (def = 30)" 
+      , aliases=Array("--n-permutations"))
+  val nPermutations:Int = 30
   
   @Option(name="-ivo", required=false, usage="Variable type ordinal with this number of levels (def = 3)" 
       , aliases=Array("--input-var-ordinal"))
@@ -63,9 +76,9 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs wit
   @Option(name="-of", required=false, usage="Path to output file (def = stdout)", aliases=Array("--output-file") )
   val outputFile:String = null
 
-  @Option(name="-on", required=false, usage="The number of top important variables to include in output (def=20)",
+  @Option(name="-on", required=false, usage="The number of top important variables to include in output (def=0 (all variables))",
       aliases=Array("--output-n-variables"))
-  val nVariables:Int = 20
+  val nVariables:Int = 0
  
   @Option(name="-od", required=false, usage="Include important variables data in output file (def=no)"
         , aliases=Array("--output-include-data") )
@@ -107,8 +120,8 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs wit
   val randomSeed: Long = defRng.nextLong
    
   @Override
-  def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ro", "-om", "target/ch22-model.ser", "-sr", "13")
-    
+  def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ro", "-om", "target/ch22-model.ser", "-sr", "13", "-pn", "30", "-v", "-ivb")
+
   @Override
   def run():Unit = {
     implicit val fs = FileSystem.get(sc.hadoopConfiguration)  
@@ -128,13 +141,10 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs wit
     echo(s"Loaded variables: ${dumpListHead(variablePreview, totalVariables)}, took: ${dataLoadingTimer.durationInSec}")
     echoDataPreview() 
     
-     
     echo(s"Loading labels from: ${featuresFile}, column: ${featureColumn}")
     val labelSource = new CsvLabelSource(featuresFile, featureColumn)
     val labels = labelSource.getLabels(featureSource.sampleNames)
     echo(s"Loaded labels: ${dumpList(labels.toList)}")
-    
-    
     
     // discover variable type
     // for now assume it's ordered factor with provided number of levels
@@ -143,63 +153,97 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs wit
     val dataType = BoundedOrdinal(varOrdinalLevels)
     
     
-    echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")  
-    echo(s"Random seed is: ${randomSeed}")
-    val treeBuildingTimer = Timer()
-    val rf = new ByteRandomForest(RandomForestParams(oob=rfEstimateOob, seed = randomSeed, bootstrap = !rfSampleNoReplacement, 
-        subsample = rfSubsampleFraction, 
-        nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction))
-    val trainingData = inputData.map{ case (f, i) => (f.values, i)}
+    // For now do it in a loop
     
-    implicit val rfCallback = new RandomForestCallback() {
-      var totalTime = 0l
-      var totalTrees = 0
-      override   def onParamsResolved(actualParams:RandomForestParams) {
-        echo(s"RF Params: ${actualParams}")
-        echo(s"RF Params mTry: ${(actualParams.nTryFraction * totalVariables).toLong}")
+    val iterationImportances = Range(0, nPermutations).map { pn =>    
+      
+      //TODO: need to actually permutate the labels
+      // we can do it in place as a permutatino of a permutation is still a permutation
+      // although it might be better to actually get the permutation as oder of indexes
+      MathArrays.shuffle(labels, defRng)
+      echo(s"Running permutation ${pn}")  
+      verbose(s"The permutation is: ${labels.toList}" )
+      echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")  
+      echo(s"Random seed is: ${randomSeed}")
+      val treeBuildingTimer = Timer()
+      val rf = new ByteRandomForest(RandomForestParams(oob=rfEstimateOob, seed = randomSeed, bootstrap = !rfSampleNoReplacement, 
+          subsample = rfSubsampleFraction, 
+          nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction))
+      val trainingData = inputData.map{ case (f, i) => (f.values, i)}
+      
+      implicit val rfCallback = new RandomForestCallback() {
+        var totalTime = 0l
+        var totalTrees = 0
+        override   def onParamsResolved(actualParams:RandomForestParams) {
+          echo(s"RF Params: ${actualParams}")
+          echo(s"RF Params mTry: ${(actualParams.nTryFraction * totalVariables).toLong}")
+        }
+        override  def onTreeComplete(nTrees:Int, oobError:Double, elapsedTimeMs:Long) {
+          totalTime += elapsedTimeMs
+          totalTrees += nTrees
+          echo(s"Finished trees: ${totalTrees}, current oobError: ${oobError}, totalTime: ${totalTime/1000.0} s, avg timePerTree: ${totalTime/(1000.0*totalTrees)} s")
+          echo(s"Last build trees: ${nTrees}, time: ${elapsedTimeMs} ms, timePerTree: ${elapsedTimeMs/nTrees} ms")
+          
+        }
       }
-      override  def onTreeComplete(nTrees:Int, oobError:Double, elapsedTimeMs:Long) {
-        totalTime += elapsedTimeMs
-        totalTrees += nTrees
-        echo(s"Finished trees: ${totalTrees}, current oobError: ${oobError}, totalTime: ${totalTime/1000.0} s, avg timePerTree: ${totalTime/(1000.0*totalTrees)} s")
-        echo(s"Last build trees: ${nTrees}, time: ${elapsedTimeMs} ms, timePerTree: ${elapsedTimeMs/nTrees} ms")
+  
+      val result = rf.batchTrain(trainingData, dataType, labels, nTrees, rfBatchSize)
+      
+      echo(s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s") 
+          
+      if (modelFile != null) {
+        LoanUtils.withCloseable(new ObjectOutputStream(HdfsPath(modelFile).create())) { objectOut =>
+          objectOut.writeObject(result)
+        }
+      }
+      
+      // build index for names
+      val allImportantVariables = result.variableImportance.toSeq
+      val topImportantVariables = if (nVariables > 0) allImportantVariables.sortBy(-_._2).take(nVariables) else allImportantVariables
+      (pn,topImportantVariables)
+    }
+     
+    // now I need to somehow join the output
+    // essentially need to transpose a sparse matrix
+    // this seem to be available on a SparkML coordinate matrix
+    // actually I do not need to to transpose just build it transposed and convert to indexed row matrix 
+    
+    val importanceMatrix = new CoordinateMatrix(sc.parallelize(iterationImportances.flatMap(ii => ii._2.map(vi => new MatrixEntry(vi._1, ii._1, vi._2))).toSeq))
+          .toIndexedRowMatrix()    
+    
+    
+    val mappedOutput = importanceMatrix.rows.map(k => (k.index, k.vector))
+      .join(inputData.map({case (f,i) => (i, f.label)})).sortByKey().map(_._2)
+          
+    val permutationImpSchema = StructType(
+        Seq(StructField("variable",StringType,false))  
+        ++ Range(0,nPermutations).map(p => StructField(s"perm_${p}",DoubleType, true))
+    )
         
-      }
-    }
-
-    val result = rf.batchTrain(trainingData, dataType, labels, nTrees, rfBatchSize)
+    val df = spark.createDataFrame(mappedOutput.map(r => Row.merge(Row(r._2), Row(r._1.toArray:_*))), permutationImpSchema)
+    df.write.mode(SaveMode.Overwrite).option("header", true).csv("target/output.csv")
     
-    echo(s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s") 
-        
-    if (modelFile != null) {
-      LoanUtils.withCloseable(new ObjectOutputStream(HdfsPath(modelFile).create())) { objectOut =>
-        objectOut.writeObject(result)
-      }
-    }
-    
-    // build index for names
-    val topImportantVariables = result.normalizedVariableImportance().toSeq.sortBy(-_._2).take(nVariables)
-    val topImportantVariableIndexes = topImportantVariables.map(_._1).toSet
-    
-    val index = SparkUtils.withBroadcast(sc)(topImportantVariableIndexes) { br_indexes => 
-      inputData.filter(t => br_indexes.value.contains(t._2)).map({case (f,i) => (i, f.label)}).collectAsMap()
-    }
-    
-    val varImportance = topImportantVariables.map({ case (i, importance) => (index(i), importance)})
-    
-    if (isEcho && outputFile!=null) {
-      echo("Variable importance preview")
-      varImportance.take(math.min(nVariables, defaultPreviewSize)).foreach({case(label, importance) => echo(s"${label}: ${importance}")})
-    }
-
-    val importantVariableData = if (includeData) trainingData.collectAtIndexes(topImportantVariableIndexes) else null
-    
-    CSVUtils.withStream(if (outputFile != null ) HdfsPath(outputFile).create() else ReusablePrintStream.stdout) { writer =>
-      val header = List("variable","importance") ::: (if (includeData) featureSource.sampleNames else Nil)
-      writer.writeRow(header)
-      writer.writeAll(topImportantVariables.map({case (i, importance) => 
-        List(index(i), importance) ::: (if (includeData) importantVariableData(i).toArray.toList else Nil)}))
-    }
+//    val topImportantVariableIndexes = topImportantVariables.map(_._1).toSet
+//      
+//    val index = SparkUtils.withBroadcast(sc)(topImportantVariableIndexes) { br_indexes => 
+//      inputData.filter(t => br_indexes.value.contains(t._2)).map({case (f,i) => (i, f.label)}).collectAsMap()
+//    }
+//    
+//    val varImportance = topImportantVariables.map({ case (i, importance) => (index(i), importance)})
+//    
+//    if (isEcho && outputFile!=null) {
+//      echo("Variable importance preview")
+//      varImportance.take(math.min(nVariables, defaultPreviewSize)).foreach({case(label, importance) => echo(s"${label}: ${importance}")})
+//    }
+//
+//    val importantVariableData = if (includeData) trainingData.collectAtIndexes(topImportantVariableIndexes) else null
+//    
+//    CSVUtils.withStream(if (outputFile != null ) HdfsPath(outputFile).create() else ReusablePrintStream.stdout) { writer =>
+//      val header = List("variable","importance") ::: (if (includeData) featureSource.sampleNames else Nil)
+//      writer.writeRow(header)
+//      writer.writeAll(topImportantVariables.map({case (i, importance) => 
+//        List(index(i), importance) ::: (if (includeData) importantVariableData(i).toArray.toList else Nil)}))
+//    }
   }
 }
 
