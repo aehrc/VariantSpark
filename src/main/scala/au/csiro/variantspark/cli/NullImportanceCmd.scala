@@ -60,11 +60,14 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs
   @Option(name="-pn", required=false, usage="Number of permutations to generate (def = 30)" 
       , aliases=Array("--n-permutations"))
   val nPermutations:Int = 30
-  
+
+  @Option(name="-pnv", required=false, usage="Number of top important variables from each permutations to include. Use `0` for all variables (def = 0)" 
+      , aliases=Array("--permutations-n-variables"))
+  val permutationsVarLimit:Int = 0
+
   @Option(name="-ivo", required=false, usage="Variable type ordinal with this number of levels (def = 3)" 
       , aliases=Array("--input-var-ordinal"))
   val varOrdinalLevels:Int = 3
-
 
   @Option(name="-ff", required=true, usage="Path to feature file", aliases=Array("--feature-file"))
   val featuresFile:String = null
@@ -72,18 +75,10 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs
   @Option(name="-fc", required=true, usage="Name of the feature column", aliases=Array("--feature-column"))
   val featureColumn:String = null
   
-  
   // output options
   @Option(name="-of", required=false, usage="Path to output file (def = stdout)", aliases=Array("--output-file") )
   val outputFile:String = null
   
-  @Option(name="-od", required=false, usage="Include important variables data in output file (def=no)"
-        , aliases=Array("--output-include-data") )
-  val includeData = false
-    
-  @Option(name="-om", required=false, usage="Path to model file", aliases=Array("--model-file"))
-  val modelFile:String = null
-
   // random forrest options
   
   @Option(name="-rn", required=false, usage="RandomForest: number of trees to build (def=20)", aliases=Array("--rf-n-trees") )
@@ -126,8 +121,7 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs
     
     logDebug(s"Running with filesystem: ${fs}, home: ${fs.getHomeDirectory}")
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
-    echo(s"Finding  ${nVariables}  most important features using random forest")
-
+    echo(s"Computing ${nPermutations} variable importance permutations with random forest")
 
     val dataLoadingTimer = Timer()    
     echo(s"Loaded rows: ${dumpList(featureSource.sampleNames)}")
@@ -147,8 +141,6 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs
     echo(s"Assumed ordinal variable with ${varOrdinalLevels} levels")
     // TODO (Feature): Add autodiscovery
     val dataType = BoundedOrdinal(varOrdinalLevels)
-    
-    
     
     val permutationRng = new XorShift1024StarRandomGenerator(randomSeed)
 
@@ -189,14 +181,7 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs
       
       echo(s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s") 
           
-      if (modelFile != null) {
-        LoanUtils.withCloseable(new ObjectOutputStream(HdfsPath(modelFile).create())) { objectOut =>
-          objectOut.writeObject(result)
-        }
-      }
-      
-      // build index for names      
-      val topImportantVariables = limitVariables(result.normalizedVariableImportance(importanceNormalizer).toSeq)
+      val topImportantVariables = limitVariables(result.normalizedVariableImportance(importanceNormalizer).toSeq, permutationsVarLimit)
       (pn,topImportantVariables)
     }
      
