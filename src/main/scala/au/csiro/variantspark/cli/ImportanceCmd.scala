@@ -135,10 +135,6 @@ class ImportanceCmd extends ArgsApp with SparkApp
     echo(s"Assumed ordinal variable with ${varOrdinalLevels} levels")
     // TODO (Feature): Add autodiscovery
     val dataType = BoundedOrdinal(varOrdinalLevels)    
-    if (isVerbose) {
-      verbose("Data preview:")
-      featureSource.features().take(defaultPreviewSize).foreach(f=> verbose(s"${f.label}:${dumpList(f.values.toList, longPreviewSize)}"))
-    }
     
     echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")  
     echo(s"Random seed is: ${randomSeed}")
