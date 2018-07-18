@@ -48,6 +48,9 @@ import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.types.StringType
 import org.apache.spark.sql.types.DoubleType
 import org.apache.spark.sql.SaveMode
+import au.csiro.variantspark.algo.To100ImportanceNormalizer
+import au.csiro.variantspark.algo.RawVarImportanceNormalizer
+import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 
 class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs with Echoable with Logging with TestArgs {
   
@@ -74,7 +77,17 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs wit
   @Option(name="-on", required=false, usage="The number of top important variables to include in output (def=0 (all variables))",
       aliases=Array("--output-n-variables"))
   val nVariables:Int = 0
- 
+
+  
+  @Option(name="-oc", required=false, usage="The number of ouput paritions (def=0 (all variables))",
+      aliases=Array("--output-partitions"))
+  val nOuputParitions:Int = 0
+
+  
+  @Option(name="-ovn", required=false, usage="Type of normalization to apply to variable importance [raw|to100] (def=to100)",
+      aliases=Array("--output-normalization"))
+  val outputNormalization:String = "to100"
+  
   @Option(name="-od", required=false, usage="Include important variables data in output file (def=no)"
         , aliases=Array("--output-include-data") )
   val includeData = false
@@ -115,8 +128,15 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs wit
   val randomSeed: Long = defRng.nextLong
    
   @Override
-  def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ro", "-om", "target/ch22-model.ser", "-sr", "13", "-pn", "30", "-v", "-ivb")
+  def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ro", "-of", "target/null-importances.csv", "-sr", "13", "-pn", "5", "-v", "-ivb", "-ovn", "raw")
 
+  
+  def importanceNormalizer = outputNormalization match {
+    case "to100" => To100ImportanceNormalizer
+    case "raw"  => RawVarImportanceNormalizer
+    case _ => throw new IllegalArgumentException(s"Unrecognized normalization type: `${outputNormalization}`. Valid options are `top100`, `raw`")
+  }
+  
   @Override
   def run():Unit = {
     implicit val fs = FileSystem.get(sc.hadoopConfiguration)  
@@ -148,14 +168,17 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs wit
     val dataType = BoundedOrdinal(varOrdinalLevels)
     
     
-    // For now do it in a loop
     
+    val permutationRng = new XorShift1024StarRandomGenerator(randomSeed)
+
+    // For now do it in a loop    
     val iterationImportances = Range(0, nPermutations).map { pn =>    
       
       //TODO: need to actually permutate the labels
       // we can do it in place as a permutatino of a permutation is still a permutation
       // although it might be better to actually get the permutation as oder of indexes
       echo(s"Running permutation ${pn}")  
+      MathArrays.shuffle(labels, permutationRng)
       verbose(s"The permutation is: ${labels.toList}" )
       echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")  
       echo(s"Random seed is: ${randomSeed}")
@@ -182,7 +205,6 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs wit
       }
   
       val result = rf.batchTrain(trainingData, dataType, labels, nTrees, rfBatchSize)
-      MathArrays.shuffle(labels, defRng)
       
       echo(s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s") 
           
@@ -193,7 +215,8 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs wit
       }
       
       // build index for names
-      val allImportantVariables = result.variableImportance.toSeq
+      
+      val allImportantVariables = result.normalizedVariableImportance(importanceNormalizer).toSeq
       val topImportantVariables = if (nVariables > 0) allImportantVariables.sortBy(-_._2).take(nVariables) else allImportantVariables
       (pn,topImportantVariables)
     }
@@ -216,7 +239,8 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs wit
     )
         
     val df = spark.createDataFrame(mappedOutput.map(r => Row.merge(Row(r._2), Row(r._1.toArray:_*))), permutationImpSchema)
-    df.write.mode(SaveMode.Overwrite).option("header", true).csv("target/output.csv")
+    val outputDf  = if (nOuputParitions > 0) df.repartition(nOuputParitions) else df
+    outputDf.write.mode(SaveMode.Overwrite).option("header", true).csv(outputFile)
     
 //    val topImportantVariableIndexes = topImportantVariables.map(_._1).toSet
 //      
