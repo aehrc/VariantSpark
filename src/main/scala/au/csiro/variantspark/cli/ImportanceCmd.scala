@@ -39,39 +39,32 @@ import org.apache.hadoop.conf.Configuration
 import au.csiro.variantspark.utils.HdfsPath
 import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
 import au.csiro.variantspark.cli.args.ImportanceOutputArgs
+import au.csiro.variantspark.cli.args.FeatureSourceArgs
 
 class ImportanceCmd extends ArgsApp with SparkApp 
+  with FeatureSourceArgs
   with ImportanceOutputArgs
   with Echoable with Logging with TestArgs {
 
-  // input options
-  @Option(name="-if", required=true, usage="Path to input file or directory", aliases=Array("--input-file"))
-  val inputFile:String = null
-
-  @Option(name="-it", required=false, usage="Input file type, one of: vcf, csv, parquet (def=vcf)", aliases=Array("--input-type"))
-  val inputType:String = "vcf"
-  
+  // input options  
   @Option(name="-ivo", required=false, usage="Variable type ordinal with this number of levels (def = 3)" 
       , aliases=Array("--input-var-ordinal"))
   val varOrdinalLevels:Int = 3
-
-  @Option(name="-ivb", required=false, usage="Input vcf is biallelic (def=false)", aliases=Array("--input-vcf-biallelic"))
-  val inputVcfBiallelic:Boolean = false
-
-  @Option(name="-ivs", required=false, usage="The separator to use to produce labels for variants from vcf file.(def='_')", aliases=Array("--input-vcf-sep"))
-  val inputVcfSeparator:String = "_"
 
   @Option(name="-ff", required=true, usage="Path to feature file", aliases=Array("--feature-file"))
   val featuresFile:String = null
 
   @Option(name="-fc", required=true, usage="Name of the feature column", aliases=Array("--feature-column"))
   val featureColumn:String = null
-  
-  
+    
   // output options
   @Option(name="-of", required=false, usage="Path to output file (def = stdout)", aliases=Array("--output-file") )
   val outputFile:String = null
- 
+  
+  @Option(name="-on", required=false, usage="The number of top important variables to include in output. Use `0` for all variables. (def=20)",
+      aliases=Array("--output-n-variables"))
+  val nVariables:Int = 20
+
   @Option(name="-od", required=false, usage="Include important variables data in output file (def=no)"
         , aliases=Array("--output-include-data") )
   val includeData = false
@@ -110,32 +103,10 @@ class ImportanceCmd extends ArgsApp with SparkApp
 
   @Option(name="-sr", required=false, usage="Random seed to use (def=<random>)", aliases=Array("--seed"))
   val randomSeed: Long = defRng.nextLong
-  
-  // spark related
-  @Option(name="-sp", required=false, usage="Spark parallelism (def=<default-spark-par>)", aliases=Array("--spark-par"))
-  val sparkPar = 0
- 
+   
   @Override
   def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ro", "-om", "target/ch22-model.ser", "-sr", "13")
-  
-  def loadVCF() = {
-    echo(s"Loading header from VCF file: ${inputFile}")
-    val vcfSource = VCFSource(sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
-    verbose(s"VCF Version: ${vcfSource.version}")
-    verbose(s"VCF Header: ${vcfSource.header}")    
-    VCFFeatureSource(vcfSource, inputVcfBiallelic, inputVcfSeparator)    
-  }
-  
-  def loadCSV() = {
-    echo(s"Loading csv file: ${inputFile}")
-    CsvFeatureSource(sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
-  }
-  
-  def loadParquet() = {
-    echo(s"Loading parquet file: ${inputFile}")
-    ParquetFeatureSource(inputFile)
-  }
-  
+    
   @Override
   def run():Unit = {
     implicit val fs = FileSystem.get(sc.hadoopConfiguration)  
@@ -146,41 +117,27 @@ class ImportanceCmd extends ArgsApp with SparkApp
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
     echo(s"Finding  ${nVariables}  most important features using random forest")
 
-    // TODO (Refactoring): Make a class
-    // TODO (Func): add auto detection based on name
-    val fileLoader = inputType match {
-      case "csv" =>  loadCSV _
-      case "parquet" => loadParquet _ 
-      case "vcf" => loadVCF _
-    }
-    val source = fileLoader()
-    
-    echo(s"Loaded rows: ${dumpList(source.sampleNames)}")
-     
-    echo(s"Loading labels from: ${featuresFile}, column: ${featureColumn}")
-    val labelSource = new CsvLabelSource(featuresFile, featureColumn)
-    val labels = labelSource.getLabels(source.sampleNames)
-    echo(s"Loaded labels: ${dumpList(labels.toList)}")
-    
-    
-    val dataLoadingTimer = Timer()
-    echo(s"Loading features from: ${inputFile}")
-    
-    val inputData = source.features().zipWithIndex().cache()
+    val dataLoadingTimer = Timer()    
+    echo(s"Loaded rows: ${dumpList(featureSource.sampleNames)}")
+    val inputData = featureSource.features().zipWithIndex().cache()
     val totalVariables = inputData.count()
     val variablePreview = inputData.map({case (f,i) => f.label}).take(defaultPreviewSize).toList
-        
     echo(s"Loaded variables: ${dumpListHead(variablePreview, totalVariables)}, took: ${dataLoadingTimer.durationInSec}")
+    echoDataPreview() 
+    
+    echo(s"Loading labels from: ${featuresFile}, column: ${featureColumn}")
+    val labelSource = new CsvLabelSource(featuresFile, featureColumn)
+    val labels = labelSource.getLabels(featureSource.sampleNames)
+    echo(s"Loaded labels: ${dumpList(labels.toList)}")
     
     // discover variable type
     // for now assume it's ordered factor with provided number of levels
     echo(s"Assumed ordinal variable with ${varOrdinalLevels} levels")
     // TODO (Feature): Add autodiscovery
-    val dataType = BoundedOrdinal(varOrdinalLevels)
-    
+    val dataType = BoundedOrdinal(varOrdinalLevels)    
     if (isVerbose) {
       verbose("Data preview:")
-      source.features().take(defaultPreviewSize).foreach(f=> verbose(s"${f.label}:${dumpList(f.values.toList, longPreviewSize)}"))
+      featureSource.features().take(defaultPreviewSize).foreach(f=> verbose(s"${f.label}:${dumpList(f.values.toList, longPreviewSize)}"))
     }
     
     echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")  
@@ -218,7 +175,7 @@ class ImportanceCmd extends ArgsApp with SparkApp
     }
     
     // build index for names
-    val topImportantVariables = limitVariables(result.normalizedVariableImportance(importanceNormalizer).toSeq)
+    val topImportantVariables = limitVariables(result.normalizedVariableImportance(importanceNormalizer).toSeq, nVariables)
     val topImportantVariableIndexes = topImportantVariables.map(_._1).toSet
     
     val index = SparkUtils.withBroadcast(sc)(topImportantVariableIndexes) { br_indexes => 
@@ -235,7 +192,7 @@ class ImportanceCmd extends ArgsApp with SparkApp
     val importantVariableData = if (includeData) trainingData.collectAtIndexes(topImportantVariableIndexes) else null
     
     CSVUtils.withStream(if (outputFile != null ) HdfsPath(outputFile).create() else ReusablePrintStream.stdout) { writer =>
-      val header = List("variable","importance") ::: (if (includeData) source.sampleNames else Nil)
+      val header = List("variable","importance") ::: (if (includeData) featureSource.sampleNames else Nil)
       writer.writeRow(header)
       writer.writeAll(topImportantVariables.map({case (i, importance) => 
         List(index(i), importance) ::: (if (includeData) importantVariableData(i).toArray.toList else Nil)}))
