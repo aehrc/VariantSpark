@@ -51,8 +51,11 @@ import org.apache.spark.sql.SaveMode
 import au.csiro.variantspark.algo.To100ImportanceNormalizer
 import au.csiro.variantspark.algo.RawVarImportanceNormalizer
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
+import au.csiro.variantspark.cli.args.ImportanceOutputArgs
 
-class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs with Echoable with Logging with TestArgs {
+class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs 
+  with ImportanceOutputArgs
+  with Echoable with Logging with TestArgs {
   
   @Option(name="-pn", required=false, usage="Number of permutations to generate (def = 30)" 
       , aliases=Array("--n-permutations"))
@@ -73,20 +76,6 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs wit
   // output options
   @Option(name="-of", required=false, usage="Path to output file (def = stdout)", aliases=Array("--output-file") )
   val outputFile:String = null
-
-  @Option(name="-on", required=false, usage="The number of top important variables to include in output (def=0 (all variables))",
-      aliases=Array("--output-n-variables"))
-  val nVariables:Int = 0
-
-  
-  @Option(name="-oc", required=false, usage="The number of ouput paritions (def=0 (all variables))",
-      aliases=Array("--output-partitions"))
-  val nOuputParitions:Int = 0
-
-  
-  @Option(name="-ovn", required=false, usage="Type of normalization to apply to variable importance [raw|to100] (def=to100)",
-      aliases=Array("--output-normalization"))
-  val outputNormalization:String = "to100"
   
   @Option(name="-od", required=false, usage="Include important variables data in output file (def=no)"
         , aliases=Array("--output-include-data") )
@@ -129,19 +118,11 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs wit
    
   @Override
   def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ro", "-of", "target/null-importances.csv", "-sr", "13", "-pn", "5", "-v", "-ivb", "-ovn", "raw")
-
-  
-  def importanceNormalizer = outputNormalization match {
-    case "to100" => To100ImportanceNormalizer
-    case "raw"  => RawVarImportanceNormalizer
-    case _ => throw new IllegalArgumentException(s"Unrecognized normalization type: `${outputNormalization}`. Valid options are `top100`, `raw`")
-  }
   
   @Override
   def run():Unit = {
     implicit val fs = FileSystem.get(sc.hadoopConfiguration)  
     implicit val hadoopConf:Configuration = sc.hadoopConfiguration
-    
     
     logDebug(s"Running with filesystem: ${fs}, home: ${fs.getHomeDirectory}")
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
@@ -214,10 +195,8 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs wit
         }
       }
       
-      // build index for names
-      
-      val allImportantVariables = result.normalizedVariableImportance(importanceNormalizer).toSeq
-      val topImportantVariables = if (nVariables > 0) allImportantVariables.sortBy(-_._2).take(nVariables) else allImportantVariables
+      // build index for names      
+      val topImportantVariables = limitVariables(result.normalizedVariableImportance(importanceNormalizer).toSeq)
       (pn,topImportantVariables)
     }
      
@@ -242,27 +221,6 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs wit
     val outputDf  = if (nOuputParitions > 0) df.repartition(nOuputParitions) else df
     outputDf.write.mode(SaveMode.Overwrite).option("header", true).csv(outputFile)
     
-//    val topImportantVariableIndexes = topImportantVariables.map(_._1).toSet
-//      
-//    val index = SparkUtils.withBroadcast(sc)(topImportantVariableIndexes) { br_indexes => 
-//      inputData.filter(t => br_indexes.value.contains(t._2)).map({case (f,i) => (i, f.label)}).collectAsMap()
-//    }
-//    
-//    val varImportance = topImportantVariables.map({ case (i, importance) => (index(i), importance)})
-//    
-//    if (isEcho && outputFile!=null) {
-//      echo("Variable importance preview")
-//      varImportance.take(math.min(nVariables, defaultPreviewSize)).foreach({case(label, importance) => echo(s"${label}: ${importance}")})
-//    }
-//
-//    val importantVariableData = if (includeData) trainingData.collectAtIndexes(topImportantVariableIndexes) else null
-//    
-//    CSVUtils.withStream(if (outputFile != null ) HdfsPath(outputFile).create() else ReusablePrintStream.stdout) { writer =>
-//      val header = List("variable","importance") ::: (if (includeData) featureSource.sampleNames else Nil)
-//      writer.writeRow(header)
-//      writer.writeAll(topImportantVariables.map({case (i, importance) => 
-//        List(index(i), importance) ::: (if (includeData) importantVariableData(i).toArray.toList else Nil)}))
-//    }
   }
 }
 

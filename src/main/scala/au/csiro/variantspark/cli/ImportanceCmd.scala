@@ -38,8 +38,11 @@ import java.io.FileOutputStream
 import org.apache.hadoop.conf.Configuration
 import au.csiro.variantspark.utils.HdfsPath
 import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
+import au.csiro.variantspark.cli.args.ImportanceOutputArgs
 
-class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
+class ImportanceCmd extends ArgsApp with SparkApp 
+  with ImportanceOutputArgs
+  with Echoable with Logging with TestArgs {
 
   // input options
   @Option(name="-if", required=true, usage="Path to input file or directory", aliases=Array("--input-file"))
@@ -68,10 +71,6 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
   // output options
   @Option(name="-of", required=false, usage="Path to output file (def = stdout)", aliases=Array("--output-file") )
   val outputFile:String = null
-
-  @Option(name="-on", required=false, usage="The number of top important variables to include in output (def=20)",
-      aliases=Array("--output-n-variables"))
-  val nVariables:Int = 20
  
   @Option(name="-od", required=false, usage="Include important variables data in output file (def=no)"
         , aliases=Array("--output-include-data") )
@@ -219,7 +218,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     }
     
     // build index for names
-    val topImportantVariables = result.normalizedVariableImportance().toSeq.sortBy(-_._2).take(nVariables)
+    val topImportantVariables = limitVariables(result.normalizedVariableImportance(importanceNormalizer).toSeq)
     val topImportantVariableIndexes = topImportantVariables.map(_._1).toSet
     
     val index = SparkUtils.withBroadcast(sc)(topImportantVariableIndexes) { br_indexes => 
@@ -230,7 +229,7 @@ class ImportanceCmd extends ArgsApp with SparkApp with Echoable with Logging wit
     
     if (isEcho && outputFile!=null) {
       echo("Variable importance preview")
-      varImportance.take(math.min(nVariables, defaultPreviewSize)).foreach({case(label, importance) => echo(s"${label}: ${importance}")})
+      varImportance.take(math.min(math.max(nVariables, defaultPreviewSize), defaultPreviewSize)).foreach({case(label, importance) => echo(s"${label}: ${importance}")})
     }
 
     val importantVariableData = if (includeData) trainingData.collectAtIndexes(topImportantVariableIndexes) else null
