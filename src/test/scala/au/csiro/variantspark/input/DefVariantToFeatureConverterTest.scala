@@ -49,7 +49,7 @@ class DefVariantToFeatureConverterTest {
   def testConvertsMultialleicVariantCorrctly() {
     val converter = DefVariantToFeatureConverter(false)
     val result = converter.convert(multialleciVC)
-    assertEquals("chr1_10_T", result.label)
+    assertEquals("chr1_10_T_A|G", result.label)
     assertArrayEquals(expectedEncodedGenotype, result.values)
   }
 
