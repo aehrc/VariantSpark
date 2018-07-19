@@ -25,6 +25,8 @@ case class DefVariantToFeatureConverter(biallelic:Boolean = false, separator:Str
       .append(separator).append(vc.getReference().getBaseString())
     if (biallelic) {
       labelBuilder.append(separator).append(vc.getAlternateAllele(0).getBaseString())
+    } else {
+      labelBuilder.append(separator).append(vc.getAlternateAlleles.asScala.map(_.getBaseString()).mkString("|"))   
     }
     labelBuilder.toString()
   }
