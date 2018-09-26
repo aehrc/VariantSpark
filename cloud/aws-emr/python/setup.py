@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='vs-emr',
-    version='0.2.0a1',
+    version='0.2.0a2',
     packages=['vs_emr'],
     install_requires=[
         'Click', 'PyYAML', 'pystache', 'jsonmerge', 'awscli>=1.11'
