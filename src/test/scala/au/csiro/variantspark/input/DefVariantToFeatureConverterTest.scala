@@ -41,7 +41,7 @@ class DefVariantToFeatureConverterTest {
   def testConvertsBialleicVariantCorrctly() {
     val converter = DefVariantToFeatureConverter(true, ":")
     val result = converter.convert(bialellicVC)
-    assertEquals("chr1:10:T", result.label)
+    assertEquals("chr1:10:T:A", result.label)
     assertArrayEquals(expectedEncodedGenotype, result.values)
   }
 
