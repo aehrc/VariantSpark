@@ -14,7 +14,7 @@ TEMP_PATH = "target"
 
 in_src = os.path.isfile(os.path.join(ROOT_DIR, "pom.xml"))
         
-VERSION = '0.2.0a2.dev0'
+VERSION = '0.2.0a3.dev0'
     
 # Provide guidance about how to use setup.py
 incorrect_invocation_message = """
@@ -65,14 +65,16 @@ try:
         version= VERSION,    
         packages=find_packages(exclude=["*.test"]) + ['varspark.jars'], 
         install_requires=[
-            'typedecorator',
-            'pandas>=0.22.0',
+            'typedecorator'
         ],
 #        test_suite = 'varspark.test',
 #        test_requires = [
 #            'pyspark>=2.1.0'
 #        ],
-        extras_require = {
+        extras_require = {                          
+            'deps': [ 
+                'pandas>=0.22.0', 
+            ],
             'spark': [ 
                 'pyspark==2.2.1', 
             ],
