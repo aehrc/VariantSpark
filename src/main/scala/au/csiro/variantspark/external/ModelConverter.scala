@@ -34,7 +34,12 @@ class ModelConverter(varIndex:Map[Long, String]) {
   }
   
   def toExternal(rfModel:RandomForestModel[_]):Forest = {
-    Forest(rfModel.members.map(toExternal))    
+    val oobErrors = if (rfModel.oobErrors != null && !rfModel.oobErrors.isEmpty && !rfModel.oobErrors.head.isNaN()) {
+      Some(rfModel.oobErrors)
+    } else {
+      None
+    }
+    Forest(Option(rfModel.params), rfModel.members.map(toExternal), oobErrors)    
   }
 }
 

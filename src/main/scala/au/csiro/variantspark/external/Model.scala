@@ -6,6 +6,7 @@ import au.csiro.variantspark.algo.LeafNode
 import au.csiro.variantspark.algo.SplitNode
 import au.csiro.variantspark.algo.RandomForestMember
 import au.csiro.variantspark.algo.DecisionTreeModel
+import au.csiro.variantspark.algo.RandomForestParams
 
 trait Node 
 
@@ -24,7 +25,8 @@ case class OOBInfo(val oobSamples:Array[Int], val oobPredictions:Array[Int]) ext
 case class Tree(val rootNode: Node, val oobInfo:Option[OOBInfo]) extends Object with Serializable
 
 @SerialVersionUID(1l)
-case class Forest(val trees:Seq[Tree]) extends Object with Serializable
+case class Forest(val params:Option[RandomForestParams], 
+    val trees:Seq[Tree], oobErrors:Option[Seq[Double]]) extends Object with Serializable
 
 
 

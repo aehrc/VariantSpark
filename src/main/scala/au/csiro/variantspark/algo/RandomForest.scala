@@ -87,7 +87,7 @@ case class RandomForestMember[V](val predictor:PredictiveModelWithImportance[V],
   */
 @SerialVersionUID(2l)
 case class RandomForestModel[V](val members: List[RandomForestMember[V]], val labelCount:Int, val oobErrors:
-  List[Double] = List.empty) {
+  List[Double] = List.empty, val params:RandomForestParams = null) {
 
   def size = members.size
   def trees = members.map(_.predictor)
@@ -254,7 +254,7 @@ class RandomForest[V](params:RandomForestParams=RandomForestParams()
         }.result
      }.toList.unzip
 
-    RandomForestModel(allTrees.toList, nLabels, errors)
+    RandomForestModel(allTrees.toList, nLabels, errors, actualParams)
  }
   
   
