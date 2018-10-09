@@ -7,7 +7,7 @@ import org.apache.spark.rdd.RDD
 import scala.reflect.ClassTag
 
 case class TestPredictorWithImportance(val predictions: Array[Int], val importance: Long2DoubleOpenHashMap) extends PredictiveModelWithImportance[Vector] {
-  def predictIndexed(data: RDD[(Vector, Long)])(implicit ct: ClassTag[Vector]): Array[Int] = predictions
+  def predictIndexed(data: RDD[(Vector, Long)])(implicit canSplit: CanSplit[Vector]): Array[Int] = predictions
 
   def variableImportanceAsFastMap: Long2DoubleOpenHashMap = importance
 

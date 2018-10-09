@@ -41,6 +41,17 @@ import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
 import au.csiro.variantspark.cli.args.ImportanceOutputArgs
 import au.csiro.variantspark.cli.args.FeatureSourceArgs
 
+
+
+import org.json4s._
+import org.json4s.jackson.Serialization
+import org.json4s.jackson.Serialization.{write, writePretty}
+import java.io.OutputStreamWriter
+import au.csiro.variantspark.external.Forest
+import au.csiro.variantspark.external.ModelConverter
+
+
+
 class ImportanceCmd extends ArgsApp with SparkApp 
   with FeatureSourceArgs
   with ImportanceOutputArgs
@@ -105,7 +116,7 @@ class ImportanceCmd extends ArgsApp with SparkApp
   val randomSeed: Long = defRng.nextLong
    
   @Override
-  def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ro", "-om", "target/ch22-model.ser", "-sr", "13")
+  def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ro", "-om", "target/ch22-model.json", "-sr", "13")
     
   @Override
   def run():Unit = {
@@ -164,17 +175,19 @@ class ImportanceCmd extends ArgsApp with SparkApp
     
     echo(s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s") 
         
-    if (modelFile != null) {
-      LoanUtils.withCloseable(new ObjectOutputStream(HdfsPath(modelFile).create())) { objectOut =>
-        objectOut.writeObject(result)
-      }
-    }
     
     // build index for names
-    val topImportantVariables = limitVariables(result.normalizedVariableImportance(importanceNormalizer).toSeq, nVariables)
+    val allImportantVariables  = result.normalizedVariableImportance(importanceNormalizer).toSeq
+    val topImportantVariables = limitVariables(allImportantVariables, nVariables)
     val topImportantVariableIndexes = topImportantVariables.map(_._1).toSet
     
-    val index = SparkUtils.withBroadcast(sc)(topImportantVariableIndexes) { br_indexes => 
+    val variablesToIndex = if (modelFile == null)  {
+      topImportantVariableIndexes
+    } else {
+      allImportantVariables.map(_._1).toSet
+    }
+    
+    val index = SparkUtils.withBroadcast(sc)(variablesToIndex) { br_indexes => 
       inputData.filter(t => br_indexes.value.contains(t._2)).map({case (f,i) => (i, f.label)}).collectAsMap()
     }
     
@@ -192,6 +205,16 @@ class ImportanceCmd extends ArgsApp with SparkApp
       writer.writeRow(header)
       writer.writeAll(topImportantVariables.map({case (i, importance) => 
         List(index(i), importance) ::: (if (includeData) importantVariableData(i).toArray.toList else Nil)}))
+    }
+
+    if (modelFile != null) {
+      implicit val formats = Serialization.formats(NoTypeHints)
+//      LoanUtils.withCloseable(new ObjectOutputStream(HdfsPath(modelFile).create())) { objectOut =>
+//        objectOut.writeObject(result)
+//      }
+      LoanUtils.withCloseable(new OutputStreamWriter(HdfsPath(modelFile).create())) { objectOut =>
+        writePretty(new ModelConverter(index.toMap).toExternal(result), objectOut)
+      }
     }
   }
 }

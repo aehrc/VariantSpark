@@ -1,0 +1,40 @@
+package au.csiro.variantspark.external
+
+import au.csiro.variantspark.algo.RandomForestModel
+import au.csiro.variantspark.algo.RandomForestMember
+import au.csiro.variantspark.algo.DecisionTreeModel
+import au.csiro.variantspark.algo.DecisionTreeNode
+import au.csiro.variantspark.algo.LeafNode
+import au.csiro.variantspark.algo.SplitNode
+import org.apache.spark.rdd.RDD
+import au.csiro.variantspark.input.Feature
+import au.csiro.pbdava.ssparkle.spark.SparkUtils
+
+class ModelConverter(varIndex:Map[Long, String]) {
+
+  def toExternal(node: DecisionTreeNode):Node  = {
+    node match {
+      case LeafNode(majorityLabel, size, nodeImpurity) => Leaf(majorityLabel, size, nodeImpurity)
+      case SplitNode(majorityLabel, size, nodeImpurity, splitVariableIndex,
+          splitPoint, impurityReduction,left, right) => {
+            Split(majorityLabel, size, nodeImpurity, varIndex.getOrElse(splitVariableIndex, null),
+                splitVariableIndex, splitPoint, impurityReduction,
+                toExternal(left), toExternal(right))
+          }
+      case _  => throw new IllegalArgumentException("Unknow node type:" + node)
+    }
+  }
+  
+  def toExternal(rfMember: RandomForestMember[_]):Tree = {
+    val rootNode = rfMember.predictor match {
+      case DecisionTreeModel(rootNode) => toExternal(rootNode)  
+      case _ => throw new IllegalArgumentException("Unknow predictory type:" + rfMember.predictor)
+    }
+    Tree(rootNode, null)
+  }
+  
+  def toExternal(rfModel:RandomForestModel[_]):Forest = {
+    Forest(rfModel.members.map(toExternal))    
+  }
+}
+
