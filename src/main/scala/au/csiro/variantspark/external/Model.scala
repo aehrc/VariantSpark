@@ -21,7 +21,7 @@ case class Split(val majorityLabel: Int, val size: Int, val  impurity: Double,
 case class OOBInfo(val oobSamples:Array[Int], val oobPredictions:Array[Int]) extends Object with Serializable
     
 @SerialVersionUID(1l)
-case class Tree(val rootNode: Node, val oobInfo:OOBInfo) extends Object with Serializable
+case class Tree(val rootNode: Node, val oobInfo:Option[OOBInfo]) extends Object with Serializable
 
 @SerialVersionUID(1l)
 case class Forest(val trees:Seq[Tree]) extends Object with Serializable

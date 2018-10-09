@@ -30,7 +30,7 @@ class ModelConverter(varIndex:Map[Long, String]) {
       case DecisionTreeModel(rootNode) => toExternal(rootNode)  
       case _ => throw new IllegalArgumentException("Unknow predictory type:" + rfMember.predictor)
     }
-    Tree(rootNode, null)
+    Tree(rootNode, Option(rfMember.oobIndexes).map(_ => OOBInfo(rfMember.oobIndexes, rfMember.oobPred)))
   }
   
   def toExternal(rfModel:RandomForestModel[_]):Forest = {
