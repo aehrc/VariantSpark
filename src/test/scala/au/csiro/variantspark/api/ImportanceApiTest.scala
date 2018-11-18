@@ -20,7 +20,7 @@ class ImportanceApiTest extends SparkTest {
     importanceDF.cache()
     val top10Variables = importanceDF.orderBy(desc("importance")).limit(10).collect()
     assertEquals(10, top10Variables.size)
-    assertEquals("22_16050408", top10Variables.head.getString(0))
+    assertEquals("22_16050408_T_C", top10Variables.head.getString(0))
   }
   
   @Test
@@ -31,6 +31,6 @@ class ImportanceApiTest extends SparkTest {
     val impAnalysis = features.importanceAnalysis(label, nTrees = 100, seed = Some(13L))
     val top20Variables = impAnalysis.importantVariables(20)
     assertEquals(20, top20Variables.size)
-    assertEquals("22_16050408", top20Variables.head._1)
+    assertEquals("22_16050408_T_C", top20Variables.head._1)
   }
 }

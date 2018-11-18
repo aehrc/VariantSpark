@@ -22,7 +22,7 @@ trait VarImportanceNormalizer {
 
 /** Defines normalization variable conditionally
   */
-case object IdentityVarImportanceNormalizer extends VarImportanceNormalizer {
+case object RawVarImportanceNormalizer extends VarImportanceNormalizer {
   override def normalize(varImportance:Map[Long,Double]):Map[Long, Double] = varImportance
 }
 
