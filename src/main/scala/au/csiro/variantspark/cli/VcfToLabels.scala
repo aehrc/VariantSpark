@@ -14,6 +14,7 @@ import org.apache.spark.mllib.linalg.Vectors
 import java.io.File
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
+import  au.csiro.variantspark.input._
 
 
 class VcfToLabels extends ArgsApp with SparkApp {
@@ -37,7 +38,7 @@ class VcfToLabels extends ArgsApp with SparkApp {
     println(header)
     println(version)
     val source  = VCFFeatureSource(vcfSource)
-    val columns = source.features().take(limit)
+    val columns = source.features.take(limit)
     CSVUtils.withFile(new File(outputFile)) { writer =>
       writer.writeRow("" :: columns.map(_.label).toList)
       source.sampleNames.zipWithIndex.foreach { case( row, i) =>

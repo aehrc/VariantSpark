@@ -5,8 +5,11 @@ import au.csiro.variantspark.cmd.Echoable
 import au.csiro.variantspark.input.VCFSource
 import au.csiro.variantspark.input.VCFFeatureSource
 import au.csiro.variantspark.input.CsvFeatureSource
+import au.csiro.variantspark.input.CsvFeatureSource._
 import au.csiro.variantspark.input.ParquetFeatureSource
 import au.csiro.variantspark.cmd.EchoUtils._
+import org.apache.spark.mllib.linalg.{Vector, Vectors}
+import au.csiro.variantspark.input.FeatureSource
 
 
 trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
@@ -33,12 +36,21 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
   
   def loadCSV() = {
     echo(s"Loading csv file: ${inputFile}")
-    CsvFeatureSource(sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
+    CsvFeatureSource[Array[Byte]](sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
   }
   
   def loadParquet() = {
     echo(s"Loading parquet file: ${inputFile}")
     ParquetFeatureSource(inputFile)
+  }
+  
+  def creatreFeatureSource[R]:FeatureSource = {
+      val fileLoader = inputType match {
+      case "csv" =>  loadCSV _
+      case "parquet" => loadParquet _ 
+      case "vcf" => loadVCF _
+    }
+    fileLoader()    
   }
   
   lazy val featureSource = {
@@ -53,7 +65,8 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
   def echoDataPreview() {
     if (isVerbose) {
       verbose("Data preview:")
-      featureSource.features().take(defaultPreviewSize).foreach(f=> verbose(s"${f.label}:${dumpList(f.values.toList, longPreviewSize)}"))
+      //TODO:FIX
+      //featureSource.features().take(defaultPreviewSize).foreach(f=> verbose(s"${f.label}:${dumpList(f.values.toList, longPreviewSize)}"))
     }  
   }
   

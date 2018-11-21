@@ -28,6 +28,8 @@ import org.apache.spark.Accumulable
 import org.apache.spark.AccumulableParam
 import java.io.FileOutputStream
 import java.io.ObjectOutputStream
+import  au.csiro.variantspark.input._
+
 
 object IndexAccumulator extends AccumulableParam[Long2ObjectOpenHashMap[String], (Long,String)] {
   def addAccumulator(r: Long2ObjectOpenHashMap[String], t: (Long, String)): Long2ObjectOpenHashMap[String] = {

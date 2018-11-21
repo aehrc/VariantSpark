@@ -25,8 +25,9 @@ import au.csiro.pbdava.ssparkle.common.utils.ReusablePrintStream
 import au.csiro.variantspark.algo.RandomForestCallback
 import au.csiro.variantspark.utils.VectorRDDFunction._
 import au.csiro.variantspark.input.CsvFeatureSource
+import au.csiro.variantspark.input.CsvFeatureSource._
 import au.csiro.variantspark.algo.RandomForestParams
-import au.csiro.variantspark.data.BoundedOrdinal
+import au.csiro.variantspark.data.BoundedOrdinalVariable
 import au.csiro.pbdava.ssparkle.common.utils.Timer
 import au.csiro.variantspark.utils.defRng
 import au.csiro.variantspark.input.ParquetFeatureSource
@@ -83,7 +84,7 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
   
   def loadCSV() = {
     echo(s"Loading csv file: ${inputFile}")
-    CsvFeatureSource(sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
+    CsvFeatureSource[Array[Byte]](sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
   }
   
   def loadParquet() = {
@@ -130,7 +131,7 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
     // for now assume it's ordered factor with provided number of levels
     echo(s"Assumed ordinal variable with ${varOrdinalLevels} levels")
     // TODO (Feature): Add autodiscovery
-    val dataType = BoundedOrdinal(varOrdinalLevels)
+    val dataType = BoundedOrdinalVariable(varOrdinalLevels)
     
     if (isVerbose) {
       verbose("Data preview:")

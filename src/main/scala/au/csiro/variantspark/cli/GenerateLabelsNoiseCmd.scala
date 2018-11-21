@@ -27,7 +27,7 @@ import au.csiro.variantspark.algo.RandomForestCallback
 import au.csiro.variantspark.utils.VectorRDDFunction._
 import au.csiro.variantspark.input.CsvFeatureSource
 import au.csiro.variantspark.algo.RandomForestParams
-import au.csiro.variantspark.data.BoundedOrdinal
+import au.csiro.variantspark.data.BoundedOrdinalVariable
 import au.csiro.pbdava.ssparkle.common.utils.Timer
 import au.csiro.variantspark.utils.defRng
 import au.csiro.variantspark.input.generate.OrdinalFeatureGenerator

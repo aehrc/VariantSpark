@@ -1,7 +1,7 @@
 package au.csiro.variantspark.input.generate
 
 
-import au.csiro.variantspark.input.{Feature, FeatureSource}
+import au.csiro.variantspark.input.{ByteArrayFeature, FeatureSource}
 import au.csiro.variantspark.test.SparkTest
 import breeze.linalg.DenseVector
 import breeze.stats.meanAndVariance
@@ -9,10 +9,12 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.junit.Assert._
 import org.junit.Test
+import au.csiro.variantspark.input.Feature
+import au.csiro.variantspark.input.CanRepresent
+import au.csiro.variantspark.input._
 
-class TestFeatureGenerator(val samples: Seq[Feature])(implicit sc: SparkContext) extends FeatureSource {
-  def features(): RDD[Feature] = sc.parallelize(samples)
-
+class TestFeatureGenerator(val samples: Seq[ByteArrayFeature])(implicit sc: SparkContext) extends FeatureSource {
+  def featuresAs[V](implicit cr:CanRepresent[V]=CanRepresentByteArray):RDD[Feature[V]] = sc.parallelize(samples.map(s =>cr.from(s.label, s.values)))
   def sampleNames: List[String] = Range(0, samples.head.values.length).map("s_" + _).toList
 
 }
@@ -51,10 +53,10 @@ class NoisyEffectLabelGeneratorTest extends SparkTest {
   @Test
   def testAdditiveEffectCorrectness() {
     val featureGenerator = new TestFeatureGenerator(List(
-      Feature("v_0", Array[Byte](0, 1, 2, 0)),
-      Feature("v_1", Array[Byte](0, 1, 2, 1)),
-      Feature("v_2", Array[Byte](0, 1, 2, 2)),
-      Feature("v_3", Array[Byte](2, 2, 2, 2))
+      ByteArrayFeature("v_0", Array[Byte](0, 1, 2, 0)),
+      ByteArrayFeature("v_1", Array[Byte](0, 1, 2, 1)),
+      ByteArrayFeature("v_2", Array[Byte](0, 1, 2, 2)),
+      ByteArrayFeature("v_3", Array[Byte](2, 2, 2, 2))
     ))
     val labelGenerator = new NoisyEffectLabelGenerator(featureGenerator)(1, Map("v_0" -> 0.1, "v_1" -> 0.5, "v_2" -> 2.0),
       fractionVarianceExplained = 0.2, classThresholdPercentile = 0.75, multiplicative = false)
@@ -66,10 +68,10 @@ class NoisyEffectLabelGeneratorTest extends SparkTest {
   @Test
   def testMultiplicativeEffectCorrectness() {
     val featureGenerator = new TestFeatureGenerator(List(
-      Feature("v_0", Array[Byte](0, 1, 2, 0)),
-      Feature("v_1", Array[Byte](0, 1, 2, 1)),
-      Feature("v_2", Array[Byte](0, 1, 2, 2)),
-      Feature("v_3", Array[Byte](2, 2, 2, 2))
+      ByteArrayFeature("v_0", Array[Byte](0, 1, 2, 0)),
+      ByteArrayFeature("v_1", Array[Byte](0, 1, 2, 1)),
+      ByteArrayFeature("v_2", Array[Byte](0, 1, 2, 2)),
+      ByteArrayFeature("v_3", Array[Byte](2, 2, 2, 2))
     ))
     val labelGenerator = new NoisyEffectLabelGenerator(featureGenerator)(1, Map("v_0" -> 0.1, "v_1" -> 0.5, "v_2" -> 2.0),
       fractionVarianceExplained = 0.2, classThresholdPercentile = 0.75, multiplicative = true)

@@ -1,14 +1,17 @@
 package au.csiro.variantspark.algo
 
 import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
-import au.csiro.variantspark.data.BoundedOrdinal
+import au.csiro.variantspark.data.BoundedOrdinalVariable
 import au.csiro.variantspark.input.{CsvFeatureSource, CsvLabelSource}
+import au.csiro.variantspark.input.CsvFeatureSource._
 import au.csiro.variantspark.test.SparkTest
 import org.apache.hadoop.fs.FileSystem
 import org.apache.spark.mllib.linalg.Vectors
 import org.junit.Assert._
 import org.junit.Test
 import org.saddle.io._
+import au.csiro.variantspark.data.VariableType
+import au.csiro.variantspark.data.ContinuousVariable
 
 class WideDecisionTreeIntegratedTest extends SparkTest {
 
@@ -23,17 +26,15 @@ class WideDecisionTreeIntegratedTest extends SparkTest {
     * Test data are produced by 'src/test/R/make_test_data.R' R script
     *
     */
-  def checkCNAE_9_Dataset(maxDepth: Int) {
+  def checkCNAE_9_Dataset(maxDepth: Int, dataType:VariableType = BoundedOrdinalVariable(5)) {
     val labelSource = new CsvLabelSource("data/CNAE-9-labels.csv", "category")
-    val featureSource = new CsvFeatureSource(sc.textFile("data/CNAE-9-wide.csv"))
+    val featureSource = new CsvFeatureSource[Array[Byte]](sc.textFile("data/CNAE-9-wide.csv"))
     val labels = labelSource.getLabels(featureSource.sampleNames)
     val inputData = featureSource.features().map(_.toVector.values).cache()
     val nVars = inputData.count
     // max fife levels
-    val dataType = BoundedOrdinal(5)
     val model = new WideDecisionTree(DecisionTreeParams(maxDepth = maxDepth)).run(inputData, dataType, labels)
     val prediction = model.predict(inputData)
-
 
     // check predictions
     val expected = CsvParser.parse(CsvFile("src/test/data/CNAE-9_R_predictions.csv")).withRowIndex(0).withColIndex(0)
@@ -69,6 +70,17 @@ class WideDecisionTreeIntegratedTest extends SparkTest {
 
 
   @Test
+  def testCNAE_9_DatasetWithMaxDepth4_onContinous() {
+    checkCNAE_9_Dataset(4, ContinuousVariable)
+  }
+  
+  
+  @Test
+  def testCNAE_9_DatasetWithMaxDepth30_onContinous() {
+    checkCNAE_9_Dataset(30, ContinuousVariable)
+  }
+  
+  @Test
   def testSplitsCorrectlyForFullData() {
 
     val data = sc.parallelize(List.fill(4)(Vectors.dense(0.0, 1.0, 2.0)))
@@ -89,7 +101,7 @@ class WideDecisionTreeIntegratedTest extends SparkTest {
     val labels = decisionTreeModel.predict(data)
     println(labels.toList)
 
-    val model = new WideDecisionTree().run(data, BoundedOrdinal(3), labels)
+    val model = new WideDecisionTree().run(data, BoundedOrdinalVariable(3), labels)
     model.printout()
 
   }

@@ -10,7 +10,7 @@ import au.csiro.variantspark.utils.VectorRDDFunction._
 import au.csiro.variantspark.utils.CV
 import au.csiro.variantspark.algo.WideRandomForest
 import scala.Range
-import au.csiro.variantspark.data.BoundedOrdinal
+import au.csiro.variantspark.data.BoundedOrdinalVariable
 import au.csiro.variantspark.algo.RandomForestParams
 import au.csiro.variantspark.algo.RandomForest
 
@@ -45,7 +45,7 @@ object TestWideDecisionTree extends SparkApp {
     val testSet = vectorData.project(testSetProj).cache()
     val testLabels = testSetProj.projectArray(labels)
     
-    val dataType = BoundedOrdinal(3)
+    val dataType = BoundedOrdinalVariable(3)
     val rf = new WideRandomForest()
     
     val result  = rf.batchTrain(trainSetWithIndex, dataType, trainLabels, 20, 10)

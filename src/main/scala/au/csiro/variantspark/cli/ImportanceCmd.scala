@@ -9,7 +9,7 @@ import collection.JavaConverters._
 import au.csiro.variantspark.input.VCFSource
 import au.csiro.variantspark.input.VCFFeatureSource
 import au.csiro.variantspark.input.HashingLabelSource
-import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.mllib.linalg.{Vector,Vectors}
 import au.csiro.variantspark.input.CsvLabelSource
 import au.csiro.variantspark.cmd.Echoable
 import au.csiro.pbdava.ssparkle.common.utils.Logging
@@ -27,7 +27,7 @@ import au.csiro.variantspark.algo.RandomForestCallback
 import au.csiro.variantspark.utils.VectorRDDFunction._
 import au.csiro.variantspark.input.CsvFeatureSource
 import au.csiro.variantspark.algo.RandomForestParams
-import au.csiro.variantspark.data.BoundedOrdinal
+import au.csiro.variantspark.data.BoundedOrdinalVariable
 import au.csiro.pbdava.ssparkle.common.utils.Timer
 import au.csiro.variantspark.utils.defRng
 import au.csiro.variantspark.input.ParquetFeatureSource
@@ -40,17 +40,53 @@ import au.csiro.variantspark.utils.HdfsPath
 import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
 import au.csiro.variantspark.cli.args.ImportanceOutputArgs
 import au.csiro.variantspark.cli.args.FeatureSourceArgs
+import au.csiro.variantspark.data.ContinuousVariable
+import au.csiro.variantspark.algo.RandomForest
+import au.csiro.variantspark.algo.CanSplit
+import au.csiro.variantspark.input.CanRepresent
+import scala.reflect.ClassTag
+import au.csiro.variantspark.input._
+import au.csiro.variantspark.algo._
+import au.csiro.variantspark.data.VariableType
+
 
 class ImportanceCmd extends ArgsApp with SparkApp 
   with FeatureSourceArgs
   with ImportanceOutputArgs
   with Echoable with Logging with TestArgs {
 
+  
   // input options  
-  @Option(name="-ivo", required=false, usage="Variable type ordinal with this number of levels (def = 3)" 
-      , aliases=Array("--input-var-ordinal"))
+  @Option(name="-ivt", required=false, usage="Input variable type, one of [`ord`, `cont` ] (def =  `ord` or vcf files `cont` otherwise)"
+      , aliases=Array("--input-var-type"))
+  val inputVariableTypeAsString:String = null
+  def inputVariableTypeAsStringWithDefault:String = if (inputVariableTypeAsString != null) inputVariableTypeAsString else inputType match {
+    case "vcf" => "ord"
+    case _ => "cont"
+  }
+  
+  // input options  
+  @Option(name="-icl", required=false, usage="Number of levels for categorical variables with this number of levels (def = 3)" 
+      , aliases=Array("--input-var-levels"))
   val varOrdinalLevels:Int = 3
 
+  def inputVariableType:VariableType  = inputVariableTypeAsStringWithDefault match {
+    case "cont" => ContinuousVariable
+    case "ord" => BoundedOrdinalVariable(varOrdinalLevels)
+    case _ => throw new IllegalArgumentException(s"Unknow variable type ${inputVariableTypeAsStringWithDefault}")
+  }
+  
+  // input options  
+  @Option(name="-ir", required=false, usage="Input representation, one of [`vector`, 'byteArray`]" 
+      , aliases=Array("--input-represntation"))
+  val inputRepresentationAsString:String = null
+  def inputRepresentationAsStringWithDefault = if (inputRepresentationAsString != null) inputRepresentationAsString else inputType match {
+      case "csv" => "vector"
+      case _ => "byteArray"
+    } 
+  
+  
+  
   @Option(name="-ff", required=true, usage="Path to feature file", aliases=Array("--feature-file"))
   val featuresFile:String = null
 
@@ -107,19 +143,21 @@ class ImportanceCmd extends ArgsApp with SparkApp
   @Override
   def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ro", "-om", "target/ch22-model.ser", "-sr", "13")
     
-  @Override
-  def run():Unit = {
+  def runWithRepresentation[R](cr:CanRepresent[R], cs:CanSplit[R])(implicit ct:ClassTag[R]) = {
     implicit val fs = FileSystem.get(sc.hadoopConfiguration)  
     implicit val hadoopConf:Configuration = sc.hadoopConfiguration
+
     
     
     logDebug(s"Running with filesystem: ${fs}, home: ${fs.getHomeDirectory}")
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
+    echo(s"Running with representation: ${ct.runtimeClass}")
+ 
     echo(s"Finding  ${nVariables}  most important features using random forest")
 
     val dataLoadingTimer = Timer()    
     echo(s"Loaded rows: ${dumpList(featureSource.sampleNames)}")
-    val inputData = featureSource.features().zipWithIndex().cache()
+    val inputData = featureSource.featuresAs[R](cr).zipWithIndex().cache()
     val totalVariables = inputData.count()
     val variablePreview = inputData.map({case (f,i) => f.label}).take(defaultPreviewSize).toList
     echo(s"Loaded variables: ${dumpListHead(variablePreview, totalVariables)}, took: ${dataLoadingTimer.durationInSec}")
@@ -132,16 +170,15 @@ class ImportanceCmd extends ArgsApp with SparkApp
     
     // discover variable type
     // for now assume it's ordered factor with provided number of levels
-    echo(s"Assumed ordinal variable with ${varOrdinalLevels} levels")
-    // TODO (Feature): Add autodiscovery
-    val dataType = BoundedOrdinal(varOrdinalLevels)    
+    val dataType = inputVariableType    
+    echo(s"Data type is ${dataType} (represented on: ${ct.runtimeClass})")
     
     echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")  
     echo(s"Random seed is: ${randomSeed}")
     val treeBuildingTimer = Timer()
-    val rf = new ByteRandomForest(RandomForestParams(oob=rfEstimateOob, seed = randomSeed, bootstrap = !rfSampleNoReplacement, 
+    val rf:RandomForest[R] = new RandomForest[R](RandomForestParams(oob=rfEstimateOob, seed = randomSeed, bootstrap = !rfSampleNoReplacement, 
         subsample = rfSubsampleFraction, 
-        nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction))
+        nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction))(cs)
     val trainingData = inputData.map{ case (f, i) => (f.values, i)}
     
     implicit val rfCallback = new RandomForestCallback() {
@@ -191,8 +228,19 @@ class ImportanceCmd extends ArgsApp with SparkApp
       val header = List("variable","importance") ::: (if (includeData) featureSource.sampleNames else Nil)
       writer.writeRow(header)
       writer.writeAll(topImportantVariables.map({case (i, importance) => 
-        List(index(i), importance) ::: (if (includeData) importantVariableData(i).toArray.toList else Nil)}))
-    }
+        List(index(i), importance) ::: (if (includeData) cr.toListOfStrings(importantVariableData(i)) else Nil)}))
+    }    
+  }
+  
+ 
+  @Override
+  def run():Unit = {
+    implicit val fs = FileSystem.get(sc.hadoopConfiguration)  
+    implicit val hadoopConf:Configuration = sc.hadoopConfiguration
+    inputRepresentationAsStringWithDefault match {
+      case "vector" => runWithRepresentation[Vector](CanRepresentVector, canSplitVector)
+      case _ => runWithRepresentation[Array[Byte]](CanRepresentByteArray, canSplitArrayOfBytes)
+    }    
   }
 }
 

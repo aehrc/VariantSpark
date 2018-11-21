@@ -23,6 +23,7 @@ import au.csiro.variantspark.algo.metrics.MultiPairwiseRevMetric
 import au.csiro.variantspark.algo.metrics.SharedAltAlleleCount
 import au.csiro.variantspark.algo.metrics.AtLeastOneSharedAltAlleleCount
 import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
+import  au.csiro.variantspark.input._
 
 
 class PairWiseDistanceCmd extends ArgsApp with FeatureSourceArgs with Logging with TestArgs {
@@ -59,7 +60,7 @@ class PairWiseDistanceCmd extends ArgsApp with FeatureSourceArgs with Logging wi
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
     val metric = buildMetricFromName(metricName)
     echo(s"Calculating pair wise distance: ${metric}")
-    val data = featureSource.features().map(_.values)
+    val data = featureSource.features.map(_.values)
     echoDataPreview()
     val noOfSamples = data.first.length
     val resultAsMatrix = metric.compute(data).toMatrix

@@ -7,12 +7,13 @@ import collection.JavaConverters._
 
 
 trait VariantToFeatureConverter {
-  def convert(v:VariantContext):Feature
+  def convert[V](cr:CanRepresent[V])(vc:VariantContext):Feature[V]
 }
 
 case class DefVariantToFeatureConverter(biallelic:Boolean = false, separator:String = "_") extends VariantToFeatureConverter {
-  def convert(vc:VariantContext):Feature = {
-    Feature(convertLabel(vc), vc.getGenotypes.iterator().asScala.map(convertGenotype).toArray)
+  def convert[V](cr:CanRepresent[V])(vc:VariantContext):Feature[V] = {
+    val gts = vc.getGenotypes.iterator().asScala.map(convertGenotype).toArray
+    cr.from(convertLabel(vc), gts)
   }
   
   def convertLabel(vc:VariantContext):String = {
@@ -38,9 +39,9 @@ case class DefVariantToFeatureConverter(biallelic:Boolean = false, separator:Str
 
 class VCFFeatureSource(vcfSource:VCFSource, converter: VariantToFeatureConverter) extends FeatureSource {
   override lazy val sampleNames:List[String] = vcfSource.header.getGenotypeSamples().asScala.toList
-  override def features():RDD[Feature] = {
+  override def featuresAs[V](implicit cr:CanRepresent[V]):RDD[Feature[V]] = {
     val converterRef = converter
-    vcfSource.genotypes().map(converterRef.convert) 
+    vcfSource.genotypes().map(converterRef.convert(cr)) 
   }
 }
 

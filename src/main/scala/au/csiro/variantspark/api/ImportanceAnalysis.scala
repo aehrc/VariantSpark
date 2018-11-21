@@ -2,7 +2,7 @@ package au.csiro.variantspark.api
 
 import au.csiro.pbdava.ssparkle.spark.SparkUtils
 import au.csiro.variantspark.algo.{ByteRandomForest, RandomForestParams}
-import au.csiro.variantspark.data.BoundedOrdinal
+import au.csiro.variantspark.data.BoundedOrdinalVariable
 import au.csiro.variantspark.input.{FeatureSource, LabelSource}
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
 import org.apache.spark.sql.{Row, SQLContext}
@@ -37,7 +37,7 @@ class ImportanceAnalysis(val sqlContext:SQLContext, val featureSource:FeatureSou
   val variableImportanceSchema = StructType(Seq(StructField("variable",StringType,true),StructField("importance",DoubleType,true )))
   
   lazy val rfModel = {
-    val dataType = BoundedOrdinal(varOrdinalLevels)
+    val dataType = BoundedOrdinalVariable(varOrdinalLevels)
     val labels = labelSource.getLabels(featureSource.sampleNames)
     val rf = new ByteRandomForest(rfParams)
     val trainingData = inputData.map{ case (f, i) => (f.values, i)}

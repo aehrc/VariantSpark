@@ -15,10 +15,10 @@ case class ParquetFeatureSource(inputPath:String)(implicit sc: SparkContext) ext
     SerialUtils.read(fs.open(pathToColumns))
   }
 
-  def features():RDD[Feature] = {
+  def featuresAs[V](implicit cr:CanRepresent[V]):RDD[Feature[V]] = {
      val sqlContext = new org.apache.spark.sql.SQLContext(sc)
 
      val rawDF = sqlContext.read.parquet(inputPath)
-     rawDF.rdd.map( r => Feature(r.getString(0), r.getAs(1)))
+     rawDF.rdd.map( r => cr.from(r.getString(0), r.getAs[Array[Byte]](1)))
   }
 }

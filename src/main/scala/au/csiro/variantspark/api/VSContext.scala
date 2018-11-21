@@ -5,6 +5,7 @@ import org.apache.hadoop.fs.FileSystem
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.SQLContext
 import au.csiro.variantspark.input.CsvFeatureSource
+import au.csiro.variantspark.input.CsvFeatureSource._
 import com.github.tototoshi.csv.CSVFormat
 import au.csiro.variantspark.input.DefaultCSVFormatSpec
 
@@ -51,7 +52,7 @@ class VSContext(val spark:SparkSession) extends SqlContextHolder {
    	* @return FeatureSource loaded from the VCF file or files 
    	*/
   def importCSV(inputFile:String, csvFormat:CSVFormat = DefaultCSVFormatSpec):FeatureSource = {
-    CsvFeatureSource(sc.textFile(inputFile), csvFormat)     
+    CsvFeatureSource[Array[Byte]](sc.textFile(inputFile), csvFormat)     
   } 
   
   

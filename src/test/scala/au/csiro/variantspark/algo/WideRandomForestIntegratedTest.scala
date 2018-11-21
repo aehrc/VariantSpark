@@ -1,6 +1,6 @@
 package au.csiro.variantspark.algo
 
-import au.csiro.variantspark.data.BoundedOrdinal
+import au.csiro.variantspark.data.BoundedOrdinalVariable
 import au.csiro.variantspark.input.generate.{EffectLabelGenerator, OrdinalFeatureGenerator}
 import au.csiro.variantspark.test.SparkTest
 import org.junit.Assert._
@@ -18,7 +18,7 @@ class WideRandomForestIntegratedTest extends SparkTest {
     val rf = new WideRandomForest(RandomForestParams(seed = seed))
     val data = fg.features().map(_.toVector.values).zipWithIndex.cache
     println(s"Data size: ${data.count}")
-    val dataType = BoundedOrdinal(3)
+    val dataType = BoundedOrdinalVariable(3)
     val rfModel = rf.batchTrain(data, dataType, labels, 200, 50)
     val topThreeVariables = rfModel.variableImportance.toList.sortBy(-_._2).take(3)
     topThreeVariables.foreach(println)
