@@ -161,9 +161,9 @@ trait RandomForestCallback {
 
 // TODO (Design): Avoid using type cast change design
 trait BatchTreeModel[V] {
-  def batchTrain(indexedData: RDD[(V, Long)], dataType:VariableType, labels: Array[Int], nTryFraction: Double, samples:
+  def batchTrain(indexedData: RDD[(TypedData[V], Long)],  labels: Array[Int], nTryFraction: Double, samples:
     Seq[Sample]): Seq[PredictiveModelWithImportance[V]]
-  def batchPredict(indexedData: RDD[(V, Long)], models: Seq[PredictiveModelWithImportance[V]], indexes:Seq[Array[Int]]):
+  def batchPredict(indexedData: RDD[(TypedData[V], Long)], models: Seq[PredictiveModelWithImportance[V]], indexes:Seq[Array[Int]]):
     Seq[Array[Int]]
 }
 
@@ -173,10 +173,10 @@ object RandomForest {
   def wideDecisionTreeBuilder[V](params:DecisionTreeParams, canSplit:CanSplit[V]): BatchTreeModel[V] = {
     val decisionTree = new DecisionTree[V](params)(canSplit)
     new BatchTreeModel[V]() {
-      override def batchTrain(indexedData: RDD[(V, Long)], dataType:VariableType, labels: Array[Int], nTryFraction:
-        Double, samples:Seq[Sample]) = decisionTree.batchTrain(indexedData, dataType, labels, nTryFraction, samples)
-      override def batchPredict(indexedData: RDD[(V, Long)], models: Seq[PredictiveModelWithImportance[V]], indexes:
-        Seq[Array[Int]]) = DecisionTreeModel.batchPredict(indexedData,
+      override def batchTrain(indexedData: RDD[(TypedData[V], Long)], labels: Array[Int], nTryFraction:
+        Double, samples:Seq[Sample]) = decisionTree.batchTrain(indexedData, labels, nTryFraction, samples)
+      override def batchPredict(indexedData: RDD[(TypedData[V], Long)], models: Seq[PredictiveModelWithImportance[V]], indexes:
+        Seq[Array[Int]]) = DecisionTreeModel.batchPredictTyped(indexedData,
               models.asInstanceOf[Seq[DecisionTreeModel[V]]], indexes)(canSplit)
     }
   }
@@ -200,16 +200,23 @@ class RandomForest[V](params:RandomForestParams=RandomForestParams()
               batchTrain(indexedData, dataType, labels, nTrees, RandomForest.defaultBatchSize)
 
 
+              
+              
+  def batchTrain(indexedData: RDD[(V, Long)], dataType: VariableType, labels: Array[Int], nTrees: Int, nBatchSize:Int)
+                (implicit callback:RandomForestCallback = null): RandomForestModel[V] = {
+    batchTrainTyped(indexedData.map({case (v,i) => (TypedData(dataType,v),i)}), labels, nTrees, nBatchSize)
+  }
+                  
   // TODO (Design): Make a param rather then an extra method
   // TODO (Func): Add OOB Calculation
-  def batchTrain(indexedData: RDD[(V, Long)], dataType: VariableType, labels: Array[Int], nTrees: Int, nBatchSize:Int)
+  def batchTrainTyped(indexedTypedData: RDD[(TypedData[V], Long)], labels: Array[Int], nTrees: Int, nBatchSize:Int)
                 (implicit callback:RandomForestCallback = null): RandomForestModel[V] = {
 
     require(nBatchSize > 0)
     require(nTrees > 0)
 
     val nSamples = labels.length
-    val nVariables = indexedData.count().toInt
+    val nVariables = indexedTypedData.count().toInt
     val nLabels = labels.max + 1
 
     logDebug(s"Data:  nSamples:${nSamples}, nVariables: ${nVariables}, nLabels:${nLabels}")
@@ -232,11 +239,11 @@ class RandomForest[V](params:RandomForestParams=RandomForestParams()
         time {
 
           val samples = samplesStream.toList
-          val predictors = builder.batchTrain(indexedData, dataType, labels, actualParams.nTryFraction, samples)
+          val predictors = builder.batchTrain(indexedTypedData, labels, actualParams.nTryFraction, samples)
           val members = if (actualParams.oob) {
 
             val oobIndexes = samples.map(_.indexesOut.toArray)
-            val oobPredictions = builder.batchPredict(indexedData, predictors, oobIndexes)
+            val oobPredictions = builder.batchPredict(indexedTypedData, predictors, oobIndexes)
             predictors.zip(oobIndexes.zip(oobPredictions)).map { case (t, (i,p)) => RandomForestMember(t,i,p)}
 
           } else predictors.map(RandomForestMember(_))

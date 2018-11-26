@@ -487,7 +487,12 @@ object DecisionTreeModel {
     * @param indexes: input a sequence of arrays containing the indices
     * @return Returns the indexes of the split
     */
-  def batchPredict[V](indexedData: RDD[(V,Long)], trees:Seq[DecisionTreeModel[V]], indexes:Seq[Array[Int]])(implicit canSplit:CanSplit[V]) = {
+
+  def batchPredictTyped[V](indexedTypedData: RDD[(TypedData[V],Long)], trees:Seq[DecisionTreeModel[V]], indexes:Seq[Array[Int]])(implicit canSplit:CanSplit[V]):Seq[Array[Int]] = {
+    batchPredict(indexedTypedData.map({ case(td, i) => (td.data,i)}), trees, indexes)
+  }
+
+  def batchPredict[V](indexedData: RDD[(V,Long)], trees:Seq[DecisionTreeModel[V]], indexes:Seq[Array[Int]])(implicit canSplit:CanSplit[V]):Seq[Array[Int]] = {
 
     /** Takes the decision tree nodes and outputs the leaf nodes 
       * Partitions the nodesAndIndexes variable and recursively iterates through each model until a leaf node is reached

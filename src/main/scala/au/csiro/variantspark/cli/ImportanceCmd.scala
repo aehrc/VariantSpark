@@ -81,8 +81,8 @@ class ImportanceCmd extends ArgsApp with SparkApp
       , aliases=Array("--input-represntation"))
   val inputRepresentationAsString:String = null
   def inputRepresentationAsStringWithDefault = if (inputRepresentationAsString != null) inputRepresentationAsString else inputType match {
-      case "csv" => "vector"
-      case _ => "byteArray"
+      case "vcf" => "byteArray"
+      case _ => "vector"
     } 
   
   

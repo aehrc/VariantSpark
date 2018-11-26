@@ -10,6 +10,7 @@ import au.csiro.variantspark.input.ParquetFeatureSource
 import au.csiro.variantspark.cmd.EchoUtils._
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import au.csiro.variantspark.input.FeatureSource
+import au.csiro.variantspark.input.CsvStdFeatureSource
 
 
 trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
@@ -39,6 +40,11 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
     CsvFeatureSource[Array[Byte]](sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
   }
   
+  def loadStdCSV() = {
+    echo(s"Loading standard csv file: ${inputFile}")
+    CsvStdFeatureSource[Array[Byte]](sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
+  }
+  
   def loadParquet() = {
     echo(s"Loading parquet file: ${inputFile}")
     ParquetFeatureSource(inputFile)
@@ -47,6 +53,7 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
   def creatreFeatureSource[R]:FeatureSource = {
       val fileLoader = inputType match {
       case "csv" =>  loadCSV _
+      case "stdcsv" =>  loadStdCSV _
       case "parquet" => loadParquet _ 
       case "vcf" => loadVCF _
     }
@@ -56,6 +63,7 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
   lazy val featureSource = {
       val fileLoader = inputType match {
       case "csv" =>  loadCSV _
+      case "stdcsv" =>  loadStdCSV _
       case "parquet" => loadParquet _ 
       case "vcf" => loadVCF _
     }
