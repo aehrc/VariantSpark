@@ -32,9 +32,9 @@ class CsvStdFeatureSourceTest extends SparkTest {
 
   @Test
   def testConvertsLargeCorectly() {
-    val featureSource = CsvStdFeatureSource(sc.textFile("data/final_X_train.csv.bz2", 5))
+    val featureSource = CsvStdFeatureSource(sc.textFile("data/har_aal.csv.bz2", 5))
     println(featureSource.sampleNames)          
     val features = featureSource.featuresAs[Vector]
-    features.take(100).foreach(println _)
+    features.count()
   }
 }

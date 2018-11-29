@@ -52,28 +52,16 @@ class PolymorphicDecisionTreeTest extends SparkTest {
     // that is the source should likely pre-determine what the variable types are:
     // or otherwise I need another layer of indirection to assign data typed later
     // but it might may sense to do it at data source level as for example for genomic data it makes sense to mark them as oridinals straight away
-    val allFeatures = genomicFeatures.union(otherFeatures)
+    val allFeatures = genomicFeatures.union(otherFeatures).zipWithIndex
     // not how to combine them into single typed feature set    
     allFeatures.foreach(println _)
-                 
-    // and not I need somehow to convert it to the internal representation (whatever that might be)
-    // this need to be extracted to a factory that can optimize the 
-    // both the representation and the splitting algorithm for different types of variables
-    
-    val treeData:RDD[TreeFeature] = allFeatures.zipWithIndex.map{ case(f,i) => 
-      // essentialy convert to typed variables based on the type of the data we encounter
-      // but in the future may choose any representation that makes sense
-      f.variableType match {
-        case _:NumericalType => StdTreeFeature.forType[Vector](i, f.label, f.variableType, f.valueAsVector)
-        case BoundedOrdinalVariable(nLevels) => StdTreeFeature.forType[Array[Byte]](i, f.label, f.variableType, f.valueAsByteArray)
-      }
-    }
+
     // not this needs to be simplified really to be just working on a single representation
     // with possibly typed constructors for some legacy cases
     // does not make sense really have per representation tree (does it?)
     
     val tree = new DecisionTree()
-    tree.batchTrain(treeData, Array[Int](), 1.0, List(Sample.all(treeData.first.size)))
+    tree.batchTrain(allFeatures, Array[Int](0,1,0,1), 1.0, List(Sample.all(allFeatures.first._1.size)))
     // so again limit the legacy cases for contruction only
     // and maybe can get rid of them in the future
     // build the interal tree representation

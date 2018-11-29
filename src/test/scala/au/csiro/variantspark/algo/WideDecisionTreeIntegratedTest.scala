@@ -33,7 +33,7 @@ class WideDecisionTreeIntegratedTest extends SparkTest {
     */
   def checkCNAE_9_Dataset(maxDepth: Int, dataType:VariableType = BoundedOrdinalVariable(5)) {
     val labelSource = new CsvLabelSource("data/CNAE-9-labels.csv", "category")
-    val featureSource = new CsvFeatureSource[Array[Byte]](sc.textFile("data/CNAE-9-wide.csv"))
+    val featureSource = new CsvFeatureSource(sc.textFile("data/CNAE-9-wide.csv"), dataType)
     val labels = labelSource.getLabels(featureSource.sampleNames)
     val inputData = featureSource.features.zipWithIndex.cache()
     val nVars = inputData.count

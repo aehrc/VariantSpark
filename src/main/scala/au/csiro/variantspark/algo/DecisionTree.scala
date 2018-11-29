@@ -21,6 +21,7 @@ import au.csiro.variantspark.data.ContinuousVariable
 import au.csiro.variantspark.data.Feature
 import au.csiro.variantspark.utils.IndexedRDDFunction._
 import au.csiro.variantspark.data.FeatureBuilder
+import org.apache.spark.mllib.linalg.Vector
 
 
 
@@ -84,7 +85,14 @@ trait TreeRepresentationFactory {
 
 case object DefTreeRepresentationFactory extends TreeRepresentationFactory {
   def createRepresentation(f:Feature, index:Long):TreeFeature  = {
-      StdTreeFeature.forType[Array[Byte]](index, f.label, f.variableType, f.valueAsByteArray)
+    f.variableType match {
+      case BoundedOrdinalVariable(nLevels) => if (nLevels < 256)  {
+        StdTreeFeature.forType[Array[Byte]](index, f.label, f.variableType, f.valueAsByteArray) 
+      } else {
+        StdTreeFeature.forType[Vector](index, f.label, f.variableType, f.valueAsVector)
+      }
+      case _ => StdTreeFeature.forType[Vector](index, f.label, f.variableType, f.valueAsVector)
+    }
   }
 }
 
@@ -630,10 +638,9 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) extend
 //    * @param sample: input the [[au.csiro.variantspark.utils.Sample]] class that contains the size and the indices
 //    * @return Returns a Sequence of [[au.csiro.variantspark.algo.DecisionTreeModel]] classes containing the dataset 
 //    */
-//  def batchTrain[V](indexedData: RDD[(V, Long)], dataType: VariableType,
-//      labels: Array[Int], nvarFraction: Double, sample:Seq[Sample]): Seq[DecisionTreeModel] = {
-//    batchTrain(indexedData.map({case (v,i) => (TypedData(dataType, v), i)}),labels, nvarFraction, sample)
-//  }
+  def batchTrain(indexedFeatures: RDD[(Feature, Long)],labels: Array[Int], nvarFraction: Double, sample:Seq[Sample])(implicit trf: TreeRepresentationFactory = DefTreeRepresentationFactory): Seq[DecisionTreeModel] = {
+    batchTrain(trf.createRepresentation(indexedFeatures),labels, nvarFraction, sample)
+  }
  
   def batchTrain(treeFeatures: RDD[TreeFeature], 
       labels: Array[Int], nvarFraction: Double, sample:Seq[Sample]): Seq[DecisionTreeModel] = {
