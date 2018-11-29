@@ -19,7 +19,6 @@ import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 import com.github.tototoshi.csv.CSVWriter
 import au.csiro.pbdava.ssparkle.common.arg4j.TestArgs
 import org.apache.hadoop.fs.FileSystem
-import au.csiro.variantspark.algo.WideDecisionTree
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation
 import au.csiro.pbdava.ssparkle.spark.SparkUtils
 import au.csiro.pbdava.ssparkle.common.utils.ReusablePrintStream
@@ -31,7 +30,6 @@ import au.csiro.variantspark.data.BoundedOrdinalVariable
 import au.csiro.pbdava.ssparkle.common.utils.Timer
 import au.csiro.variantspark.utils.defRng
 import au.csiro.variantspark.input.ParquetFeatureSource
-import au.csiro.variantspark.algo.ByteRandomForest
 import au.csiro.variantspark.utils.IndexedRDDFunction._
 import java.io.ObjectOutputStream
 import java.io.FileOutputStream

@@ -1,7 +1,7 @@
 package au.csiro.variantspark.api
 
 import au.csiro.pbdava.ssparkle.spark.SparkUtils
-import au.csiro.variantspark.algo.{ByteRandomForest, RandomForestParams}
+import au.csiro.variantspark.algo.{RandomForest, RandomForestParams}
 import au.csiro.variantspark.data.BoundedOrdinalVariable
 import au.csiro.variantspark.input.{FeatureSource, LabelSource}
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap

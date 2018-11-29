@@ -106,7 +106,7 @@ class WideDecisionTreeIntegratedTest extends SparkTest {
     val labels = decisionTreeModel.predict(data.asFeature(BoundedOrdinalVariable(3)))
     println(labels.toList)
 
-    val model = new WideDecisionTree().run(data.asFeature(BoundedOrdinalVariable(3)), labels)
+    val model = new DecisionTree().run(data.asFeature(BoundedOrdinalVariable(3)), labels)
     model.printout()
 
   }

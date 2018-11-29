@@ -36,7 +36,7 @@ class WideRandomForrestTest extends SparkTest {
     val nTryFraction = 0.6
     val nTrees = 10
     val collector = new TreeDataCollector(Stream.continually(1).map(pl => TestPredictorWithImportance(Array.fill(nLabels)(pl), null)))
-    val rf = new WideRandomForest(RandomForestParams(oob = true, nTryFraction = nTryFraction, bootstrap = false, subsample = 0.5), modelBuilderFactory = collector.factory)
+    val rf = new RandomForest(RandomForestParams(oob = true, nTryFraction = nTryFraction, bootstrap = false, subsample = 0.5), modelBuilderFactory = collector.factory)
     val model = rf.batchTrain(testData, labels, nTrees)
     assertEquals("All trees in the model", collector.allTreest, model.trees)
     // TODO: Fix.

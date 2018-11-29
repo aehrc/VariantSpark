@@ -17,8 +17,8 @@ import au.csiro.variantspark.data.VariableType
 import au.csiro.variantspark.data.VectorFeature
 import au.csiro.variantspark.data.ByteArrayFeature
 import au.csiro.variantspark.data.ContinuousVariable
-import au.csiro.variantspark.input.ByteArrayFeatureBuilder
-import au.csiro.variantspark.input.VectorFeatureBuilder
+import au.csiro.variantspark.data.ByteArrayFeatureBuilder
+import au.csiro.variantspark.data.VectorFeatureBuilder
 import au.csiro.variantspark.data.FeatureBuilder
 import au.csiro.variantspark.test.TestFeatureSource
 

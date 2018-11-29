@@ -9,7 +9,6 @@ import collection.JavaConverters._
 import au.csiro.variantspark.input.VCFSource
 import au.csiro.variantspark.input.VCFFeatureSource
 import au.csiro.variantspark.input.HashingLabelSource
-import au.csiro.variantspark.algo.WideRandomForest
 import org.apache.spark.mllib.linalg.Vectors
 import java.io.File
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
