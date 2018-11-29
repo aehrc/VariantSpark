@@ -3,7 +3,6 @@ package au.csiro.variantspark.algo
 import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
 import au.csiro.variantspark.data.BoundedOrdinalVariable
 import au.csiro.variantspark.input.{CsvFeatureSource, CsvLabelSource}
-import au.csiro.variantspark.input.CsvFeatureSource._
 import au.csiro.variantspark.test.SparkTest
 import org.apache.hadoop.fs.FileSystem
 import org.apache.spark.mllib.linalg.Vectors
@@ -12,9 +11,15 @@ import org.junit.Test
 import org.saddle.io._
 import au.csiro.variantspark.data.VariableType
 import au.csiro.variantspark.data.ContinuousVariable
+import org.apache.spark.rdd.RDD
+import au.csiro.variantspark.data.Feature
+import au.csiro.variantspark.data.FeatureBuilder
+import au.csiro.variantspark.data._
+import au.csiro.variantspark.input._
+
 
 class WideDecisionTreeIntegratedTest extends SparkTest {
-
+  
   implicit val fss = FileSystem.get(sc.hadoopConfiguration)
   implicit val hadoopConf = sc.hadoopConfiguration
 
@@ -30,10 +35,10 @@ class WideDecisionTreeIntegratedTest extends SparkTest {
     val labelSource = new CsvLabelSource("data/CNAE-9-labels.csv", "category")
     val featureSource = new CsvFeatureSource[Array[Byte]](sc.textFile("data/CNAE-9-wide.csv"))
     val labels = labelSource.getLabels(featureSource.sampleNames)
-    val inputData = featureSource.features().map(_.toVector.values).cache()
+    val inputData = featureSource.features.zipWithIndex.cache()
     val nVars = inputData.count
     // max fife levels
-    val model = new WideDecisionTree(DecisionTreeParams(maxDepth = maxDepth)).run(inputData, dataType, labels)
+    val model = new DecisionTree(DecisionTreeParams(maxDepth = maxDepth)).run(inputData, labels)
     val prediction = model.predict(inputData)
 
     // check predictions
@@ -85,7 +90,7 @@ class WideDecisionTreeIntegratedTest extends SparkTest {
 
     val data = sc.parallelize(List.fill(4)(Vectors.dense(0.0, 1.0, 2.0)))
 
-    val decisionTreeModel = new WideDecisionTreeModel(
+    val decisionTreeModel = new DecisionTreeModel(
       SplitNode(majorityLabel = 0, size = 10, nodeImpurity = 1.0, splitVariableIndex = 1L, splitPoint = 1.0, impurityReduction = 0.0,
         left = SplitNode(majorityLabel = 0, size = 4, nodeImpurity = 0.4, splitVariableIndex = 2L, splitPoint = 0.0, impurityReduction = 0.0,
           left = LeafNode(0, 3, 0.2),
@@ -98,10 +103,10 @@ class WideDecisionTreeIntegratedTest extends SparkTest {
       )
     )
 
-    val labels = decisionTreeModel.predict(data)
+    val labels = decisionTreeModel.predict(data.asFeature(BoundedOrdinalVariable(3)))
     println(labels.toList)
 
-    val model = new WideDecisionTree().run(data, BoundedOrdinalVariable(3), labels)
+    val model = new WideDecisionTree().run(data.asFeature(BoundedOrdinalVariable(3)), labels)
     model.printout()
 
   }

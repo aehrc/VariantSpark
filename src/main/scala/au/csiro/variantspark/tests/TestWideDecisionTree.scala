@@ -13,6 +13,9 @@ import scala.Range
 import au.csiro.variantspark.data.BoundedOrdinalVariable
 import au.csiro.variantspark.algo.RandomForestParams
 import au.csiro.variantspark.algo.RandomForest
+import au.csiro.variantspark.algo._
+import au.csiro.variantspark.input.VectorFeature
+import au.csiro.variantspark.data.Feature
 
 object TestWideDecisionTree extends SparkApp {
   conf.setAppName("VCF cluster")
@@ -37,18 +40,18 @@ object TestWideDecisionTree extends SparkApp {
     }
     
     val labels = clusterAssignment.toArray
-    
+    val dataType = BoundedOrdinalVariable(3)
+
     val (trainSetProj, testSetProj) = Projector.splitRDD(vectorData, 0.8)
-    val trainSetWithIndex = vectorData.project(trainSetProj).zipWithIndex().cache()
+    val trainSetWithIndex:RDD[(Feature,Long)] = vectorData.project(trainSetProj).map(v => VectorFeature(null,dataType, v).asInstanceOf[Feature]).zipWithIndex().cache()
     val trainLabels = trainSetProj.projectArray(labels)
 
-    val testSet = vectorData.project(testSetProj).cache()
+    val testSet = vectorData.project(testSetProj).map(v => VectorFeature(null,dataType, v).asInstanceOf[Feature]).zipWithIndex().cache()
     val testLabels = testSetProj.projectArray(labels)
     
-    val dataType = BoundedOrdinalVariable(3)
-    val rf = new WideRandomForest()
+    val rf = new RandomForest()
     
-    val result  = rf.batchTrain(trainSetWithIndex, dataType, trainLabels, 20, 10)
+    val result  = rf.batchTrain(trainSetWithIndex, trainLabels, 20, 10)
 
     val variableImportance = result.variableImportance
     println(result.predict(testSet).toList)    
@@ -59,14 +62,14 @@ object TestWideDecisionTree extends SparkApp {
     println(s"Test error: ${testError}")
 
    val crossvalidateResult = CV.evaluateMean(Projector.rddFolds(vectorData, 3)) { fold =>
-      val trainSetWithIndex = vectorData.project(fold.inverted).zipWithIndex().cache()
+      val trainSetWithIndex = vectorData.project(fold.inverted).map(v => VectorFeature(null,dataType, v).asInstanceOf[Feature]).zipWithIndex().cache()
       val trainLabels = fold.inverted.projectArray(labels)
 
-      val testSet = vectorData.project(fold).cache()
+      val testSet = vectorData.project(fold).map(v => VectorFeature(null,dataType, v).asInstanceOf[Feature]).zipWithIndex().cache()
       val testLabels = fold.projectArray(labels)
      
       val rf = new WideRandomForest()
-      val result  = rf.batchTrain(trainSetWithIndex,dataType,  trainLabels, 20, 10)
+      val result  = rf.batchTrain(trainSetWithIndex,  trainLabels, 20, 10)
       val testPredict = result.predict(testSet)
       val testError = Metrics.classificationError(testLabels,testPredict)
       testError

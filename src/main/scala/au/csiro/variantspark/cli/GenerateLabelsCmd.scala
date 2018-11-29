@@ -145,7 +145,7 @@ class GenerateLabelsCmd extends ArgsApp with SparkApp with Echoable with Logging
 
     val effectVarData = if (includeEffectVarData) {
       SparkUtils.withBroadcast(sc)(effects) { br_effects =>
-        featureSource.features.filter(f => br_effects.value.contains(f.label)).map(f => (f.label, f.values)).collectAsMap()
+        featureSource.features.filter(f => br_effects.value.contains(f.label)).map(f => (f.label, f.valueAsStrings)).collectAsMap()
       }
     } else Map.empty
 

@@ -43,11 +43,12 @@ import au.csiro.variantspark.cli.args.FeatureSourceArgs
 import au.csiro.variantspark.data.ContinuousVariable
 import au.csiro.variantspark.algo.RandomForest
 import au.csiro.variantspark.algo.CanSplit
-import au.csiro.variantspark.input.CanRepresent
+import au.csiro.variantspark.data.FeatureBuilder
 import scala.reflect.ClassTag
 import au.csiro.variantspark.input._
 import au.csiro.variantspark.algo._
 import au.csiro.variantspark.data.VariableType
+import org.apache.spark.rdd.RDD
 
 
 class ImportanceCmd extends ArgsApp with SparkApp 
@@ -143,21 +144,17 @@ class ImportanceCmd extends ArgsApp with SparkApp
   @Override
   def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ro", "-om", "target/ch22-model.ser", "-sr", "13")
     
-  def runWithRepresentation[R](cr:CanRepresent[R], cs:CanSplit[R])(implicit ct:ClassTag[R]) = {
+  def runWithRepresentation() = {
     implicit val fs = FileSystem.get(sc.hadoopConfiguration)  
     implicit val hadoopConf:Configuration = sc.hadoopConfiguration
-
-    
-    
     logDebug(s"Running with filesystem: ${fs}, home: ${fs.getHomeDirectory}")
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
-    echo(s"Running with representation: ${ct.runtimeClass}")
  
     echo(s"Finding  ${nVariables}  most important features using random forest")
 
     val dataLoadingTimer = Timer()    
     echo(s"Loaded rows: ${dumpList(featureSource.sampleNames)}")
-    val inputData = featureSource.featuresAs[R](cr).zipWithIndex().cache()
+    val inputData = featureSource.features.zipWithIndex().cache()
     val totalVariables = inputData.count()
     val variablePreview = inputData.map({case (f,i) => f.label}).take(defaultPreviewSize).toList
     echo(s"Loaded variables: ${dumpListHead(variablePreview, totalVariables)}, took: ${dataLoadingTimer.durationInSec}")
@@ -171,15 +168,18 @@ class ImportanceCmd extends ArgsApp with SparkApp
     // discover variable type
     // for now assume it's ordered factor with provided number of levels
     val dataType = inputVariableType    
-    echo(s"Data type is ${dataType} (represented on: ${ct.runtimeClass})")
+    echo(s"Data type is ${dataType}")
     
     echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")  
     echo(s"Random seed is: ${randomSeed}")
     val treeBuildingTimer = Timer()
-    val rf:RandomForest[R] = new RandomForest[R](RandomForestParams(oob=rfEstimateOob, seed = randomSeed, bootstrap = !rfSampleNoReplacement, 
+    val rf:RandomForest = new RandomForest(RandomForestParams(oob=rfEstimateOob, seed = randomSeed, bootstrap = !rfSampleNoReplacement, 
         subsample = rfSubsampleFraction, 
-        nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction))(cs)
-    val trainingData = inputData.map{ case (f, i) => (f.values, i)}
+        nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction))
+        
+        
+    //
+    val trainingData = inputData
     
     implicit val rfCallback = new RandomForestCallback() {
       var totalTime = 0l
@@ -197,7 +197,7 @@ class ImportanceCmd extends ArgsApp with SparkApp
       }
     }
 
-    val result = rf.batchTrain(trainingData, dataType, labels, nTrees, rfBatchSize)
+    val result = rf.batchTrain(trainingData, labels, nTrees, rfBatchSize)
     
     echo(s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s") 
         
@@ -228,7 +228,7 @@ class ImportanceCmd extends ArgsApp with SparkApp
       val header = List("variable","importance") ::: (if (includeData) featureSource.sampleNames else Nil)
       writer.writeRow(header)
       writer.writeAll(topImportantVariables.map({case (i, importance) => 
-        List(index(i), importance) ::: (if (includeData) cr.toListOfStrings(importantVariableData(i)) else Nil)}))
+        List(index(i), importance) ::: (if (includeData) (importantVariableData(i).valueAsStrings) else Nil)}))
     }    
   }
   
@@ -237,10 +237,7 @@ class ImportanceCmd extends ArgsApp with SparkApp
   def run():Unit = {
     implicit val fs = FileSystem.get(sc.hadoopConfiguration)  
     implicit val hadoopConf:Configuration = sc.hadoopConfiguration
-    inputRepresentationAsStringWithDefault match {
-      case "vector" => runWithRepresentation[Vector](CanRepresentVector, canSplitVector)
-      case _ => runWithRepresentation[Array[Byte]](CanRepresentByteArray, canSplitArrayOfBytes)
-    }    
+    runWithRepresentation()   
   }
 }
 

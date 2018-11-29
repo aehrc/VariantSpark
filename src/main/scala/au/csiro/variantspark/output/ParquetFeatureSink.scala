@@ -10,7 +10,7 @@ import au.csiro.variantspark.input.ByteArrayFeature
 class ParquetFeatureSink(val outputPath:String) extends FeatureSink {
   
   def save(featureSource:FeatureSource)  {
-     val features = featureSource.features()
+     val features = featureSource.features
      val sqlContext = new org.apache.spark.sql.SQLContext(features.sparkContext)
 
      import sqlContext.implicits._

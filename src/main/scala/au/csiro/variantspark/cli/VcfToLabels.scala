@@ -42,7 +42,7 @@ class VcfToLabels extends ArgsApp with SparkApp {
     CSVUtils.withFile(new File(outputFile)) { writer =>
       writer.writeRow("" :: columns.map(_.label).toList)
       source.sampleNames.zipWithIndex.foreach { case( row, i) =>
-        writer.writeRow(row :: columns.map(_.values(i)).toList)        
+        writer.writeRow(row :: columns.map(_.valueAsByteArray(i)).toList)        
       }
     }
     

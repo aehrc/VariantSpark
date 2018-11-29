@@ -5,15 +5,16 @@ import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
+import au.csiro.variantspark.data.Feature
 
-trait PredictiveModel[V] {
-    
-  def predict(data: RDD[V])(implicit ct:ClassTag[V]): Array[Int] = predictIndexed(data.zipWithIndex())
-  def predictIndexed(data: RDD[(V,Long)])(implicit ct:ClassTag[V]): Array[Int] 
+trait PredictiveModel {
+  def predict(data: RDD[(Feature, Long)]): Array[Int]  
+  //def predict[V](data: RDD[V])(implicit ct:CanSplit[V]): Array[Int] = predictIndexed(data.zipWithIndex())
+  //def predictIndexed[V](data: RDD[(V,Long)])(implicit ct:CanSplit[V]): Array[Int] 
   def printout() 
 }
 
-trait PredictiveModelWithImportance[V] extends PredictiveModel[V] {
+trait PredictiveModelWithImportance extends PredictiveModel {
   def variableImportanceAsFastMap: Long2DoubleOpenHashMap 
   def variableImportance(): Map[Long, Double] =  variableImportanceAsFastMap.asScala
 }

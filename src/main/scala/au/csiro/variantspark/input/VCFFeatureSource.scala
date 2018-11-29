@@ -4,16 +4,19 @@ import org.apache.spark.rdd.RDD
 import htsjdk.variant.variantcontext.Genotype
 import htsjdk.variant.variantcontext.VariantContext
 import collection.JavaConverters._
+import au.csiro.variantspark.data.Feature
+import au.csiro.variantspark.data.BoundedOrdinalVariable
 
 
 trait VariantToFeatureConverter {
-  def convert[V](cr:CanRepresent[V])(vc:VariantContext):Feature[V]
+  def convert(vc:VariantContext):Feature
 }
 
 case class DefVariantToFeatureConverter(biallelic:Boolean = false, separator:String = "_") extends VariantToFeatureConverter {
-  def convert[V](cr:CanRepresent[V])(vc:VariantContext):Feature[V] = {
+  
+  def convert(vc:VariantContext):Feature = {
     val gts = vc.getGenotypes.iterator().asScala.map(convertGenotype).toArray
-    cr.from(convertLabel(vc), gts)
+    ByteArrayFeature(convertLabel(vc), BoundedOrdinalVariable(3), gts)
   }
   
   def convertLabel(vc:VariantContext):String = {
@@ -39,9 +42,9 @@ case class DefVariantToFeatureConverter(biallelic:Boolean = false, separator:Str
 
 class VCFFeatureSource(vcfSource:VCFSource, converter: VariantToFeatureConverter) extends FeatureSource {
   override lazy val sampleNames:List[String] = vcfSource.header.getGenotypeSamples().asScala.toList
-  override def featuresAs[V](implicit cr:CanRepresent[V]):RDD[Feature[V]] = {
+  override def features:RDD[Feature] = {
     val converterRef = converter
-    vcfSource.genotypes().map(converterRef.convert(cr)) 
+    vcfSource.genotypes().map(converterRef.convert) 
   }
 }
 

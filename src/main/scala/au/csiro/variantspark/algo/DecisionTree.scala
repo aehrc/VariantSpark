@@ -16,18 +16,20 @@ import org.apache.spark.TaskContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.RDD.rddToPairRDDFunctions
-
 import scala.reflect.ClassTag
 import au.csiro.variantspark.data.ContinuousVariable
+import au.csiro.variantspark.data.Feature
+import au.csiro.variantspark.utils.IndexedRDDFunction._
+import au.csiro.variantspark.data.FeatureBuilder
 
 
 
-case class TypedData[V](val variableType: VariableType, data:V)
+case class TypedData[V](variableType: VariableType, data:V)
 
 
 /** Splits whatever is passed at the index specified
   */
-trait CanSplit[V] extends CanSize[V] {
+trait CanSplit[V] extends CanSize[V] with ClassTag[V] {
 
   /** Returns the SplitInfo class located below
     *
@@ -47,7 +49,52 @@ trait CanSplit[V] extends CanSize[V] {
     * @param v: generic type, input specific data construct
     * @param i: index
     */
-  def at(v:V)(i:Int):Int
+  def at(v:V)(i:Int):Double
+}
+
+trait Splittable {
+  def split(splitter: ClassificationSplitter, indices:Array[Int]):SplitInfo
+  def at(i:Int):Double
+  def size:Int
+}
+
+trait TreeFeature extends Feature with Splittable with Serializable {
+  def index: Long
+}
+
+case class StdTreeFeature(index:Long, label:String, variableType: VariableType, value:Any, cr:CanSplit[Any]) extends TreeFeature {
+  def split(splitter: ClassificationSplitter, indices:Array[Int]):SplitInfo = cr.split(value, splitter, indices)
+  def at(i:Int):Double = cr.at(value)(i)
+  def size:Int = cr.size(value)
+  def valueAsVector = ???
+  def valueAsByteArray = ???
+  def valueAsStrings = ???
+}
+
+object StdTreeFeature {
+  //TODO: I am not sure if that's appropriate
+  def forType[T](index:Long, label:String, variableType: VariableType, data:T)(implicit cr:CanSplit[T]):StdTreeFeature  = new StdTreeFeature(index, label, variableType, data, cr.asInstanceOf[CanSplit[Any]])
+}
+
+
+trait TreeRepresentationFactory {
+  def createRepresentation(f:RDD[(Feature,Long)]):RDD[TreeFeature] = f.map(fi => createRepresentation(fi._1, fi._2))
+  def createRepresentation(f:Feature, i:Long):TreeFeature
+}
+
+case object DefTreeRepresentationFactory extends TreeRepresentationFactory {
+  def createRepresentation(f:Feature, index:Long):TreeFeature  = {
+      StdTreeFeature.forType[Array[Byte]](index, f.label, f.variableType, f.valueAsByteArray)
+  }
+}
+
+class TreeFeatueRDDFunction[V](val rdd:RDD[TreeFeature]) extends AnyVal {
+  def size = rdd.first.size
+  def collectAtIndexes(indexes:Set[Long]):Map[Long, TreeFeature] = withBroadcast(rdd)(indexes) { br_indexes =>
+      rdd.filter({ case tf => br_indexes.value.contains(tf.index)})
+        .map(tf => (tf.index, tf))
+        .collectAsMap().toMap
+  }
 }
 
 /** Allows for a general description of the construct 
@@ -138,10 +185,10 @@ case class VarSplitInfo(val variableIndex: Long, val splitPoint:Double, val gini
     * @param canSplit: from the CanSplit trait will be specified automatically touch on previous at [[au.csiro.variantspark.algo.CanSplit]]
     * @return returns a tupple of the subset information
     */
-  def split[V](data:V, labels:Array[Int], nCategories:Int)(subset:SubsetInfo)(implicit canSplit:CanSplit[V]):(SubsetInfo, SubsetInfo) = {
+  def split(v:TreeFeature, labels:Array[Int], nCategories:Int)(subset:SubsetInfo):(SubsetInfo, SubsetInfo) = {
     (
-        new SubsetInfo(subset.indices.filter(canSplit.at(data)(_) <= splitPoint), leftGini, labels, nCategories),
-        new SubsetInfo(subset.indices.filter(canSplit.at(data)(_) > splitPoint), rightGini, labels, nCategories)
+        new SubsetInfo(subset.indices.filter(v.at(_) <= splitPoint), leftGini, labels, nCategories),
+        new SubsetInfo(subset.indices.filter(v.at(_) > splitPoint), rightGini, labels, nCategories)
     )
   }
 }
@@ -247,7 +294,7 @@ case class RandomizingMerger(seed:Long) extends Merger {
   * @param mTryFactor: default to 1.0
   * @param randomizeEquality: default to false
   */
-case class VariableSplitter[V](val labels:Array[Int], mTryFactor:Double=1.0, val randomizeEquality:Boolean = false)(implicit canSplit:CanSplit[V]) extends Logging  with Prof {
+case class VariableSplitter(val labels:Array[Int], mTryFactor:Double=1.0, val randomizeEquality:Boolean = false) extends Logging  with Prof {
 
   val nCategories = labels.max + 1
 
@@ -259,7 +306,7 @@ case class VariableSplitter[V](val labels:Array[Int], mTryFactor:Double=1.0, val
     * @param splits: input an array of the [[au.csiro.variantspark.algo.SubsetInfo]] class
     * @return returns an array [[au.csiro.variantspark.algo.SplitInfo]]
     */
-  def findSplits(typedData:TypedData[V], splits:Array[SubsetInfo])(implicit rng:RandomGenerator):Array[SplitInfo] = {
+  def findSplits(typedData:TreeFeature, splits:Array[SubsetInfo])(implicit rng:RandomGenerator):Array[SplitInfo] = {
 
     val splitter = typedData.variableType match {
       case BoundedOrdinalVariable(nLevels) => new JConfusionClassificationSplitter(labels, nCategories, nLevels)
@@ -269,7 +316,7 @@ case class VariableSplitter[V](val labels:Array[Int], mTryFactor:Double=1.0, val
 
     splits.map { subsetInfo =>
       if (rng.nextDouble() <= mTryFactor) {
-        val splitInfo = canSplit.split(typedData.data, splitter, subsetInfo.indices)
+        val splitInfo = typedData.split(splitter, subsetInfo.indices)
         if (splitInfo != null && splitInfo.gini < subsetInfo.impurity) splitInfo else null
       } else null
     }
@@ -281,12 +328,12 @@ case class VariableSplitter[V](val labels:Array[Int], mTryFactor:Double=1.0, val
     * @param splits: input an Array of the [[au.csiro.variantspark.algo.SubsetInfo]] class
     * @return takes the varData and maps the value of the dataset 
     */
-  def findSplitsForVars(varData:Iterator[(TypedData[V], Long)], splits:Array[SubsetInfo])(implicit rng:RandomGenerator):Iterator[Array[VarSplitInfo]] = {
+  def findSplitsForVars(varData:Iterator[TreeFeature], splits:Array[SubsetInfo])(implicit rng:RandomGenerator):Iterator[Array[VarSplitInfo]] = {
     profIt("Local: splitting") {
       val result = varData
         .map{vi =>
-          val thisVarSplits = findSplits(vi._1, splits)
-          thisVarSplits.map(si => if (si != null) VarSplitInfo(vi._2, si) else null).toArray
+          val thisVarSplits = findSplits(vi, splits)
+          thisVarSplits.map(si => if (si != null) VarSplitInfo(vi.index, si) else null).toArray
         }
       result
     }
@@ -298,12 +345,12 @@ case class VariableSplitter[V](val labels:Array[Int], mTryFactor:Double=1.0, val
     * @param bestSplits: input an array of the [[au.csiro.variantspark.algo.VarSplitInfo]]
     * @return returns a flattened iterator  
     */
-  def splitSubsets(varData:Iterator[(TypedData[V], Long)], subsets:Array[SubsetInfo], bestSplits:Array[VarSplitInfo])  = {
+  def splitSubsets(varData:Iterator[TreeFeature], subsets:Array[SubsetInfo], bestSplits:Array[VarSplitInfo])  = {
       val usefulSubsetSplitAndIndex = subsets.zip(bestSplits).filter(_._2 != null).zipWithIndex.toList
       val splitByVarIndex = usefulSubsetSplitAndIndex.groupBy(_._1._2.variableIndex)
-      varData.flatMap { case (v,i) =>
-        splitByVarIndex.getOrElse(i, Nil).map { case ((subsetInfo, splitInfo), si) =>
-            (si, splitInfo.split(v.data, labels, nCategories)(subsetInfo))
+      varData.flatMap { vi =>
+        splitByVarIndex.getOrElse(vi.index, Nil).map { case ((subsetInfo, splitInfo), si) =>
+            (si, splitInfo.split(vi, labels, nCategories)(subsetInfo))
         }
      }
   }
@@ -325,7 +372,7 @@ object DecisionTree extends Logging  with Prof {
     * @param br_splitter: Broadcast of the [[au.csiro.variantspark.algo.VariableSplitter]] class
     * @return Returns an indexed list of splited subsets
     */
-  def splitSubsets[V](indexedData: RDD[(TypedData[V], Long)], bestSplits:Array[VarSplitInfo], br_subsets:Broadcast[Array[SubsetInfo]], br_splitter:Broadcast[VariableSplitter[V]]) = {
+  def splitSubsets(indexedData: RDD[TreeFeature], bestSplits:Array[VarSplitInfo], br_subsets:Broadcast[Array[SubsetInfo]], br_splitter:Broadcast[VariableSplitter]) = {
     profIt("REM: splitSubsets") {
       val indexedSplittedSubsets = withBroadcast(indexedData)(bestSplits){ br_bestSplits =>
         indexedData.mapPartitions(it => br_splitter.value.splitSubsets(it, br_subsets.value, br_bestSplits.value))
@@ -346,12 +393,12 @@ object DecisionTree extends Logging  with Prof {
     * @param br_splitter: input a broadcast containing the [[au.csiro.variantspark.algo.VariableSplitter]] class of the dataset 
     * @return Returns the indexedData variable that contains the indexed best splits 
     */
-  def findBestSplits[V](indexedData: RDD[(TypedData[V], Long)], br_splits:Broadcast[Array[SubsetInfo]], br_splitter:Broadcast[VariableSplitter[V]])
+  def findBestSplits(treeFeatures: RDD[TreeFeature], br_splits:Broadcast[Array[SubsetInfo]], br_splitter:Broadcast[VariableSplitter])
         (implicit rng:RandomGenerator) =  {
     val seed = rng.nextLong()
     val merger = br_splitter.value.createMerger(seed)
     profIt("REM: findBestSplits") {
-      indexedData
+      treeFeatures
         .mapPartitionsWithIndex { case (pi, it) =>
           br_splitter.value.findSplitsForVars(it, br_splits.value)(new XorShift1024StarRandomGenerator(seed ^ pi))
         }.fold(Array.fill(br_splits.value.length)(null))(merger.merge)
@@ -420,13 +467,18 @@ object SplitNode {
 }
 
 @SerialVersionUID(1l)
-class DecisionTreeModel[V](val rootNode: DecisionTreeNode)(implicit canSplit:CanSplit[V]) extends PredictiveModelWithImportance[V] with  Logging with Serializable {
+class DecisionTreeModel(val rootNode: DecisionTreeNode) extends PredictiveModelWithImportance with  Logging with Serializable {
 
   def splitVariableIndexes = rootNode.splitsToStream.map(_.splitVariableIndex).toSet
-
-  def predictIndexed(indexedData: RDD[(V,Long)])(implicit ct:ClassTag[V]): Array[Int] = {
+  
+  def predict[T](indexedData: RDD[(T, Long)], variableType:VariableType)(implicit  fb:FeatureBuilder[T]): Array[Int]  = {
+    predict(indexedData.map({ case(v,i) => (fb.from(null,variableType, v),i)}))
+  }
+  
+  def predict(indexedData: RDD[(Feature, Long)]): Array[Int]  = {
     val treeVariableData =  indexedData.collectAtIndexes(splitVariableIndexes)
-    Range(0, indexedData.size).map(i => rootNode.traverse(s => canSplit.at(treeVariableData(s.splitVariableIndex))(i) <= s.splitPoint).majorityLabel).toArray
+    Range(0, indexedData.size)
+      .map(i => rootNode.traverse(s => treeVariableData(s.splitVariableIndex).at(i) <= s.splitPoint).majorityLabel).toArray
   }
 
   def printout() {
@@ -467,32 +519,22 @@ object DecisionTreeModel {
     * @param splitNodes: input a list of tuples with the [[au.csiro.variantspark.algo.SplitNode]] class and an index
     * @return returns a List of the resolved [[au.csiro.variantspark.algo.SplitNode]] class and it's index
     */
-  def resolveSplitNodes[V](indexedData: RDD[(V,Long)], splitNodes:List[(SplitNode, Int)])(implicit canSplit:CanSplit[V]) = {
+  def resolveSplitNodes(indexedData: RDD[(Feature,Long)], splitNodes:List[(SplitNode, Int)]) = {
     val varsAndIndexesToCollect = splitNodes.asInstanceOf[List[(SplitNode, Int)]].map { case (n,i) => (n.splitVariableIndex, i)}.zipWithIndex.toArray
       val varValuesForSplits = withBroadcast(indexedData)(varsAndIndexesToCollect) { br_varsAndIndexesToCollect =>
         indexedData.mapPartitions{ it =>
           val varsAndIndexesToCollectMap = br_varsAndIndexesToCollect.value.toList.groupBy(_._1._1)
           it.flatMap { case (v,vi) =>
-            varsAndIndexesToCollectMap.getOrElse(vi, Nil).map { case (n,si) => (si, canSplit.at(v)(n._2)) }
+            varsAndIndexesToCollectMap.getOrElse(vi, Nil).map { case (n,si) => (si, v.at(n._2)) }
           }
       }.collectAsMap
     }
     splitNodes.asInstanceOf[List[(SplitNode, Int)]].zipWithIndex.map{ case ((n,i),v) => (n.childFor(varValuesForSplits(v)), i)}
   }
 
-  /** Continues for each DecisionTreeModel until the splits are exhausted 
-    * 
-    * @param indexedData: input an RDD of the values and their indices
-    * @param trees: input a sequence of the decision tree models that includes the values passed from dataset
-    * @param indexes: input a sequence of arrays containing the indices
-    * @return Returns the indexes of the split
-    */
 
-  def batchPredictTyped[V](indexedTypedData: RDD[(TypedData[V],Long)], trees:Seq[DecisionTreeModel[V]], indexes:Seq[Array[Int]])(implicit canSplit:CanSplit[V]):Seq[Array[Int]] = {
-    batchPredict(indexedTypedData.map({ case(td, i) => (td.data,i)}), trees, indexes)
-  }
 
-  def batchPredict[V](indexedData: RDD[(V,Long)], trees:Seq[DecisionTreeModel[V]], indexes:Seq[Array[Int]])(implicit canSplit:CanSplit[V]):Seq[Array[Int]] = {
+  def batchPredict(indexedData: RDD[(Feature,Long)], trees:Seq[DecisionTreeModel], indexes:Seq[Array[Int]]):Seq[Array[Int]] = {
 
     /** Takes the decision tree nodes and outputs the leaf nodes 
       * Partitions the nodesAndIndexes variable and recursively iterates through each model until a leaf node is reached
@@ -555,56 +597,57 @@ case class DecisionTreeParams(
   *
   * @param params: input the [[au.csiro.variantspark.algo.DecisionTreeParams]] class containing the main aspects of the model
   */
-class DecisionTree[V](val params: DecisionTreeParams = DecisionTreeParams())(implicit canSplit:CanSplit[V]) extends Logging with Prof {
+class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) extends Logging with Prof {
 
   implicit lazy val rnd = new XorShift1024StarRandomGenerator(params.seed)
 
-  /** Basic run operation taking the in the data, the type, and the labels
-    *
-    * @param data: input an RDD of the dataset
-    * @param dataType: input the dataType using the [[au.csiro.variantspark.data.VariableType]] class
-    * @param labels: input an array of integers changed to an integer representation
-    */
-  def run(data: RDD[V], dataType: VariableType, labels: Array[Int]): DecisionTreeModel[V] = run(data.zipWithIndex(), dataType, labels, 1.0, Sample.all(canSplit.size(data.first())))
+//  /** Basic run operation taking the in the data, the type, and the labels
+//    *
+//    * @param data: input an RDD of the dataset
+//    * @param dataType: input the dataType using the [[au.csiro.variantspark.data.VariableType]] class
+//    * @param labels: input an array of integers changed to an integer representation
+//    */
+//  def run(data: RDD[V], dataType: VariableType, labels: Array[Int]): DecisionTreeModel[V] = run(data.zipWithIndex(), dataType, labels, 1.0, Sample.all(canSplit.size(data.first())))
 
-  /** Alternative run function
-    *
-    * @param indexedData: input an RDD of the values of the dataset with the indices
-    * @param dataType: input the [[au.csiro.variantspark.data.VariableType]] class
-    * @param labels: input an array of integers changed to an integer representation
-    * @param nvarFraction: 
-    * @param sample: input the [[au.csiro.variantspark.utils.Sample]] class that contains the size and the indices
-    */
-  def run(indexedData: RDD[(V,Long)], dataType: VariableType,  labels: Array[Int], nvarFraction: Double, sample:Sample): DecisionTreeModel[V] =
-      batchTrain(indexedData, dataType, labels, nvarFraction, List(sample)).head
-
-  /** Trains all the trees for specified samples at the same time
-    *
-    * @param indexedData: input an RDD of the values of the dataset with the indices
-    * @param dataType: input the [[au.csiro.variantspark.data.VariableType]] class
-    * @param labels: input an array of integers changed to an integer representation
-    * @param nvarFraction: 
-    * @param sample: input the [[au.csiro.variantspark.utils.Sample]] class that contains the size and the indices
-    * @return Returns a Sequence of [[au.csiro.variantspark.algo.DecisionTreeModel]] classes containing the dataset 
-    */
-  def batchTrain(indexedData: RDD[(V, Long)], dataType: VariableType,
-      labels: Array[Int], nvarFraction: Double, sample:Seq[Sample]): Seq[DecisionTreeModel[V]] = {
-    batchTrain(indexedData.map({case (v,i) => (TypedData(dataType, v), i)}),labels, nvarFraction, sample)
-  }
-       
-  def batchTrain(indexedTypedData: RDD[(TypedData[V], Long)], 
-      labels: Array[Int], nvarFraction: Double, sample:Seq[Sample]): Seq[DecisionTreeModel[V]] = {
+    def run(indexedData: RDD[(Feature,Long)], labels: Array[Int]): DecisionTreeModel = run(indexedData, labels, 1.0, Sample.all(indexedData.first._1.size))
+//  /** Alternative run function
+//    *
+//    * @param indexedData: input an RDD of the values of the dataset with the indices
+//    * @param dataType: input the [[au.csiro.variantspark.data.VariableType]] class
+//    * @param labels: input an array of integers changed to an integer representation
+//    * @param nvarFraction: 
+//    * @param sample: input the [[au.csiro.variantspark.utils.Sample]] class that contains the size and the indices
+//    */
+    def run(indexedData: RDD[(Feature,Long)], labels: Array[Int], nvarFraction: Double, sample:Sample)(implicit trf: TreeRepresentationFactory = DefTreeRepresentationFactory): DecisionTreeModel =
+        batchTrain(trf.createRepresentation(indexedData), labels, nvarFraction, List(sample)).head
+//
+//  /** Trains all the trees for specified samples at the same time
+//    *
+//    * @param indexedData: input an RDD of the values of the dataset with the indices
+//    * @param dataType: input the [[au.csiro.variantspark.data.VariableType]] class
+//    * @param labels: input an array of integers changed to an integer representation
+//    * @param nvarFraction: 
+//    * @param sample: input the [[au.csiro.variantspark.utils.Sample]] class that contains the size and the indices
+//    * @return Returns a Sequence of [[au.csiro.variantspark.algo.DecisionTreeModel]] classes containing the dataset 
+//    */
+//  def batchTrain[V](indexedData: RDD[(V, Long)], dataType: VariableType,
+//      labels: Array[Int], nvarFraction: Double, sample:Seq[Sample]): Seq[DecisionTreeModel] = {
+//    batchTrain(indexedData.map({case (v,i) => (TypedData(dataType, v), i)}),labels, nvarFraction, sample)
+//  }
+ 
+  def batchTrain(treeFeatures: RDD[TreeFeature], 
+      labels: Array[Int], nvarFraction: Double, sample:Seq[Sample]): Seq[DecisionTreeModel] = {
       
-    val splitter = VariableSplitter[V](labels, nvarFraction, randomizeEquality = params.randomizeEquality)
+    val splitter = VariableSplitter(labels, nvarFraction, randomizeEquality = params.randomizeEquality)
     val subsets = sample.map { s =>
       val currentSet =  s.indexesIn.toArray
       val (totalGini, totalLabel) = Gini.giniImpurity(currentSet, labels, splitter.nCategories)
       SubsetInfo(currentSet, totalGini, totalLabel)
     }.toList
-    val rootNodes = withBroadcast(indexedTypedData)(splitter) { br_splitter =>
-      buildSplit(indexedTypedData, subsets, br_splitter, 0)
+    val rootNodes = withBroadcast(treeFeatures)(splitter) { br_splitter =>
+      buildSplit(treeFeatures, subsets, br_splitter, 0)
     }
-    rootNodes.map(new DecisionTreeModel[V](_))
+    rootNodes.map(new DecisionTreeModel(_))
   }      
       
   /** Builds (recursively) the decision tree level by level
@@ -615,7 +658,7 @@ class DecisionTree[V](val params: DecisionTreeParams = DecisionTreeParams())(imp
     * @param treeLevel: specify the current level of the tree being built
     * @return Returns a subset of the splits 
     */
-  def buildSplit(indexedTypedData: RDD[(TypedData[V], Long)], subsets: List[SubsetInfo], br_splitter: Broadcast[VariableSplitter[V]],treeLevel:Int): List[DecisionTreeNode] = {
+  def buildSplit(indexedTypedData: RDD[TreeFeature], subsets: List[SubsetInfo], br_splitter: Broadcast[VariableSplitter],treeLevel:Int): List[DecisionTreeNode] = {
 
     logDebug(s"Building level ${treeLevel}, subsets: ${subsets}")
     profReset()
@@ -653,16 +696,17 @@ class DecisionTree[V](val params: DecisionTreeParams = DecisionTreeParams())(imp
     * @param subsetsToSplit: input a list of [[au.csiro.variantspark.algo.SubsetInfo]]
     * @param br_splitter: input a Broadcast of Arrays containing the [[au.csiro.variantspark.algo.SubsetInfo]] class
     */
-  def findBestSplitsAndSubsets(indexedData: RDD[(TypedData[V], Long)], subsetsToSplit:List[SubsetInfo], br_splitter:Broadcast[VariableSplitter[V]]) =  {
+  def findBestSplitsAndSubsets(treeFeatures: RDD[TreeFeature], subsetsToSplit:List[SubsetInfo], br_splitter:Broadcast[VariableSplitter]) =  {
     profIt("findBestSplitsAndSubsets") { 
       val subsetsToSplitAsIndices = subsetsToSplit.toArray
-      withBroadcast(indexedData)(subsetsToSplitAsIndices){ br_splits => 
-        val bestSplits = DecisionTree.findBestSplits(indexedData, br_splits, br_splitter)
-        (bestSplits, DecisionTree.splitSubsets(indexedData, bestSplits, br_splits, br_splitter))
+      withBroadcast(treeFeatures)(subsetsToSplitAsIndices){ br_splits => 
+        val bestSplits = DecisionTree.findBestSplits(treeFeatures, br_splits, br_splitter)
+        (bestSplits, DecisionTree.splitSubsets(treeFeatures, bestSplits, br_splits, br_splitter))
       }
     }
   }
 }
+
 
 
 

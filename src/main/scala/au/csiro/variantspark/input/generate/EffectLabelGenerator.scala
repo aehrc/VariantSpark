@@ -65,7 +65,7 @@ class EffectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
     continouusResponse = withBroadcast(featureSource.features.sparkContext)(allEffects){ br_effects =>
        featureSource.features.filter(f => br_effects.value.contains(f.label)).mapPartitions {it =>
          val normalizer = DenseVector.fill(nSamples)(zeroLevelValue)
-         it.map(f => (DenseVector(f.toVector.values.toArray)-=normalizer) *= (2 * br_effects.value(f.label)))
+         it.map(f => (DenseVector(f.valueAsVector.toArray)-=normalizer) *= (2 * br_effects.value(f.label)))
        }.fold(DenseVector.zeros[Double](nSamples))(_+=_)
     }
 

@@ -13,7 +13,7 @@ case class CSVFeatureSink(val fileName:String) extends FeatureSink {
   def save(fs:FeatureSource)  {
     CSVUtils.withFile(new File(fileName)) { csvWriter =>
       csvWriter.writeRow("" :: fs.sampleNames)
-      csvWriter.writeAll(fs.features().collect().toSeq.map(f => f.label :: f.values.toList))
+      csvWriter.writeAll(fs.features.collect().toSeq.map(f => f.label :: f.valueAsStrings))
     }
   }
   

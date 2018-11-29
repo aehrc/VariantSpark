@@ -6,11 +6,13 @@ import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
 import org.apache.spark.mllib.linalg.Vectors
 import org.junit.Assert._
 import org.junit.Test
+import au.csiro.variantspark.data._
+import au.csiro.variantspark.input._
 
 class WideRandomForrestModelTest extends SparkTest {
   val nLabels = 4
   val nSamples = 2
-  val testData = sc.parallelize(List(Vectors.zeros(nSamples)))
+  val testData = sc.parallelize(List(Vectors.zeros(nSamples))).asFeature(BoundedOrdinalVariable(3))
 
   @Test
   def whenManyPredictorsThenAveragesImportance() {

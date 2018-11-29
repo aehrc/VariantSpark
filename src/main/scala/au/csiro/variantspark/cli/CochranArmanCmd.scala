@@ -121,7 +121,7 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
     val dataLoadingTimer = Timer()
     echo(s"Loading features from: ${inputFile}")
     
-    val inputData = source.features().zipWithIndex().cache()
+    val inputData = source.features.zipWithIndex().cache()
     val totalVariables = inputData.count()
     val variablePreview = inputData.map({case (f,i) => f.label}).take(defaultPreviewSize).toList
         
@@ -135,11 +135,11 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
     
     if (isVerbose) {
       verbose("Data preview:")
-      source.features().take(defaultPreviewSize).foreach(f=> verbose(s"${f.label}:${dumpList(f.values.toList, longPreviewSize)}"))
+      source.features.take(defaultPreviewSize).foreach(f=> verbose(s"${f.label}:${dumpList(f.valueAsStrings, longPreviewSize)}"))
     }
     
     echo(s"Running two sided CochranArmitage test")  
-     val trainingData = inputData.map{ case (f, i) => (f.values, i)}
+     val trainingData = inputData.map{ case (f, i) => (f.valueAsByteArray, i)}
     
     
     val scorer = new CochranArmitageTestScorer(labels, CochranArmitageTestCalculator.WEIGHT_TREND, nVariables)

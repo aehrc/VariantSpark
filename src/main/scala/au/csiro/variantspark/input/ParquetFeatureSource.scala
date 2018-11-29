@@ -4,9 +4,11 @@ import au.csiro.pbdava.ssparkle.common.utils.SerialUtils
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import au.csiro.variantspark.data.Feature
 
 
 
+@Deprecated
 case class ParquetFeatureSource(inputPath:String)(implicit sc: SparkContext) extends FeatureSource {
 
   override lazy val sampleNames:List[String] = {
@@ -15,10 +17,10 @@ case class ParquetFeatureSource(inputPath:String)(implicit sc: SparkContext) ext
     SerialUtils.read(fs.open(pathToColumns))
   }
 
-  def featuresAs[V](implicit cr:CanRepresent[V]):RDD[Feature[V]] = {
+  def features:RDD[Feature] = {
      val sqlContext = new org.apache.spark.sql.SQLContext(sc)
 
      val rawDF = sqlContext.read.parquet(inputPath)
-     rawDF.rdd.map( r => cr.from(r.getString(0), r.getAs[Array[Byte]](1)))
+     rawDF.rdd.map( r => ByteArrayFeature(r.getString(0), r.getAs[Array[Byte]](1)))
   }
 }

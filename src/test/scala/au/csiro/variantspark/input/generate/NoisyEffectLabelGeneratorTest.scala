@@ -9,13 +9,13 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.junit.Assert._
 import org.junit.Test
-import au.csiro.variantspark.input.Feature
-import au.csiro.variantspark.input.CanRepresent
 import au.csiro.variantspark.input._
+import au.csiro.variantspark.data.Feature
+import au.csiro.variantspark.data.FeatureBuilder
 
 class TestFeatureGenerator(val samples: Seq[ByteArrayFeature])(implicit sc: SparkContext) extends FeatureSource {
-  def featuresAs[V](implicit cr:CanRepresent[V]=CanRepresentByteArray):RDD[Feature[V]] = sc.parallelize(samples.map(s =>cr.from(s.label, s.values)))
-  def sampleNames: List[String] = Range(0, samples.head.values.length).map("s_" + _).toList
+  def features:RDD[Feature] = sc.parallelize(samples)
+  def sampleNames: List[String] = Range(0, samples.head.size).map("s_" + _).toList
 
 }
 

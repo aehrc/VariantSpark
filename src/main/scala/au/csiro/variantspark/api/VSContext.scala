@@ -52,7 +52,7 @@ class VSContext(val spark:SparkSession) extends SqlContextHolder {
    	* @return FeatureSource loaded from the VCF file or files 
    	*/
   def importCSV(inputFile:String, csvFormat:CSVFormat = DefaultCSVFormatSpec):FeatureSource = {
-    CsvFeatureSource[Array[Byte]](sc.textFile(inputFile), csvFormat)     
+    CsvFeatureSource[Array[Byte]](sc.textFile(inputFile), csvFormat=csvFormat)     
   } 
   
   

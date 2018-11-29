@@ -7,6 +7,10 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.Accumulable
 import org.apache.spark.util.AccumulatorV2
 import scala.collection.mutable.{Map=>MutableMap}
+import au.csiro.variantspark.data.VariableType
+import au.csiro.variantspark.data.ContinuousVariable
+import au.csiro.variantspark.data.Feature
+import au.csiro.variantspark.data.FeatureBuilder
 
 
 class MapAccumulator extends AccumulatorV2[(Int, Array[String]), Array[String]] { 
@@ -70,7 +74,8 @@ class MapAccumulator extends AccumulatorV2[(Int, Array[String]), Array[String]] 
 /**
  * Frature source from a standard variable in columns representation
  */
-case class CsvStdFeatureSource[V](data:RDD[String], csvFormat:CSVFormat = DefaultCSVFormatSpec) extends FeatureSource {
+case class CsvStdFeatureSource[V](data:RDD[String], defaultType:VariableType = ContinuousVariable, 
+      csvFormat:CSVFormat = DefaultCSVFormatSpec) extends FeatureSource {
   
   //val acc_sampleName = new MapAccumulator()
   //data.context.register(acc_sampleName, "SampleAcc")
@@ -116,9 +121,11 @@ case class CsvStdFeatureSource[V](data:RDD[String], csvFormat:CSVFormat = Defaul
     }).collect().toList.drop(1)
   }
 
-  def featuresAs[V](implicit cr:CanRepresent[V]):RDD[Feature[V]] = {
+  def features:RDD[Feature] = featuresAs[Vector]
+  
+  def featuresAs[V](implicit cr:FeatureBuilder[V]):RDD[Feature] = {
     transposedData.map({case (varId,values) =>
-      cr.from(varId, values.toList)
+      cr.from(varId, defaultType, values.toList)
     })
   }
 }

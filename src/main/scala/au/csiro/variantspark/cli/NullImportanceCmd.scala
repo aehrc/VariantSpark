@@ -125,7 +125,7 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs
 
     val dataLoadingTimer = Timer()    
     echo(s"Loaded rows: ${dumpList(featureSource.sampleNames)}")
-    val inputData = featureSource.features().zipWithIndex().cache()
+    val inputData = featureSource.features.zipWithIndex().cache()
     val totalVariables = inputData.count()
     val variablePreview = inputData.map({case (f,i) => f.label}).take(defaultPreviewSize).toList
     echo(s"Loaded variables: ${dumpListHead(variablePreview, totalVariables)}, took: ${dataLoadingTimer.durationInSec}")
@@ -159,7 +159,7 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs
       val rf = new ByteRandomForest(RandomForestParams(oob=rfEstimateOob, seed = randomSeed, bootstrap = !rfSampleNoReplacement, 
           subsample = rfSubsampleFraction, 
           nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction))
-      val trainingData = inputData.map{ case (f, i) => (f.values, i)}
+      val trainingData = inputData
       
       implicit val rfCallback = new RandomForestCallback() {
         var totalTime = 0l
@@ -177,7 +177,7 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs
         }
       }
   
-      val result = rf.batchTrain(trainingData, dataType, labels, nTrees, rfBatchSize)
+      val result = rf.batchTrain(trainingData, labels, nTrees, rfBatchSize)
       
       echo(s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s") 
           

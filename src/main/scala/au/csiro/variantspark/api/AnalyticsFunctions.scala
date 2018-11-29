@@ -41,7 +41,7 @@ class AnalyticsFunctions(val featureSource: FeatureSource) extends AnyVal {
 	 * 			pairwise computation. The result includes the diagonal. 
    */  
   def pairwiseOperation(operation:PairwiseOperation):LowerTriangMatrix = {
-    operation.compute(featureSource.features().map(_.values))
+    operation.compute(featureSource.features.map(_.valueAsByteArray))
   }
  
   /**
@@ -59,6 +59,6 @@ class AnalyticsFunctions(val featureSource: FeatureSource) extends AnyVal {
 	 * 			pairwise computation. The result includes the diagonal. 
    */
   def pairwiseOperation(operationName: String):LowerTriangMatrix = {
-    CommonPairwiseOperation.withName(operationName).compute(featureSource.features().map(_.values))
+    CommonPairwiseOperation.withName(operationName).compute(featureSource.features.map(_.valueAsByteArray))
   }
 }

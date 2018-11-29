@@ -15,6 +15,6 @@ class ParquetFeatureSinkTest extends SparkTest {
     sink.save(originalSource)
     val source = new ParquetFeatureSource("target/parquet-sink")
     assertEquals(originalSource.sampleNames, source.sampleNames)
-    assertArrayEquals(originalSource.features().collect().asInstanceOf[Array[Object]], source.features().collect().asInstanceOf[Array[Object]])
+    assertArrayEquals(originalSource.features.collect().asInstanceOf[Array[Object]], source.features.collect().asInstanceOf[Array[Object]])
   }
 }
