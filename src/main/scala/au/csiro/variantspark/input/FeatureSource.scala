@@ -5,7 +5,7 @@ import org.apache.spark.rdd.RDD
 import scala.reflect.ClassTag
 import au.csiro.variantspark.data.VariableType
 import au.csiro.variantspark.data.ContinuousVariable
-import au.csiro.variantspark.data.UnboundedOrdinalVariable
+import au.csiro.variantspark.data.OrdinalVariable
 import au.csiro.variantspark.data.Feature
 
 

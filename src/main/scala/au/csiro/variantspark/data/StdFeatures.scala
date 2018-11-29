@@ -38,5 +38,5 @@ case class ByteArrayFeature(label:String, variableType: VariableType, valueAsByt
 }
 
 object ByteArrayFeature {
-  def apply(label:String, values: Array[Byte]):ByteArrayFeature = ByteArrayFeature(label, UnboundedOrdinalVariable, values)
+  def apply(label:String, values: Array[Byte]):ByteArrayFeature = ByteArrayFeature(label, OrdinalVariable, values)
 }

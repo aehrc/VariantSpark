@@ -1,7 +1,7 @@
 package au.csiro.variantspark.algo
 
 
-import au.csiro.variantspark.data.UnboundedOrdinalVariable
+import au.csiro.variantspark.data.OrdinalVariable
 import au.csiro.variantspark.test.SparkTest
 import org.apache.spark.mllib.linalg.Vectors
 import org.junit.Assert._

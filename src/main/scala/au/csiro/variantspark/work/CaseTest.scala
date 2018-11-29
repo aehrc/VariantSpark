@@ -1,6 +1,6 @@
 package au.csiro.variantspark.work
 
-import au.csiro.variantspark.data.UnboundedOrdinalVariable
+import au.csiro.variantspark.data.OrdinalVariable
 import au.csiro.variantspark.data.VariableType
 
 object CaseTest {
@@ -8,11 +8,11 @@ object CaseTest {
     
     println("Hello world")
    
-    val vr:VariableType = UnboundedOrdinalVariable
+    val vr:VariableType = OrdinalVariable
    
     
     vr match  {
-      case UnboundedOrdinalVariable => println("object:" + vr)
+      case OrdinalVariable => println("object:" + vr)
       case _ => println("Default:" + vr)
     }
   }
