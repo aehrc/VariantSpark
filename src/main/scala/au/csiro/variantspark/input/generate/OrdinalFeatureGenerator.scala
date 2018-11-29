@@ -2,7 +2,7 @@ package au.csiro.variantspark.input.generate
 
 import au.csiro.variantspark.input.FeatureSource
 import org.apache.spark.rdd.RDD
-import au.csiro.variantspark.input.ByteArrayFeature
+import au.csiro.variantspark.data.ByteArrayFeature
 import org.apache.spark.SparkContext
 import au.csiro.variantspark.utils.Sampling
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator

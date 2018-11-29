@@ -5,6 +5,7 @@ import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import au.csiro.variantspark.data.Feature
+import au.csiro.variantspark.data.ByteArrayFeature
 
 
 

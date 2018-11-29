@@ -27,7 +27,7 @@ class CsvStdFeatureSourceTest extends SparkTest {
     val featureSource = CsvStdFeatureSource(testCSV)
     val features = featureSource.featuresAs[Vector]
     println(features.collect.toList)
-    println(featureSource.sampleNames)    
+    println(featureSource.sampleNames)   
   }
 
   @Test

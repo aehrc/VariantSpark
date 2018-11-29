@@ -1,7 +1,8 @@
 package au.csiro.variantspark.input.generate
 
 
-import au.csiro.variantspark.input.{ByteArrayFeature, FeatureSource}
+import au.csiro.variantspark.input.{FeatureSource}
+import au.csiro.variantspark.data.ByteArrayFeature
 import au.csiro.variantspark.test.SparkTest
 import breeze.linalg.DenseVector
 import breeze.stats.meanAndVariance

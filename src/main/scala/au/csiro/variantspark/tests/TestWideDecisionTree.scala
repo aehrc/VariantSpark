@@ -8,13 +8,13 @@ import au.csiro.variantspark.metrics.Metrics
 import au.csiro.variantspark.utils.Projector
 import au.csiro.variantspark.utils.VectorRDDFunction._
 import au.csiro.variantspark.utils.CV
-import au.csiro.variantspark.algo.WideRandomForest
+import au.csiro.variantspark.algo.RandomForest
 import scala.Range
 import au.csiro.variantspark.data.BoundedOrdinalVariable
 import au.csiro.variantspark.algo.RandomForestParams
 import au.csiro.variantspark.algo.RandomForest
 import au.csiro.variantspark.algo._
-import au.csiro.variantspark.input.VectorFeature
+import au.csiro.variantspark.data.VectorFeature
 import au.csiro.variantspark.data.Feature
 
 object TestWideDecisionTree extends SparkApp {
@@ -68,7 +68,7 @@ object TestWideDecisionTree extends SparkApp {
       val testSet = vectorData.project(fold).map(v => VectorFeature(null,dataType, v).asInstanceOf[Feature]).zipWithIndex().cache()
       val testLabels = fold.projectArray(labels)
      
-      val rf = new WideRandomForest()
+      val rf = new RandomForest()
       val result  = rf.batchTrain(trainSetWithIndex,  trainLabels, 20, 10)
       val testPredict = result.predict(testSet)
       val testError = Metrics.classificationError(testLabels,testPredict)

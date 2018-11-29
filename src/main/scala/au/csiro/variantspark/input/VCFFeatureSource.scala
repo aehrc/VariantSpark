@@ -6,6 +6,7 @@ import htsjdk.variant.variantcontext.VariantContext
 import collection.JavaConverters._
 import au.csiro.variantspark.data.Feature
 import au.csiro.variantspark.data.BoundedOrdinalVariable
+import au.csiro.variantspark.data.ByteArrayFeature
 
 
 trait VariantToFeatureConverter {

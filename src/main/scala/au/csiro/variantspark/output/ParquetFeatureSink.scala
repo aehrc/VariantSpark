@@ -5,7 +5,7 @@ import au.csiro.variantspark.input.FeatureSource
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.SaveMode
 import org.apache.spark.rdd.RDD
-import au.csiro.variantspark.input.ByteArrayFeature
+import au.csiro.variantspark.data.ByteArrayFeature
 
 class ParquetFeatureSink(val outputPath:String) extends FeatureSink {
 

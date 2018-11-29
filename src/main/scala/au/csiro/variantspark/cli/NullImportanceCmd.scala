@@ -19,7 +19,7 @@ import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 import com.github.tototoshi.csv.CSVWriter
 import au.csiro.pbdava.ssparkle.common.arg4j.TestArgs
 import org.apache.hadoop.fs.FileSystem
-import au.csiro.variantspark.algo.WideDecisionTree
+import au.csiro.variantspark.algo.DecisionTree
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation
 import au.csiro.pbdava.ssparkle.spark.SparkUtils
 import au.csiro.pbdava.ssparkle.common.utils.ReusablePrintStream
@@ -31,7 +31,7 @@ import au.csiro.variantspark.data.BoundedOrdinalVariable
 import au.csiro.pbdava.ssparkle.common.utils.Timer
 import au.csiro.variantspark.utils.defRng
 import au.csiro.variantspark.input.ParquetFeatureSource
-import au.csiro.variantspark.algo.ByteRandomForest
+import au.csiro.variantspark.algo.RandomForest
 import au.csiro.variantspark.utils.IndexedRDDFunction._
 import java.io.ObjectOutputStream
 import java.io.FileOutputStream
@@ -156,7 +156,7 @@ class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs
       echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")  
       echo(s"Random seed is: ${randomSeed}")
       val treeBuildingTimer = Timer()
-      val rf = new ByteRandomForest(RandomForestParams(oob=rfEstimateOob, seed = randomSeed, bootstrap = !rfSampleNoReplacement, 
+      val rf = new RandomForest(RandomForestParams(oob=rfEstimateOob, seed = randomSeed, bootstrap = !rfSampleNoReplacement, 
           subsample = rfSubsampleFraction, 
           nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction))
       val trainingData = inputData

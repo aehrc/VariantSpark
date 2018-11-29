@@ -14,8 +14,8 @@ import au.csiro.variantspark.data.BoundedOrdinalVariable
 import au.csiro.variantspark.utils.Sample
 import au.csiro.variantspark.data.Feature
 import au.csiro.variantspark.data.VariableType
-import au.csiro.variantspark.input.VectorFeature
-import au.csiro.variantspark.input.ByteArrayFeature
+import au.csiro.variantspark.data.VectorFeature
+import au.csiro.variantspark.data.ByteArrayFeature
 import au.csiro.variantspark.data.ContinuousVariable
 import au.csiro.variantspark.input.ByteArrayFeatureBuilder
 import au.csiro.variantspark.input.VectorFeatureBuilder

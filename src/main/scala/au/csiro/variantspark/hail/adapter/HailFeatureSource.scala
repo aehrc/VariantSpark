@@ -4,7 +4,7 @@ package au.csiro.variantspark.hail.adapter
 import is.hail.variant.VariantDataset
 import au.csiro.variantspark.input.FeatureSource
 import org.apache.spark.rdd.RDD
-import au.csiro.variantspark.input.ByteArrayFeature
+import au.csiro.variantspark.data.ByteArrayFeature
 import is.hail.variant.Variant
 import is.hail.variant.Genotype
 import au.csiro.variantspark.input._
