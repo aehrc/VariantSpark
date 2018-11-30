@@ -142,7 +142,8 @@ class ImportanceCmd extends ArgsApp with SparkApp
   @Override
   def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ro", "-om", "target/ch22-model.ser", "-sr", "13")
     
-  def runWithRepresentation() = {
+  @Override
+  def run():Unit = {    
     implicit val fs = FileSystem.get(sc.hadoopConfiguration)  
     implicit val hadoopConf:Configuration = sc.hadoopConfiguration
     logDebug(s"Running with filesystem: ${fs}, home: ${fs.getHomeDirectory}")
@@ -228,14 +229,6 @@ class ImportanceCmd extends ArgsApp with SparkApp
       writer.writeAll(topImportantVariables.map({case (i, importance) => 
         List(index(i), importance) ::: (if (includeData) (importantVariableData(i).valueAsStrings) else Nil)}))
     }    
-  }
-  
- 
-  @Override
-  def run():Unit = {
-    implicit val fs = FileSystem.get(sc.hadoopConfiguration)  
-    implicit val hadoopConf:Configuration = sc.hadoopConfiguration
-    runWithRepresentation()   
   }
 }
 

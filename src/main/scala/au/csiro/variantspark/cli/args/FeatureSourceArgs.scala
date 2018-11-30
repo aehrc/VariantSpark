@@ -37,7 +37,7 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
   
   def loadCSV() = {
     echo(s"Loading csv file: ${inputFile}")
-    CsvFeatureSource[Array[Byte]](sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
+    CsvFeatureSource(sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
   }
   
   def loadStdCSV() = {

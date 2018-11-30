@@ -82,7 +82,7 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
   
   def loadCSV() = {
     echo(s"Loading csv file: ${inputFile}")
-    CsvFeatureSource[Array[Byte]](sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
+    CsvFeatureSource(sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
   }
   
   def loadParquet() = {
