@@ -53,38 +53,6 @@ class ImportanceCmd extends ArgsApp with SparkApp
   with FeatureSourceArgs
   with ImportanceOutputArgs
   with Echoable with Logging with TestArgs {
-
-  
-  // input options  
-  @Option(name="-ivt", required=false, usage="Input variable type, one of [`ord`, `cont` ] (def =  `ord` or vcf files `cont` otherwise)"
-      , aliases=Array("--input-var-type"))
-  val inputVariableTypeAsString:String = null
-  def inputVariableTypeAsStringWithDefault:String = if (inputVariableTypeAsString != null) inputVariableTypeAsString else inputType match {
-    case "vcf" => "ord"
-    case _ => "cont"
-  }
-  
-  // input options  
-  @Option(name="-icl", required=false, usage="Number of levels for categorical variables with this number of levels (def = 3)" 
-      , aliases=Array("--input-var-levels"))
-  val varOrdinalLevels:Int = 3
-
-  def inputVariableType:VariableType  = inputVariableTypeAsStringWithDefault match {
-    case "cont" => ContinuousVariable
-    case "ord" => BoundedOrdinalVariable(varOrdinalLevels)
-    case _ => throw new IllegalArgumentException(s"Unknow variable type ${inputVariableTypeAsStringWithDefault}")
-  }
-  
-  // input options  
-  @Option(name="-ir", required=false, usage="Input representation, one of [`vector`, 'byteArray`]" 
-      , aliases=Array("--input-represntation"))
-  val inputRepresentationAsString:String = null
-  def inputRepresentationAsStringWithDefault = if (inputRepresentationAsString != null) inputRepresentationAsString else inputType match {
-      case "vcf" => "byteArray"
-      case _ => "vector"
-    } 
-  
-  
   
   @Option(name="-ff", required=true, usage="Path to feature file", aliases=Array("--feature-file"))
   val featuresFile:String = null
@@ -153,11 +121,18 @@ class ImportanceCmd extends ArgsApp with SparkApp
 
     val dataLoadingTimer = Timer()    
     echo(s"Loaded rows: ${dumpList(featureSource.sampleNames)}")
-    val inputData = featureSource.features.zipWithIndex().cache()
+    
+  
+    val inputData = DefTreeRepresentationFactory.createRepresentation(featureSource.features.zipWithIndex()).cache() 
     val totalVariables = inputData.count()
-    val variablePreview = inputData.map({case (f,i) => f.label}).take(defaultPreviewSize).toList
+    val variablePreview = inputData.map(_.label).take(defaultPreviewSize).toList
     echo(s"Loaded variables: ${dumpListHead(variablePreview, totalVariables)}, took: ${dataLoadingTimer.durationInSec}")
     echoDataPreview() 
+    
+    //if (isVerbose) {
+    //  verbose("Representation preview:")
+    //  inputData.take(defaultPreviewSize).foreach(f=> verbose(s"${f.label}:${f.variableType}:${dumpList(f.valueAsStrings, longPreviewSize)}(${f.getClass.getName})"))
+    //} 
     
     echo(s"Loading labels from: ${featuresFile}, column: ${featureColumn}")
     val labelSource = new CsvLabelSource(featuresFile, featureColumn)
@@ -195,8 +170,8 @@ class ImportanceCmd extends ArgsApp with SparkApp
         
       }
     }
-
-    val result = rf.batchTrain(trainingData, labels, nTrees, rfBatchSize)
+    
+    val result = rf.batchTrainTyped(trainingData, labels, nTrees, rfBatchSize)
     
     echo(s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s") 
         
@@ -211,7 +186,7 @@ class ImportanceCmd extends ArgsApp with SparkApp
     val topImportantVariableIndexes = topImportantVariables.map(_._1).toSet
     
     val index = SparkUtils.withBroadcast(sc)(topImportantVariableIndexes) { br_indexes => 
-      inputData.filter(t => br_indexes.value.contains(t._2)).map({case (f,i) => (i, f.label)}).collectAsMap()
+      inputData.filter(t => br_indexes.value.contains(t.index)).map(f => (f.index, f.label)).collectAsMap()
     }
     
     val varImportance = topImportantVariables.map({ case (i, importance) => (index(i), importance)})

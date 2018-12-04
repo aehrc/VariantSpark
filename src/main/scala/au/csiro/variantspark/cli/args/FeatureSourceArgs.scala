@@ -11,6 +11,7 @@ import au.csiro.variantspark.cmd.EchoUtils._
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import au.csiro.variantspark.input.FeatureSource
 import au.csiro.variantspark.input.CsvStdFeatureSource
+import au.csiro.variantspark.data.VariableType
 
 
 trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
@@ -27,6 +28,20 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
   @Option(name="-ivs", required=false, usage="The separator to use to produce labels for variants from vcf file.(def='_')", aliases=Array("--input-vcf-sep"))
   val inputVcfSeparator:String = "_"
   
+  // input options  
+  @Option(name="-ivt", required=false, usage="Input variable type, one of [`ord`, `cont` ] (def =  `ord` or vcf files `cont` otherwise)"
+      , aliases=Array("--input-var-type"))
+  val inputVariableTypeAsString:String = null
+
+  @Option(name="-ivtf", required=false, usage="Input variable type, one of [`ord`, `cont` ] (def =  `ord` or vcf files `cont` otherwise)"
+      , aliases=Array("--input-var-types-file"))
+  val inputVariableTypesFile:String = null
+
+  
+  
+  lazy val inputVariableType:scala.Option[VariableType]  = scala.Option(inputVariableTypeAsString).map(VariableType.fromString _)
+      
+  
   def loadVCF() = {
     echo(s"Loading header from VCF file: ${inputFile}")
     val vcfSource = VCFSource(sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
@@ -37,7 +52,10 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
   
   def loadCSV() = {
     echo(s"Loading csv file: ${inputFile}")
-    CsvFeatureSource(sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
+    echo(s"Variable type is ${inputVariableType}")
+    val dataRDD = sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism)
+    val typeRDD = scala.Option(inputVariableTypesFile).map(fileName => sc.textFile(fileName))
+    inputVariableType.map(CsvFeatureSource(dataRDD,_, optVariableTypes=typeRDD)).getOrElse(CsvFeatureSource(dataRDD, optVariableTypes=typeRDD)) 
   }
   
   def loadStdCSV() = {
@@ -73,8 +91,8 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
   def echoDataPreview() {
     if (isVerbose) {
       verbose("Data preview:")
-      //TODO:FIX
-      //featureSource.features().take(defaultPreviewSize).foreach(f=> verbose(s"${f.label}:${dumpList(f.values.toList, longPreviewSize)}"))
+      //featureSource.features.take(defaultPreviewSize).foreach(f=> verbose(f.toString))
+      featureSource.features.take(defaultPreviewSize).foreach(f=> verbose(s"${f.label}:${f.variableType}:${dumpList(f.valueAsStrings, longPreviewSize)}(${f.getClass.getName})"))
     }  
   }
   
