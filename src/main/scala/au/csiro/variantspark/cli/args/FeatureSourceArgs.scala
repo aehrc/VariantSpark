@@ -70,7 +70,12 @@ case class StdCSVFeatureSourceFactory(inputFile:String) extends FeatureSourceFac
 }
 
 trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
-
+  
+  import org.json4s._
+  import org.json4s.jackson.JsonMethods._
+  import org.json4s.JsonDSL._
+  implicit val formats = DefaultFormats
+  
   @ArgsOption(name="-if", required=false, usage="Path to input file or directory", aliases=Array("--input-file"))
   val inputFile:String = null
 
@@ -80,23 +85,27 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
   @ArgsOption(name="-io", required=false, usage="a JSON object with the additional options for the input file type (depends on input file type)", aliases=Array("--input-options"))
   val inputOptions:String = null
   
-  def featureSourceFactory: FeatureSourceFactory = {
-    // parse options
-    import org.json4s._
-    import org.json4s.jackson.JsonMethods._
-    import org.json4s.JsonDSL._
-    implicit val formats = DefaultFormats
-    
-    // extract options from the arguments
-    val inputOptionsObject =  Option(inputOptions).map(parse(_).asInstanceOf[JObject]).getOrElse(JObject()) 
-    verbose(s"Input JSON options are: ${inputOptions} ->  ${inputOptionsObject}")
-    val inputOptionsWithFile = inputOptionsObject ~ ("inputFile", inputFile)
-    inputType match {
-      case "csv" =>  inputOptionsWithFile.extract[CSVFeatureSourceFactory]
-      case "stdcsv" =>   inputOptionsWithFile.extract[StdCSVFeatureSourceFactory]
-      case "parquet" => inputOptionsWithFile.extract[ParquetFeatureSourceFactory]
-      case "vcf" => inputOptionsWithFile.extract[VCFFeatureSourceFactory]
+  @ArgsOption(name="-ij", required=false, usage="Input JSON specification", aliases=Array("--input-json"))
+  val inputJSON:String = null 
+  
+  def featureSourceFactory(inputJSON:JObject): FeatureSourceFactory = {
+     verbose(s"Input Spec is : ${inputJSON}")   
+    (inputJSON \ "type").toString match {
+      case "csv" =>  inputJSON.extract[CSVFeatureSourceFactory]
+      case "stdcsv" =>   inputJSON.extract[StdCSVFeatureSourceFactory]
+      case "parquet" => inputJSON.extract[ParquetFeatureSourceFactory]
+      case "vcf" => inputJSON.extract[VCFFeatureSourceFactory]
     }      
+  }
+
+  def featureSourceFactory: FeatureSourceFactory = {
+    val inputSpec = if (inputJSON!=null) {
+      parse(inputJSON).asInstanceOf[JObject]
+    } else {
+      val inputOptionsObject =  Option(inputOptions).map(parse(_).asInstanceOf[JObject]).getOrElse(JObject()) 
+      inputOptionsObject ~ ("inputFile", inputFile) ~ ("type", inputType)
+    }
+    featureSourceFactory(inputSpec)
   }
   
   lazy val featureSource = featureSourceFactory.createSource(this)
