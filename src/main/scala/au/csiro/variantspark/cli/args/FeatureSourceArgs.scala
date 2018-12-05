@@ -12,7 +12,67 @@ import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import au.csiro.variantspark.input.FeatureSource
 import au.csiro.variantspark.input.CsvStdFeatureSource
 import au.csiro.variantspark.data.VariableType
+import au.csiro.variantspark.data.ContinuousVariable
 
+trait FeatureSourceFactory {
+  def createSource(sparkArgs:SparkArgs): FeatureSource
+}
+
+object VCFFeatureSourceFactory {
+  val KEY_IS_BIALLELIC = "isBiallelic"
+  val DEF_IS_BIALLELIC = false
+  val KEY_SEPARATOR = "separator"
+  val DEF_SEPARATOR = "_"
+}
+
+case class VCFFeatureSourceFactory(inputFile:String, options:Map[String, String]) extends FeatureSourceFactory with Echoable {
+  def createSource(sparkArgs:SparkArgs): FeatureSource  = {
+    echo(s"Loading header from VCF file: ${inputFile}")
+    val vcfSource = VCFSource(sparkArgs.textFile(inputFile))
+    verbose(s"VCF Version: ${vcfSource.version}")
+    verbose(s"VCF Header: ${vcfSource.header}")   
+    
+    import VCFFeatureSourceFactory._
+    VCFFeatureSource(vcfSource, 
+        options.get(KEY_IS_BIALLELIC).map(_.toBoolean).getOrElse(DEF_IS_BIALLELIC),
+        options.getOrElse(KEY_SEPARATOR, DEF_SEPARATOR))
+  }
+}
+
+object CSVFeatureSourceFactory {
+   val KEY_VARIABLE_TYPE = "defVariableType"
+   val DEF_VARIABLE_TYPE = ContinuousVariable
+   val KEY_VARIABLE_TYPE_FILE = "variableTypeFile"
+}
+
+case class CSVFeatureSourceFactory(inputFile:String, options:Map[String, String]) extends FeatureSourceFactory with Echoable {
+  import CSVFeatureSourceFactory._
+  def createSource(sparkArgs:SparkArgs): FeatureSource  = {
+    echo(s"Loading csv file: ${inputFile}")
+    val inputVariableType = options.get(KEY_VARIABLE_TYPE).map(VariableType.fromString).getOrElse(DEF_VARIABLE_TYPE)
+    val variableTypeFile = options.get(KEY_VARIABLE_TYPE_FILE)
+    echo(s"Default input variable type is ${inputVariableType}, variable type file is ${variableTypeFile}")
+    val typeRDD = variableTypeFile.map(fileName => sparkArgs.sc.textFile(fileName))
+    val dataRDD = sparkArgs.textFile(inputFile)
+    CsvFeatureSource(dataRDD,inputVariableType, typeRDD)
+  }
+}
+
+case class ParquetFeatureSourceFactory(inputFile:String, options:Map[String, String]) extends FeatureSourceFactory with Echoable {
+  def createSource(sparkArgs:SparkArgs): FeatureSource  = {
+    import sparkArgs._
+    echo(s"Loading parquet file: ${inputFile}")
+    ParquetFeatureSource(inputFile)
+  }
+}
+
+case class StdCSVFeatureSourceFactory(inputFile:String, options:Map[String, String]) extends FeatureSourceFactory with Echoable {
+  def createSource(sparkArgs:SparkArgs): FeatureSource  = {
+    import sparkArgs._
+    echo(s"Loading standard csv file: ${inputFile}")
+    CsvStdFeatureSource[Array[Byte]](textFile(inputFile))
+  }
+}
 
 trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
 
@@ -22,76 +82,24 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
   @Option(name="-it", required=false, usage="Input file type, one of: vcf, csv, parquet (def=vcf)", aliases=Array("--input-type"))
   val inputType:String = "vcf"
 
-  @Option(name="-ivb", required=false, usage="Input vcf is biallelic (def=false)", aliases=Array("--input-vcf-biallelic"))
-  val inputVcfBiallelic:Boolean = false
-
-  @Option(name="-ivs", required=false, usage="The separator to use to produce labels for variants from vcf file.(def='_')", aliases=Array("--input-vcf-sep"))
-  val inputVcfSeparator:String = "_"
+  @Option(name="-io", required=false, usage="List of input options (depends on input file type)", aliases=Array("--input-options"))
+  val inputOptions:String = ""
   
-  // input options  
-  @Option(name="-ivt", required=false, usage="Input variable type, one of [`ord`, `cont` ] (def =  `ord` or vcf files `cont` otherwise)"
-      , aliases=Array("--input-var-type"))
-  val inputVariableTypeAsString:String = null
-
-  @Option(name="-ivtf", required=false, usage="Input variable type, one of [`ord`, `cont` ] (def =  `ord` or vcf files `cont` otherwise)"
-      , aliases=Array("--input-var-types-file"))
-  val inputVariableTypesFile:String = null
-
-  
-  
-  lazy val inputVariableType:scala.Option[VariableType]  = scala.Option(inputVariableTypeAsString).map(VariableType.fromString _)
-      
-  
-  def loadVCF() = {
-    echo(s"Loading header from VCF file: ${inputFile}")
-    val vcfSource = VCFSource(sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
-    verbose(s"VCF Version: ${vcfSource.version}")
-    verbose(s"VCF Header: ${vcfSource.header}")    
-    VCFFeatureSource(vcfSource, inputVcfBiallelic, inputVcfSeparator)
+  def featureSourceFactory: FeatureSourceFactory = {
+    // parse options
+    val options =  inputOptions.split(",").map(_.trim).filter(!_.isEmpty).map(_.split("=")).map(l => (l(0).trim, l(1).trim)).toMap
+    inputType match {
+      case "csv" =>  CSVFeatureSourceFactory(inputFile, options)
+      case "stdcsv" =>   StdCSVFeatureSourceFactory(inputFile, options)
+      case "parquet" => ParquetFeatureSourceFactory(inputFile, options)
+      case "vcf" => VCFFeatureSourceFactory(inputFile, options)
+    }      
   }
   
-  def loadCSV() = {
-    echo(s"Loading csv file: ${inputFile}")
-    echo(s"Variable type is ${inputVariableType}")
-    val dataRDD = sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism)
-    val typeRDD = scala.Option(inputVariableTypesFile).map(fileName => sc.textFile(fileName))
-    inputVariableType.map(CsvFeatureSource(dataRDD,_, optVariableTypes=typeRDD)).getOrElse(CsvFeatureSource(dataRDD, optVariableTypes=typeRDD)) 
-  }
-  
-  def loadStdCSV() = {
-    echo(s"Loading standard csv file: ${inputFile}")
-    CsvStdFeatureSource[Array[Byte]](sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
-  }
-  
-  def loadParquet() = {
-    echo(s"Loading parquet file: ${inputFile}")
-    ParquetFeatureSource(inputFile)
-  }
-  
-  def creatreFeatureSource[R]:FeatureSource = {
-      val fileLoader = inputType match {
-      case "csv" =>  loadCSV _
-      case "stdcsv" =>  loadStdCSV _
-      case "parquet" => loadParquet _ 
-      case "vcf" => loadVCF _
-    }
-    fileLoader()    
-  }
-  
-  lazy val featureSource = {
-      val fileLoader = inputType match {
-      case "csv" =>  loadCSV _
-      case "stdcsv" =>  loadStdCSV _
-      case "parquet" => loadParquet _ 
-      case "vcf" => loadVCF _
-    }
-    fileLoader()
-  }
- 
+  lazy val featureSource = featureSourceFactory.createSource(this)
   def echoDataPreview() {
     if (isVerbose) {
       verbose("Data preview:")
-      //featureSource.features.take(defaultPreviewSize).foreach(f=> verbose(f.toString))
       featureSource.features.take(defaultPreviewSize).foreach(f=> verbose(s"${f.label}:${f.variableType}:${dumpList(f.valueAsStrings, longPreviewSize)}(${f.getClass.getName})"))
     }  
   }

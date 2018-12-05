@@ -138,12 +138,6 @@ class ImportanceCmd extends ArgsApp with SparkApp
     val labelSource = new CsvLabelSource(featuresFile, featureColumn)
     val labels = labelSource.getLabels(featureSource.sampleNames)
     echo(s"Loaded labels: ${dumpList(labels.toList)}")
-    
-    // discover variable type
-    // for now assume it's ordered factor with provided number of levels
-    val dataType = inputVariableType    
-    echo(s"Data type is ${dataType}")
-    
     echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")  
     echo(s"Random seed is: ${randomSeed}")
     val treeBuildingTimer = Timer()
