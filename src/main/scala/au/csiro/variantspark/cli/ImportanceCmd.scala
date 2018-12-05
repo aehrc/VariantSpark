@@ -108,7 +108,7 @@ class ImportanceCmd extends ArgsApp with SparkApp
   val randomSeed: Long = defRng.nextLong
    
   @Override
-  def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ro", "-om", "target/ch22-model.ser", "-sr", "13")
+  def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ro", "-om", "target/ch22-model.ser", "-sr", "13", "-v", "-io", """{"separator":":"}""")
     
   @Override
   def run():Unit = {    

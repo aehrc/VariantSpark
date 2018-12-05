@@ -154,6 +154,18 @@
 			<artifactId>args4j</artifactId>
 			<version>2.0.29</version>
 		</dependency>
+        <!-- https://mvnrepository.com/artifact/org.json4s/json4s -->
+        <dependency>
+            <groupId>org.json4s</groupId>
+            <artifactId>json4s_${scala.binary.version}</artifactId>
+            <version>3.2.11</version>
+        </dependency>        
+        <!-- https://mvnrepository.com/artifact/org.json4s/json4s-ext -->
+        <dependency>
+            <groupId>org.json4s</groupId>
+            <artifactId>json4s-ext_${scala.binary.version}</artifactId>
+            <version>3.2.11</version>
+        </dependency>
 		<!-- https://mvnrepository.com/artifact/it.unimi.dsi/dsiutils -->
 		<dependency>
 			<groupId>it.unimi.dsi</groupId>

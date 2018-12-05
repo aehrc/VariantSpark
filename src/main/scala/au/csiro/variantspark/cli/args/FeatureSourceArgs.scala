@@ -1,6 +1,6 @@
 package au.csiro.variantspark.cli.args
 
-import org.kohsuke.args4j.Option
+import org.kohsuke.args4j.{Option => ArgsOption}
 import au.csiro.variantspark.cmd.Echoable
 import au.csiro.variantspark.input.VCFSource
 import au.csiro.variantspark.input.VCFFeatureSource
@@ -19,13 +19,11 @@ trait FeatureSourceFactory {
 }
 
 object VCFFeatureSourceFactory {
-  val KEY_IS_BIALLELIC = "isBiallelic"
   val DEF_IS_BIALLELIC = false
-  val KEY_SEPARATOR = "separator"
   val DEF_SEPARATOR = "_"
 }
 
-case class VCFFeatureSourceFactory(inputFile:String, options:Map[String, String]) extends FeatureSourceFactory with Echoable {
+case class VCFFeatureSourceFactory(inputFile:String, isBiallelic:Option[Boolean], separator:Option[String]) extends FeatureSourceFactory with Echoable {
   def createSource(sparkArgs:SparkArgs): FeatureSource  = {
     echo(s"Loading header from VCF file: ${inputFile}")
     val vcfSource = VCFSource(sparkArgs.textFile(inputFile))
@@ -34,23 +32,20 @@ case class VCFFeatureSourceFactory(inputFile:String, options:Map[String, String]
     
     import VCFFeatureSourceFactory._
     VCFFeatureSource(vcfSource, 
-        options.get(KEY_IS_BIALLELIC).map(_.toBoolean).getOrElse(DEF_IS_BIALLELIC),
-        options.getOrElse(KEY_SEPARATOR, DEF_SEPARATOR))
+        isBiallelic.getOrElse(DEF_IS_BIALLELIC),
+        separator.getOrElse(DEF_SEPARATOR))
   }
 }
 
 object CSVFeatureSourceFactory {
-   val KEY_VARIABLE_TYPE = "defVariableType"
    val DEF_VARIABLE_TYPE = ContinuousVariable
-   val KEY_VARIABLE_TYPE_FILE = "variableTypeFile"
 }
 
-case class CSVFeatureSourceFactory(inputFile:String, options:Map[String, String]) extends FeatureSourceFactory with Echoable {
+case class CSVFeatureSourceFactory(inputFile:String, defVariableType:Option[String], variableTypeFile:Option[String]) extends FeatureSourceFactory with Echoable {
   import CSVFeatureSourceFactory._
   def createSource(sparkArgs:SparkArgs): FeatureSource  = {
     echo(s"Loading csv file: ${inputFile}")
-    val inputVariableType = options.get(KEY_VARIABLE_TYPE).map(VariableType.fromString).getOrElse(DEF_VARIABLE_TYPE)
-    val variableTypeFile = options.get(KEY_VARIABLE_TYPE_FILE)
+    val inputVariableType = defVariableType.map(VariableType.fromString).getOrElse(DEF_VARIABLE_TYPE)
     echo(s"Default input variable type is ${inputVariableType}, variable type file is ${variableTypeFile}")
     val typeRDD = variableTypeFile.map(fileName => sparkArgs.sc.textFile(fileName))
     val dataRDD = sparkArgs.textFile(inputFile)
@@ -58,7 +53,7 @@ case class CSVFeatureSourceFactory(inputFile:String, options:Map[String, String]
   }
 }
 
-case class ParquetFeatureSourceFactory(inputFile:String, options:Map[String, String]) extends FeatureSourceFactory with Echoable {
+case class ParquetFeatureSourceFactory(inputFile:String) extends FeatureSourceFactory with Echoable {
   def createSource(sparkArgs:SparkArgs): FeatureSource  = {
     import sparkArgs._
     echo(s"Loading parquet file: ${inputFile}")
@@ -66,7 +61,7 @@ case class ParquetFeatureSourceFactory(inputFile:String, options:Map[String, Str
   }
 }
 
-case class StdCSVFeatureSourceFactory(inputFile:String, options:Map[String, String]) extends FeatureSourceFactory with Echoable {
+case class StdCSVFeatureSourceFactory(inputFile:String) extends FeatureSourceFactory with Echoable {
   def createSource(sparkArgs:SparkArgs): FeatureSource  = {
     import sparkArgs._
     echo(s"Loading standard csv file: ${inputFile}")
@@ -76,23 +71,31 @@ case class StdCSVFeatureSourceFactory(inputFile:String, options:Map[String, Stri
 
 trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
 
-  @Option(name="-if", required=false, usage="Path to input file or directory", aliases=Array("--input-file"))
+  @ArgsOption(name="-if", required=false, usage="Path to input file or directory", aliases=Array("--input-file"))
   val inputFile:String = null
 
-  @Option(name="-it", required=false, usage="Input file type, one of: vcf, csv, parquet (def=vcf)", aliases=Array("--input-type"))
+  @ArgsOption(name="-it", required=false, usage="Input file type, one of: vcf, csv, parquet (def=vcf)", aliases=Array("--input-type"))
   val inputType:String = "vcf"
 
-  @Option(name="-io", required=false, usage="List of input options (depends on input file type)", aliases=Array("--input-options"))
-  val inputOptions:String = ""
+  @ArgsOption(name="-io", required=false, usage="a JSON object with the additional options for the input file type (depends on input file type)", aliases=Array("--input-options"))
+  val inputOptions:String = null
   
   def featureSourceFactory: FeatureSourceFactory = {
     // parse options
-    val options =  inputOptions.split(",").map(_.trim).filter(!_.isEmpty).map(_.split("=")).map(l => (l(0).trim, l(1).trim)).toMap
+    import org.json4s._
+    import org.json4s.jackson.JsonMethods._
+    import org.json4s.JsonDSL._
+    implicit val formats = DefaultFormats
+    
+    // extract options from the arguments
+    val inputOptionsObject =  Option(inputOptions).map(parse(_).asInstanceOf[JObject]).getOrElse(JObject()) 
+    verbose(s"Input JSON options are: ${inputOptions} ->  ${inputOptionsObject}")
+    val inputOptionsWithFile = inputOptionsObject ~ ("inputFile", inputFile)
     inputType match {
-      case "csv" =>  CSVFeatureSourceFactory(inputFile, options)
-      case "stdcsv" =>   StdCSVFeatureSourceFactory(inputFile, options)
-      case "parquet" => ParquetFeatureSourceFactory(inputFile, options)
-      case "vcf" => VCFFeatureSourceFactory(inputFile, options)
+      case "csv" =>  inputOptionsWithFile.extract[CSVFeatureSourceFactory]
+      case "stdcsv" =>   inputOptionsWithFile.extract[StdCSVFeatureSourceFactory]
+      case "parquet" => inputOptionsWithFile.extract[ParquetFeatureSourceFactory]
+      case "vcf" => inputOptionsWithFile.extract[VCFFeatureSourceFactory]
     }      
   }
   
