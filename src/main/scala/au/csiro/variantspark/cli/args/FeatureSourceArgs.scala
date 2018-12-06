@@ -90,11 +90,12 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
   
   def featureSourceFactory(inputJSON:JObject): FeatureSourceFactory = {
      verbose(s"Input Spec is : ${inputJSON}")   
-    (inputJSON \ "type").toString match {
-      case "csv" =>  inputJSON.extract[CSVFeatureSourceFactory]
-      case "stdcsv" =>   inputJSON.extract[StdCSVFeatureSourceFactory]
-      case "parquet" => inputJSON.extract[ParquetFeatureSourceFactory]
-      case "vcf" => inputJSON.extract[VCFFeatureSourceFactory]
+     val inputType = (inputJSON \ "type")
+     inputType match {
+      case JString("csv") =>  inputJSON.extract[CSVFeatureSourceFactory]
+      case JString("stdcsv") =>   inputJSON.extract[StdCSVFeatureSourceFactory]
+      case JString("parquet") => inputJSON.extract[ParquetFeatureSourceFactory]
+      case JString("vcf") => inputJSON.extract[VCFFeatureSourceFactory]
     }      
   }
 
