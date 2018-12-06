@@ -13,6 +13,9 @@ import au.csiro.variantspark.input.FeatureSource
 import au.csiro.variantspark.input.CsvStdFeatureSource
 import au.csiro.variantspark.data.VariableType
 import au.csiro.variantspark.data.ContinuousVariable
+import scala.collection.mutable.ArrayBuffer
+import org.apache.spark.rdd.RDD
+import au.csiro.variantspark.data.Feature
 
 trait FeatureSourceFactory {
   def createSource(sparkArgs:SparkArgs): FeatureSource
@@ -69,6 +72,29 @@ case class StdCSVFeatureSourceFactory(inputFile:String) extends FeatureSourceFac
   }
 }
 
+
+
+class CompositeFeatueSource(featureSources: Seq[FeatureSource]) extends FeatureSource {
+  require(!featureSources.isEmpty)
+  override lazy val sampleNames = { 
+    val headSampleNames = featureSources.head.sampleNames
+    require(featureSources.tail.forall(_.sampleNames == headSampleNames))
+    headSampleNames    
+  }
+  
+  def features: RDD[Feature] = {
+    // Make Union of all samples
+    // this does not check for duplicate variable though
+    val compositeRDDs = featureSources.map(_.features)
+    compositeRDDs.reduceLeft(_.union(_))
+  }
+}
+
+
+case class CompositeFeatureSourceFactory(sourceFactories:Seq[FeatureSourceFactory]) extends FeatureSourceFactory {
+  def createSource(sparkArgs:SparkArgs): FeatureSource  = new CompositeFeatueSource(sourceFactories.map(_.createSource(sparkArgs)))
+}
+
 trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
   
   import org.json4s._
@@ -88,6 +114,20 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
   @ArgsOption(name="-ij", required=false, usage="Input JSON specification", aliases=Array("--input-json"))
   val inputJSON:String = null 
   
+  def featureSourceFactory(inputJSON:JValue):FeatureSourceFactory = {
+    inputJSON match  {
+      case jsonObject:JObject => featureSourceFactory(jsonObject)
+      case jsonArray:JArray => featureSourceFactory(jsonArray)
+      case _ => throw new IllegalArgumentException(s"Cannot create source from spec of class ${inputJSON.getClass}") 
+    }
+  }
+  
+  
+  def featureSourceFactory(inputJSON:JArray): FeatureSourceFactory = {
+     val sourceFactories = inputJSON.children.map(featureSourceFactory)
+     CompositeFeatureSourceFactory(sourceFactories.foldLeft(ArrayBuffer[FeatureSourceFactory]())(_+=_).toSeq)
+  }
+  
   def featureSourceFactory(inputJSON:JObject): FeatureSourceFactory = {
      verbose(s"Input Spec is : ${inputJSON}")   
      val inputType = (inputJSON \ "type")
@@ -96,12 +136,13 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
       case JString("stdcsv") =>   inputJSON.extract[StdCSVFeatureSourceFactory]
       case JString("parquet") => inputJSON.extract[ParquetFeatureSourceFactory]
       case JString("vcf") => inputJSON.extract[VCFFeatureSourceFactory]
+      case _ => throw new IllegalArgumentException(s"Unrecognized input type: ${inputType}")
     }      
   }
 
   def featureSourceFactory: FeatureSourceFactory = {
-    val inputSpec = if (inputJSON!=null) {
-      parse(inputJSON).asInstanceOf[JObject]
+    val inputSpec:JValue = if (inputJSON!=null) {
+      parse(inputJSON)
     } else {
       val inputOptionsObject =  Option(inputOptions).map(parse(_).asInstanceOf[JObject]).getOrElse(JObject()) 
       inputOptionsObject ~ ("inputFile", inputFile) ~ ("type", inputType)
