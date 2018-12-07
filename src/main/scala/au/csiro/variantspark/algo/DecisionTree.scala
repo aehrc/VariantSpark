@@ -22,6 +22,8 @@ import au.csiro.variantspark.data.Feature
 import au.csiro.variantspark.utils.IndexedRDDFunction._
 import au.csiro.variantspark.data.FeatureBuilder
 import org.apache.spark.mllib.linalg.Vector
+import au.csiro.variantspark.data.DataBuilder
+import au.csiro.variantspark.data.StdFeature
 
 
 
@@ -70,6 +72,7 @@ case class StdTreeFeature(index:Long, label:String, variableType: VariableType, 
   def valueAsVector = ???
   def valueAsByteArray = ???
   def valueAsStrings = ???
+  def data = ???
 }
 
 object StdTreeFeature {
@@ -479,8 +482,8 @@ class DecisionTreeModel(val rootNode: DecisionTreeNode) extends PredictiveModelW
 
   def splitVariableIndexes = rootNode.splitsToStream.map(_.splitVariableIndex).toSet
   
-  def predict[T](indexedData: RDD[(T, Long)], variableType:VariableType)(implicit  fb:FeatureBuilder[T]): Array[Int]  = {
-    predict(indexedData.map({ case(v,i) => (fb.from(null,variableType, v),i)}))
+  def predict[T](indexedData: RDD[(T, Long)], variableType:VariableType)(implicit  db:DataBuilder[T]): Array[Int]  = {
+    predict(indexedData.map({ case(v,i) => (StdFeature.from(null,variableType, v),i)}))
   }
   
   def predict(indexedData: RDD[(Feature, Long)]): Array[Int]  = {

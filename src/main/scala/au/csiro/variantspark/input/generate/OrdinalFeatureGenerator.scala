@@ -2,7 +2,7 @@ package au.csiro.variantspark.input.generate
 
 import au.csiro.variantspark.input.FeatureSource
 import org.apache.spark.rdd.RDD
-import au.csiro.variantspark.data.ByteArrayFeature
+import au.csiro.variantspark.data._
 import org.apache.spark.SparkContext
 import au.csiro.variantspark.utils.Sampling
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
@@ -21,7 +21,7 @@ case class OrdinalFeatureGenerator(val nLevels:Int, val nVariables:Long,
     sc.range(0L, nVariables, numSlices = if (sparkPar > 0) sparkPar else sc.defaultParallelism)
       .mapPartitionsWithIndex { case (pi, iter) =>
         implicit val rf = new XorShift1024StarRandomGenerator(pi ^ seed)
-        iter.map(i => ByteArrayFeature("v_" + i, BoundedOrdinalVariable(nLevels), Sampling.subsample(nLevels, nSamples, true).map(_.toByte)))
+        iter.map(i => StdFeature.from("v_" + i, BoundedOrdinalVariable(nLevels), Sampling.subsample(nLevels, nSamples, true).map(_.toByte)))
       }
   }
   def sampleNames: List[String] =  Range(0,nSamples).map("s_"+_).toList  

@@ -4,9 +4,8 @@ import au.csiro.pbdava.ssparkle.common.utils.SerialUtils
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import au.csiro.variantspark.data.Feature
-import au.csiro.variantspark.data.ByteArrayFeature
-
+import au.csiro.variantspark.data._
+import au.csiro.variantspark.data.StdFeature
 
 
 @Deprecated
@@ -22,6 +21,6 @@ case class ParquetFeatureSource(inputPath:String)(implicit sc: SparkContext) ext
      val sqlContext = new org.apache.spark.sql.SQLContext(sc)
 
      val rawDF = sqlContext.read.parquet(inputPath)
-     rawDF.rdd.map( r => ByteArrayFeature(r.getString(0), r.getAs[Array[Byte]](1)))
+     rawDF.rdd.map( r => StdFeature.from(r.getString(0), r.getAs[Array[Byte]](1)))
   }
 }

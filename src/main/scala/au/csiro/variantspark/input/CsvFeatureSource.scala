@@ -5,8 +5,8 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import au.csiro.variantspark.data.ContinuousVariable
 import au.csiro.variantspark.data.VariableType
-import au.csiro.variantspark.data.Feature
-import au.csiro.variantspark.data.FeatureBuilder
+import au.csiro.variantspark.data._
+import au.csiro.variantspark.data.DataBuilder
 
 class DefaultCSVFormatSpec extends DefaultCSVFormat with Serializable
 
@@ -28,7 +28,7 @@ case class CsvFeatureSource(data:RDD[String], defaultType:VariableType = Continu
     }.collect().toMap
   }
   
-  def featuresAs[V](implicit cr:FeatureBuilder[V]):RDD[Feature] = {
+  def featuresAs[V](implicit cr:DataBuilder[V]):RDD[Feature] = {
     //TODO: extract the mapping to object
     val local_br_header = this.br_header
     val br_types  = data.context.broadcast(optVariableTypes.map(parseTypes))
@@ -37,7 +37,7 @@ case class CsvFeatureSource(data:RDD[String], defaultType:VariableType = Continu
        val header = local_br_header.value
        val csvParser = new CSVParser(csvFormat)
        val types = br_types.value
-       it.filter(!_.equals(header)).map(csvParser.parseLine(_).get).map(l => cr.from(l.head, types.flatMap(_.get(l.head)).getOrElse(defaultType) , l.tail))
+       it.filter(!_.equals(header)).map(csvParser.parseLine(_).get).map(l => StdFeature.from[V](l.head, types.flatMap(_.get(l.head)).getOrElse(defaultType) , l.tail))
     }    
   }
 }

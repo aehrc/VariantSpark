@@ -14,13 +14,9 @@ import au.csiro.variantspark.data.BoundedOrdinalVariable
 import au.csiro.variantspark.utils.Sample
 import au.csiro.variantspark.data.Feature
 import au.csiro.variantspark.data.VariableType
-import au.csiro.variantspark.data.VectorFeature
-import au.csiro.variantspark.data.ByteArrayFeature
 import au.csiro.variantspark.data.ContinuousVariable
-import au.csiro.variantspark.data.ByteArrayFeatureBuilder
-import au.csiro.variantspark.data.VectorFeatureBuilder
-import au.csiro.variantspark.data.FeatureBuilder
 import au.csiro.variantspark.test.TestFeatureSource
+import au.csiro.variantspark.data._
 
 
 class PolymorphicDecisionTreeTest extends SparkTest {
@@ -29,13 +25,13 @@ class PolymorphicDecisionTreeTest extends SparkTest {
     val genomicFeatureSource = new TestFeatureSource(Seq(
       ("gen_1", List("0", "0", "1", "2")),
       ("gen_2", List("0", "1", "0", "2"))          
-    ), BoundedOrdinalVariable(3), ByteArrayFeatureBuilder)
+    ), BoundedOrdinalVariable(3), ByteArrayDataBuilder)
     
     
     val otherFeatureSource = new TestFeatureSource(Seq(
       ("cont_1", List("0.2", "0.3", "1.4", "2.5")),
       ("cont_2", List("0.1", "1.3", "0.3", "2.6"))          
-    ), ContinuousVariable, VectorFeatureBuilder)
+    ), ContinuousVariable,VectorDataBuilder)
     
     // load polymorphic features (possibly combining two homogenous sources)
     

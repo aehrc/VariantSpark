@@ -14,7 +14,7 @@ import au.csiro.variantspark.data.BoundedOrdinalVariable
 import au.csiro.variantspark.algo.RandomForestParams
 import au.csiro.variantspark.algo.RandomForest
 import au.csiro.variantspark.algo._
-import au.csiro.variantspark.data.VectorFeature
+import au.csiro.variantspark.data._
 import au.csiro.variantspark.data.Feature
 
 object TestWideDecisionTree extends SparkApp {
@@ -43,10 +43,10 @@ object TestWideDecisionTree extends SparkApp {
     val dataType = BoundedOrdinalVariable(3)
 
     val (trainSetProj, testSetProj) = Projector.splitRDD(vectorData, 0.8)
-    val trainSetWithIndex:RDD[(Feature,Long)] = vectorData.project(trainSetProj).map(v => VectorFeature(null,dataType, v).asInstanceOf[Feature]).zipWithIndex().cache()
+    val trainSetWithIndex:RDD[(Feature,Long)] = vectorData.project(trainSetProj).map(v => StdFeature.from(null,dataType, v).asInstanceOf[Feature]).zipWithIndex().cache()
     val trainLabels = trainSetProj.projectArray(labels)
 
-    val testSet = vectorData.project(testSetProj).map(v => VectorFeature(null,dataType, v).asInstanceOf[Feature]).zipWithIndex().cache()
+    val testSet = vectorData.project(testSetProj).map(v => StdFeature.from(null,dataType, v).asInstanceOf[Feature]).zipWithIndex().cache()
     val testLabels = testSetProj.projectArray(labels)
     
     val rf = new RandomForest()
@@ -62,10 +62,10 @@ object TestWideDecisionTree extends SparkApp {
     println(s"Test error: ${testError}")
 
    val crossvalidateResult = CV.evaluateMean(Projector.rddFolds(vectorData, 3)) { fold =>
-      val trainSetWithIndex = vectorData.project(fold.inverted).map(v => VectorFeature(null,dataType, v).asInstanceOf[Feature]).zipWithIndex().cache()
+      val trainSetWithIndex = vectorData.project(fold.inverted).map(v => StdFeature.from(null,dataType, v).asInstanceOf[Feature]).zipWithIndex().cache()
       val trainLabels = fold.inverted.projectArray(labels)
 
-      val testSet = vectorData.project(fold).map(v => VectorFeature(null,dataType, v).asInstanceOf[Feature]).zipWithIndex().cache()
+      val testSet = vectorData.project(fold).map(v => StdFeature.from(null,dataType, v).asInstanceOf[Feature]).zipWithIndex().cache()
       val testLabels = fold.projectArray(labels)
      
       val rf = new RandomForest()

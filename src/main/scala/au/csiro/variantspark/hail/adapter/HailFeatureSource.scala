@@ -4,7 +4,7 @@ package au.csiro.variantspark.hail.adapter
 import is.hail.variant.VariantDataset
 import au.csiro.variantspark.input.FeatureSource
 import org.apache.spark.rdd.RDD
-import au.csiro.variantspark.data.ByteArrayFeature
+import au.csiro.variantspark.data._
 import is.hail.variant.Variant
 import is.hail.variant.Genotype
 import au.csiro.variantspark.input._
@@ -35,7 +35,7 @@ object HailFeatureSource {
         variant.ref, variant.alt).mkString(":")
   
   private def hailLineToFeature[V](variant:Variant, genotypes:Iterable[Genotype]):Feature = {    
-    ByteArrayFeature(variantToFeatureName(variant), DEFAULT_VARIABLE_TYPE, genotypes.map(genotypeToHamming).toArray)
+    StdFeature.from(variantToFeatureName(variant), DEFAULT_VARIABLE_TYPE, genotypes.map(genotypeToHamming).toArray)
   }
   
   private def genotypeToHamming(gt:Genotype):Byte = if (!gt.isCalled || gt.isHomRef) 0 else if (gt.isHomVar) 2 else 1

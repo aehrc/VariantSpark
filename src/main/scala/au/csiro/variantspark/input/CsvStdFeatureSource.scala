@@ -11,6 +11,8 @@ import au.csiro.variantspark.data.VariableType
 import au.csiro.variantspark.data.ContinuousVariable
 import au.csiro.variantspark.data.Feature
 import au.csiro.variantspark.data.FeatureBuilder
+import au.csiro.variantspark.data.DataBuilder
+import au.csiro.variantspark.data.StdFeature
 
 
 class MapAccumulator extends AccumulatorV2[(Int, Array[String]), Array[String]] { 
@@ -123,9 +125,9 @@ case class CsvStdFeatureSource[V](data:RDD[String], defaultType:VariableType = C
 
   def features:RDD[Feature] = featuresAs[Vector]
   
-  def featuresAs[V](implicit cr:FeatureBuilder[V]):RDD[Feature] = {
+  def featuresAs[V](implicit cr:DataBuilder[V]):RDD[Feature] = {
     transposedData.map({case (varId,values) =>
-      cr.from(varId, defaultType, values.toList)
+      StdFeature.from[V](varId, defaultType, values.toList)
     })
   }
 }

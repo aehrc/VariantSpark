@@ -6,7 +6,7 @@ import htsjdk.variant.variantcontext.VariantContext
 import collection.JavaConverters._
 import au.csiro.variantspark.data.Feature
 import au.csiro.variantspark.data.BoundedOrdinalVariable
-import au.csiro.variantspark.data.ByteArrayFeature
+import au.csiro.variantspark.data.StdFeature
 
 
 trait VariantToFeatureConverter {
@@ -17,7 +17,7 @@ case class DefVariantToFeatureConverter(biallelic:Boolean = false, separator:Str
   
   def convert(vc:VariantContext):Feature = {
     val gts = vc.getGenotypes.iterator().asScala.map(convertGenotype).toArray
-    ByteArrayFeature(convertLabel(vc), BoundedOrdinalVariable(3), gts)
+    StdFeature.from(convertLabel(vc), BoundedOrdinalVariable(3), gts)
   }
   
   def convertLabel(vc:VariantContext):String = {
