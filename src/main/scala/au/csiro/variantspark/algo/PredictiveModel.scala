@@ -8,8 +8,8 @@ import scala.reflect.ClassTag
 
 trait PredictiveModel[V] {
     
-  def predict(data: RDD[V])(implicit ct:ClassTag[V]): Array[Int] = predictIndexed(data.zipWithIndex())
-  def predictIndexed(data: RDD[(V,Long)])(implicit ct:ClassTag[V]): Array[Int] 
+  def predict(data: RDD[V])(implicit canSplit:CanSplit[V]): Array[Int] = predictIndexed(data.zipWithIndex())
+  def predictIndexed(data: RDD[(V,Long)])(implicit canSplit:CanSplit[V]): Array[Int] 
   def printout() 
 }
 

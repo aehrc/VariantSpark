@@ -413,11 +413,11 @@ object SplitNode {
 }
 
 @SerialVersionUID(1l)
-class DecisionTreeModel[V](val rootNode: DecisionTreeNode)(implicit canSplit:CanSplit[V]) extends PredictiveModelWithImportance[V] with  Logging with Serializable {
+case class DecisionTreeModel[V](val rootNode: DecisionTreeNode) extends PredictiveModelWithImportance[V] with  Logging with Serializable {
 
   def splitVariableIndexes = rootNode.splitsToStream.map(_.splitVariableIndex).toSet
 
-  def predictIndexed(indexedData: RDD[(V,Long)])(implicit ct:ClassTag[V]): Array[Int] = {
+  def predictIndexed(indexedData: RDD[(V,Long)])(implicit canSplit:CanSplit[V]): Array[Int] = {
     val treeVariableData =  indexedData.collectAtIndexes(splitVariableIndexes)
     Range(0, indexedData.size).map(i => rootNode.traverse(s => canSplit.at(treeVariableData(s.splitVariableIndex))(i) <= s.splitPoint).majorityLabel).toArray
   }

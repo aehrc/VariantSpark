@@ -40,10 +40,13 @@ import au.csiro.variantspark.utils.HdfsPath
 import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
 import au.csiro.variantspark.cli.args.ImportanceOutputArgs
 import au.csiro.variantspark.cli.args.FeatureSourceArgs
+import au.csiro.variantspark.cli.args.ModelOutputArgs
+
 
 class ImportanceCmd extends ArgsApp with SparkApp 
   with FeatureSourceArgs
   with ImportanceOutputArgs
+  with ModelOutputArgs
   with Echoable with Logging with TestArgs {
 
   // input options  
@@ -69,9 +72,6 @@ class ImportanceCmd extends ArgsApp with SparkApp
         , aliases=Array("--output-include-data") )
   val includeData = false
     
-  @Option(name="-om", required=false, usage="Path to model file", aliases=Array("--model-file"))
-  val modelFile:String = null
-
   // random forrest options
   
   @Option(name="-rn", required=false, usage="RandomForest: number of trees to build (def=20)", aliases=Array("--rf-n-trees") )
@@ -105,7 +105,8 @@ class ImportanceCmd extends ArgsApp with SparkApp
   val randomSeed: Long = defRng.nextLong
    
   @Override
-  def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ro", "-om", "target/ch22-model.ser", "-sr", "13")
+  def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ro", "-om",
+      "target/ch22-model.json", "-omf","json", "-sr", "13")
     
   @Override
   def run():Unit = {
@@ -164,17 +165,19 @@ class ImportanceCmd extends ArgsApp with SparkApp
     
     echo(s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s") 
         
-    if (modelFile != null) {
-      LoanUtils.withCloseable(new ObjectOutputStream(HdfsPath(modelFile).create())) { objectOut =>
-        objectOut.writeObject(result)
-      }
-    }
     
     // build index for names
-    val topImportantVariables = limitVariables(result.normalizedVariableImportance(importanceNormalizer).toSeq, nVariables)
+    val allImportantVariables  = result.normalizedVariableImportance(importanceNormalizer).toSeq
+    val topImportantVariables = limitVariables(allImportantVariables, nVariables)
     val topImportantVariableIndexes = topImportantVariables.map(_._1).toSet
     
-    val index = SparkUtils.withBroadcast(sc)(topImportantVariableIndexes) { br_indexes => 
+    val variablesToIndex = if (requiresFullIndex)  {
+      allImportantVariables.map(_._1).toSet
+    } else {
+      topImportantVariableIndexes      
+    }
+    
+    val index = SparkUtils.withBroadcast(sc)(variablesToIndex) { br_indexes => 
       inputData.filter(t => br_indexes.value.contains(t._2)).map({case (f,i) => (i, f.label)}).collectAsMap()
     }
     
@@ -184,15 +187,16 @@ class ImportanceCmd extends ArgsApp with SparkApp
       echo("Variable importance preview")
       varImportance.take(math.min(math.max(nVariables, defaultPreviewSize), defaultPreviewSize)).foreach({case(label, importance) => echo(s"${label}: ${importance}")})
     }
-
-    val importantVariableData = if (includeData) trainingData.collectAtIndexes(topImportantVariableIndexes) else null
     
+    val importantVariableData = if (includeData) trainingData.collectAtIndexes(topImportantVariableIndexes) else null
+   
     CSVUtils.withStream(if (outputFile != null ) HdfsPath(outputFile).create() else ReusablePrintStream.stdout) { writer =>
       val header = List("variable","importance") ::: (if (includeData) featureSource.sampleNames else Nil)
       writer.writeRow(header)
       writer.writeAll(topImportantVariables.map({case (i, importance) => 
         List(index(i), importance) ::: (if (includeData) importantVariableData(i).toArray.toList else Nil)}))
     }
+    saveModel(result, index.toMap)
   }
 }
 
