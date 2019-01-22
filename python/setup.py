@@ -65,14 +65,16 @@ try:
         version= VERSION,    
         packages=find_packages(exclude=["*.test"]) + ['varspark.jars'], 
         install_requires=[
-            'typedecorator',
-            'pandas>=0.22.0',
+            'typedecorator'
         ],
 #        test_suite = 'varspark.test',
 #        test_requires = [
 #            'pyspark>=2.1.0'
 #        ],
-        extras_require = {
+        extras_require = {                          
+            'deps': [ 
+                'pandas>=0.22.0', 
+            ],
             'spark': [ 
                 'pyspark==2.2.1', 
             ],

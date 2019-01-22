@@ -16,7 +16,8 @@ class ReproducibilityTest extends SparkTest {
   
   override implicit lazy val spark = SparkSession.builder.config(new SparkConf(false)).appName("test").master("local[*]").getOrCreate()
   
-  //@Test
+  @Test
+  @Ignore
   def testReproducibleResults() {    
     implicit val vsContext = VSContext(spark)
     val features = vsContext.importVCF("data/chr22_1000.vcf", 3)
