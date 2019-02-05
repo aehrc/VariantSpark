@@ -172,7 +172,7 @@ object RandomForest {
     val decisionTree = new DecisionTree(params)
     new BatchTreeModel() {
       override def batchTrain(indexedData: RDD[TreeFeature], labels: Array[Int], nTryFraction:
-        Double, samples:Seq[Sample]) = decisionTree.batchTrain(indexedData, labels, nTryFraction, samples)
+        Double, samples:Seq[Sample]) = decisionTree.batchTrainInt(indexedData, labels, nTryFraction, samples)
       override def batchPredict(indexedData: RDD[TreeFeature], models: Seq[PredictiveModelWithImportance], indexes:
         Seq[Array[Int]]) = DecisionTreeModel.batchPredict(indexedData.map(tf => (tf,tf.index)),
               models.asInstanceOf[Seq[DecisionTreeModel]], indexes)

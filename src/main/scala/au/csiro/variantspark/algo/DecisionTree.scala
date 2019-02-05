@@ -16,6 +16,7 @@ import org.apache.spark.TaskContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.RDD.rddToPairRDDFunctions
+import org.apache.spark.storage.StorageLevel
 import scala.reflect.ClassTag
 import au.csiro.variantspark.data.ContinuousVariable
 import au.csiro.variantspark.data.Feature
@@ -309,6 +310,12 @@ case class VariableSplitter(val labels:Array[Int], mTryFactor:Double=1.0, val ra
 
   val nCategories = labels.max + 1
 
+  def initialSubset(sample:Sample):SubsetInfo = {
+        val currentSet =  sample.indexesIn.toArray
+        val (totalGini, totalLabel) = Gini.giniImpurity(currentSet, labels, nCategories)
+        SubsetInfo(currentSet, totalGini, totalLabel)    
+  }
+  
   /** Find the splits in the data based on the gini value 
     * 
     * Specify the 'data' and 'splits' inputs
@@ -590,6 +597,9 @@ case class DecisionTreeParams(
   override def toString = ToStringBuilder.reflectionToString(this)
 }
 
+
+
+
 /** Class for the Decision tree model 
   * 
   * Specify the 'params' using the [[au.csiro.variantspark.algo.DecisionTreeParams]]
@@ -608,56 +618,61 @@ case class DecisionTreeParams(
   *
   * @param params: input the [[au.csiro.variantspark.algo.DecisionTreeParams]] class containing the main aspects of the model
   */
-class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) extends Logging with Prof {
+class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(), val trf:TreeRepresentationFactory = DefTreeRepresentationFactory) extends Logging with Prof {
 
   implicit lazy val rnd = new XorShift1024StarRandomGenerator(params.seed)
 
-//  /** Basic run operation taking the in the data, the type, and the labels
-//    *
-//    * @param data: input an RDD of the dataset
-//    * @param dataType: input the dataType using the [[au.csiro.variantspark.data.VariableType]] class
-//    * @param labels: input an array of integers changed to an integer representation
-//    */
-//  def run(data: RDD[V], dataType: VariableType, labels: Array[Int]): DecisionTreeModel[V] = run(data.zipWithIndex(), dataType, labels, 1.0, Sample.all(canSplit.size(data.first())))
+  implicit def toRepresenation(indexedFeatures: RDD[(Feature, Long)]):RDD[TreeFeature] = trf.createRepresentation(indexedFeatures)
+  
+  /** Basic training operation taking the in the data, the type, and the labels
+    *
+    * @param data: input an RDD of the dataset
+    * @param labels: input an array of integers changed to an integer representation
+    */
+    def train(indexedData: RDD[(Feature,Long)], labels: Array[Int]): DecisionTreeModel = train(indexedData, labels, 1.0, Sample.all(indexedData.first._1.size))
 
-    def run(indexedData: RDD[(Feature,Long)], labels: Array[Int]): DecisionTreeModel = run(indexedData, labels, 1.0, Sample.all(indexedData.first._1.size))
-//  /** Alternative run function
-//    *
-//    * @param indexedData: input an RDD of the values of the dataset with the indices
-//    * @param dataType: input the [[au.csiro.variantspark.data.VariableType]] class
-//    * @param labels: input an array of integers changed to an integer representation
-//    * @param nvarFraction: 
-//    * @param sample: input the [[au.csiro.variantspark.utils.Sample]] class that contains the size and the indices
-//    */
-    def run(indexedData: RDD[(Feature,Long)], labels: Array[Int], nvarFraction: Double, sample:Sample)(implicit trf: TreeRepresentationFactory = DefTreeRepresentationFactory): DecisionTreeModel =
-        batchTrain(trf.createRepresentation(indexedData), labels, nvarFraction, List(sample)).head
-//
-//  /** Trains all the trees for specified samples at the same time
-//    *
-//    * @param indexedData: input an RDD of the values of the dataset with the indices
-//    * @param dataType: input the [[au.csiro.variantspark.data.VariableType]] class
-//    * @param labels: input an array of integers changed to an integer representation
-//    * @param nvarFraction: 
-//    * @param sample: input the [[au.csiro.variantspark.utils.Sample]] class that contains the size and the indices
-//    * @return Returns a Sequence of [[au.csiro.variantspark.algo.DecisionTreeModel]] classes containing the dataset 
-//    */
-  def batchTrain(indexedFeatures: RDD[(Feature, Long)],labels: Array[Int], nvarFraction: Double, sample:Seq[Sample])(implicit trf: TreeRepresentationFactory = DefTreeRepresentationFactory): Seq[DecisionTreeModel] = {
-    batchTrain(trf.createRepresentation(indexedFeatures),labels, nvarFraction, sample)
+  /** Alternative train function
+    *
+    * @param indexedData: input an RDD of the values of the dataset with the indices
+    * @param labels: input an array of integers changed to an integer representation
+    * @param nvarFraction: 
+    * @param sample: input the [[au.csiro.variantspark.utils.Sample]] class that contains the size and the indices
+    */
+    def train(indexedData: RDD[(Feature,Long)], labels: Array[Int], nvarFraction: Double, sample:Sample): DecisionTreeModel =
+        batchTrain(indexedData, labels, nvarFraction, List(sample)).head
+
+  /** Trains all the trees for specified samples at the same time
+    *
+    * @param indexedData: input an RDD of the values of the dataset with the indices
+    * @param labels: input an array of integers changed to an integer representation
+    * @param nvarFraction: 
+    * @param sample: input the [[au.csiro.variantspark.utils.Sample]] class that contains the size and the indices
+    * @return Returns a Sequence of [[au.csiro.variantspark.algo.DecisionTreeModel]] classes containing the dataset 
+    */
+  def batchTrain(indexedFeatures: RDD[(Feature, Long)],labels: Array[Int], nvarFraction: Double, sample:Seq[Sample]): Seq[DecisionTreeModel] = {
+    batchTrainInt(trf.createRepresentation(indexedFeatures),labels, nvarFraction, sample)
   }
  
-  def batchTrain(treeFeatures: RDD[TreeFeature], 
-      labels: Array[Int], nvarFraction: Double, sample:Seq[Sample]): Seq[DecisionTreeModel] = {
+  /** Trains all the trees for specified samples at the same time
+    *
+    * @param treeFeatures: input an RDD of the internal tree feature representation
+    * @param labels: input an array of integers changed to an integer representation
+    * @param nvarFraction: 
+    * @param sample: input the [[au.csiro.variantspark.utils.Sample]] class that contains the size and the indices
+    * @return Returns a Sequence of [[au.csiro.variantspark.algo.DecisionTreeModel]] classes containing the dataset 
+    */
+  def batchTrainInt(features: RDD[TreeFeature], labels: Array[Int], nvarFraction: Double, sample:Seq[Sample]): Seq[DecisionTreeModel] = {
+    
+    // manage persistence here - cache the features if not already cached
+    withCached(features) { cachedFeatures =>
       
-    val splitter = VariableSplitter(labels, nvarFraction, randomizeEquality = params.randomizeEquality)
-    val subsets = sample.map { s =>
-      val currentSet =  s.indexesIn.toArray
-      val (totalGini, totalLabel) = Gini.giniImpurity(currentSet, labels, splitter.nCategories)
-      SubsetInfo(currentSet, totalGini, totalLabel)
-    }.toList
-    val rootNodes = withBroadcast(treeFeatures)(splitter) { br_splitter =>
-      buildSplit(treeFeatures, subsets, br_splitter, 0)
+      val splitter = VariableSplitter(labels, nvarFraction, randomizeEquality = params.randomizeEquality)
+      val subsets = sample.map(splitter.initialSubset).toList
+      val rootNodes = withBroadcast(cachedFeatures)(splitter) { br_splitter =>
+        buildSplit(cachedFeatures, subsets, br_splitter, 0)
+      }
+      rootNodes.map(new DecisionTreeModel(_))
     }
-    rootNodes.map(new DecisionTreeModel(_))
   }      
       
   /** Builds (recursively) the decision tree level by level
@@ -668,7 +683,7 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) extend
     * @param treeLevel: specify the current level of the tree being built
     * @return Returns a subset of the splits 
     */
-  def buildSplit(indexedTypedData: RDD[TreeFeature], subsets: List[SubsetInfo], br_splitter: Broadcast[VariableSplitter],treeLevel:Int): List[DecisionTreeNode] = {
+  private def buildSplit(indexedTypedData: RDD[TreeFeature], subsets: List[SubsetInfo], br_splitter: Broadcast[VariableSplitter],treeLevel:Int): List[DecisionTreeNode] = {
 
     logDebug(s"Building level ${treeLevel}, subsets: ${subsets}")
     profReset()
@@ -706,7 +721,7 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams()) extend
     * @param subsetsToSplit: input a list of [[au.csiro.variantspark.algo.SubsetInfo]]
     * @param br_splitter: input a Broadcast of Arrays containing the [[au.csiro.variantspark.algo.SubsetInfo]] class
     */
-  def findBestSplitsAndSubsets(treeFeatures: RDD[TreeFeature], subsetsToSplit:List[SubsetInfo], br_splitter:Broadcast[VariableSplitter]) =  {
+  private def findBestSplitsAndSubsets(treeFeatures: RDD[TreeFeature], subsetsToSplit:List[SubsetInfo], br_splitter:Broadcast[VariableSplitter]) =  {
     profIt("findBestSplitsAndSubsets") { 
       val subsetsToSplitAsIndices = subsetsToSplit.toArray
       withBroadcast(treeFeatures)(subsetsToSplitAsIndices){ br_splits => 

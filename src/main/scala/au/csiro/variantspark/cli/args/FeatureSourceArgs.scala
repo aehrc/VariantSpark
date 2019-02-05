@@ -154,7 +154,7 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable  {
   def echoDataPreview() {
     if (isVerbose) {
       verbose("Data preview:")
-      featureSource.features.take(defaultPreviewSize).foreach(f=> verbose(s"${f.label}:${f.variableType}:${dumpList(f.valueAsStrings, longPreviewSize)}(${f.getClass.getName})"))
+      featureSource.features.take(defaultPreviewSize).foreach(f=> verbose(s"${f.label}:${f.variableType}:${dumpList(f.valueAsStrings, longPreviewSize)} (${f.getClass.getName})"))
     }  
   }
   

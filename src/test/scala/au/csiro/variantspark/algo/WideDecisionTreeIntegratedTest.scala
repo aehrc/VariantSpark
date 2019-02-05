@@ -38,7 +38,7 @@ class WideDecisionTreeIntegratedTest extends SparkTest {
     val inputData = featureSource.features.zipWithIndex.cache()
     val nVars = inputData.count
     // max fife levels
-    val model = new DecisionTree(DecisionTreeParams(maxDepth = maxDepth)).run(inputData, labels)
+    val model = new DecisionTree(DecisionTreeParams(maxDepth = maxDepth)).train(inputData, labels)
     val prediction = model.predict(inputData)
 
     // check predictions
@@ -106,7 +106,7 @@ class WideDecisionTreeIntegratedTest extends SparkTest {
     val labels = decisionTreeModel.predict(data.asFeature(BoundedOrdinalVariable(3)))
     println(labels.toList)
 
-    val model = new DecisionTree().run(data.asFeature(BoundedOrdinalVariable(3)), labels)
+    val model = new DecisionTree().train(data.asFeature(BoundedOrdinalVariable(3)), labels)
     model.printout()
 
   }
