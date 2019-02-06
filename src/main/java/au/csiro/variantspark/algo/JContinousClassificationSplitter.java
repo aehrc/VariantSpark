@@ -1,5 +1,7 @@
 package au.csiro.variantspark.algo;
 
+import java.util.Arrays;
+
 import it.unimi.dsi.fastutil.doubles.DoubleArrays;
 
 
@@ -28,6 +30,11 @@ class SplitGiniAggregator {
 	
 }
 
+
+/**
+ * @author szu004
+ * This is a naive implementation of precise (not binning) continous variable splitter
+ */
 public class JContinousClassificationSplitter implements ClassificationSplitter  {
 
 	private final int[] labels;
@@ -43,24 +50,30 @@ public class JContinousClassificationSplitter implements ClassificationSplitter 
 		if (splitIndices.length < 2) {
 			// nothing to split
 			return null;
-		}
-		// TODO: Use sorting trick
-		// This is a naive implementation sorting eveything at evry split
-		
-		// essentialy need to indirecly sort split indices by the values of data
-		// 
-		
+		}		
 		SplitGiniAggregator giniAggregator = new SplitGiniAggregator(noLabels);
 		
+		// TODO: [Perfomance] this is where the sorting trick might be useful 
+		// this is all to sort the subset indexes in ascending order by the values the refer to
+		// using available Java functions
 		double splitValues[] = new double[splitIndices.length];
-		int perm[] = new int[splitIndices.length];
+		int order[] = new int[splitIndices.length];
 		for(int i=0; i < splitIndices.length; i++) {
 			splitValues[i] = data[splitIndices[i]];
-			perm[i] = i;
-			giniAggregator.init(labels[splitIndices[i]]);
+			order[i] = i;
 		}
-		DoubleArrays.quickSortIndirect(perm, splitValues);
-		// TODO: This is obviously crazy with dereferencing
+		DoubleArrays.quickSortIndirect(order, splitValues);
+		int[] sortedSplitIndices = new int[splitIndices.length];
+		
+		for(int i=0; i < order.length; i++) {
+			sortedSplitIndices[i] = splitIndices[order[i]];
+		}
+		
+		// init the aggregator with the label counts
+		for(int i:sortedSplitIndices) {
+			giniAggregator.init(labels[i]);
+		}
+
 		// INFO: a valid split is 
 		// - left: v <= splitValue
 		// - right: splitValue < v
@@ -72,12 +85,15 @@ public class JContinousClassificationSplitter implements ClassificationSplitter 
 		double leftRightGini[] = new double[2];
 		double minGini = Double.MAX_VALUE;
 		double splitValue = Double.NaN;
-		double splitLeftGini=Double.NaN, splitRightGini=Double.NaN;
-		double lastValue =  splitValues[perm[0]];
+		double splitLeftGini = Double.NaN, splitRightGini=Double.NaN;
+		double lastValue = data[sortedSplitIndices[0]];
 		
-		for(int i=0; i < splitIndices.length;i++) {
-			double currentValue = splitValues[perm[i]];
-			int currentLabel = labels[splitIndices[perm[i]]];
+		// we now go through the subset starting from the smallest values 
+		// (sortedSplitIndices are sorted by ascending values the refer to)
+		
+		for(int i:sortedSplitIndices) {
+			double currentValue = data[i];
+			int currentLabel = labels[i];
 			if (currentValue !=lastValue) {
 				// possible split treshold
 				double lastValueGini = giniAggregator.getGini(leftRightGini);
