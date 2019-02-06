@@ -74,47 +74,54 @@ class MapAccumulator extends AccumulatorV2[(Int, Array[String]), Array[String]] 
 
 
 /**
- * Frature source from a standard variable in columns representation
+ * Feature source from a standard variable in columns representation
+ * NOTE: This class may be removed in the future but for now is here to simplify
+ * ingestion of traditional CSV files for analysis. 
  */
 case class CsvStdFeatureSource[V](data:RDD[String], defaultType:VariableType = ContinuousVariable, 
       csvFormat:CSVFormat = DefaultCSVFormatSpec) extends FeatureSource {
   
-  //val acc_sampleName = new MapAccumulator()
-  //data.context.register(acc_sampleName, "SampleAcc")
   val variableNames = new CSVParser(csvFormat).parseLine(data.first).get.tail
   val br_variableNames = data.context.broadcast(variableNames)
   
   lazy val transposedData = {
-    data.mapPartitionsWithIndex({ case (i,it) =>
-    val csvParser = new CSVParser(csvFormat)
-    val variableNames = br_variableNames.value
-    val columns = Array.fill(variableNames.size)(ArrayBuffer[String]())
-    val sampleNames = ArrayBuffer[String]()
-    it.drop(if (i==0) 1 else 0).map(csvParser.parseLine(_).get).foreach({l => 
-      val sampleId = l.head
-      // we will accumulate sample names later
-      l.tail.zipWithIndex.foreach({case (v, i) => 
-          columns(i).append(v)
-      })
-      sampleNames.append(sampleId)
-    })
-    //acc_sampleName.add((i,sampleNames.toArray))
-    variableNames.zip(columns.map(c => (i,c.toArray))).toIterator      
-     // essentially need to transpose the data .. should I Just use Spar Function
-     // otherwise produce (varID, (partId, data)) 
-     // groupBy (varID)
-     // reduce data by combining all the paritions ordered by partID        
-          }, true)
-      .sortBy(_._2._1) // sort by partition Index
-      .groupByKey()
-      .map({ case (varId, it) => 
-        val values = ArrayBuffer[String]()
-        it.foreach({case (pi, block) => values++=block })
-        (varId, values.toArray)
-      })
-      .sortBy(_._1)
+    // expects data in coma separated format of
+    // <SampleId>  , VarName1, VarName2,....
+    // SampleName1, v_1_1,   v_1_2, ...
+    // SampleName2, v_2_1,   v_2_2, ...
+    
+    // The first step is to transpose data in each partition and produce an RDD
+    // of (VariableName, (PartitionIndex, [values for samples]])
+    
+    val transposedPartitions:RDD[(String,(Int, Array[String]))] = data.mapPartitionsWithIndex({ case (partIndex,it) =>
+      val csvParser = new CSVParser(csvFormat)
+      val variableNames = br_variableNames.value
+      val variableValues = Array.fill(variableNames.size)(ArrayBuffer[String]())
+      val sampleNames = ArrayBuffer[String]()
+      it.drop(if (partIndex==0) 1 else 0) // skip header line (the first line of the first partition)
+        .map(csvParser.parseLine(_).get) // parse the line
+        .foreach({ case sampleId :: sampleValues => 
+          sampleNames.append(sampleId)
+          sampleValues.zipWithIndex.foreach({case (v, i) => // transpose: assign the values of a sample to corresponding variables
+            variableValues(i).append(v)
+          })
+        })
+        variableNames.zip(variableValues.map(c => (partIndex,c.toArray))).toIterator      
+    }, true)
+      
+    // The second step is to combine all the values for each variable originating 
+    // from differenrt partitions (in the order of partitions)
+    transposedPartitions.sortBy(_._2._1) // sort by partition Index
+      .map({case (variableName, (partIndex, variableValues)) => (variableName, variableValues)})
+      .groupByKey() // group by variableName
+      .mapValues(variableValues => variableValues.foldLeft(ArrayBuffer[String]())(_++=_).toArray) // combine values from this variable coming from different partitions (samples)
+      .sortBy(_._1) // sort by variable name
   }
   
+  //TODO: [Peformance] It would be better (especiall for larger files)
+  // to collect sample names in the transposition calculation above 
+  // for smaller files (which is how we intend to use initially this should not 
+  // be an issue though
   
   lazy val sampleNames:List[String] = {
     data.mapPartitions({it => 
