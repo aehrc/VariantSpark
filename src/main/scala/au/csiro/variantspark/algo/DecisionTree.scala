@@ -493,7 +493,7 @@ class DecisionTreeModel(val rootNode: DecisionTreeNode) extends PredictiveModelW
     predict(indexedData.map({ case(v,i) => (StdFeature.from(null,variableType, v),i)}))
   }
   
-  def predict(indexedData: RDD[(Feature, Long)]): Array[Int]  = {
+  def predict(indexedData:RDD[(Feature, Long)]): Array[Int]  = {
     val treeVariableData =  indexedData.collectAtIndexes(splitVariableIndexes)
     Range(0, indexedData.size)
       .map(i => rootNode.traverse(s => treeVariableData(s.splitVariableIndex).at(i) <= s.splitPoint).majorityLabel).toArray

@@ -3,13 +3,16 @@ package au.csiro.variantspark.data
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
 
-trait Data {
+trait DataLike {
+  def size:Int
+  def at(i:Int):Double    
+}
+
+trait Data extends DataLike {
   def value: Any
   def valueAsByteArray: Array[Byte]
   def valueAsVector: Vector
   def valueAsStrings: List[String]
-  def size:Int
-  def at(i:Int):Double  
 }
 
 
