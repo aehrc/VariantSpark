@@ -40,7 +40,6 @@ import au.csiro.variantspark.cli.args.ImportanceOutputArgs
 import au.csiro.variantspark.cli.args.FeatureSourceArgs
 import au.csiro.variantspark.data.ContinuousVariable
 import au.csiro.variantspark.algo.RandomForest
-import au.csiro.variantspark.algo.CanSplit
 import au.csiro.variantspark.data.FeatureBuilder
 import scala.reflect.ClassTag
 import au.csiro.variantspark.input._

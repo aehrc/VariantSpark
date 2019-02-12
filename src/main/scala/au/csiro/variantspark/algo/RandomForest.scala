@@ -187,15 +187,13 @@ object RandomForest {
   * @param modelBuilderFactory the type of model, i.e. 'wide decision tree builder'
   */
 class RandomForest(params:RandomForestParams=RandomForestParams()
-      ,modelBuilderFactory:RandomForest.ModelBuilderFactory = RandomForest.wideDecisionTreeBuilder _) extends Logging {
+      ,modelBuilderFactory:RandomForest.ModelBuilderFactory = RandomForest.wideDecisionTreeBuilder _, trf:TreeRepresentationFactory = DefTreeRepresentationFactory) extends Logging {
 
   // TODO (Design):make this class keep random state (could be externalised to implicit random)
   implicit lazy val rng = new XorShift1024StarRandomGenerator(params.seed)
 
   def batchTrain(indexedData: RDD[(Feature, Long)],  labels: Array[Int], nTrees: Int, nBatchSize:Int = RandomForest.defaultBatchSize): RandomForestModel = {
-    val treeFeatures:RDD[TreeFeature] = indexedData.map { case(f,i) =>
-      StdTreeFeature.forType[Array[Byte]](i, f.label, f.variableType, f.valueAsByteArray)
-    }
+    val treeFeatures:RDD[TreeFeature] = trf.createRepresentation(indexedData)
     batchTrainTyped(treeFeatures, labels, nTrees, nBatchSize)
   }
                   

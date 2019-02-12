@@ -3,6 +3,8 @@ package au.csiro.variantspark.algo;
 import java.util.Arrays;
 import java.util.function.BiConsumer;
 
+import au.csiro.variantspark.algo.impurity.FastGini;
+
 /**
  * Fast gini based splitter. NOT MULITHREADED !!!
  * Caches state to avoid heap allocations

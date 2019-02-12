@@ -1,4 +1,6 @@
-package au.csiro.variantspark.algo;
+package au.csiro.variantspark.algo.impurity;
+
+import au.csiro.variantspark.algo.ArrayOps;
 
 @SuppressWarnings("JavaDoc")
 public final class FastGini {

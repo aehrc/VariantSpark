@@ -2,6 +2,9 @@ package au.csiro.variantspark.algo
 
 
 import org.junit.Assert._
+
+import au.csiro.variantspark.algo.impurity.FastGini;
+
 import org.junit.Test
 
 class FastGiniTest {

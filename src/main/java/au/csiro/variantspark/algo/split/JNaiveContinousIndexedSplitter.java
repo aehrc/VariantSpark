@@ -1,38 +1,32 @@
-package au.csiro.variantspark.algo;
+package au.csiro.variantspark.algo.split;
 
-import java.util.Arrays;
-
-import au.csiro.variantspark.algo.impurity.GiniImpurityAggregator;
+import au.csiro.variantspark.algo.IndexedImpurityCalculator;
+import au.csiro.variantspark.algo.IndexedSplitter;
+import au.csiro.variantspark.algo.SplitInfo;
 import it.unimi.dsi.fastutil.doubles.DoubleArrays;
 
 
 /**
  * @author szu004
- * This is a naive implementation of precise (not binning) continous variable splitter
+ * This is a naive implementation of precise continouns variable splitter
  */
 
+public class JNaiveContinousIndexedSplitter implements IndexedSplitter {
 
-
-
-
-public class JContinousClassificationSplitter implements ClassificationSplitter  {
-
-	private final int[] labels;
-	private final int noLabels;
-	
-	public JContinousClassificationSplitter(int[] labels, int noLabels) {
-		this.labels = labels;
-		this.noLabels = noLabels;
+	private final double[] data;
+	public JNaiveContinousIndexedSplitter(double[] data) {
+		this.data = data;
 	}
 	
 	@Override
-	public SplitInfo findSplit(final double[] data, int[] splitIndices) {		
+	public SplitInfo findSplit(IndexedImpurityCalculator impurityCalc, int[] splitIndices) {		
 		if (splitIndices.length < 2) {
 			// nothing to split
 			return null;
 		}		
-		GiniImpurityAggregator giniAggregator = new GiniImpurityAggregator(noLabels);
-		
+
+		impurityCalc.init(splitIndices);
+
 		// TODO: [Perfomance] this is where the sorting trick might be useful 
 		// this is all to sort the subset indexes in ascending order by the values the refer to
 		// using available Java functions
@@ -48,11 +42,6 @@ public class JContinousClassificationSplitter implements ClassificationSplitter 
 		for(int i=0; i < order.length; i++) {
 			sortedSplitIndices[i] = splitIndices[order[i]];
 		}
-		
-		// init the aggregator with the label counts
-		for(int i:sortedSplitIndices) {
-			giniAggregator.initLabel(labels[i]);
-		}
 
 		// INFO: a valid split is 
 		// - left: v <= splitValue
@@ -62,10 +51,10 @@ public class JContinousClassificationSplitter implements ClassificationSplitter 
 		// also we can only split at value changes so if there are repeat values we need to continue 
 		// and only check for gini improvement if there is a change
 		
-		double leftRightGini[] = new double[2];
-		double minGini = Double.MAX_VALUE;
+		double leftRightImpurity[] = new double[2];
+		double minImpurity = Double.MAX_VALUE;
 		double splitValue = Double.NaN;
-		double splitLeftGini = Double.NaN, splitRightGini=Double.NaN;
+		double splitLeftImpurity = Double.NaN, splitRightImpurity=Double.NaN;
 		double lastValue = data[sortedSplitIndices[0]];
 		
 		// we now go through the subset starting from the smallest values 
@@ -73,35 +62,21 @@ public class JContinousClassificationSplitter implements ClassificationSplitter 
 		
 		for(int i:sortedSplitIndices) {
 			double currentValue = data[i];
-			int currentLabel = labels[i];
 			if (currentValue !=lastValue) {
 				// possible split treshold
-				double lastValueGini = giniAggregator.getValue(leftRightGini);
-				if (lastValueGini < minGini) {
+				double lastValueImpurity = impurityCalc.getImpurity(leftRightImpurity);
+				if (lastValueImpurity < minImpurity) {
 					// OK we have got a better split here
 					splitValue = lastValue;
-					minGini = lastValueGini;
-					splitLeftGini = leftRightGini[0];
-					splitRightGini = leftRightGini[1];					
+					minImpurity = lastValueImpurity;
+					splitLeftImpurity = leftRightImpurity[0];
+					splitRightImpurity = leftRightImpurity[1];					
 				}
 			}			
-			giniAggregator.updateLabel(currentLabel);
+			impurityCalc.update(i);
 			lastValue = currentValue;
 		}
-		
 		// if splitValue is not NaN we seem to have a split here
-		return (!Double.isNaN(splitValue))? new SplitInfo(splitValue, minGini, splitLeftGini, splitRightGini):null;
+		return (!Double.isNaN(splitValue))? new SplitInfo(splitValue, minImpurity, splitLeftImpurity, splitRightImpurity):null;
 	}
-
-	@Override
-	public SplitInfo findSplit(int[] data, int[] splitIndices) {
-		throw new UnsupportedOperationException("JContinousClassificationSplitter.findSplit(int[] ...");
-	
-	}
-
-	@Override
-	public SplitInfo findSplit(byte[] data, int[] splitIndices) {
-		throw new UnsupportedOperationException("JContinousClassificationSplitter.findSplit(byte[] ...");
-	}
-
 }
