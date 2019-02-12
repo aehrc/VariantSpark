@@ -12,5 +12,5 @@ package object algo {
      def size(f:Feature):Int = f.size
   }
       
-  implicit def toTreeFeatueRDD(rdd:RDD[TreeFeature]) = new TreeFeatueRDDFunction(rdd)
+  implicit def toTreeFeatueRDD(rdd:RDD[TreeFeature]) = new TreeFeatureRDDFunction(rdd)
 }

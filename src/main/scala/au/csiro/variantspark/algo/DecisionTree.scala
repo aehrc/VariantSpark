@@ -38,14 +38,15 @@ trait TreeFeature extends DataLike with Serializable {
   def label:String
   def variableType:VariableType
   def index: Long
-  def data: Data
   def createSplitter: IndexedSplitter
+  def toData: Data
+  def toFeature: Feature = StdFeature(label, variableType, toData)
 }
 
 class StdContinousTreeFeature(val label:String, val index:Long, continousData:Array[Double]) extends TreeFeature {
   def variableType = ContinuousVariable
   def createSplitter = new JNaiveContinousIndexedSplitter(continousData)
-  def data = new VectorData(Vectors.dense(continousData))
+  def toData = new VectorData(Vectors.dense(continousData))
   override def size = continousData.size
   override def at(i:Int) = continousData(i)
 }
@@ -54,7 +55,7 @@ class StdContinousTreeFeature(val label:String, val index:Long, continousData:Ar
 class SmallOrderedTreeFeature(val label:String, val index:Long, orderedData:Array[Byte], nLevels:Int) extends TreeFeature {
   def variableType = BoundedOrdinalVariable(nLevels)
   def createSplitter = new JOrderedIndexedSplitter(orderedData, nLevels)
-  def data = new ByteArrayData(orderedData)
+  def toData = new ByteArrayData(orderedData)
   override def size = orderedData.size
   override def at(i:Int) = orderedData(i).toDouble
 }
@@ -74,11 +75,11 @@ case object DefTreeRepresentationFactory extends TreeRepresentationFactory {
   }
 }
 
-class TreeFeatueRDDFunction[V](val rdd:RDD[TreeFeature]) extends AnyVal {
+class TreeFeatureRDDFunction[V](val rdd:RDD[TreeFeature]) extends AnyVal {
   def size = rdd.first.size
   def collectAtIndexes(indexes:Set[Long]):Map[Long, Data] = withBroadcast(rdd)(indexes) { br_indexes =>
       rdd.filter({ case tf => br_indexes.value.contains(tf.index)})
-        .map(tf => (tf.index, tf.data))
+        .map(tf => (tf.index, tf.toData))
         .collectAsMap().toMap
   }
 }

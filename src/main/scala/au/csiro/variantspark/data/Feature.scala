@@ -10,16 +10,15 @@ trait Feature extends Data {
   def label:String
   def variableType: VariableType
   def data: Data
-}
-
-case class StdFeature(label:String, variableType: VariableType, data:Data) extends Feature {
   def at(i: Int): Double = data.at(i)
   def size: Int = data.size
   def value: Any = data.value
-  def valueAsByteArray:Array[Byte] = data.valueAsByteArray
-  def valueAsStrings: List[String] = data.valueAsStrings
+  def valueAsByteArray: Array[Byte] = data.valueAsByteArray
   def valueAsVector: Vector = data.valueAsVector
+  def valueAsStrings: List[String] = data.valueAsStrings
 }
+
+case class StdFeature(label:String, variableType: VariableType, data:Data) extends Feature 
 
 object StdFeature {
   def from[V](label: String, variableType:VariableType, v:V)(implicit db:DataBuilder[V]): Feature = {
