@@ -33,6 +33,7 @@ import au.csiro.variantspark.algo.split.JOrderedIndexedSplitter
 import au.csiro.variantspark.algo.impurity.GiniImpurityAggregator
 import au.csiro.variantspark.data.DataLike
 import au.csiro.variantspark.data.Data
+import au.csiro.variantspark.algo.split.JOrderedFastIndexedSplitter
 
 trait TreeFeature extends DataLike with Serializable {
   def label:String
@@ -53,7 +54,7 @@ class StdContinousTreeFeature(val label:String, val index:Long, continousData:Ar
 
 class SmallOrderedTreeFeature(val label:String, val index:Long, orderedData:Array[Byte], nLevels:Int) extends TreeFeature {
   def variableType = BoundedOrdinalVariable(nLevels)
-  def createSplitter = new JOrderedIndexedSplitter(orderedData, nLevels)
+  def createSplitter = new JOrderedFastIndexedSplitter(orderedData, nLevels)
   def toData = new ByteArrayData(orderedData)
   override def size = orderedData.size
   override def at(i:Int) = orderedData(i).toDouble

@@ -32,15 +32,22 @@ case object GiniImpurity extends ClassficationImpurity {
   def createAggregator(nLevels:Int): ClassificationImpurityAggregator = new GiniImpurityAggregator(nLevels)  
 }
 
+
+class SplitImpurity(var left:Double, var right:Double) {
+  def this() {
+    this(0.0,0.0)
+  }
+}
+
 class ClassificationSplitAggregator(val left:ClassificationImpurityAggregator, val right:ClassificationImpurityAggregator) {  
   def reset() {
     left.reset();
     right.reset();
   }
-  def getValue(outLeftRight:Array[Double]):Double = {
-      outLeftRight(0) = left.getValue()
-      outLeftRight(1) = right.getValue()
-      return (outLeftRight(0)*left.getCount + outLeftRight(1)*right.getCount)/(left.getCount + right.getCount)   
+  def getValue(outSplitImp:SplitImpurity):Double = {
+      outSplitImp.left = left.getValue()
+      outSplitImp.right = right.getValue()
+      return (outSplitImp.left*left.getCount + outSplitImp.right*right.getCount)/(left.getCount + right.getCount)   
   }
   
 	def initLabel(label:Int) {
@@ -50,34 +57,77 @@ class ClassificationSplitAggregator(val left:ClassificationImpurityAggregator, v
 	  left.addLabel(label)
 	  right.subLabel(label)
 	}
+
+	def update(agg: ImpurityAggregator) {
+	  left.add(agg)
+	  right.sub(agg)
+	}
+
+
 }
 
 object ClassificationSplitAggregator {
   def apply(impurity:ClassficationImpurity, nLevels:Int):ClassificationSplitAggregator = new ClassificationSplitAggregator(impurity.createAggregator(nLevels), impurity.createAggregator(nLevels))
 }
 
+
+class ConfusionAggregator(val matrix:Array[ClassificationImpurityAggregator], val labels:Array[Int]) {
+  
+  def this(impurity:ClassficationImpurity, size:Int, nCategories:Int, labels:Array[Int]) {
+    this(Array.fill(size)(impurity.createAggregator(nCategories)), labels)
+  }
+  
+  /**
+   * Reset the first nLevels of the matrix
+   */
+  def reset(nLevels:Int) {
+    assert(nLevels <= matrix.length)
+    matrix.iterator.take(nLevels).foreach(_.reset());
+  }
+  
+  /**
+   * Add a response at index yIndex for ordinal level
+   */
+  def updateAt(level:Int, yIndex:Int) = matrix(level).addLabel(labels(yIndex)); 
+  
+  def apply(level:Int):ClassificationImpurityAggregator = matrix(level) 
+}
+
+
 /**
- * So this will be the main way to interact for algorithms for differnet variable types
+ * So this will be the main way to interact for algorithms for ml tasks (classification and regression)
  * @author szu004
  */
 trait IndexedImpurityCalculator {
 	def init(indexes:Array[Int])
 	def update(index:Int)
-	def getImpurity(outLeftRight:Array[Double]):Double 
+	def update(agg: ImpurityAggregator)
+	def getConfusionAggregator(nLevels:Int):ConfusionAggregator
+	def getImpurity(outSplitImp:SplitImpurity):Double 
 }
 
 class ClassificationImpurityCalculator(val labels:Array[Int], val nCategories:Int, val impurity:ClassficationImpurity) extends IndexedImpurityCalculator {
   
   val splitAggregator = ClassificationSplitAggregator(impurity, nCategories);
+  lazy val confusionAggregator = new ConfusionAggregator(impurity, 10, nCategories, labels)
   
   override def init(indexes:Array[Int]) {
     splitAggregator.reset()
     indexes.foreach(i => splitAggregator.initLabel(labels(i)))
   }
   
-	override def update(index:Int) {
-	  splitAggregator.updateLabel(labels(index))
+	override def update(yIndex:Int) {
+	  splitAggregator.updateLabel(labels(yIndex))
 	}
 	
-	override def getImpurity(outLeftRight:Array[Double]):Double = splitAggregator.getValue(outLeftRight)
+	override def getImpurity(outSplitImp:SplitImpurity):Double = splitAggregator.getValue(outSplitImp)
+
+  override def update(agg: ImpurityAggregator) {
+    splitAggregator.update(agg)
+  }
+	
+	override def getConfusionAggregator(nLevels:Int):ConfusionAggregator  = {
+	  confusionAggregator.reset(nLevels)
+	  confusionAggregator
+	}
 }

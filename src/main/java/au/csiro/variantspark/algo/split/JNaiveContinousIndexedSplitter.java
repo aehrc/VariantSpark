@@ -2,6 +2,7 @@ package au.csiro.variantspark.algo.split;
 
 import au.csiro.variantspark.algo.IndexedImpurityCalculator;
 import au.csiro.variantspark.algo.IndexedSplitter;
+import au.csiro.variantspark.algo.SplitImpurity;
 import au.csiro.variantspark.algo.SplitInfo;
 import it.unimi.dsi.fastutil.doubles.DoubleArrays;
 
@@ -51,7 +52,7 @@ public class JNaiveContinousIndexedSplitter implements IndexedSplitter {
 		// also we can only split at value changes so if there are repeat values we need to continue 
 		// and only check for gini improvement if there is a change
 		
-		double leftRightImpurity[] = new double[2];
+		SplitImpurity leftRightImpurity = new SplitImpurity();
 		double minImpurity = Double.MAX_VALUE;
 		double splitValue = Double.NaN;
 		double splitLeftImpurity = Double.NaN, splitRightImpurity=Double.NaN;
@@ -69,8 +70,8 @@ public class JNaiveContinousIndexedSplitter implements IndexedSplitter {
 					// OK we have got a better split here
 					splitValue = lastValue;
 					minImpurity = lastValueImpurity;
-					splitLeftImpurity = leftRightImpurity[0];
-					splitRightImpurity = leftRightImpurity[1];					
+					splitLeftImpurity = leftRightImpurity.left();
+					splitRightImpurity = leftRightImpurity.right();					
 				}
 			}			
 			impurityCalc.update(i);

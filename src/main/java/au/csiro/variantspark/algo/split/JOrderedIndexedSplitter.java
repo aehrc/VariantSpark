@@ -2,6 +2,7 @@ package au.csiro.variantspark.algo.split;
 
 import au.csiro.variantspark.algo.IndexedImpurityCalculator;
 import au.csiro.variantspark.algo.IndexedSplitter;
+import au.csiro.variantspark.algo.SplitImpurity;
 import au.csiro.variantspark.algo.SplitInfo;
 
 /**
@@ -19,7 +20,7 @@ import au.csiro.variantspark.algo.SplitInfo;
 public class JOrderedIndexedSplitter implements IndexedSplitter {
 	private final byte[] data;
 	private final int nLevels;
-	private final double[] leftRightGini = new double[2];
+	private final SplitImpurity leftRightImpurity = new SplitImpurity();
 	
 
 	public JOrderedIndexedSplitter(byte[] data, int nLevels) {
@@ -40,7 +41,7 @@ public class JOrderedIndexedSplitter implements IndexedSplitter {
 	@Override
 	public SplitInfo findSplit(IndexedImpurityCalculator impurityCalc, int[] splitIndices) {
 	    SplitInfo result = null;
-	    double minGini = Double.MAX_VALUE;
+	    double minImpurity = Double.MAX_VALUE;
 	    if (splitIndices.length < 2) {
 	    	return result;
 	    }
@@ -52,10 +53,10 @@ public class JOrderedIndexedSplitter implements IndexedSplitter {
 					impurityCalc.update(i);
 				} 
 			}
-			double g = impurityCalc.getImpurity(leftRightGini);
-			if (g < minGini ) {
-				result = new SplitInfo(sp, g, leftRightGini[0], leftRightGini[1]);
-				minGini = g;
+			double g = impurityCalc.getImpurity(leftRightImpurity);
+			if (g < minImpurity ) {
+				result = new SplitInfo(sp, g, leftRightImpurity.left(), leftRightImpurity.right());
+				minImpurity = g;
 			}
 		}
 		return result;	}
