@@ -1,5 +1,6 @@
 package au.csiro.variantspark.algo.impurity;
 
+import au.csiro.variantspark.algo.ImpurityAggregator;
 import au.csiro.variantspark.algo.RegressionImpurityAggregator;
 
 
@@ -11,44 +12,66 @@ import au.csiro.variantspark.algo.RegressionImpurityAggregator;
  */
 public class VarianceImpurityAggregator implements RegressionImpurityAggregator {
 
-	double leftSumOfValues = 0;
-	double leftSumOfSquares = 0;
-	int leftCount = 0;
-	double rightSumOfValues = 0;
-	double rightSumOfSquares = 0;
-	int rightCount = 0;
+	double sumOfValues = 0;
+	double sumOfSquares = 0;
+	int count = 0;
 	
 	@Override
-	public double getValue(double[] outLeftRight) {
-		outLeftRight[0] = (leftSumOfSquares - leftSumOfValues*leftSumOfValues)/leftCount;
-		outLeftRight[1] = (rightSumOfSquares - rightSumOfValues*rightSumOfValues)/rightCount;
-		return 	outLeftRight[0] + outLeftRight[1];	
-	}
-
-	@Override
-	public void initValue(double value) {
-		rightSumOfValues+= value;
-		rightSumOfSquares+= (value*value);
-		rightCount = 0;
-	}
-
-	@Override
-	public void updateValue(double value) {
-		leftSumOfValues+= value;
-		leftSumOfSquares+=(value*value);
-		leftCount++;
-		rightSumOfValues-= value;
-		rightSumOfSquares-= (value*value);
-		rightCount--;
-	}
-
-	@Override
 	public void reset() {
-		leftSumOfValues = 0;
-		leftSumOfSquares = 0;
-		leftCount = 0;
-		rightSumOfValues = 0;
-		rightSumOfSquares = 0;
-		rightCount = 0;		
+		sumOfValues = 0;
+		sumOfSquares = 0;
+		count = 0;
+	}
+
+	@Override
+	public boolean isEmpty() {
+		return count == 0;
+	}
+	
+	@Override
+	public int getCount() {
+		return count;
 	}	
+	
+	@Override
+	public void add(ImpurityAggregator other) {
+		if (!other.isEmpty()) {
+			VarianceImpurityAggregator otherVariance = (VarianceImpurityAggregator)other;
+			sumOfValues+= otherVariance.sumOfValues;
+			sumOfSquares+=otherVariance.sumOfSquares;
+			count+=otherVariance.count;
+		}
+	}
+
+	@Override
+	public void sub(ImpurityAggregator other) {
+		if (!other.isEmpty()) {
+			VarianceImpurityAggregator otherVariance = (VarianceImpurityAggregator)other;
+			sumOfValues-= otherVariance.sumOfValues;
+			sumOfSquares-=otherVariance.sumOfSquares;
+			count-=otherVariance.count;
+		}
+	}
+
+	@Override
+	public double getValue() {
+		//TODO: [REVIEW] Need to be reviewed when implementing regresion trees
+		// but technically the Var(X) = E(X^2) - E(X)^2
+		//return sumOfSquares/count - (sumOfValues/count)*(sumOfValues/count);
+		throw new UnsupportedOperationException("Needs review. Defered until regression trees implementaiton");
+	}
+
+	@Override
+	public void addValue(double value) {
+		sumOfValues+= value;
+		sumOfSquares+=(value*value);
+		count++;
+	}
+
+	@Override
+	public void subValue(double value) {
+		sumOfValues-= value;
+		sumOfSquares-=(value*value);
+		count--;
+	}
 }

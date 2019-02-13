@@ -2,7 +2,9 @@ package au.csiro.variantspark.algo.impurity;
 
 import java.util.Arrays;
 
+import au.csiro.variantspark.algo.ArrayOps;
 import au.csiro.variantspark.algo.ClassificationImpurityAggregator;
+import au.csiro.variantspark.algo.ImpurityAggregator;
 
 /**
  * @author szu004
@@ -10,34 +12,60 @@ import au.csiro.variantspark.algo.ClassificationImpurityAggregator;
  * See: https://en.wikipedia.org/wiki/Decision_tree_learning#Metrics
  */
 public class GiniImpurityAggregator implements ClassificationImpurityAggregator {
-	private final int[] leftCounts;
-	private final int[] rigthCounts;
-	
+	private final int[] labelCounts;
+	private int count = 0;
 	
 	public GiniImpurityAggregator(int noLabels) {
-		leftCounts = new int[noLabels];
-		rigthCounts = new int[noLabels];
+		labelCounts = new int[noLabels];
 	}
-	
 	@Override
-	public void initLabel(int label) {
-		rigthCounts[label] ++;
-	}
-	
-	@Override
-	public void updateLabel(int label) {
-		leftCounts[label]++;
-		rigthCounts[label] --;		
-	}
-	
-	@Override
-	public double getValue(double []outLeftRight) {
-		return FastGini.splitGini(leftCounts, rigthCounts, outLeftRight);
+	public void reset() {
+		Arrays.fill(labelCounts, 0);
+		count = 0;
 	}
 
 	@Override
-	public void reset() {
-		Arrays.fill(leftCounts, 0);
-		Arrays.fill(rigthCounts, 0);
+	public boolean isEmpty() {
+		return count == 0;
+	}
+		
+	@Override
+	public void addLabel(int label) {
+		labelCounts[label]++;
+		count ++;
+	}
+
+	@Override
+	public void subLabel(int label) {
+		labelCounts[label]--;
+		count --;
 	}	
+	
+	@Override
+	public void add(ImpurityAggregator other) {
+		if (!other.isEmpty()) {
+			GiniImpurityAggregator otherGini = (GiniImpurityAggregator)other;
+			count += otherGini.count;
+			ArrayOps.addEq(labelCounts, otherGini.labelCounts);
+		}
+	}
+
+	@Override
+	public void sub(ImpurityAggregator other) {
+		if (!other.isEmpty()) {
+			GiniImpurityAggregator otherGini = (GiniImpurityAggregator)other;
+			count -= otherGini.count;
+			ArrayOps.subEq(labelCounts, otherGini.labelCounts);
+		}
+	}
+	
+	@Override
+	public double getValue() {
+		return FastGini.gini(labelCounts);
+	}
+	@Override
+	public int getCount() {
+		return count;
+	}
+
 }

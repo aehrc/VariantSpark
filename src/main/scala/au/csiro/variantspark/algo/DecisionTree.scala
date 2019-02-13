@@ -51,7 +51,6 @@ class StdContinousTreeFeature(val label:String, val index:Long, continousData:Ar
   override def at(i:Int) = continousData(i)
 }
 
-
 class SmallOrderedTreeFeature(val label:String, val index:Long, orderedData:Array[Byte], nLevels:Int) extends TreeFeature {
   def variableType = BoundedOrdinalVariable(nLevels)
   def createSplitter = new JOrderedIndexedSplitter(orderedData, nLevels)
@@ -313,7 +312,7 @@ case class VariableSplitter(val labels:Array[Int], mTryFactor:Double=1.0, val ra
     
       //TODO: this should be actually passed externally (or at least part of it 
       // as it essentially determines what kind of tree are we bulding (e.g what is the metric used for impurity)
-      val impurityCalculator = new ClassificationImpurityCalculator(labels, nCategories, new GiniImpurityAggregator(nCategories))
+      val impurityCalculator = new ClassificationImpurityCalculator(labels, nCategories, GiniImpurity)
 
       val result = varData
         .map{vi =>

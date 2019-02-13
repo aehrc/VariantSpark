@@ -1,18 +1,59 @@
 package au.csiro.variantspark.algo
 
+import au.csiro.variantspark.algo.impurity.GiniImpurityAggregator
+
 trait ImpurityAggregator {
-    def reset()
-	  def getValue(outLeftRight:Array[Double]):Double
+  def reset()
+  def isEmpty():Boolean
+  def add(other:ImpurityAggregator)
+  def sub(other:ImpurityAggregator)
+  def getValue():Double
+  def getCount():Int
 }
 
 trait ClassificationImpurityAggregator extends  ImpurityAggregator {
-	def initLabel(label:Int)
-	def updateLabel(label:Int)
+	def addLabel(label:Int)
+	def subLabel(label:Int)
 }
 
 trait RegressionImpurityAggregator extends  ImpurityAggregator {
-	def initValue(value:Double)
-	def updateValue(value:Double)
+	def addValue(value:Double)
+	def subValue(value:Double)
+}
+
+
+trait Impurity
+
+trait ClassficationImpurity extends Impurity {
+  def createAggregator(nLevels:Int): ClassificationImpurityAggregator
+}
+
+case object GiniImpurity extends ClassficationImpurity {
+  def createAggregator(nLevels:Int): ClassificationImpurityAggregator = new GiniImpurityAggregator(nLevels)  
+}
+
+class ClassificationSplitAggregator(val left:ClassificationImpurityAggregator, val right:ClassificationImpurityAggregator) {  
+  def reset() {
+    left.reset();
+    right.reset();
+  }
+  def getValue(outLeftRight:Array[Double]):Double = {
+      outLeftRight(0) = left.getValue()
+      outLeftRight(1) = right.getValue()
+      return (outLeftRight(0)*left.getCount + outLeftRight(1)*right.getCount)/(left.getCount + right.getCount)   
+  }
+  
+	def initLabel(label:Int) {
+	  right.addLabel(label);
+	}
+	def updateLabel(label:Int) {
+	  left.addLabel(label)
+	  right.subLabel(label)
+	}
+}
+
+object ClassificationSplitAggregator {
+  def apply(impurity:ClassficationImpurity, nLevels:Int):ClassificationSplitAggregator = new ClassificationSplitAggregator(impurity.createAggregator(nLevels), impurity.createAggregator(nLevels))
 }
 
 /**
@@ -25,16 +66,18 @@ trait IndexedImpurityCalculator {
 	def getImpurity(outLeftRight:Array[Double]):Double 
 }
 
-class ClassificationImpurityCalculator(val labels:Array[Int], val nCategories:Int, impurity:ClassificationImpurityAggregator) extends IndexedImpurityCalculator {
+class ClassificationImpurityCalculator(val labels:Array[Int], val nCategories:Int, val impurity:ClassficationImpurity) extends IndexedImpurityCalculator {
+  
+  val splitAggregator = ClassificationSplitAggregator(impurity, nCategories);
   
   override def init(indexes:Array[Int]) {
-    impurity.reset()
-    indexes.foreach(i => impurity.initLabel(labels(i)))
+    splitAggregator.reset()
+    indexes.foreach(i => splitAggregator.initLabel(labels(i)))
   }
   
 	override def update(index:Int) {
-	  impurity.updateLabel(labels(index))
+	  splitAggregator.updateLabel(labels(index))
 	}
 	
-	override def getImpurity(outLeftRight:Array[Double]):Double = impurity.getValue(outLeftRight)
+	override def getImpurity(outLeftRight:Array[Double]):Double = splitAggregator.getValue(outLeftRight)
 }
