@@ -2,6 +2,16 @@ package au.csiro.variantspark.algo
 
 import au.csiro.variantspark.algo.impurity.GiniImpurityAggregator
 
+class SplitImpurity(var left:Double, var right:Double) {
+  def this() {
+    this(0.0,0.0)
+  }
+  def set(left:Double, right:Double) {
+    this.left = left
+    this.right = right
+  }
+}
+
 trait ImpurityAggregator {
   def reset()
   def isEmpty():Boolean
@@ -9,6 +19,7 @@ trait ImpurityAggregator {
   def sub(other:ImpurityAggregator)
   def getValue():Double
   def getCount():Int
+  def splitValue(other:ImpurityAggregator, out:SplitImpurity):Double 
 }
 
 trait ClassificationImpurityAggregator extends  ImpurityAggregator {
@@ -32,27 +43,20 @@ case object GiniImpurity extends ClassficationImpurity {
   def createAggregator(nLevels:Int): ClassificationImpurityAggregator = new GiniImpurityAggregator(nLevels)  
 }
 
-
-class SplitImpurity(var left:Double, var right:Double) {
-  def this() {
-    this(0.0,0.0)
-  }
-}
-
 class ClassificationSplitAggregator(val left:ClassificationImpurityAggregator, val right:ClassificationImpurityAggregator) {  
   def reset() {
     left.reset();
     right.reset();
   }
+  
   def getValue(outSplitImp:SplitImpurity):Double = {
-      outSplitImp.left = left.getValue()
-      outSplitImp.right = right.getValue()
-      return (outSplitImp.left*left.getCount + outSplitImp.right*right.getCount)/(left.getCount + right.getCount)   
+    return left.splitValue(right, outSplitImp)
   }
   
 	def initLabel(label:Int) {
 	  right.addLabel(label);
 	}
+	
 	def updateLabel(label:Int) {
 	  left.addLabel(label)
 	  right.subLabel(label)
@@ -62,7 +66,6 @@ class ClassificationSplitAggregator(val left:ClassificationImpurityAggregator, v
 	  left.add(agg)
 	  right.sub(agg)
 	}
-
 
 }
 

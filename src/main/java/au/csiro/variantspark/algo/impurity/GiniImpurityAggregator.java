@@ -5,6 +5,7 @@ import java.util.Arrays;
 import au.csiro.variantspark.algo.ArrayOps;
 import au.csiro.variantspark.algo.ClassificationImpurityAggregator;
 import au.csiro.variantspark.algo.ImpurityAggregator;
+import au.csiro.variantspark.algo.SplitImpurity;
 
 /**
  * @author szu004
@@ -66,6 +67,13 @@ public class GiniImpurityAggregator implements ClassificationImpurityAggregator 
 	@Override
 	public int getCount() {
 		return count;
+	}
+	
+	@Override
+	public double splitValue(ImpurityAggregator other, SplitImpurity outSplitImp) {
+		GiniImpurityAggregator otherGini = (GiniImpurityAggregator)other;
+		outSplitImp.set(getValue(), otherGini.getValue());
+		return (outSplitImp.left()*getCount() + outSplitImp.right()*otherGini.getCount())/(getCount() + otherGini.getCount());   
 	}
 
 }

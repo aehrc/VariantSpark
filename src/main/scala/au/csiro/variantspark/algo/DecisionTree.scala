@@ -262,10 +262,10 @@ case class RandomizingMerger(seed:Long) extends Merger {
   *
   * @param dataType: specify the basic data type of the variable split on
   * @param labels: input an array of labels used by the dataset
-  * @param mTryFactor: default to 1.0
+  * @param mTryFraction:  the fraction of variable to try at each split (default to 1.0)
   * @param randomizeEquality: default to false
   */
-case class VariableSplitter(val labels:Array[Int], mTryFactor:Double=1.0, val randomizeEquality:Boolean = false) extends Logging  with Prof {
+case class VariableSplitter(val labels:Array[Int], mTryFraction:Double=1.0, val randomizeEquality:Boolean = false) extends Logging  with Prof {
 
   val nCategories = labels.max + 1
 
@@ -290,12 +290,11 @@ case class VariableSplitter(val labels:Array[Int], mTryFactor:Double=1.0, val ra
     //
     // Create splits of a fraction of subsets consistent with mTry 
     // So rather rather then randomly selecting mTry variables of each subset (tree node to split)
-    // we randomly select mTry subsets for each variable (which should be the same ???)
-    // TODO: [Method] Is that really the same? 
-    
+    // we randomly select mTryFraction subsets for each variable 
+    // (which is the same as mTryFraction represents the desired probability of selecting a variable at each split)
     
     splits.map { subsetInfo =>
-      if (rng.nextDouble() <= mTryFactor) {
+      if (rng.nextDouble() <= mTryFraction) {
         val splitInfo = splitter.findSplit(inpurityCalculator, subsetInfo.indices)
         if (splitInfo != null && splitInfo.gini < subsetInfo.impurity) splitInfo else null
       } else null
@@ -313,6 +312,8 @@ case class VariableSplitter(val labels:Array[Int], mTryFactor:Double=1.0, val ra
     
       //TODO: this should be actually passed externally (or at least part of it 
       // as it essentially determines what kind of tree are we bulding (e.g what is the metric used for impurity)
+      // This should obtain a statefule and somehow compartmenalised impurity calculator
+      // (Try trhead local perhaps here, but creating a new one (per partition) also fits the bill)
       val impurityCalculator = new ClassificationImpurityCalculator(labels, nCategories, GiniImpurity)
 
       val result = varData

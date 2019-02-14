@@ -2,6 +2,7 @@ package au.csiro.variantspark.algo.impurity;
 
 import au.csiro.variantspark.algo.ImpurityAggregator;
 import au.csiro.variantspark.algo.RegressionImpurityAggregator;
+import au.csiro.variantspark.algo.SplitImpurity;
 
 
 
@@ -55,10 +56,8 @@ public class VarianceImpurityAggregator implements RegressionImpurityAggregator 
 
 	@Override
 	public double getValue() {
-		//TODO: [REVIEW] Need to be reviewed when implementing regresion trees
-		// but technically the Var(X) = E(X^2) - E(X)^2
-		//return sumOfSquares/count - (sumOfValues/count)*(sumOfValues/count);
-		throw new UnsupportedOperationException("Needs review. Defered until regression trees implementaiton");
+		// Var(X) = E(X^2) - E(X)^2
+		return sumOfSquares/count - (sumOfValues/count)*(sumOfValues/count);
 	}
 
 	@Override
@@ -73,5 +72,15 @@ public class VarianceImpurityAggregator implements RegressionImpurityAggregator 
 		sumOfValues-= value;
 		sumOfSquares-=(value*value);
 		count--;
+	}
+
+	@Override
+	public double splitValue(ImpurityAggregator other, SplitImpurity outSplitImp) {
+		VarianceImpurityAggregator otherVariance = (VarianceImpurityAggregator)other;
+		outSplitImp.set(getValue(), other.getValue());
+		double totalSumOfValues = sumOfValues + otherVariance.sumOfValues;
+		double totalSumOfSquares= sumOfSquares + otherVariance.sumOfSquares;
+		double totalCount = count + otherVariance.count;
+		return totalSumOfSquares/totalCount - (totalSumOfValues/totalCount)*(totalSumOfValues/totalCount);
 	}
 }
