@@ -26,6 +26,18 @@ package object data {
     
     def defaultVariableType = BoundedOrdinalVariable(3)
   }
+
+  implicit case object IntArrayDataBuilder extends DataBuilder[Array[Int]] {
+    def from(l: List[String]): Data = {
+      IntArrayData(l.map(_.toInt).toArray)
+    }
+  
+    def from(v:Array[Int]): Data = {
+      IntArrayData(v)
+    }
+    
+    def defaultVariableType = OrdinalVariable
+  }
   
   implicit def toFeatueConverter[V](v:RDD[V]):ToFeature[V] = new ToFeature[V](v)
 }

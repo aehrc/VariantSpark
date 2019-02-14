@@ -11,6 +11,7 @@ trait DataLike {
 trait Data extends DataLike {
   def value: Any
   def valueAsByteArray: Array[Byte]
+  def valueAsIntArray: Array[Int]
   def valueAsVector: Vector
   def valueAsStrings: List[String]
 }

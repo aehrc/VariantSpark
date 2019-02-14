@@ -19,7 +19,26 @@ case class CsvFeatureSource(data:RDD[String], defaultType:VariableType = Continu
 
   def sampleNames:List[String] = new CSVParser(csvFormat).parseLine(fileHeader).get.tail
 
-  def features:RDD[Feature] = featuresAs[Vector]
+  def features:RDD[Feature] = {
+
+    //TODO: Possibly move make a class parameter
+    val representationFactory = DefRepresentationFactory
+    //TODO: extract the mapping to object
+    val local_br_header = this.br_header
+    val br_types  = data.context.broadcast(optVariableTypes.map(parseTypes))
+    
+    data.mapPartitions { it =>
+       val header = local_br_header.value
+       val csvParser = new CSVParser(csvFormat)
+       val types = br_types.value
+       it.filter(!_.equals(header))
+         .map(csvParser.parseLine(_).get)
+         .map{ case label::stringValues => 
+           val variableType =  types.flatMap(_.get(label)).getOrElse(defaultType)
+           StdFeature(label, variableType, representationFactory.createRepresentation(variableType, stringValues))
+         }    
+       }
+  }
   
   def parseTypes(typeRDD:RDD[String]):Map[String,VariableType] = {
     typeRDD.mapPartitions { it =>

@@ -14,6 +14,7 @@ trait Feature extends Data {
   def size: Int = data.size
   def value: Any = data.value
   def valueAsByteArray: Array[Byte] = data.valueAsByteArray
+  def valueAsIntArray: Array[Int] = data.valueAsIntArray
   def valueAsVector: Vector = data.valueAsVector
   def valueAsStrings: List[String] = data.valueAsStrings
 }
