@@ -2,9 +2,7 @@ package au.csiro.variantspark.algo.split;
 
 import au.csiro.variantspark.algo.ConfusionAggregator;
 import au.csiro.variantspark.algo.ImpurityAggregator;
-import au.csiro.variantspark.algo.IndexedImpurityCalculator;
-import au.csiro.variantspark.algo.IndexedSplitter;
-import au.csiro.variantspark.algo.SplitImpurity;
+import au.csiro.variantspark.algo.IndexedSplitAggregator;
 import au.csiro.variantspark.algo.SplitInfo;
 
 /**
@@ -19,28 +17,24 @@ import au.csiro.variantspark.algo.SplitInfo;
 
 
 
-public class JOrderedFastIndexedSplitter implements IndexedSplitter {
+public class JOrderedFastIndexedSplitter extends AbstractIndexedSplitterBase {
 	private final byte[] data;
 	private final int nLevels;
-	private final SplitImpurity leftRightImpurity = new SplitImpurity();
-	
+	private final  ConfusionAggregator confusionAgg;
 
-	public JOrderedFastIndexedSplitter(byte[] data, int nLevels) {
+	public JOrderedFastIndexedSplitter(ConfusionAggregator confusionAgg, IndexedSplitAggregator impurityCalc, byte[] data, int nLevels) {
+		super(impurityCalc);
+		this.confusionAgg = confusionAgg;
 		this.data = data;
 		this.nLevels = nLevels;
 	}
 
 	@Override
-	public SplitInfo findSplit(IndexedImpurityCalculator impurityCalc, int[] splitIndices) {
+	protected SplitInfo doFindSplit(int[] splitIndices) {
 	    SplitInfo result = null;
 	    double minImpurity = Double.MAX_VALUE;
-	    if (splitIndices.length < 2) {
-	    	return result;
-	    }
-	    
-	    impurityCalc.init(splitIndices);
 	    // compute the confusion matrix
-	    ConfusionAggregator confusionAgg = impurityCalc.getConfusionAggregator(nLevels);
+	    confusionAgg.reset(nLevels);
 	    for(int i:splitIndices) {
 	    	confusionAgg.updateAt(data[i], i);
 	    }
@@ -52,12 +46,13 @@ public class JOrderedFastIndexedSplitter implements IndexedSplitter {
 			if (!thisAggregator.isEmpty()) {
 				// only consider value that appeared at least once in the split
 				impurityCalc.update(thisAggregator);
-				double thisImpurity = impurityCalc.getImpurity(leftRightImpurity);
+				double thisImpurity = impurityCalc.getValue(leftRightImpurity);
 				if (thisImpurity < minImpurity) {
 					result = new SplitInfo(sp, thisImpurity, leftRightImpurity.left(), leftRightImpurity.right());
 					minImpurity = thisImpurity;
 				}
 			}
 		}
-		return result;	}
+		return result;	
+	}
 }

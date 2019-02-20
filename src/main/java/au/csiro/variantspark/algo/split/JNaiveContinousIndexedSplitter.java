@@ -1,8 +1,6 @@
 package au.csiro.variantspark.algo.split;
 
-import au.csiro.variantspark.algo.IndexedImpurityCalculator;
-import au.csiro.variantspark.algo.IndexedSplitter;
-import au.csiro.variantspark.algo.SplitImpurity;
+import au.csiro.variantspark.algo.IndexedSplitAggregator;
 import au.csiro.variantspark.algo.SplitInfo;
 import it.unimi.dsi.fastutil.doubles.DoubleArrays;
 
@@ -12,22 +10,16 @@ import it.unimi.dsi.fastutil.doubles.DoubleArrays;
  * This is a naive implementation of precise continouns variable splitter
  */
 
-public class JNaiveContinousIndexedSplitter implements IndexedSplitter {
+public class JNaiveContinousIndexedSplitter extends AbstractIndexedSplitterBase {
 
 	private final double[] data;
-	public JNaiveContinousIndexedSplitter(double[] data) {
-		this.data = data;
+	public JNaiveContinousIndexedSplitter(IndexedSplitAggregator impurityCalc, double[] data) {
+		super(impurityCalc);
+		this.data = data;	
 	}
 	
 	@Override
-	public SplitInfo findSplit(IndexedImpurityCalculator impurityCalc, int[] splitIndices) {		
-		if (splitIndices.length < 2) {
-			// nothing to split
-			return null;
-		}		
-
-		impurityCalc.init(splitIndices);
-
+	protected SplitInfo doFindSplit(int[] splitIndices) {		
 		// TODO: [Perfomance] this is where the sorting trick might be useful 
 		// this is all to sort the subset indexes in ascending order by the values the refer to
 		// using available Java functions
@@ -50,9 +42,7 @@ public class JNaiveContinousIndexedSplitter implements IndexedSplitter {
 		// NOTE: continous split only makes sense if there are at least two different values in subset
 		// otherwise not split can be done
 		// also we can only split at value changes so if there are repeat values we need to continue 
-		// and only check for gini improvement if there is a change
-		
-		SplitImpurity leftRightImpurity = new SplitImpurity();
+		// and only check for gini improvement if there is a change		
 		double minImpurity = Double.MAX_VALUE;
 		double splitValue = Double.NaN;
 		double splitLeftImpurity = Double.NaN, splitRightImpurity=Double.NaN;
@@ -65,7 +55,7 @@ public class JNaiveContinousIndexedSplitter implements IndexedSplitter {
 			double currentValue = data[i];
 			if (currentValue !=lastValue) {
 				// possible split treshold
-				double lastValueImpurity = impurityCalc.getImpurity(leftRightImpurity);
+				double lastValueImpurity = impurityCalc.getValue(leftRightImpurity);
 				if (lastValueImpurity < minImpurity) {
 					// OK we have got a better split here
 					splitValue = lastValue;

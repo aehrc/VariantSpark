@@ -35,29 +35,41 @@ import au.csiro.variantspark.data.DataLike
 import au.csiro.variantspark.data.Data
 import au.csiro.variantspark.algo.split.JOrderedFastIndexedSplitter
 
-trait TreeFeature extends DataLike with Serializable {
+
+
+trait SplitterFactory {
+  def createSplitter(impCalc:IndexedSplitAggregator): IndexedSplitter  
+}
+
+trait FastSplitterFactory extends SplitterFactory {
+  def confusionSize:Int
+  def createSplitter(impCalc:IndexedSplitAggregator, confusionAgg:ConfusionAggregator): IndexedSplitter    
+}
+
+trait TreeFeature extends DataLike with SplitterFactory with Serializable {
   def label:String
   def variableType:VariableType
   def index: Long
-  def createSplitter: IndexedSplitter
   def toData: Data
   def toFeature: Feature = StdFeature(label, variableType, toData)
 }
 
 class StdContinousTreeFeature(val label:String, val index:Long, continousData:Array[Double]) extends TreeFeature {
   def variableType = ContinuousVariable
-  def createSplitter = new JNaiveContinousIndexedSplitter(continousData)
   def toData = new VectorData(Vectors.dense(continousData))
   override def size = continousData.size
   override def at(i:Int) = continousData(i)
+  override def createSplitter(impCalc:IndexedSplitAggregator) = new JNaiveContinousIndexedSplitter(impCalc,continousData)
 }
 
-class SmallOrderedTreeFeature(val label:String, val index:Long, orderedData:Array[Byte], nLevels:Int) extends TreeFeature {
+class SmallOrderedTreeFeature(val label:String, val index:Long, orderedData:Array[Byte], nLevels:Int) extends TreeFeature with  FastSplitterFactory {
   def variableType = BoundedOrdinalVariable(nLevels)
-  def createSplitter = new JOrderedFastIndexedSplitter(orderedData, nLevels)
-  def toData = new ByteArrayData(orderedData)
+  def toData = new ByteArrayData(orderedData) 
   override def size = orderedData.size
   override def at(i:Int) = orderedData(i).toDouble
+  override def createSplitter(impCalc:IndexedSplitAggregator) = new JOrderedIndexedSplitter(impCalc, orderedData, nLevels)
+  override def confusionSize = nLevels
+  override def createSplitter(impCalc:IndexedSplitAggregator, confusionAgg:ConfusionAggregator) =  new JOrderedFastIndexedSplitter(confusionAgg, impCalc, orderedData, nLevels) 
 }
 
 trait TreeRepresentationFactory {
@@ -255,6 +267,26 @@ case class RandomizingMerger(seed:Long) extends Merger {
   }
 }
 
+
+
+trait SpliterBuilderFactory {
+  def create(sf:SplitterFactory):IndexedSplitter
+}
+
+class StatefullSpliterBuilderFactory(val impurity:ClassficationImpurity, val labels:Array[Int], val nCategories:Int) extends SpliterBuilderFactory {
+  
+  val splitAggregator = ClassificationSplitAggregator(impurity, nCategories)
+  val confusionAgg = new ConfusionAggregator(impurity, 10, nCategories, labels)
+  
+  def create(sf:SplitterFactory):IndexedSplitter = {
+    sf match {
+      case fsf:FastSplitterFactory if (fsf.confusionSize <= 10 ) => fsf.createSplitter(splitAggregator, confusionAgg)
+      case _ => sf.createSplitter(splitAggregator)
+    }
+  }
+}
+
+
 /** This is the main split function
   * 
   * 1. specifies the number of categories based on the label input
@@ -283,24 +315,36 @@ case class VariableSplitter(val labels:Array[Int], mTryFraction:Double=1.0, val 
     * @param splits: input an array of the [[au.csiro.variantspark.algo.SubsetInfo]] class
     * @return returns an array [[au.csiro.variantspark.algo.SplitInfo]]
     */
-  def findSplits(typedData:TreeFeature, splits:Array[SubsetInfo], inpurityCalculator:IndexedImpurityCalculator)(implicit rng:RandomGenerator):Array[SplitInfo] = {
+  def findSplits(typedData:TreeFeature, splits:Array[SubsetInfo], sbf:SpliterBuilderFactory)(implicit rng:RandomGenerator):Array[SplitInfo] = {
 
-    val splitter = typedData.createSplitter
-    
+    val splitter = sbf.create(typedData)
     //
     // Create splits of a fraction of subsets consistent with mTry 
     // So rather rather then randomly selecting mTry variables of each subset (tree node to split)
     // we randomly select mTryFraction subsets for each variable 
     // (which is the same as mTryFraction represents the desired probability of selecting a variable at each split)
     
+    val splitterFactory: SubsetSplitterFactory = new SubsetSplitterFactory() {
+      def createSplitter(subsetIndices:Array[Int]):IndexedSplitter = splitter
+    }
+    
     splits.map { subsetInfo =>
       if (rng.nextDouble() <= mTryFraction) {
-        val splitInfo = splitter.findSplit(inpurityCalculator, subsetInfo.indices)
+        val splitInfo = splitterFactory.createSplitter(subsetInfo.indices).findSplit(subsetInfo.indices)
         if (splitInfo != null && splitInfo.gini < subsetInfo.impurity) splitInfo else null
       } else null
     }
   }
 
+  
+  def threadSafeSpliterBuilderFactory(): SpliterBuilderFactory = {
+      //TODO: this should be actually passed externally (or at least part of it 
+      // as it essentially determines what kind of tree are we bulding (e.g what is the metric used for impurity)
+      // This should obtain a statefule and somehow compartmenalised impurity calculator
+      // (Try trhead local perhaps here, but creating a new one (per partition) also fits the bill)
+    new StatefullSpliterBuilderFactory(GiniImpurity, labels, nCategories)
+  }
+  
   /** Returns the result of a split based on a variable
     *
     * @param varData: input an Iterator of a tuple containing the dataset and indices
@@ -309,16 +353,10 @@ case class VariableSplitter(val labels:Array[Int], mTryFraction:Double=1.0, val 
     */
   def findSplitsForVars(varData:Iterator[TreeFeature], splits:Array[SubsetInfo])(implicit rng:RandomGenerator):Iterator[Array[VarSplitInfo]] = {
     profIt("Local: splitting") {
-    
-      //TODO: this should be actually passed externally (or at least part of it 
-      // as it essentially determines what kind of tree are we bulding (e.g what is the metric used for impurity)
-      // This should obtain a statefule and somehow compartmenalised impurity calculator
-      // (Try trhead local perhaps here, but creating a new one (per partition) also fits the bill)
-      val impurityCalculator = new ClassificationImpurityCalculator(labels, nCategories, GiniImpurity)
-
+      val sbf = threadSafeSpliterBuilderFactory()
       val result = varData
         .map{vi =>
-          val thisVarSplits = findSplits(vi, splits, impurityCalculator)
+          val thisVarSplits = findSplits(vi, splits, sbf)
           thisVarSplits.map(si => if (si != null) VarSplitInfo(vi.index, si) else null).toArray
         }
       result
