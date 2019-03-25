@@ -44,18 +44,28 @@ case object GiniImpurity extends ClassficationImpurity {
 }
 
 trait IndexedSplitAggregator {
-  def reset()
-	def init(index:Int)
-	def update(index:Int)
-	def update(agg: ImpurityAggregator)
-	def getValue(outSplitImp:SplitImpurity):Double 
+  def left: ImpurityAggregator
+  def right: ImpurityAggregator  
+  def reset() {
+    left.reset();
+    right.reset();    
+  }
+	def update(agg: ImpurityAggregator) {
+	  left.add(agg)
+	  right.sub(agg)	  
+	}
+	def getValue(outSplitImp:SplitImpurity):Double = {
+	  left.splitValue(right, outSplitImp)
+	}
 	def init(indexes:Array[Int]) {
     reset()
     indexes.foreach(i => init(i))	  
 	}
+	def init(index:Int)
+	def update(index:Int)
 }
 
-class ClassificationSplitAggregator(val left:ClassificationImpurityAggregator, val right:ClassificationImpurityAggregator) extends IndexedSplitAggregator {  
+class ClassificationSplitAggregator private (val labels:Array[Int], val left:ClassificationImpurityAggregator, val right:ClassificationImpurityAggregator) extends IndexedSplitAggregator {  
   
   def initLabel(label:Int) {
 	  right.addLabel(label);
@@ -66,34 +76,16 @@ class ClassificationSplitAggregator(val left:ClassificationImpurityAggregator, v
 	  right.subLabel(label)
 	}
 
-  @Override
-  def reset() {
-    left.reset();
-    right.reset();
-  }
-  
-  @Override
-  def getValue(outSplitImp:SplitImpurity):Double = {
-    return left.splitValue(right, outSplitImp)
-  }
-  
 	@Override
-	def update(agg: ImpurityAggregator) {
-	  left.add(agg)
-	  right.sub(agg)
-	}
+	def init(index:Int) = initLabel(labels(index))
 
 	@Override
-	def init(index:Int) = initLabel(index)
-
-	@Override
-	def update(index:Int) = updateLabel(index) 
+	def update(index:Int) = updateLabel(labels(index)) 
 }
 
 object ClassificationSplitAggregator {
-  def apply(impurity:ClassficationImpurity, nLevels:Int):ClassificationSplitAggregator = new ClassificationSplitAggregator(impurity.createAggregator(nLevels), impurity.createAggregator(nLevels))
+  def apply(impurity:ClassficationImpurity, labels:Array[Int], nLevels:Int):ClassificationSplitAggregator = new ClassificationSplitAggregator(labels, impurity.createAggregator(nLevels), impurity.createAggregator(nLevels))
 }
-
 
 class ConfusionAggregator(val matrix:Array[ClassificationImpurityAggregator], val labels:Array[Int]) {
   

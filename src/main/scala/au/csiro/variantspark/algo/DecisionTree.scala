@@ -275,7 +275,7 @@ trait SpliterBuilderFactory {
 
 class StatefullSpliterBuilderFactory(val impurity:ClassficationImpurity, val labels:Array[Int], val nCategories:Int) extends SpliterBuilderFactory {
   
-  val splitAggregator = ClassificationSplitAggregator(impurity, nCategories)
+  val splitAggregator = ClassificationSplitAggregator(impurity, labels, nCategories)
   val confusionAgg = new ConfusionAggregator(impurity, 10, nCategories, labels)
   
   def create(sf:SplitterFactory):IndexedSplitter = {
