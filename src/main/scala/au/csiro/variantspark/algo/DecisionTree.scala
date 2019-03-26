@@ -61,17 +61,6 @@ case class SubsetInfo(indices:Array[Int], impurity:Double, majorityLabel:Int) {
   override def toString(): String = s"SubsetInfo(${indices.toList},${impurity}, ${majorityLabel})"
 }
 
-/** An immutable container for the information that was recently split 
-  * 
-  * Specify 'splitPoint', 'gini', 'leftGini', and 'rightGini'
-  *
-  * @constructor create an object containing the information about the split
-  * @param splitPoint: specifies the exact point in the dataset that it was split at
-  * @param gini: general gini value of the dataset
-  * @param leftGini: the gini impurity of the left split of the dataset
-  * @param rightGini: the gini impurity of the right split of the dataset
-  */
-case class SplitInfo(val splitPoint:Double, val gini:Double,  val leftGini:Double, val rightGini:Double)
 
 /** Class utilized to give an insight into the split data
   * 
@@ -196,24 +185,6 @@ case class RandomizingMerger(seed:Long) extends Merger {
 
 
 
-trait SpliterBuilderFactory {
-  def create(sf:SplitterFactory):IndexedSplitter
-}
-
-class StatefullSpliterBuilderFactory(val impurity:ClassficationImpurity, val labels:Array[Int], val nCategories:Int) extends SpliterBuilderFactory {
-  
-  val splitAggregator = ClassificationSplitAggregator(impurity, labels, nCategories)
-  val confusionAgg = new ConfusionAggregator(impurity, 10, nCategories, labels)
-  
-  def create(sf:SplitterFactory):IndexedSplitter = {
-    sf match {
-      case fsf:FastSplitterFactory if (fsf.confusionSize <= 10 ) => fsf.createSplitter(splitAggregator, confusionAgg)
-      case _ => sf.createSplitter(splitAggregator)
-    }
-  }
-}
-
-
 /** This is the main split function
   * 
   * 1. specifies the number of categories based on the label input
@@ -242,34 +213,24 @@ case class VariableSplitter(val labels:Array[Int], mTryFraction:Double=1.0, val 
     * @param splits: input an array of the [[au.csiro.variantspark.algo.SubsetInfo]] class
     * @return returns an array [[au.csiro.variantspark.algo.SplitInfo]]
     */
-  def findSplits(typedData:TreeFeature, splits:Array[SubsetInfo], sbf:SpliterBuilderFactory)(implicit rng:RandomGenerator):Array[SplitInfo] = {
+  def findSplits(typedData:TreeFeature, splits:Array[SubsetInfo], sbf:IndexedSplitterFactory)(implicit rng:RandomGenerator):Array[SplitInfo] = {
 
-    val splitter = sbf.create(typedData)
-    //
-    // Create splits of a fraction of subsets consistent with mTry 
-    // So rather rather then randomly selecting mTry variables of each subset (tree node to split)
-    // we randomly select mTryFraction subsets for each variable 
-    // (which is the same as mTryFraction represents the desired probability of selecting a variable at each split)
-    
-    val splitterFactory: SubsetSplitterFactory = new SubsetSplitterFactory() {
-      def createSplitter(subsetIndices:Array[Int]):IndexedSplitter = splitter
-    }
-    
+    val splitter = sbf.create(typedData)    
     splits.map { subsetInfo =>
       if (rng.nextDouble() <= mTryFraction) {
-        val splitInfo = splitterFactory.createSplitter(subsetInfo.indices).findSplit(subsetInfo.indices)
+        val splitInfo = splitter.findSplit(subsetInfo.indices)
         if (splitInfo != null && splitInfo.gini < subsetInfo.impurity) splitInfo else null
       } else null
     }
   }
 
   
-  def threadSafeSpliterBuilderFactory(): SpliterBuilderFactory = {
+  def threadSafeSpliterBuilderFactory(): IndexedSplitterFactory = {
       //TODO: this should be actually passed externally (or at least part of it 
       // as it essentially determines what kind of tree are we bulding (e.g what is the metric used for impurity)
       // This should obtain a statefule and somehow compartmenalised impurity calculator
       // (Try trhead local perhaps here, but creating a new one (per partition) also fits the bill)
-    new StatefullSpliterBuilderFactory(GiniImpurity, labels, nCategories)
+    new DefStatefullIndexedSpliterFactory(GiniImpurity, labels, nCategories)
   }
   
   /** Returns the result of a split based on a variable

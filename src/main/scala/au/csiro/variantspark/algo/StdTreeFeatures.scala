@@ -28,7 +28,7 @@ class StdContinousTreeFeature(val label:String, val index:Long, continousData:Ar
  * A representation for ordered factors with no more than 127 levels. 
  * Stored as {{Array[Byte]}}
  */
-class SmallOrderedTreeFeature(val label:String, val index:Long, orderedData:Array[Byte], nLevels:Int) extends TreeFeature with  FastSplitterFactory {
+class SmallOrderedTreeFeature(val label:String, val index:Long, orderedData:Array[Byte], nLevels:Int) extends TreeFeature with  FastSplitterProvider {
   def variableType = BoundedOrdinalVariable(nLevels)
   def toData = new ByteArrayData(orderedData) 
   override def size = orderedData.size

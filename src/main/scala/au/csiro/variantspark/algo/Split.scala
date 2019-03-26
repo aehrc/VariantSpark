@@ -1,5 +1,18 @@
 package au.csiro.variantspark.algo
 
+/** An immutable container for the information that was recently split 
+  * 
+  * Specify 'splitPoint', 'gini', 'leftGini', and 'rightGini'
+  *
+  * @constructor create an object containing the information about the split
+  * @param splitPoint: specifies the exact point in the dataset that it was split at
+  * @param gini: general gini value of the dataset
+  * @param leftGini: the gini impurity of the left split of the dataset
+  * @param rightGini: the gini impurity of the right split of the dataset
+  */
+case class SplitInfo(val splitPoint:Double, val gini:Double,  val leftGini:Double, val rightGini:Double)
+
+
 
 trait IndexedSplitAggregator {
   def left: ImpurityAggregator
@@ -45,7 +58,7 @@ object ClassificationSplitAggregator {
   def apply(impurity:ClassficationImpurity, labels:Array[Int], nCategories:Int):ClassificationSplitAggregator = new ClassificationSplitAggregator(labels, impurity.createAggregator(nCategories), impurity.createAggregator(nCategories))
 }
 
-class ConfusionAggregator(val matrix:Array[ClassificationImpurityAggregator], val labels:Array[Int]) {
+class ConfusionAggregator private (val matrix:Array[ClassificationImpurityAggregator], val labels:Array[Int]) {
   
   def this(impurity:ClassficationImpurity, size:Int, nCategories:Int, labels:Array[Int]) {
     this(Array.fill(size)(impurity.createAggregator(nCategories)), labels)
@@ -73,33 +86,62 @@ trait IndexedSplitter {
 }
 
 
-trait SplitterFactory {
+trait SwitchingIndexedSplitter extends IndexedSplitter {
+  def select(splitIndices:Array[Int]):IndexedSplitter
+  override def findSplit(splitIndices:Array[Int]):SplitInfo = select(splitIndices).findSplit(splitIndices)
+}
+
+
+trait SplitterProvider {
   def createSplitter(impCalc:IndexedSplitAggregator): IndexedSplitter  
 }
 
-trait FastSplitterFactory extends SplitterFactory {
+trait FastSplitterProvider extends SplitterProvider {
   def confusionSize:Int
   def createSplitter(impCalc:IndexedSplitAggregator, confusionAgg:ConfusionAggregator): IndexedSplitter    
 }
 
 
-trait SubsetSplitterFactory {
-  def createSplitter(subsetIndices:Array[Int]):IndexedSplitter
+trait IndexedSplitterFactory {
+  def create(sf:SplitterProvider):IndexedSplitter
 }
 
-class DefSubsetSplitterFactory(val fastThreshold:Int) extends SubsetSplitterFactory {
- 
-  lazy val defaultSplitter:IndexedSplitter = ???
-  lazy val fastSplitter:Option[IndexedSplitter] = ???
+
+/**
+ * Depending on weather the fast memory consuming splitter can be created
+ * and the size of the current subset select either the fast memory consuming option
+ * slower but memory efficien one
+ * The way ranger does it is
+ *  if (sampleSize/numOfUniqueValues < Q_THRESHOLD {
+ *    useSlowAlgorirm()
+ *  else {
+ *   useFastAltorithm() if (available I assume)
+ *  
+ *  The value of Q_THRESHOLD is 0.02
+ */
+case class ThresholdIndexedSplitter(fastSplitter:IndexedSplitter, confusionSize:Int, defaultSplitter:IndexedSplitter,
+      qThreshold:Double = ThresholdIndexesSplitter.DefaultQThredhold) extends SwitchingIndexedSplitter {
+   
+  override def select(splitIndices:Array[Int]):IndexedSplitter = {
+    if (splitIndices.length.toDouble/confusionSize >=qThreshold)  fastSplitter else defaultSplitter
+  }
+}
+
+object ThresholdIndexesSplitter {
+  val DefaultQThredhold:Double = 0.02
+}
+
+class DefStatefullIndexedSpliterFactory(val impurity:ClassficationImpurity, val labels:Array[Int], val nCategories:Int, 
+    val maxConfusionSize:Int = 10, val qThreshold:Double = ThresholdIndexesSplitter.DefaultQThredhold) extends IndexedSplitterFactory {
   
-  def createSplitter(subsetIndices:Array[Int]):IndexedSplitter = {
-    // depending on weather the fast memory consuming splitter can be created
-    // and the size of the current subset select either the fast memory consuming option
-    // slower but memory efficien one
-    if (subsetIndices.length >= fastThreshold && !fastSplitter.isEmpty) {
-      fastSplitter.get
-    } else {
-      defaultSplitter
+  val splitAggregator = ClassificationSplitAggregator(impurity, labels, nCategories)
+  val confusionAgg = new ConfusionAggregator(impurity, maxConfusionSize, nCategories, labels)
+  
+  def create(sf:SplitterProvider):IndexedSplitter = {
+    sf match {
+      case fsf:FastSplitterProvider if (fsf.confusionSize <= maxConfusionSize ) => ThresholdIndexedSplitter(fsf.createSplitter(splitAggregator, 
+            confusionAgg), fsf.confusionSize, sf.createSplitter(splitAggregator), qThreshold)
+      case _ => sf.createSplitter(splitAggregator)
     }
   }
 }

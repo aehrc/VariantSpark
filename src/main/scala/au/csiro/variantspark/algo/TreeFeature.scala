@@ -15,7 +15,7 @@ import au.csiro.pbdava.ssparkle.spark.SparkUtils._
  * The implementation of splitting is expressed by implementing {{SplitterFactory}} 
  * (or {{FastSplitterFactory}} in case confusion based splitting is possible) 
  */
-trait TreeFeature extends DataLike with SplitterFactory with Serializable {
+trait TreeFeature extends DataLike with SplitterProvider with Serializable {
   def label:String
   def variableType:VariableType
   def index: Long
