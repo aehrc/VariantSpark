@@ -1,10 +1,7 @@
-package au.csiro.variantspark.algo
+package au.csiro.variantspark.algo.impurity
 
 
 import org.junit.Assert._
-
-import au.csiro.variantspark.algo.impurity.FastGini;
-
 import org.junit.Test
 
 class FastGiniTest {

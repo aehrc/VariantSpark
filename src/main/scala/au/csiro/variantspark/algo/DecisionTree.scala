@@ -1,100 +1,27 @@
 package au.csiro.variantspark.algo
 
-import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
-import au.csiro.pbdava.ssparkle.common.utils.{Logging, Prof}
-import au.csiro.pbdava.ssparkle.spark.SparkUtils._
-import au.csiro.variantspark.data.BoundedOrdinalVariable
-import au.csiro.variantspark.data.VariableType
-import au.csiro.variantspark.metrics.Gini
-import au.csiro.variantspark.utils.IndexedRDDFunction._
-import au.csiro.variantspark.utils.{CanSize, FactorVariable, Sample, defRng}
-import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
-import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 import org.apache.commons.lang3.builder.ToStringBuilder
 import org.apache.commons.math3.random.RandomGenerator
-import org.apache.spark.TaskContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.RDD.rddToPairRDDFunctions
-import org.apache.spark.storage.StorageLevel
-import scala.reflect.ClassTag
-import au.csiro.variantspark.data.ContinuousVariable
-import au.csiro.variantspark.data.Feature
-import au.csiro.variantspark.utils.IndexedRDDFunction._
-import au.csiro.variantspark.data.FeatureBuilder
-import org.apache.spark.mllib.linalg.Vector
+
+import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
+import au.csiro.pbdava.ssparkle.common.utils.Logging
+import au.csiro.pbdava.ssparkle.common.utils.Prof
+import au.csiro.pbdava.ssparkle.spark.SparkUtils._
 import au.csiro.variantspark.data.DataBuilder
-import au.csiro.variantspark.data.StdFeature
-import au.csiro.variantspark.data.VectorData
-import org.apache.spark.mllib.linalg.Vectors
-import au.csiro.variantspark.data.ByteArrayData
-import au.csiro.variantspark.algo.split.JNaiveContinousIndexedSplitter
-import au.csiro.variantspark.algo.split.JOrderedIndexedSplitter
-import au.csiro.variantspark.algo.impurity.GiniImpurityAggregator
 import au.csiro.variantspark.data.DataLike
-import au.csiro.variantspark.data.Data
-import au.csiro.variantspark.algo.split.JOrderedFastIndexedSplitter
-
-
-
-trait SplitterFactory {
-  def createSplitter(impCalc:IndexedSplitAggregator): IndexedSplitter  
-}
-
-trait FastSplitterFactory extends SplitterFactory {
-  def confusionSize:Int
-  def createSplitter(impCalc:IndexedSplitAggregator, confusionAgg:ConfusionAggregator): IndexedSplitter    
-}
-
-trait TreeFeature extends DataLike with SplitterFactory with Serializable {
-  def label:String
-  def variableType:VariableType
-  def index: Long
-  def toData: Data
-  def toFeature: Feature = StdFeature(label, variableType, toData)
-}
-
-class StdContinousTreeFeature(val label:String, val index:Long, continousData:Array[Double]) extends TreeFeature {
-  def variableType = ContinuousVariable
-  def toData = new VectorData(Vectors.dense(continousData))
-  override def size = continousData.size
-  override def at(i:Int) = continousData(i)
-  override def createSplitter(impCalc:IndexedSplitAggregator) = new JNaiveContinousIndexedSplitter(impCalc,continousData)
-}
-
-class SmallOrderedTreeFeature(val label:String, val index:Long, orderedData:Array[Byte], nLevels:Int) extends TreeFeature with  FastSplitterFactory {
-  def variableType = BoundedOrdinalVariable(nLevels)
-  def toData = new ByteArrayData(orderedData) 
-  override def size = orderedData.size
-  override def at(i:Int) = orderedData(i).toDouble
-  override def createSplitter(impCalc:IndexedSplitAggregator) = new JOrderedIndexedSplitter(impCalc, orderedData, nLevels)
-  override def confusionSize = nLevels
-  override def createSplitter(impCalc:IndexedSplitAggregator, confusionAgg:ConfusionAggregator) =  new JOrderedFastIndexedSplitter(confusionAgg, impCalc, orderedData, nLevels) 
-}
-
-trait TreeRepresentationFactory {
-  def createRepresentation(f:RDD[(Feature,Long)]):RDD[TreeFeature] = f.map(fi => createRepresentation(fi._1, fi._2))
-  def createRepresentation(f:Feature, i:Long):TreeFeature
-}
-
-case object DefTreeRepresentationFactory extends TreeRepresentationFactory {
-  def createRepresentation(f:Feature, index:Long):TreeFeature  = {
-    f.variableType match {
-      case BoundedOrdinalVariable(nLevels) if (nLevels < 127) => new  SmallOrderedTreeFeature(f.label, index, f.data.valueAsByteArray, nLevels)
-      case ContinuousVariable => new StdContinousTreeFeature(f.label, index, f.data.valueAsVector.toArray) 
-      case _ => throw new IllegalArgumentException(s"Unsupported feature type ${f.variableType}")
-    }
-  }
-}
-
-class TreeFeatureRDDFunction[V](val rdd:RDD[TreeFeature]) extends AnyVal {
-  def size = rdd.first.size
-  def collectAtIndexes(indexes:Set[Long]):Map[Long, Data] = withBroadcast(rdd)(indexes) { br_indexes =>
-      rdd.filter({ case tf => br_indexes.value.contains(tf.index)})
-        .map(tf => (tf.index, tf.toData))
-        .collectAsMap().toMap
-  }
-}
+import au.csiro.variantspark.data.Feature
+import au.csiro.variantspark.data.StdFeature
+import au.csiro.variantspark.data.VariableType
+import au.csiro.variantspark.metrics.Gini
+import au.csiro.variantspark.utils.FactorVariable
+import au.csiro.variantspark.utils.IndexedRDDFunction._
+import au.csiro.variantspark.utils.Sample
+import au.csiro.variantspark.utils.defRng
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
+import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 
 /** Allows for a general description of the construct 
   *
