@@ -9,8 +9,6 @@ import au.csiro.variantspark.data.Feature
 
 trait PredictiveModel {
   def predict(data: RDD[(Feature, Long)]): Array[Int]  
-  //def predict[V](data: RDD[V])(implicit ct:CanSplit[V]): Array[Int] = predictIndexed(data.zipWithIndex())
-  //def predictIndexed[V](data: RDD[(V,Long)])(implicit ct:CanSplit[V]): Array[Int] 
   def printout() 
 }
 

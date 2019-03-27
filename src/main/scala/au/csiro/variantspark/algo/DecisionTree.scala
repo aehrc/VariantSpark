@@ -380,7 +380,7 @@ object SplitNode {
 }
 
 @SerialVersionUID(1l)
-class DecisionTreeModel(val rootNode: DecisionTreeNode) extends PredictiveModelWithImportance with  Logging with Serializable {
+case class DecisionTreeModel(val rootNode: DecisionTreeNode) extends PredictiveModelWithImportance with  Logging with Serializable {
 
   def splitVariableIndexes = rootNode.splitsToStream.map(_.splitVariableIndex).toSet
   

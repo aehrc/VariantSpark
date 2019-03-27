@@ -24,6 +24,7 @@ The potential users include:
 ### Community
 
 Please feel free to add issues and/or upvote issues you care about. Also join the [Gitter chat](https://gitter.im/VariantSpark/Lobby).
+We also started [ReadTheDocs](https://variantspark.readthedocs.io/en/latest/) and there is always the this repo's issues page for you to add requests. Thanks for your support. 
 
 
 ### Learn More
