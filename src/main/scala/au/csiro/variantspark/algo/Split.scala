@@ -13,7 +13,10 @@ package au.csiro.variantspark.algo
 case class SplitInfo(val splitPoint:Double, val gini:Double,  val leftGini:Double, val rightGini:Double)
 
 
-
+/**
+ * An aggregator for calculating split impurity for two sets of labels or values
+ * indireclty referenced by theid indexes.
+ */
 trait IndexedSplitAggregator {
   def left: ImpurityAggregator
   def right: ImpurityAggregator  
@@ -36,6 +39,9 @@ trait IndexedSplitAggregator {
 	def update(index:Int)
 }
 
+/**
+ * Split aggregator for classification. The indexes refer to nominal labels.
+ */
 class ClassificationSplitAggregator private (val labels:Array[Int], val left:ClassificationImpurityAggregator, val right:ClassificationImpurityAggregator) extends IndexedSplitAggregator {  
   
   def initLabel(label:Int) {
@@ -58,6 +64,11 @@ object ClassificationSplitAggregator {
   def apply(impurity:ClassficationImpurity, labels:Array[Int], nCategories:Int):ClassificationSplitAggregator = new ClassificationSplitAggregator(labels, impurity.createAggregator(nCategories), impurity.createAggregator(nCategories))
 }
 
+
+/**
+ * Fast but memory intensive split aggregator keeping partial impurity statistics for 
+ * all the unique values of the feature (only makes senses with indexed features)
+ */
 class ConfusionAggregator private (val matrix:Array[ClassificationImpurityAggregator], val labels:Array[Int]) {
   
   def this(impurity:ClassficationImpurity, size:Int, nCategories:Int, labels:Array[Int]) {
@@ -81,27 +92,47 @@ class ConfusionAggregator private (val matrix:Array[ClassificationImpurityAggreg
 }
 
 
+/**
+ * The base interface for finding the best split in a set of indexed values.
+ */
 trait IndexedSplitter {
   def findSplit(splitIndices:Array[Int]):SplitInfo
 }
 
 
+/**
+ * A helper trait for IndexedSplitter that select the actual implementaiton
+ * base on the set of indexes themselves.
+ */
 trait SwitchingIndexedSplitter extends IndexedSplitter {
   def select(splitIndices:Array[Int]):IndexedSplitter
   override def findSplit(splitIndices:Array[Int]):SplitInfo = select(splitIndices).findSplit(splitIndices)
 }
 
 
+/**
+ * Base interface for entities capable of producing indexes splitters
+ */
 trait SplitterProvider {
   def createSplitter(impCalc:IndexedSplitAggregator): IndexedSplitter  
 }
 
+/**
+ * Base interface for entities capable of producing fast but memory intensive confusion splitters
+ */
 trait FastSplitterProvider extends SplitterProvider {
+  /**
+   * The size of the required confusino aggregator
+   */
   def confusionSize:Int
   def createSplitter(impCalc:IndexedSplitAggregator, confusionAgg:ConfusionAggregator): IndexedSplitter    
 }
 
 
+
+/**
+ * Base interface for the strategy for creating indexed splitters for a provider.
+ */
 trait IndexedSplitterFactory {
   def create(sf:SplitterProvider):IndexedSplitter
 }
@@ -131,11 +162,15 @@ object ThresholdIndexesSplitter {
   val DefaultQThredhold:Double = 0.02
 }
 
+/**
+ * The default implementation of the {{IndexedSplitterFactory}} for classification
+ * 
+ */
 class DefStatefullIndexedSpliterFactory(val impurity:ClassficationImpurity, val labels:Array[Int], val nCategories:Int, 
     val maxConfusionSize:Int = 10, val qThreshold:Double = ThresholdIndexesSplitter.DefaultQThredhold) extends IndexedSplitterFactory {
   
-  val splitAggregator = ClassificationSplitAggregator(impurity, labels, nCategories)
-  val confusionAgg = new ConfusionAggregator(impurity, maxConfusionSize, nCategories, labels)
+  lazy val splitAggregator = ClassificationSplitAggregator(impurity, labels, nCategories)
+  lazy val confusionAgg = new ConfusionAggregator(impurity, maxConfusionSize, nCategories, labels)
   
   def create(sf:SplitterProvider):IndexedSplitter = {
     sf match {
