@@ -24,7 +24,7 @@ trait ImportanceOutputArgs {
   def importanceNormalizer = outputNormalization match {
     case "to100" => To100ImportanceNormalizer
     case "raw"  => RawVarImportanceNormalizer
-    case _ => throw new IllegalArgumentException(s"Unrecognized normalization type: `${outputNormalization}`. Valid options are `top100`, `raw`")
+    case _ => throw new IllegalArgumentException(s"Unrecognized normalization type: `${outputNormalization}`. Valid options are `to100`, `raw`")
   }
   
   def limitVariables(importances:Seq[(Long,Double)], limit:Int):Seq[(Long,Double)] =  {
