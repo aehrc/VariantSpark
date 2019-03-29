@@ -10,7 +10,7 @@ INPUT_OPTIONS_JSON=$(cat << EOF
 EOF
 )
 
-variant-spark --spark --master 'local[*]' -- \
+variant-spark --spark --master 'local' -- \
  importance -ff ${PWD}/src/test/data/data-labels.csv -fc label -v -rn 2000 -rbs 50 -ro -sr 13 -ovn raw \
  -on 0 \
  -if "${PWD}/src/test/data/data.csv" -it "stdcsv" \
