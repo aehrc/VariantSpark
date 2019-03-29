@@ -2,10 +2,17 @@ package au.csiro.variantspark.utils
 
 import org.apache.commons.math3.random.{RandomDataGenerator, RandomGenerator}
 
+/**
+ * Represents a sample (possibly with replacement0 from an array of size `nSize` by storing the indexes of the elements
+ * beloning to the sample.
+ */
 class Sample(val nSize:Int, val indexes:Array[Int]) {
-  def asWeights:Array[Int] = Array()
-  def indexesIn:Set[Int] = indexes.toSet
-  def indexesOut:Set[Int] = Range(0, nSize).toSet.diff(indexesIn)
+  def asWeights:Array[Int] = ???
+  def distinctIndexesIn:Set[Int] = indexes.toSet
+  def distinctIndexesOut:Set[Int] = Range(0, nSize).toSet.diff(distinctIndexesIn)
+  /**
+   * The length of the sample
+   */
   def length = indexes.length
 }
 
