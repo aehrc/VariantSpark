@@ -580,7 +580,7 @@ class DecisionTree[V](val params: DecisionTreeParams = DecisionTreeParams())(imp
 
     val splitter = VariableSplitter[V](dataType, labels, nvarFraction, randomizeEquality = params.randomizeEquality)
     val subsets = sample.map { s =>
-      val currentSet =  s.indexesIn.toArray
+      val currentSet =  s.indexes
       val (totalGini, totalLabel) = Gini.giniImpurity(currentSet, labels, splitter.nCategories)
       SubsetInfo(currentSet, totalGini, totalLabel)
     }.toList

@@ -16,6 +16,7 @@ class ReproducibilityTest extends SparkTest {
   
   override implicit lazy val spark = SparkSession.builder.config(new SparkConf(false)).appName("test").master("local[*]").getOrCreate()
   
+  @Ignore
   @Test
   def testReproducibleResults() {    
     implicit val vsContext = VSContext(spark)
