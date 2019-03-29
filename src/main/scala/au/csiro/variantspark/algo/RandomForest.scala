@@ -232,7 +232,7 @@ class RandomForest(params:RandomForestParams=RandomForestParams()
           val predictors = builder.batchTrain(treeFeatures, labels, actualParams.nTryFraction, samples)
           val members = if (actualParams.oob) {
 
-            val oobIndexes = samples.map(_.indexesOut.toArray)
+            val oobIndexes = samples.map(_.distinctIndexesOut.toArray)
             val oobPredictions = builder.batchPredict(treeFeatures, predictors, oobIndexes)
             predictors.zip(oobIndexes.zip(oobPredictions)).map { case (t, (i,p)) => RandomForestMember(t,i,p)}
 

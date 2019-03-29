@@ -200,7 +200,7 @@ case class VariableSplitter(val labels:Array[Int], mTryFraction:Double=1.0, val 
   val nCategories = labels.max + 1
 
   def initialSubset(sample:Sample):SubsetInfo = {
-        val currentSet =  sample.indexesIn.toArray
+        val currentSet =  sample.indexes
         val (totalGini, totalLabel) = Gini.giniImpurity(currentSet, labels, nCategories)
         SubsetInfo(currentSet, totalGini, totalLabel)    
   }
