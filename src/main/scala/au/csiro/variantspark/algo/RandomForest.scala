@@ -22,7 +22,7 @@ trait VarImportanceNormalizer {
 
 /** Defines normalization variable conditionally
   */
-case object IdentityVarImportanceNormalizer extends VarImportanceNormalizer {
+case object RawVarImportanceNormalizer extends VarImportanceNormalizer {
   override def normalize(varImportance:Map[Long,Double]):Map[Long, Double] = varImportance
 }
 
@@ -87,7 +87,7 @@ case class RandomForestMember[V](val predictor:PredictiveModelWithImportance[V],
   */
 @SerialVersionUID(2l)
 case class RandomForestModel[V](val members: List[RandomForestMember[V]], val labelCount:Int, val oobErrors:
-  List[Double] = List.empty)(implicit canSplit:CanSplit[V]) {
+  List[Double] = List.empty, val params:RandomForestParams = null) {
 
   def size = members.size
   def trees = members.map(_.predictor)
@@ -114,13 +114,13 @@ case class RandomForestModel[V](val members: List[RandomForestMember[V]], val la
       .asScala.mapValues(_/size)
   }
 
-  def predict(data: RDD[V])(implicit ct:ClassTag[V]): Array[Int] = predictIndexed(data.zipWithIndex())
+  def predict(data: RDD[V])(implicit canSplit:CanSplit[V]): Array[Int] = predictIndexed(data.zipWithIndex())
 
-  def predictIndexed(indexedData: RDD[(V,Long)])(implicit ct:ClassTag[V]):
+  def predictIndexed(indexedData: RDD[(V,Long)])(implicit canSplit:CanSplit[V]):
     Array[Int] = predictIndexed(indexedData, indexedData.size)
 
-  def predictIndexed(indexedData: RDD[(V,Long)], nSamples:Int)(implicit ct:ClassTag[V]): Array[Int] = {
-     trees.map(_.predictIndexed(indexedData))
+  def predictIndexed(indexedData: RDD[(V,Long)], nSamples:Int)(implicit canSplit:CanSplit[V]): Array[Int] = {
+    trees.map(_.predictIndexed(indexedData))
        .foldLeft(VotingAggregator(labelCount, nSamples))(_.addVote(_)).predictions
   }
 
@@ -254,7 +254,7 @@ class RandomForest[V](params:RandomForestParams=RandomForestParams()
         }.result
      }.toList.unzip
 
-    RandomForestModel(allTrees.toList, nLabels, errors)
+    RandomForestModel(allTrees.toList, nLabels, errors, actualParams)
  }
   
   

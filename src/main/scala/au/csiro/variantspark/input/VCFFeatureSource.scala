@@ -22,9 +22,11 @@ case class DefVariantToFeatureConverter(biallelic:Boolean = false, separator:Str
     }
     val labelBuilder = new StringBuilder()
     labelBuilder.append(vc.getContig()).append(separator).append(vc.getStart())
+      .append(separator).append(vc.getReference().getBaseString())
     if (biallelic) {
-      labelBuilder.append(separator).append(vc.getReference().getBaseString())
-        .append(separator).append(vc.getAlternateAllele(0).getBaseString())
+      labelBuilder.append(separator).append(vc.getAlternateAllele(0).getBaseString())
+    } else {
+      labelBuilder.append(separator).append(vc.getAlternateAlleles.asScala.map(_.getBaseString()).mkString("|"))   
     }
     labelBuilder.toString()
   }
