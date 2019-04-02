@@ -10,6 +10,7 @@ import org.apache.hadoop.fs.FileSystem
 import au.csiro.variantspark.input.CsvStdFeatureSource
 import org.saddle.io.CsvParser
 import org.saddle.io.CsvFile
+import org.junit.Ignore
 
 object RandomForestImportanceIntegratedTest {
   val NoTrees:Int = 5000
@@ -28,6 +29,7 @@ class RandomForestImportanceIntegratedTest extends SparkTest {
     data.filter(_ <= q).size.toDouble/data.size.toDouble
   }
   
+  @Ignore
   @Test
   def testFindsImportantVariablesInGeneratedDataset() {
     
