@@ -5,14 +5,16 @@ import au.csiro.variantspark.test.SparkTest
 import org.apache.spark.mllib.linalg.Vectors
 import org.junit.Assert._
 import org.junit.Test
-
+import au.csiro.variantspark.data.ContinuousVariable
+import au.csiro.variantspark.data._
+import au.csiro.variantspark.input._
 
 class WideDecisionTreeModelTest extends SparkTest {
 
   @Test
   def testCorrectlyPredictsComplexTree() {
     // let's build a tree with 2 variables and 5 nodes
-    val decisionTreeModel = new WideDecisionTreeModel(
+    val decisionTreeModel = new DecisionTreeModel(
       SplitNode(majorityLabel = 0, size = 10, nodeImpurity = 0.0, splitVariableIndex = 1L, splitPoint = 1.0, impurityReduction = 0.0,
         left = LeafNode(1, 0, 0.0),
         right = SplitNode(majorityLabel = 0, size = 10, nodeImpurity = 0.0, splitVariableIndex = 2L, splitPoint = 0.0, impurityReduction = 0.0,
@@ -25,14 +27,14 @@ class WideDecisionTreeModelTest extends SparkTest {
       Vectors.dense(3.0, 3.0, 3.0),
       Vectors.dense(0.0, 2.0, 2.0),
       Vectors.dense(0.0, 0.0, 1.0)
-    )).zipWithIndex
-    assertArrayEquals(Array(1, 2, 3), decisionTreeModel.predictIndexed(data))
+    )).asFeature(ContinuousVariable)
+    assertArrayEquals(Array(1, 2, 3), decisionTreeModel.predict(data))
   }
 
   @Test
   def testCorrectlyIdentifiedVariableImportanceForComplexTree() {
     // let's build a tree with 2 variables and 5 nodes
-    val decisionTreeModel = new WideDecisionTreeModel(
+    val decisionTreeModel = new DecisionTreeModel(
       SplitNode(majorityLabel = 0, size = 10, nodeImpurity = 1.0, splitVariableIndex = 1L, splitPoint = 1.0, impurityReduction = 0.0,
         left = SplitNode(majorityLabel = 0, size = 4, nodeImpurity = 0.4, splitVariableIndex = 2L, splitPoint = 0.0, impurityReduction = 0.0,
           left = LeafNode(2, 3, 0.2),

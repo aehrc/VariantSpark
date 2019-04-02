@@ -32,7 +32,7 @@ trait ModelOutputArgs extends SparkArgs with Echoable {
 
   def requiresFullIndex = modelFile != null
  
-  def saveModelJson(rfModel:RandomForestModel[_], variableIndex:Map[Long,String]) {
+  def saveModelJson(rfModel:RandomForestModel, variableIndex:Map[Long,String]) {
       implicit val hadoopConf:Configuration = sc.hadoopConfiguration
       implicit val formats = Serialization.formats(NoTypeHints)
       LoanUtils.withCloseable(new OutputStreamWriter(HdfsPath(modelFile).create())) { objectOut =>
@@ -40,14 +40,14 @@ trait ModelOutputArgs extends SparkArgs with Echoable {
       }
   }
   
-  def saveModelJava(rfModel:RandomForestModel[_], variableIndex:Map[Long,String]) {
+  def saveModelJava(rfModel:RandomForestModel, variableIndex:Map[Long,String]) {
     implicit val hadoopConf:Configuration = sc.hadoopConfiguration
     LoanUtils.withCloseable(new ObjectOutputStream(HdfsPath(modelFile).create())) { objectOut =>
       objectOut.writeObject(rfModel)
     }
   }
   
-  def saveModel(rfModel:RandomForestModel[_], variableIndex:Map[Long,String]) {    
+  def saveModel(rfModel:RandomForestModel, variableIndex:Map[Long,String]) {    
     if (modelFile != null) {
       echo(s"Saving random forest model as `${modelFileFormat}` to: ${modelFile}") 
       modelFileFormat  match {

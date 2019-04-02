@@ -10,7 +10,7 @@ object PairwiseComputation {
   def apply(vds: VariantDataset, pairwiseOp: PairwiseOperation): KinshipMatrix = {
     require(vds.wasSplit)
     val featureSource = HailFeatureSource(vds)
-    val pairwiseResult = pairwiseOp.compute(featureSource.features().map(_.values))
+    val pairwiseResult = pairwiseOp.compute(featureSource.features.map(_.valueAsByteArray))
     
     val indexedRowMatrix = pairwiseResult.toIndexedRowMatrix(vds.hc.sc)
     println(s"sizes: ${indexedRowMatrix.numRows()}, ${indexedRowMatrix.numCols()}")

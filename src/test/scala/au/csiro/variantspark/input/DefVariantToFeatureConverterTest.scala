@@ -42,7 +42,7 @@ class DefVariantToFeatureConverterTest {
     val converter = DefVariantToFeatureConverter(true, ":")
     val result = converter.convert(bialellicVC)
     assertEquals("chr1:10:T:A", result.label)
-    assertArrayEquals(expectedEncodedGenotype, result.values)
+    assertArrayEquals(expectedEncodedGenotype, result.valueAsByteArray)
   }
 
   @Test
@@ -50,7 +50,7 @@ class DefVariantToFeatureConverterTest {
     val converter = DefVariantToFeatureConverter(false)
     val result = converter.convert(multialleciVC)
     assertEquals("chr1_10_T_A|G", result.label)
-    assertArrayEquals(expectedEncodedGenotype, result.values)
+    assertArrayEquals(expectedEncodedGenotype, result.valueAsByteArray)
   }
 
   @Test(expected=classOf[IllegalArgumentException])

@@ -73,4 +73,11 @@ class JConfusionClassificationSplitterTest extends ClassificationSplitterTest {
   def splitter(labels: Array[Int], nLabels: Int = 2) = new JConfusionClassificationSplitter(labels, nLabels, 4)
 }
 
+class JContinousClassificationFastSplitterTest extends ClassificationSplitterTest {
+  def splitter(labels: Array[Int], nLabels: Int = 2) = new JContinousClassificationFastSplitter(labels, nLabels)
+}
+
+
+
+
 

@@ -28,6 +28,8 @@ import org.apache.spark.Accumulable
 import org.apache.spark.AccumulableParam
 import java.io.FileOutputStream
 import java.io.ObjectOutputStream
+import  au.csiro.variantspark.input._
+
 
 object IndexAccumulator extends AccumulableParam[Long2ObjectOpenHashMap[String], (Long,String)] {
   def addAccumulator(r: Long2ObjectOpenHashMap[String], t: (Long, String)): Long2ObjectOpenHashMap[String] = {
@@ -61,7 +63,7 @@ class BuildVarIndexCmd extends ArgsApp with FeatureSourceArgs with Logging with 
     echo(s"Building full variable index")
     
     val indexAccumulator = sc.accumulable(new Long2ObjectOpenHashMap[String]())(IndexAccumulator)
-    featureSource.features().zipWithIndex().map(t => (t._2, t._1.label)).foreach(indexAccumulator.add(_))
+    featureSource.features.zipWithIndex().map(t => (t._2, t._1.label)).foreach(indexAccumulator.add(_))
     
     val index = indexAccumulator.value
     

@@ -1,8 +1,8 @@
 package au.csiro.variantspark.api
 
 import au.csiro.pbdava.ssparkle.spark.SparkUtils
-import au.csiro.variantspark.algo.{ByteRandomForest, RandomForestParams}
-import au.csiro.variantspark.data.BoundedOrdinal
+import au.csiro.variantspark.algo.{RandomForest, RandomForestParams}
+import au.csiro.variantspark.data.BoundedOrdinalVariable
 import au.csiro.variantspark.input.{FeatureSource, LabelSource}
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
 import org.apache.spark.sql.{Row, SQLContext}
@@ -10,6 +10,7 @@ import org.apache.spark.sql.types.{DoubleType, StringType, StructField, StructTy
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
+import au.csiro.variantspark.algo.RandomForest
 
 /**
   * A class to represent an instance of the Importance Analysis
@@ -31,17 +32,15 @@ class ImportanceAnalysis(val sqlContext:SQLContext, val featureSource:FeatureSou
       val labelSource:LabelSource, 
       val rfParams: RandomForestParams, val nTrees:Int, val rfBatchSize:Int, varOrdinalLevels:Int) {
       
-  private def sc = featureSource.features().sparkContext
-  private lazy val inputData = featureSource.features().zipWithIndex().cache()
+  private def sc = featureSource.features.sparkContext
+  private lazy val inputData = featureSource.features.zipWithIndex().cache()
   
   val variableImportanceSchema = StructType(Seq(StructField("variable",StringType,true),StructField("importance",DoubleType,true )))
   
   lazy val rfModel = {
-    val dataType = BoundedOrdinal(varOrdinalLevels)
     val labels = labelSource.getLabels(featureSource.sampleNames)
-    val rf = new ByteRandomForest(rfParams)
-    val trainingData = inputData.map{ case (f, i) => (f.values, i)}
-    rf.batchTrain(trainingData, dataType, labels, nTrees, rfBatchSize)
+    val rf = new RandomForest(rfParams)
+    rf.batchTrain(inputData, labels, nTrees, rfBatchSize)
   }
 
   val oobError: Double  = rfModel.oobError
@@ -62,7 +61,7 @@ class ImportanceAnalysis(val sqlContext:SQLContext, val featureSource:FeatureSou
     val topImportantVariables = rfModel.normalizedVariableImportance().toSeq.sortBy(-_._2).take(nTopLimit)
     val topImportantVariableIndexes = topImportantVariables.map(_._1).toSet
     
-    val index = SparkUtils.withBroadcast(featureSource.features().sparkContext)(topImportantVariableIndexes) { br_indexes => 
+    val index = SparkUtils.withBroadcast(featureSource.features.sparkContext)(topImportantVariableIndexes) { br_indexes => 
       inputData.filter(t => br_indexes.value.contains(t._2)).map({case (f,i) => (i, f.label)}).collectAsMap()
     }
     

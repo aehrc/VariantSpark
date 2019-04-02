@@ -18,19 +18,18 @@ import au.csiro.variantspark.cmd.EchoUtils._
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 import au.csiro.pbdava.ssparkle.common.arg4j.TestArgs
 import org.apache.hadoop.fs.FileSystem
-import au.csiro.variantspark.algo.WideDecisionTree
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation
 import au.csiro.pbdava.ssparkle.spark.SparkUtils
 import au.csiro.pbdava.ssparkle.common.utils.ReusablePrintStream
 import au.csiro.variantspark.algo.RandomForestCallback
 import au.csiro.variantspark.utils.VectorRDDFunction._
 import au.csiro.variantspark.input.CsvFeatureSource
+import au.csiro.variantspark.input.CsvFeatureSource._
 import au.csiro.variantspark.algo.RandomForestParams
-import au.csiro.variantspark.data.BoundedOrdinal
+import au.csiro.variantspark.data.BoundedOrdinalVariable
 import au.csiro.pbdava.ssparkle.common.utils.Timer
 import au.csiro.variantspark.utils.defRng
 import au.csiro.variantspark.input.ParquetFeatureSource
-import au.csiro.variantspark.algo.ByteRandomForest
 import au.csiro.variantspark.utils.IndexedRDDFunction._
 import au.csiro.variantspark.stats.CochranArmitageTestScorer
 import au.csiro.variantspark.stats.CochranArmitageTestCalculator
@@ -120,7 +119,7 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
     val dataLoadingTimer = Timer()
     echo(s"Loading features from: ${inputFile}")
     
-    val inputData = source.features().zipWithIndex().cache()
+    val inputData = source.features.zipWithIndex().cache()
     val totalVariables = inputData.count()
     val variablePreview = inputData.map({case (f,i) => f.label}).take(defaultPreviewSize).toList
         
@@ -130,15 +129,15 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
     // for now assume it's ordered factor with provided number of levels
     echo(s"Assumed ordinal variable with ${varOrdinalLevels} levels")
     // TODO (Feature): Add autodiscovery
-    val dataType = BoundedOrdinal(varOrdinalLevels)
+    val dataType = BoundedOrdinalVariable(varOrdinalLevels)
     
     if (isVerbose) {
       verbose("Data preview:")
-      source.features().take(defaultPreviewSize).foreach(f=> verbose(s"${f.label}:${dumpList(f.values.toList, longPreviewSize)}"))
+      source.features.take(defaultPreviewSize).foreach(f=> verbose(s"${f.label}:${dumpList(f.valueAsStrings, longPreviewSize)}"))
     }
     
     echo(s"Running two sided CochranArmitage test")  
-     val trainingData = inputData.map{ case (f, i) => (f.values, i)}
+     val trainingData = inputData.map{ case (f, i) => (f.valueAsByteArray, i)}
     
     
     val scorer = new CochranArmitageTestScorer(labels, CochranArmitageTestCalculator.WEIGHT_TREND, nVariables)

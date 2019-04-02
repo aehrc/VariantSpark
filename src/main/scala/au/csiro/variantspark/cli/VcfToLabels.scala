@@ -9,11 +9,11 @@ import collection.JavaConverters._
 import au.csiro.variantspark.input.VCFSource
 import au.csiro.variantspark.input.VCFFeatureSource
 import au.csiro.variantspark.input.HashingLabelSource
-import au.csiro.variantspark.algo.WideRandomForest
 import org.apache.spark.mllib.linalg.Vectors
 import java.io.File
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
+import  au.csiro.variantspark.input._
 
 
 class VcfToLabels extends ArgsApp with SparkApp {
@@ -37,11 +37,11 @@ class VcfToLabels extends ArgsApp with SparkApp {
     println(header)
     println(version)
     val source  = VCFFeatureSource(vcfSource)
-    val columns = source.features().take(limit)
+    val columns = source.features.take(limit)
     CSVUtils.withFile(new File(outputFile)) { writer =>
       writer.writeRow("" :: columns.map(_.label).toList)
       source.sampleNames.zipWithIndex.foreach { case( row, i) =>
-        writer.writeRow(row :: columns.map(_.values(i)).toList)        
+        writer.writeRow(row :: columns.map(_.valueAsByteArray(i)).toList)        
       }
     }
     

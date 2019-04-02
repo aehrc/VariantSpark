@@ -15,7 +15,7 @@ class ModelConverterTest {
   val oobPredictions = Array(2,3)
   val oobErrors  = List(0.35, 0.33)
   
-  val rfModel = new ByteRandomForestModel(
+  val rfModel = RandomForestModel(
     List(
         RandomForestMember(DecisionTreeModel(
             SplitNode(1, 4, 0.6, 0L, 1.0, 0.3,

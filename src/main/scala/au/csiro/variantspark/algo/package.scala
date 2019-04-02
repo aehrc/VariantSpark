@@ -1,20 +1,17 @@
 package au.csiro.variantspark
 
 import org.apache.spark.mllib.linalg.Vector
+import org.apache.spark.rdd.RDD
+import au.csiro.variantspark.utils.CanSize
+import au.csiro.variantspark.data.Feature
 
 package object algo {
-  
-  implicit val canSplitVector = new CanSplitVector
-  implicit val canSplitArrayOfBytes = new CanSplitArrayByte
-  
-  type WideDecisionTree = DecisionTree[Vector]
-  type WideDecisionTreeModel = DecisionTreeModel[Vector]
-  
-  type WideRandomForest = RandomForest[Vector]
-  type WideRandomForestModel = RandomForestModel[Vector]
-  
-  type ByteRandomForestModel = RandomForestModel[Array[Byte]]
-  type ByteRandomForest = RandomForest[Array[Byte]]
-  
-  
+  type IndexedFeature = (Feature,Long)
+   
+  implicit case object CanSizeFeature extends CanSize[Feature] {
+    override def size(f:Feature):Int = f.size
+    override def runtimeClass = classOf[Feature]
+  }
+      
+  implicit def toTreeFeatueRDD(rdd:RDD[TreeFeature]) = new TreeFeatureRDDFunction(rdd)
 }

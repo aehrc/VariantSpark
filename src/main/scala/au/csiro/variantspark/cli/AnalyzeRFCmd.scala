@@ -75,7 +75,7 @@ class AnalyzeRFCmd extends ArgsApp with FeatureSourceArgs with Echoable with Log
     val si = javaSerializer.newInstance()
     
     val rfModel  = LoanUtils.withCloseable(new FileInputStream(inputModel)) { in =>
-      si.deserializeStream(in).readObject().asInstanceOf[RandomForestModel[_]]
+      si.deserializeStream(in).readObject().asInstanceOf[RandomForestModel]
     }  
     
     echo(s"Loaded model of size: ${rfModel.size}") 

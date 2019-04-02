@@ -7,7 +7,6 @@ import au.csiro.variantspark.algo.DecisionTreeNode
 import au.csiro.variantspark.algo.LeafNode
 import au.csiro.variantspark.algo.SplitNode
 import org.apache.spark.rdd.RDD
-import au.csiro.variantspark.input.Feature
 import au.csiro.pbdava.ssparkle.spark.SparkUtils
 
 class ModelConverter(varIndex:Map[Long, String]) {
@@ -25,7 +24,7 @@ class ModelConverter(varIndex:Map[Long, String]) {
     }
   }
   
-  def toExternal(rfMember: RandomForestMember[_]):Tree = {
+  def toExternal(rfMember: RandomForestMember):Tree = {
     val rootNode = rfMember.predictor match {
       case DecisionTreeModel(rootNode) => toExternal(rootNode)  
       case _ => throw new IllegalArgumentException("Unknow predictory type:" + rfMember.predictor)
@@ -33,7 +32,7 @@ class ModelConverter(varIndex:Map[Long, String]) {
     Tree(rootNode, Option(rfMember.oobIndexes).map(_ => OOBInfo(rfMember.oobIndexes, rfMember.oobPred)))
   }
   
-  def toExternal(rfModel:RandomForestModel[_]):Forest = {
+  def toExternal(rfModel:RandomForestModel):Forest = {
     val oobErrors = if (rfModel.oobErrors != null && !rfModel.oobErrors.isEmpty && !rfModel.oobErrors.head.isNaN()) {
       Some(rfModel.oobErrors)
     } else {
