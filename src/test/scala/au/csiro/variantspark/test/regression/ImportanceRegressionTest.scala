@@ -66,7 +66,7 @@ class ImportanceRegressionTest {
     // synth_2000_500_fact_3_0.995-imp_cat2.csv
     val caseFileRE = """(synth_([^_]+)_([^_]+)_fact_([^_]+)_([^_]+))-imp_([^_]+).csv""".r
     caseFile match {
-      case caseFileRE(prefix,_,_,ivo,_,response) => runRegression(s"importance -if ${synth(prefix)}-wide.csv -ff ${synth(prefix)}-labels.csv -fc ${response} -it csv -ivo ${ivo} -v -rn 100 -rbs 50 -ro -sr 17 -on 100 -sp 4 -of $${outputFile}",
+      case caseFileRE(prefix,_,_,ivo,_,response) => runRegression(s"""importance -if ${synth(prefix)}-wide.csv -ff ${synth(prefix)}-labels.csv -fc ${response} -it csv -io {"defVariableType":"ORDINAL(${ivo})"} -v -rn 100 -rbs 50 -ro -sr 17 -on 100 -sp 4 -of $${outputFile}""",
           caseFile)
     }
   }
@@ -79,7 +79,7 @@ class ImportanceRegressionTest {
 
   @Test
   def testCNAEImportance() {
-    runRegression("importance -if data/CNAE-9-wide.csv -it csv -ff data/CNAE-9-labels.csv -fc category -v -ro -rn 100 -rbs 50 -sr 17 -ivo 10 -sp 4 -on 100 -of ${outputFile}",
+    runRegression("""importance -if data/CNAE-9-wide.csv -it csv -ff data/CNAE-9-labels.csv -fc category -v -ro -rn 100 -rbs 50 -sr 17 -io {"defVariableType":"ORDINAL(10)"} -sp 4 -on 100 -of ${outputFile}""",
         "CNAE-9-imp_category.csv")
   }  
 
