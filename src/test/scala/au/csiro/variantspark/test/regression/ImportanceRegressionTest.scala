@@ -71,21 +71,18 @@ class ImportanceRegressionTest {
     }
   }
   
-  @Ignore
   @Test
   def testVFCImportance() {
     runRegression("importance -if data/chr22_1000.vcf -ff data/chr22-labels.csv -fc 22_16050408 -v -rn 100 -rbs 50 -ro -sr 17 -on 100 -sp 4 -of ${outputFile}",
         "chr22-imp_22_16050408.csv")
   }
 
-  @Ignore
   @Test
   def testCNAEImportance() {
     runRegression("importance -if data/CNAE-9-wide.csv -it csv -ff data/CNAE-9-labels.csv -fc category -v -ro -rn 100 -rbs 50 -sr 17 -ivo 10 -sp 4 -on 100 -of ${outputFile}",
         "CNAE-9-imp_category.csv")
   }  
 
-  @Ignore
   @Test
   def test_synth_2000_500_fact_3_0_995_imp_cat2() {
     runSynthRegression("synth_2000_500_fact_3_0.995-imp_cat2.csv")
@@ -96,6 +93,35 @@ class ImportanceRegressionTest {
     runSynthRegression("synth_2000_500_fact_3_0.995-imp_cat10.csv")
   }  
 
+  @Test
+  def test_synth_2000_500_fact_3_0_imp_cat2() {
+    runSynthRegression("synth_2000_500_fact_3_0.0-imp_cat2.csv")
+  }  
+
+  @Test
+  def test_synth_2000_500_fact_3_0_imp_cat10() {
+    runSynthRegression("synth_2000_500_fact_3_0.0-imp_cat10.csv")
+  }  
+  
+  @Test
+  def test_synth_2000_500_fact_10_0_995_imp_cat2() {
+    runSynthRegression("synth_2000_500_fact_10_0.995-imp_cat2.csv")
+  }  
+
+  @Test
+  def test_synth_2000_500_fact_10_0_995_imp_cat10() {
+    runSynthRegression("synth_2000_500_fact_10_0.995-imp_cat10.csv")
+  }  
+
+  @Test
+  def test_synth_2000_500_fact_10_0_imp_cat2() {
+    runSynthRegression("synth_2000_500_fact_10_0.0-imp_cat2.csv")
+  }  
+
+  @Test
+  def test_synth_2000_500_fact_10_0_imp_cat10() {
+    runSynthRegression("synth_2000_500_fact_10_0.0-imp_cat10.csv")
+  }  
 }
 
   
