@@ -25,7 +25,7 @@ object VectorRDDFunction {
 }
 
 
-trait CanSize[V] {
+trait CanSize[V] extends ClassTag[V]{
   def size(v:V):Int
 }
 

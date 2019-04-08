@@ -42,15 +42,15 @@ class DefVariantToFeatureConverterTest {
     val converter = DefVariantToFeatureConverter(true, ":")
     val result = converter.convert(bialellicVC)
     assertEquals("chr1:10:T:A", result.label)
-    assertArrayEquals(expectedEncodedGenotype, result.values)
+    assertArrayEquals(expectedEncodedGenotype, result.valueAsByteArray)
   }
 
   @Test
   def testConvertsMultialleicVariantCorrctly() {
     val converter = DefVariantToFeatureConverter(false)
     val result = converter.convert(multialleciVC)
-    assertEquals("chr1_10", result.label)
-    assertArrayEquals(expectedEncodedGenotype, result.values)
+    assertEquals("chr1_10_T_A|G", result.label)
+    assertArrayEquals(expectedEncodedGenotype, result.valueAsByteArray)
   }
 
   @Test(expected=classOf[IllegalArgumentException])

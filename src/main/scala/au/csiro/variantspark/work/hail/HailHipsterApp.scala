@@ -26,7 +26,7 @@ object HailHipsterApp {
        
     val fs = new HailFeatureSource(annotatedVcf)
     println(fs.sampleNames)
-    fs.features().take(10).map(f => (f.label, f.values.toList)).foreach(println)
+    fs.features.take(10).map(f => (f.label, f.valueAsStrings)).foreach(println)
     val ls = new HailLabelSource(annotatedVcf, "sa.pheno.label")
     val labels = ls.getLabels(fs.sampleNames)    
     println("Labels : " + labels.toList)

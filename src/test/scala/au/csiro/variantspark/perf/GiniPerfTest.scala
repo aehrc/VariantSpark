@@ -1,7 +1,7 @@
 package au.csiro.variantspark.perf
 
 import au.csiro.pbdava.ssparkle.common.utils.Timed
-import au.csiro.variantspark.algo.FastGini
+import au.csiro.variantspark.algo.impurity.FastGini
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 import org.junit.Test
 

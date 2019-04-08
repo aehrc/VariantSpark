@@ -4,15 +4,20 @@ import org.apache.spark.rdd.RDD
 import htsjdk.variant.variantcontext.Genotype
 import htsjdk.variant.variantcontext.VariantContext
 import collection.JavaConverters._
+import au.csiro.variantspark.data.Feature
+import au.csiro.variantspark.data.BoundedOrdinalVariable
+import au.csiro.variantspark.data.StdFeature
 
 
 trait VariantToFeatureConverter {
-  def convert(v:VariantContext):Feature
+  def convert(vc:VariantContext):Feature
 }
 
 case class DefVariantToFeatureConverter(biallelic:Boolean = false, separator:String = "_") extends VariantToFeatureConverter {
+  
   def convert(vc:VariantContext):Feature = {
-    Feature(convertLabel(vc), vc.getGenotypes.iterator().asScala.map(convertGenotype).toArray)
+    val gts = vc.getGenotypes.iterator().asScala.map(convertGenotype).toArray
+    StdFeature.from(convertLabel(vc), BoundedOrdinalVariable(3), gts)
   }
   
   def convertLabel(vc:VariantContext):String = {
@@ -22,9 +27,11 @@ case class DefVariantToFeatureConverter(biallelic:Boolean = false, separator:Str
     }
     val labelBuilder = new StringBuilder()
     labelBuilder.append(vc.getContig()).append(separator).append(vc.getStart())
+      .append(separator).append(vc.getReference().getBaseString())
     if (biallelic) {
-      labelBuilder.append(separator).append(vc.getReference().getBaseString())
-        .append(separator).append(vc.getAlternateAllele(0).getBaseString())
+      labelBuilder.append(separator).append(vc.getAlternateAllele(0).getBaseString())
+    } else {
+      labelBuilder.append(separator).append(vc.getAlternateAlleles.asScala.map(_.getBaseString()).mkString("|"))   
     }
     labelBuilder.toString()
   }
@@ -36,7 +43,7 @@ case class DefVariantToFeatureConverter(biallelic:Boolean = false, separator:Str
 
 class VCFFeatureSource(vcfSource:VCFSource, converter: VariantToFeatureConverter) extends FeatureSource {
   override lazy val sampleNames:List[String] = vcfSource.header.getGenotypeSamples().asScala.toList
-  override def features():RDD[Feature] = {
+  override def features:RDD[Feature] = {
     val converterRef = converter
     vcfSource.genotypes().map(converterRef.convert) 
   }

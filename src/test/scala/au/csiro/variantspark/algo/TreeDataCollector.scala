@@ -6,17 +6,18 @@ import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.rdd.RDD
 
 import scala.collection.mutable.MutableList
+import au.csiro.variantspark.data.Feature
 
-class TreeDataCollector(treeStream: Stream[PredictiveModelWithImportance[Vector]] = Stream.continually(TestPredictorWithImportance(null, null))) extends BatchTreeModel[Vector] {
-  val allData = MutableList[RDD[(Vector, Long)]]()
+class TreeDataCollector(treeStream: Stream[PredictiveModelWithImportance] = Stream.continually(TestPredictorWithImportance(null, null))) extends BatchTreeModel {
+  val allTypedData = MutableList[RDD[TreeFeature]]()
   val allLabels = MutableList[Array[Int]]()
   val allTryFration = MutableList[Double]()
   val allSamples = MutableList[Sample]()
-  val allTreest = MutableList[PredictiveModelWithImportance[Vector]]()
+  val allTreest = MutableList[PredictiveModelWithImportance]()
   val treeIter = treeStream.toIterator
 
-  override def batchTrain(indexedData: RDD[(Vector, Long)], dataType: VariableType, labels: Array[Int], nTryFraction: Double, samples: Seq[Sample]): Seq[PredictiveModelWithImportance[Vector]] = {
-    allData += indexedData
+  override def batchTrain(indexedData: RDD[TreeFeature], labels: Array[Int], nTryFraction: Double, samples: Seq[Sample]): Seq[PredictiveModelWithImportance] = {
+    allTypedData += indexedData
     allLabels += labels
     allTryFration += nTryFraction
     allSamples ++= samples
@@ -25,11 +26,11 @@ class TreeDataCollector(treeStream: Stream[PredictiveModelWithImportance[Vector]
     newTrees
   }
 
-  override def batchPredict(indexedData: RDD[(Vector, Long)], models: Seq[PredictiveModelWithImportance[Vector]], indexes: Seq[Array[Int]]): Seq[Array[Int]] = {
+  override def batchPredict(indexedTypedData: RDD[TreeFeature], models: Seq[PredictiveModelWithImportance], indexes: Seq[Array[Int]]): Seq[Array[Int]] = {
     //TODO I should be projecting with indexes here
     //but it does not matter in this case
-    models.zip(indexes).map { case (model, indexes) => model.predictIndexed(indexedData) }
+    models.zip(indexes).map { case (model, indexes) => model.predict(indexedTypedData.map(tf => (tf.asInstanceOf[Feature], tf.index)))}
   }
 
-  def factory(params: DecisionTreeParams, canSplit: CanSplit[Vector]) = this
+  def factory(params: DecisionTreeParams) = this
 }

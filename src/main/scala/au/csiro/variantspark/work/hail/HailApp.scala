@@ -31,7 +31,7 @@ object HailApp {
        
     val fs = HailFeatureSource(annotatedVcf)
     println(fs.sampleNames)
-    fs.features().take(10).map(f => (f.label, f.values.toList)).foreach(println)
+    fs.features.take(10).map(f => (f.label, f.valueAsStrings)).foreach(println)
     val ls = HailLabelSource(annotatedVcf,"if (sa.pheno.x22_16051480=='1') 1 else 0")
     val labels = ls.getLabels(fs.sampleNames)    
     println("Labels : " + labels.toList)

@@ -2,33 +2,16 @@ package au.csiro.variantspark.input
 
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
-
-
-case class VectorFeature(label:String, values: Vector)
-
-case class Feature(label:String, values: Array[Byte]) extends Equals {
-  require(label != null)
-  require(values != null)
-  
-  def toVector = new VectorFeature(label, Vectors.dense(values.map(_.toDouble)))
-
-  override def equals(other: Any) = {
-    other match {
-      case that: Feature => label == that.label && values.toSeq == that.values.toSeq
-      case _ => false
-    }
-  }
-
-  override def hashCode() = {
-    val prime = 41
-    prime * (prime + label.hashCode) + values.toSeq.hashCode
-  }
-  
-  
-}
+import scala.reflect.ClassTag
+import au.csiro.variantspark.data.VariableType
+import au.csiro.variantspark.data.ContinuousVariable
+import au.csiro.variantspark.data.OrdinalVariable
+import au.csiro.variantspark.data.Feature
 
 
 trait FeatureSource {
   def sampleNames:List[String]
-  def features():RDD[Feature]
+  def features: RDD[Feature] 
 }
+
+

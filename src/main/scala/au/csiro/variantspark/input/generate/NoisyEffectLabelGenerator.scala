@@ -4,7 +4,6 @@ import org.apache.commons.math3.random.GaussianRandomGenerator
 import org.apache.spark.rdd.RDD.rddToPairRDDFunctions
 
 import au.csiro.pbdava.ssparkle.spark.SparkUtils.withBroadcast
-import au.csiro.variantspark.input.FeatureSource
 import au.csiro.variantspark.input.LabelSource
 import breeze.linalg.DenseVector
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
@@ -14,6 +13,7 @@ import breeze.stats.meanAndVariance
 import breeze.stats.MeanAndVariance
 import breeze.stats.DescriptiveStats
 import org.apache.spark.rdd.RDD
+import au.csiro.variantspark.input.FeatureSource
 
 /**
  * Generate a dichotomous response 
@@ -49,7 +49,7 @@ class NoisyEffectLabelGenerator(featureSource:FeatureSource)(zeroLevel:Int,
     baseContinuousResponse = withBroadcast(featureSource.features.sparkContext)(effects){ br_effects =>
        val rdd = featureSource.features.filter(f => br_effects.value.contains(f.label)).mapPartitions {it =>
          val normalizer = DenseVector.fill(nSamples)(zeroLevelValue)
-         it.map(f => (DenseVector(f.toVector.values.toArray)-=normalizer) *= (br_effects.value(f.label)))
+         it.map(f => (DenseVector(f.valueAsVector.toArray)-=normalizer) *= (br_effects.value(f.label)))
        }
        if (multiplicative) foldMulitiplicative(nSamples, rdd) else foldAdditive(nSamples, rdd)
     }
