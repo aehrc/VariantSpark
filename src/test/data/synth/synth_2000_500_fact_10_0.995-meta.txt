@@ -1,0 +1,8 @@
+filePrefix:/Users/szu004/dev/variant-spark/src/test/data/synth/synth_2000_500_fact_10_0.995
+seed:13
+nVariables:2000
+nSamples:500
+maxValue:10
+sparsity:0.995
+factorize:TRUE
+help:FALSE

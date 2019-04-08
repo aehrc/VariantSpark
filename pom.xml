@@ -257,9 +257,11 @@
 					<skipTests>${skipTests}</skipTests>
 					<useFile>false</useFile>
 					<disableXmlReport>true</disableXmlReport>
+					<includes>
+						<include>!test/**/*Test</include>
+					</includes>
 				</configuration>
 			</plugin>
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
@@ -484,14 +486,44 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-surefire-plugin</artifactId>
+						<version>2.20</version>
 						<configuration>
 							<skipTests>${skipTests}</skipTests>
 							<useFile>false</useFile>
 							<disableXmlReport>true</disableXmlReport>
 							<excludes>
-								<exclude>au.csiro.variantspark.perf.*Test</exclude>
+								<exclude>**/*PerfTest</exclude>
 							</excludes>
 						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		<profile>
+			<id>regression-test</id>
+			<activation>
+				<activeByDefault>false</activeByDefault>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<version>2.20</version>
+						<executions>
+							<execution>
+								<id>regression</id>
+								<configuration>
+									<includes>
+										<include>test/regression/*Test</include>
+									</includes>							
+								</configuration>
+								<phase>test</phase>
+								<goals>
+									<goal>test</goal>
+								</goals>
+							</execution>
+						</executions>
 					</plugin>
 				</plugins>
 			</build>
