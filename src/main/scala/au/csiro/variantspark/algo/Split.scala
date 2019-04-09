@@ -28,6 +28,16 @@ trait IndexedSplitAggregator {
 	  left.add(agg)
 	  right.sub(agg)	  
 	}
+	
+	/** 
+	 *  Is this a valid split that is one that does not put 
+	 *  all elements to one side
+	 */
+	def hasProperSplit:Boolean = !left.isEmpty() && !right.isEmpty()
+	
+	/**
+	 * Get split impurity value
+	 */
 	def getValue(outSplitImp:SplitImpurity):Double = {
 	  left.splitValue(right, outSplitImp)
 	}

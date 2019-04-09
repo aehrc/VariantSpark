@@ -49,10 +49,12 @@ public class JOrderedIndexedSplitter extends  AbstractIndexedSplitterBase {
 					impurityCalc.update(i);
 				} 
 			}
-			double g = impurityCalc.getValue(leftRightImpurity);
-			if (g < minImpurity ) {
-				result = new SplitInfo(sp, g, leftRightImpurity.left(), leftRightImpurity.right());
-				minImpurity = g;
+			if (impurityCalc.hasProperSplit()) {
+				double g = impurityCalc.getValue(leftRightImpurity);
+				if (g < minImpurity ) {
+					result = new SplitInfo(sp, g, leftRightImpurity.left(), leftRightImpurity.right());
+					minImpurity = g;
+				}
 			}
 		}
 		return result;	
