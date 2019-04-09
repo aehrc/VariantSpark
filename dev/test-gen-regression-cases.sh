@@ -24,7 +24,7 @@ PREFIX="chr22"
 "${FWDIR}/bin/variant-spark" --spark --master local[2] -- importance -if "${DATA_DIR}/${PREFIX}_1000.vcf" -ff "${DATA_DIR}/${PREFIX}-labels.csv" \
          -fc "${RESP}" \
          -on 100 -of "${OUTPUT_DIR}/${PREFIX}-imp_${RESP}.csv" \
-         -v -ro -rn 100 -rbs 50 -sp 4 -sr 17
+         -v -ro -rn 100 -rbs 50 -sp 4 -sr 17 -ivb
 
 # CNAE-9
 RESP="category"

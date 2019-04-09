@@ -73,7 +73,7 @@ class ImportanceRegressionTest {
   
   @Test
   def testVFCImportance() {
-    runRegression("importance -if data/chr22_1000.vcf -ff data/chr22-labels.csv -fc 22_16050408 -v -rn 100 -rbs 50 -ro -sr 17 -on 100 -sp 4 -of ${outputFile}",
+    runRegression("importance -if data/chr22_1000.vcf -ff data/chr22-labels.csv -fc 22_16050408 -v -rn 100 -rbs 50 -ro -sr 17 -on 100 -ivb -sp 4 -of ${outputFile}",
         "chr22-imp_22_16050408.csv")
   }
 
