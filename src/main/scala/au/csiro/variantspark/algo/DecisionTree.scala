@@ -569,6 +569,11 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(), val tr
     }
   }      
       
+  
+  
+  private def summarize(subsets: List[SubsetInfo]):String = {
+    s"#${subsets.size} => ${subsets.map(_.length)}"
+  }
   /** Builds (recursively) the decision tree level by level
     *
     * @param indexedData: input an RDD of the dataset plus indexes of type long
@@ -579,17 +584,23 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(), val tr
     */
   private def buildSplit(indexedTypedData: RDD[TreeFeature], subsets: List[SubsetInfo], br_splitter: Broadcast[VariableSplitter],treeLevel:Int): List[DecisionTreeNode] = {
 
-    logDebug(s"Building level ${treeLevel}, subsets: ${subsets}")
+    logDebug(s"Building level ${treeLevel}") 
+    logDebug(s"Initial subsets: ${summarize(subsets)}")
+    logTrace(s"Initial subsets (details): ${subsets}")
+    
     profReset()
 
     val subsetsToSplit = subsets.zipWithIndex.filter {case (si, _) =>
       si.length >= params.minNodeSize && treeLevel < params.maxDepth
     }
-    logDebug(s"Splits to include: ${subsetsToSplit}") 
+    logDebug(s"Splittable subsets: ${summarize(subsetsToSplit.map(_._1))}")
+    logTrace(s"Splittable subsets (details): ${subsetsToSplit}")
+    
       
     val (bestSplits, nextLevelSubsets) = findBestSplitsAndSubsets(indexedTypedData, subsetsToSplit.unzip._1.toList, br_splitter)
     logDebug(s"Best splits: ${bestSplits.toList}")
-    logDebug(s"Next level splits: ${nextLevelSubsets}")
+    logDebug(s"Next level subsets ${summarize(nextLevelSubsets)}")
+    logTrace(s"Next level subsets (details): ${nextLevelSubsets}")
     
     profPoint("Best splits and splitting done")
  
