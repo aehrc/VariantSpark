@@ -32,7 +32,7 @@ PREFIX="CNAE-9"
 "${FWDIR}/bin/variant-spark" --spark --master local[2] -- importance -if "${DATA_DIR}/${PREFIX}-wide.csv" -ff "${DATA_DIR}/${PREFIX}-labels.csv" \
          -fc "${RESP}" \
          -on 100 -of "${OUTPUT_DIR}/${PREFIX}-imp_${RESP}.csv" \
-         -ivo 10 \
+         -io "{\"defVariableType\":\"ORDINAL(10)\"}" \
          -it csv -v -ro -rn 100 -rbs 50 -sp 4 -sr  17
 
 #
@@ -49,7 +49,7 @@ for CASE in ${FWDIR}/src/test/data/synth/*-meta.txt; do
 	"${FWDIR}/bin/variant-spark" --spark --master local[2] -- importance -if "${DATA_DIR}/${PREFIX}-wide.csv" -ff "${DATA_DIR}/${PREFIX}-labels.csv" \
 	 -fc "${RESP}" \
 	 -on 100 -of "${OUTPUT_DIR}/${PREFIX}-imp_${RESP}.csv" \
-	 -ivo ${IVO} \
+	 -io "{\"defVariableType\":\"ORDINAL(${IVO})\"}" \
  	 -it csv -v -ro -rn 100 -rbs 50 -sp 4 -sr 17
 	done
 done

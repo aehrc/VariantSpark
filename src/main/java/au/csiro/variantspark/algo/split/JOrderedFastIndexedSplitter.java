@@ -46,10 +46,12 @@ public class JOrderedFastIndexedSplitter extends AbstractIndexedSplitterBase {
 			if (!thisAggregator.isEmpty()) {
 				// only consider value that appeared at least once in the split
 				impurityCalc.update(thisAggregator);
-				double thisImpurity = impurityCalc.getValue(leftRightImpurity);
-				if (thisImpurity < minImpurity) {
-					result = new SplitInfo(sp, thisImpurity, leftRightImpurity.left(), leftRightImpurity.right());
-					minImpurity = thisImpurity;
+				if (impurityCalc.hasProperSplit()) {
+					double thisImpurity = impurityCalc.getValue(leftRightImpurity);
+					if (thisImpurity < minImpurity) {
+						result = new SplitInfo(sp, thisImpurity, leftRightImpurity.left(), leftRightImpurity.right());
+						minImpurity = thisImpurity;
+					}
 				}
 			}
 		}

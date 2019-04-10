@@ -58,3 +58,4 @@ build
 dist
 _build
 spark-warehouse
+.*.crc
