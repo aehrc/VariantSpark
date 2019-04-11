@@ -1,4 +1,10 @@
 #!/usr/bin/env Rscript
+
+#
+# Generates Synthetic Datasets
+# For regression testing
+#
+
 library(optparse)
 option_list = list(
     make_option(c("-p", "--prefix"), dest='filePrefix', default=NULL, help="Output file prexix [default= %default]"),
@@ -12,6 +18,14 @@ option_list = list(
 
 opt_parser <- OptionParser(option_list=option_list)
 params <- parse_args(opt_parser)
+
+
+makeResponse <-function(y_cont) {
+    y_bi <-as.numeric(y_cont>=0)
+    y_cat5 <- as.numeric(cut(y_cont, 5)) -1
+    y_cat10 <- as.numeric(cut(y_cont, 10)) -1
+    data.frame(cont=y_cont, cat2=y_bi, cat5 = y_cat5, cat10 = y_cat10)
+}
 
 with(params, {
 
@@ -59,10 +73,10 @@ with(params, {
     names(weights) <- varNames
     y <- X %*% weights
     y_cont <- y[,1] / maxValue
-    y_bi <-as.numeric(y_cont>=0)
-    y_cat5 <- as.numeric(cut(y_cont, 5)) -1
-    y_cat10 <- as.numeric(cut(y_cont, 10)) -1
-    write.csv(data.frame(cont=y_cont, cat2=y_bi, cat5 = y_cat5, cat10 = y_cat10), fileName('labels.csv'), quote = FALSE)
+    y_cont_null <- rnorm(nSamples)
+    names(y_cont_null) <- sampleNames
+    write.csv(makeResponse(y_cont), fileName('labels.csv'), quote = FALSE)
+    write.csv(makeResponse(y_cont_null), fileName('labels_null.csv'), quote = FALSE)
 })
 
 

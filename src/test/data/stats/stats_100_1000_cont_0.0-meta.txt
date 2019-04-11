@@ -1,0 +1,8 @@
+filePrefix:/Users/szu004/dev/variant-spark/src/test/data/stats/stats_100_1000_cont_0.0
+seed:13
+nVariables:100
+nSamples:1000
+maxValue:10
+sparsity:0
+factorize:FALSE
+help:FALSE
