@@ -8,14 +8,13 @@ import org.saddle.io.CsvParser
 import org.saddle.io.CsvFile
 import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
 import java.io.FileOutputStream
+import au.csiro.variantspark.test.TestData
 
-class ImportanceStatsTest extends AbstractCmdLineTest {
+class ImportanceStatsTest extends AbstractCmdLineTest with TestData {
   
   import ImportanceStatsTest._
   
-  def expected(fileName:String):String  = new File(ExpectedDir, fileName).getPath
-  def data(fileName:String):String  = new File(DataDir, fileName).getPath
-  def actual(fileName:String):String  = new File(ActualDir, fileName).getPath
+  def subdir = "stats"
 
   def quantile(data:Array[Double])(q:Double):Double = {
     data.filter(_ <= q).size.toDouble/data.size.toDouble
@@ -26,9 +25,9 @@ class ImportanceStatsTest extends AbstractCmdLineTest {
     val labelsFile = data("stats_100_1000_cont_0.0-labels_null.csv")
     val dataFile = data("stats_100_1000_cont_0.0-wide.csv")
     val outputFile = actual("stats_100_1000_cont_0.0-importance.csv")
-    val nTrees = 1000
+    val nTrees = 2000
     
-    runVariantSpark(s"""importance -if ${dataFile} -ff ${labelsFile} -fc cat2 -it csv -v -rn ${nTrees} -rbs 50 -sr 17 -on 0 -ovn raw -sp 4 -of ${outputFile}""")   
+    runVariantSpark(s"""importance -if ${dataFile} -ff ${labelsFile} -fc cat2 -it csv -v -rn ${nTrees} -rbs 250 -sr 13 -on 0 -ovn raw -sp 4 -of ${outputFile}""")   
     
     val importanceStats = CsvParser.parse(CsvFile("src/test/data/stats/stats_100_1000_cont_0.0-stats.csv")).withRowIndex(0).withColIndex(0)
     val importanceMeans = importanceStats.firstCol("mean").mapValues(CsvParser.parseDouble).toSeq.toMap
@@ -50,21 +49,18 @@ class ImportanceStatsTest extends AbstractCmdLineTest {
     }   
     
     val importanceQuantile = quantile(residualsAbs.values.toArray)(_)
+
+    // Check that estimated quantiles are not much smaller than the normal ones.
     ZQuantiles.foreach{ case (q, p) =>
-      println(importanceQuantile(q), p)
-    }  
+      assertTrue(importanceQuantile(q) > p - 0.01)
+    }
     
-    ZQuantiles.foreach{ case (q, p) =>
-      assertEquals(p, importanceQuantile(q), 0.01)
-    }  
+    // TODO: Add check on correlation (shoiuld be less than 0.2)
+    // Use: org.apache.commons.math3.stat.correlation.PearsonsCorrelation
   }
 }
 
 object ImportanceStatsTest  {
-  val ExpectedDir = new File("src/test/data/stats")
-  val DataDir = new File("src/test/data/stats")
-  val ActualDir = new File("target/stats")  
-  
   
   val NoTrees:Int = 1000
   val ZQuantiles = Map(1.0 -> 0.6826895, 2.0 ->  0.9544997, 3.0 -> 0.9973002, 4.0 -> 0.9999367)

@@ -4,7 +4,7 @@ library(ggplot2)
 library(reshape2)
 library(ranger)
 
-nTrees <- 1000
+nTrees <- 2000
 
 prefix <- '../../test/data/stats/stats_100_1000_cont_0.0'
 dataFile <- sprintf('%s-std.csv', prefix)

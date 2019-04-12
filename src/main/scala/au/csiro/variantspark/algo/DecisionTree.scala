@@ -22,6 +22,7 @@ import au.csiro.variantspark.utils.Sample
 import au.csiro.variantspark.utils.defRng
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
+import au.csiro.variantspark.utils.MurMur3Hash
 
 /** Allows for a general description of the construct 
   *
@@ -144,6 +145,42 @@ case class DeterministicMerger() extends Merger {
     a1
   }
 }
+
+
+case class RandomizingMergerMurmur3(seed:Long) extends Merger {
+  
+  def hashOrder(varIndex:Long, splitId:Int):Int  = {
+    MurMur3Hash.hashLong(varIndex, MurMur3Hash.hashLong(seed, splitId))
+  }
+  
+  def chooseEqual(s1:VarSplitInfo, s2:VarSplitInfo, id:Int):VarSplitInfo =  {
+      if (hashOrder(s1.variableIndex, id) < hashOrder(s2.variableIndex, id)) s1 else s2
+  }
+  
+  /** Operates a merging function utilizing two arrays of the class [[au.csiro.variantspark.algo.VarSplitInfo]]
+    *
+    * @param a1: input an array of [[au.csiro.variantspark.algo.VarSplitInfo]] 
+    * @param a2: input an array of [[au.csiro.variantspark.algo.VarSplitInfo]]
+    * @return Returns the merged array a1
+    */
+  def merge(a1:Array[VarSplitInfo], a2:Array[VarSplitInfo]) = {
+
+    /** Takes the [[au.csiro.variantspark.algo.VarSplitInfo]] from two seperate splits and returns the value from either s1 or s2 based on the gini impurity
+      *
+      * @note if the gini values of each split are equal then the value returns one at random
+      *
+      * @param s1: input an [[au.csiro.variantspark.algo.VarSplitInfo]] 
+      * @param s2: input an [[au.csiro.variantspark.algo.VarSplitInfo]]
+      * @return Returns either s1 or s2 based on the gini impurity calculation
+      */
+    def mergeSplitInfo(s1:VarSplitInfo, s2:VarSplitInfo, id:Int) = {
+      if (s1 == null) s2 else if (s2 == null) s1 else if (s1.gini < s2.gini) s1 else if (s2.gini < s1.gini) s2 else chooseEqual(s1,s2, id)
+    }
+    Range(0,a1.length).foreach(i=> a1(i) = mergeSplitInfo(a1(i), a2(i), i))
+    a1
+  }
+}
+
 
 /** Utilizes the Randomized Decision Tree model found here: [[https://en.wikipedia.org/wiki/Decision_tree_model#Randomized_decision_tree]]
   * Extends the [[au.csiro.variantspark.algo.Merger]] class
@@ -268,7 +305,7 @@ case class VariableSplitter(val labels:Array[Int], mTryFraction:Double=1.0, val 
      }
   }
 
-  def createMerger(seed:Long):Merger = if (randomizeEquality) RandomizingMerger(seed) else DeterministicMerger()
+  def createMerger(seed:Long):Merger = if (randomizeEquality) RandomizingMergerMurmur3(seed) else DeterministicMerger()
 
 }
 
