@@ -146,9 +146,7 @@ Resources:
           - "10000"
           - "-rmtf"
           - "0.1"
-        Jar: "command-runner.jar"
-        StepProperties:
-        - KeyValue
+          Jar: "command-runner.jar"
       Tags:
       - Key: Name
         Value:
