@@ -106,9 +106,7 @@ Resources:
           spark.dynamicAllocation.enabled: 'false'
       Applications:
       - Name: Ganglia
-        Version: "3.7.2"
       - Name: Spark
-        Version: "2.2.0"
       Name:
         Ref: clusterName
       JobFlowRole: "EMR_EC2_DefaultRole"
@@ -120,7 +118,7 @@ Resources:
       VisibleToAllUsers: false
       Steps:
       - Name: "VariantSpark Job"
-        ActionOnFailure: TERMINATE_CLUSTER
+        ActionOnFailure: "CANCEL_AND_WAIT"
         HadoopJarStep: 
           Args:
           - "spark-submit"
