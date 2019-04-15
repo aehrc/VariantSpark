@@ -1,3 +1,9 @@
+#!/usr/bin/env Rscript
+
+#
+# Creates test data for decsion tree comparision test agains R implementation 
+#
+
 library(rpart)
 
 data <- read.csv('../../../data/CNAE-9.csv', header = FALSE)
