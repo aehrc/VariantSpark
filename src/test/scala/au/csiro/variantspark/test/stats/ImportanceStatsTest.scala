@@ -10,6 +10,15 @@ import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
 import java.io.FileOutputStream
 import au.csiro.variantspark.test.TestData
 
+/**
+ * This test compare the importance measures produced by this implementation with ones generated with ranger.
+ * The basic parameters are the same (the nunber or trees, mtry etc).
+ * To account for randomness the comparison is made by simulating the distribution the importance of each variable 
+ * using ranger (by default with 50 reperitions) and estimating their means and standard deviations.
+ * 
+ * To check if this implementation is correct we test if its importance results are within the normal quantiles.
+ * E.g. that for about 68% of variables their importances are with 1 sd from the simulated mean, 95% within 2 x sd, etc.
+ */
 class ImportanceStatsTest extends AbstractCmdLineTest with TestData {
   
   import ImportanceStatsTest._
@@ -20,29 +29,25 @@ class ImportanceStatsTest extends AbstractCmdLineTest with TestData {
     data.filter(_ <= q).size.toDouble/data.size.toDouble
   }
   
-  @Test
-  def testStats() {
-    val labelsFile = data("stats_100_1000_cont_0.0-labels_null.csv")
-    val dataFile = data("stats_100_1000_cont_0.0-wide.csv")
-    val outputFile = actual("stats_100_1000_cont_0.0-importance.csv")
+  def runTest(caseName:String, labels:String) {
+    val fullCaseName = s"${caseName}-${labels}"
+    val labelsFile = data(s"${fullCaseName}.csv")
+    val dataFile = data(s"${caseName}-wide.csv")
+    val outputFile = actual(s"${caseName}-importance.csv")
     val nTrees = 2000
     
     runVariantSpark(s"""importance -if ${dataFile} -ff ${labelsFile} -fc cat2 -it csv -v -rn ${nTrees} -rbs 250 -sr 13 -on 0 -ovn raw -sp 4 -of ${outputFile}""")   
     
-    val importanceStats = CsvParser.parse(CsvFile("src/test/data/stats/stats_100_1000_cont_0.0-stats.csv")).withRowIndex(0).withColIndex(0)
+    val importanceStats = CsvParser.parse(CsvFile(data(s"${fullCaseName}-stats.csv"))).withRowIndex(0).withColIndex(0)
     val importanceMeans = importanceStats.firstCol("mean").mapValues(CsvParser.parseDouble).toSeq.toMap
     val importanceSds = importanceStats.firstCol("sd").mapValues(CsvParser.parseDouble).toSeq.toMap
     
     val actualImportances = CsvParser.parse(CsvFile(outputFile)).withRowIndex(0).withColIndex(0)
     val variableImportance = actualImportances.firstCol("importance").mapValues(CsvParser.parseDouble).toSeq.toMap
-
-    println(s"Means: ${importanceMeans}")
-    println(s"Sds: ${importanceSds}")
-    println(s"Importances: ${variableImportance}")
     val residuals =  variableImportance.map({ case (k, v) => (k, (v - importanceMeans(k))/importanceSds(k))})
     val residualsAbs = residuals.mapValues(Math.abs)   
     
-    CSVUtils.withStream(new FileOutputStream(actual("stats_100_1000_cont_0.0-residual.csv"))) { writer =>
+    CSVUtils.withStream(new FileOutputStream(actual(s"{fullCaseName}.csv"))) { writer =>
       val header = List("variable","residual")
       writer.writeRow(header)
       writer.writeAll(residuals.toList.sortBy(_._1).map(_.productIterator.toSeq).toSeq)
@@ -57,6 +62,16 @@ class ImportanceStatsTest extends AbstractCmdLineTest with TestData {
     
     // TODO: Add check on correlation (shoiuld be less than 0.2)
     // Use: org.apache.commons.math3.stat.correlation.PearsonsCorrelation
+  }
+  
+  @Test
+  def testImportanceWithSignal() {
+    runTest("stats_100_1000_cont_0.0","labels")
+  }
+  
+  @Test
+  def testImportanceWithNoSignal() {
+    runTest("stats_100_1000_cont_0.0","labels_null")
   }
 }
 

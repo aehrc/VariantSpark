@@ -146,7 +146,15 @@ case class DeterministicMerger() extends Merger {
   }
 }
 
-
+/** 
+ *  UsedsMurmur3 hashing to create random ordering of variables
+ *  dependent on the initial seed and split number.
+ *  
+ *  The assumption is that comparing the hashes of variable indexes will produce 
+ *  sufficently randomzized orderings given different seeds and split ids.
+ *  
+ * 	@param seed: input a seed value to initialize the random number generator for rnd
+ */
 case class RandomizingMergerMurmur3(seed:Long) extends Merger {
   
   def hashOrder(varIndex:Long, splitId:Int):Int  = {
@@ -180,47 +188,6 @@ case class RandomizingMergerMurmur3(seed:Long) extends Merger {
     a1
   }
 }
-
-
-/** Utilizes the Randomized Decision Tree model found here: [[https://en.wikipedia.org/wiki/Decision_tree_model#Randomized_decision_tree]]
-  * Extends the [[au.csiro.variantspark.algo.Merger]] class
-  * 
-  * Xorting the index of a variable with a random seed provides predicateble random ordering
-  * or variables.  
-  *
-  * @param seed: input a seed value to initialize the random number generator for rnd
-  */
-case class RandomizingMerger(seed:Long) extends Merger {
-
-  def chooseEqual(s1:VarSplitInfo, s2:VarSplitInfo):VarSplitInfo =  {
-      if ((s1.variableIndex ^ seed) < (s2.variableIndex ^ seed)) s1 else s2
-  }
-  
-  /** Operates a merging function utilizing two arrays of the class [[au.csiro.variantspark.algo.VarSplitInfo]]
-    *
-    * @param a1: input an array of [[au.csiro.variantspark.algo.VarSplitInfo]] 
-    * @param a2: input an array of [[au.csiro.variantspark.algo.VarSplitInfo]]
-    * @return Returns the merged array a1
-    */
-  def merge(a1:Array[VarSplitInfo], a2:Array[VarSplitInfo]) = {
-
-    /** Takes the [[au.csiro.variantspark.algo.VarSplitInfo]] from two seperate splits and returns the value from either s1 or s2 based on the gini impurity
-      *
-      * @note if the gini values of each split are equal then the value returns one at random
-      *
-      * @param s1: input an [[au.csiro.variantspark.algo.VarSplitInfo]] 
-      * @param s2: input an [[au.csiro.variantspark.algo.VarSplitInfo]]
-      * @return Returns either s1 or s2 based on the gini impurity calculation
-      */
-    def mergeSplitInfo(s1:VarSplitInfo, s2:VarSplitInfo) = {
-      if (s1 == null) s2 else if (s2 == null) s1 else if (s1.gini < s2.gini) s1 else if (s2.gini < s1.gini) s2 else chooseEqual(s1,s2)
-    }
-    Range(0,a1.length).foreach(i=> a1(i) = mergeSplitInfo(a1(i), a2(i)))
-    a1
-  }
-}
-
-
 
 /** This is the main split function
   * 
