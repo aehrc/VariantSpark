@@ -29,6 +29,7 @@ Parameters:
   environmentType:
     Description: What environment do you want the cluster to be in
     Type: String
+    Default: "live"
   s3BucketBasePath:
     Description: Bucket to log EMR actions to
     Type: String
@@ -72,10 +73,6 @@ Resources:
           Name: Core instance group - 2
         TerminationProtected:
           Ref: terminationProtected
-        Ec2SubnetId: "subnet-a23d0fd4"  
-        Ec2KeyName: "default"
-        AdditionalMasterSecurityGroups:
-        - "sg-14ffe073"
       BootstrapActions:
       - Name: Install VariantSpark
         ScriptBootstrapAction:
