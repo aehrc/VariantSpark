@@ -2,6 +2,28 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Cloudformation Template to spin up Variant Spark on EMR clusters V3 (Version 5 of EMR only)
 Parameters:
+  NumTree:
+    Description: Number of Trees
+    Type: Number
+    Default: 100
+  TreeBatch:
+    Description: Trees in batch
+    Type: Number
+    Default: "100"
+  PhenotypeFile:
+    Description: Phenotype File in S3
+    Type: String
+    Default: "s3://csiro-tb/share/Hipster2/Hipster.csv"
+  PhenotypeColumn:
+    Description: Phenotype PhenotypeColumn
+    Type: String
+    Default: "Hipster"
+  InputFile:
+    Type: String
+    Default: "s3://csiro-tb/share/Hipster2/VCF/Small.558938.vcf.bz2"
+  OutputFile:
+    Type: String
+    Default: "s3://csiro-tb/share/Hipster2/test-maciej1.out"
   clusterName:
     Description: Name of the cluster
     Type: String
@@ -11,8 +33,7 @@ Parameters:
   emrVersion:
     Description: Version of EMR
     Type: String
-    Default: "emr-5.8.0"
-    AllowedPattern: emr-5.[0-9].[0-9]
+    Default: "emr-5.12.0"
     ConstraintDescription: 'Must be EMR Version 5 (i.e: emr-5.3.0)'
   masterInstanceType:
     Description: Instance type of Master Node
@@ -24,7 +45,7 @@ Parameters:
     Description: Instance type of Core Node
     Type: String
     Default: "m4.large"
-    AllowedValues: 
+    AllowedValues:
       - m4.large
   taskInstanceType:
     Description: Instance type of Task Node
@@ -49,7 +70,7 @@ Parameters:
     AllowedValues:
     - 'true'
     - 'false'
-    Default: 'true'
+    Default: 'false'
     ConstraintDescription: Boolean
   awsRegion:
     Description: awsRegion
@@ -104,11 +125,14 @@ Resources:
           maximizeResourceAllocation: 'true'
       - Classification: spark-defaults
         ConfigurationProperties:
-          spark.hadoop.io.compression.codecs: 'org.apache.hadoop.io.compress.DefaultCodec,is.hail.io.compress.BGzipCodec,org.apache.hadoop.io.compress.GzipCodec,org.apache.hadoop.io.compress.BZip2Codec'
-          spark.executor.extraClassPath: '/etc/hadoop/conf:/usr/lib/hadoop/*:/usr/lib/hadoop-hdfs/*:/usr/lib/hadoop-yarn/*:/usr/lib/hadoop-lzo/lib/*:/usr/share/aws/aws-java-sdk/*:/usr/share/aws/emr/emrfs/conf:/usr/share/aws/emr/emrfs/lib/*:/usr/share/aws/emr/emrfs/auxlib/*:/mnt/hail/hail-all-spark_2.0.2_2.11.jar'
+          spark.sql.files.openCostInBytes: '1099511627776'
+          spark.hadoop.io.compression.codecs: 'org.apache.hadoop.io.compress.DefaultCodec,is.hail.io.compress.BGzipCodec,org.apache.hadoop.io.compress.GzipCodec'
+          spark.hadoop.parquet.block.size: '1099511627776'
+          spark.executor.extraClassPath: '/usr/lib/hadoop-lzo/lib/*:/usr/lib/hadoop/hadoop-aws.jar:/usr/share/aws/aws-java-sdk/*:/usr/share/aws/emr/emrfs/conf:/usr/share/aws/emr/emrfs/lib/*:/usr/share/aws/emr/emrfs/auxlib/*:/usr/share/aws/emr/security/conf:/usr/share/aws/emr/security/lib/*:/home/hadoop/hail-all-spark.jar'
           spark.locality.wait: '10s'
-          spark.driver.extraClassPath: '/etc/hadoop/conf:/usr/lib/hadoop/*:/usr/lib/hadoop-hdfs/*:/usr/lib/hadoop-yarn/*:/usr/lib/hadoop-lzo/lib/*:/usr/share/aws/aws-java-sdk/*:/usr/share/aws/emr/emrfs/conf:/usr/share/aws/emr/emrfs/lib/*:/usr/share/aws/emr/emrfs/auxlib/*:/mnt/hail/hail-all-spark_2.0.2_2.11.jar'
+          spark.driver.extraClassPath: '/usr/lib/hadoop-lzo/lib/*:/usr/lib/hadoop/hadoop-aws.jar:/usr/share/aws/aws-java-sdk/*:/usr/share/aws/emr/emrfs/conf:/usr/share/aws/emr/emrfs/lib/*:/usr/share/aws/emr/emrfs/auxlib/*:/usr/share/aws/emr/security/conf:/usr/share/aws/emr/security/lib/*:/home/hadoop/hail-all-spark.jar'
           spark.serializer: 'org.apache.spark.serializer.KryoSerializer'
+          spark.sql.files.maxPartitionBytes: '1099511627776'
           spark.dynamicAllocation.enabled: 'false'
       Applications:
       - Name: Ganglia
@@ -121,7 +145,7 @@ Resources:
         Ref: emrVersion
       LogUri:
         Ref: s3BucketBasePath
-      VisibleToAllUsers: false
+      VisibleToAllUsers: true
       Steps:
       - Name: "VariantSpark Job"
         ActionOnFailure: "CANCEL_AND_WAIT"
@@ -132,20 +156,20 @@ Resources:
           - "client"
           - "--class"
           - "au.csiro.variantspark.cli.VariantSparkApp"
-          - "/mnt/variant-spark/variant-spark_2.11-all.jar"
+          - "/home/hadoop/miniconda2/envs/jupyter/lib/python2.7/site-packages/varspark/jars/variant-spark_2.11-0.2.0-a1-all.jar"
           - "importance"
           - "-ff"
-          - "s3://csiro-tb/share/Hipster2/Hipster.csv"
+          - Ref: PhenotypeFile
           - "-fc"
-          - "Hipster"
+          - Ref: PhenotypeColumn
           - "-if"
-          - "s3://csiro-tb/share/Hipster2/VCF/Small.558938.vcf.bz2"
+          - Ref: InputFile
           - "-of"
-          - "s3://csiro-tb/share/Hipster2/test-maciej1.out"
+          - Ref: OutputFile
           - "-rn"
-          - "100"
+          - Ref: NumTree
           - "-rbs"
-          - "100"
+          - Ref: TreeBatch
           - "-on"
           - "10000"
           - "-rmtf"
