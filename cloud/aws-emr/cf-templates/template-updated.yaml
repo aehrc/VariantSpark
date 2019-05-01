@@ -18,14 +18,20 @@ Parameters:
     Description: Instance type of Master Node
     Type: String
     Default: "m4.large"
+    AllowedValues: 
+      - m4.large
   coreInstanceType:
     Description: Instance type of Core Node
     Type: String
     Default: "m4.large"
+    AllowedValues: 
+      - m4.large
   taskInstanceType:
     Description: Instance type of Task Node
     Type: String
     Default: "m4.large"
+    AllowedValues: 
+      - m4.large
   environmentType:
     Description: What environment do you want the cluster to be in
     Type: String
@@ -36,12 +42,14 @@ Parameters:
   taskBidPrice:
     Description: Bid price for Task nodes
     Type: String
+    Default: "OnDemandPrice"
   terminationProtected:
     Description: Is the cluster to have termination protection enabled
     Type: String
     AllowedValues:
     - 'true'
     - 'false'
+    Default: 'true'
     ConstraintDescription: Boolean
   awsRegion:
     Description: awsRegion
