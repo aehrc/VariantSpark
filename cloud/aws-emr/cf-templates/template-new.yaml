@@ -4,55 +4,50 @@ Description: Cloudformation Template to spin up Variant Spark on EMR clusters V3
 Parameters:
   # Random-Forest Parameters Group
   NumTree:
-    Description: (-rn) Number of trees to built.
+    Description: (-rn) Number of trees to built in the forest.
     Type: Number
     Default: "100"
-  mtry:
-    Description: (-rmt) Number of Randomly selected variable to test at each node of each tree.
-    Type: Number
-    Default: "1000"
   mtryFraction:
-    Description: (-rmtf) mtry as a fraction of number of variable in the input file.
+    Description: (-rmtf) mtry as a fraction of number of variable in the input file. mtry is the umber of randomly selected variable to test at each node of each tree.
     Type: Number
     Default: "0.1"
-  #VariantSpark Parameters Group
-  rfBatchSize:
-    Description: (-rbs) Number of trees to be built in parallel
-    Type: Number
-    Default: "100"
-  PhenotypeFile:
-    Description: (-ff) S3 path to phenotype file. It should be in CSV format. The first row in header, the first column is be sample name.
-    Type: String
-    Default: "s3://csiro-tb/share/Hipster2/Hipster.csv"
-  PhenotypeColumn:
-    Description: (-fc) The column name in the phenotype file that hold the phenotype value. Phenotype is binary and can be 0 (a control) or 1 (a case).
-    Type: String
-    Default: "Hipster"
-  InputFile:
-    Description: (-if) S3 path to the input file. Can be in CSV or VCF format. See InputType parameter for more details. 
-    Type: String
-    Default: "s3://csiro-tb/share/Hipster2/VCF/Small.558938.vcf.bz2"
+  #VariantSpark Input Parameters Group
   InputType:
-    Description: (-it) It can be VCF or CSV. The VCF file can be compressed using bzip2 (x.vcf.bz2) or bgzip (x.vcf.bgz). For the CSV file the first row is sample name and the first column is the variable name. All Variable should be ordinal, descreet and starting from 0 like 0,1,2,3,...,n where n is a small number.
+    Description: (-it) It can be VCF or CSV. The VCF file can be compressed using bzip2 (.vcf.bz2) or bgzip (.vcf.bgz). For the CSV file, the first row includes sample names and the first column includes variable names. All variable should be ordinal, descreet and starting from 0 like 0,1,2,3,...,n where n is a small number. If the input is VCF, VariantSpark translate 0/0, 0/1 and 1/1 genotypes to 0, 1 and 2 respectively and treat them as descreet ordinal values. VariantSpark ignore phasing information so 0/1, 1/0, 0|1 and 1|0 genotypes are all translated to 1. VariantSpark also ignore multiallelic genotype so 0/1, 0/3 and 2/3 genotypes are translated to 1, 1 and 2 respectively. So each variable can take only 3 different values (0,1,2).
     Type: String
     Default: "vcf"
     AllowedValues:
       - vcf
       - csv
+  InputFile:
+    Description: (-if) S3 path to the input file. Can be in CSV or VCF format. See InputType parameter for more details. 
+    Type: String
+    Default: "s3://variant-spark/datasets/Hipster2Small/Small.558938.vcf.bz2"
   MaxValue:
-    Description: (-ivo) If the input is VCF, VariantSpark translate 0/0, 0/1 and 1/1 genotypes to 0, 1 and 2 respectively and treat them as descreet ordinal values. Variant spark ignore phasing information so 0/1, 1/0, 0|1 and 1|0 genotypes are all translated to 1. VariantSpark also ignore multiallelic genotype so 0/1, 0/3 and 2/3 genotypes are translated to 1, 1 and 2 respectively. So each variable can take only 3 different values (0,1,2). In case the input file is CSV, there could be a variable that takes more than 3 values. This parameter should be set to the maximum number of values a variable can take. For example if it sets to 6 (0,1,2,3,4,5) none of the variable can have value greater than 5.
+    Description: (-ivo) If the input is VCF leave it to default (3). See InputType parameter for more details. In case the input file is CSV, there could be a variable that takes more than 3 values. This parameter should be set to the maximum number of values a variable can take. For example if it is set to 6 (0,1,2,3,4,5) none of the variable can have value greater than 5.
     Type: Number
     Default: "3"
+  Biallelic:
+    Description: (-ivb) If the input file is VCF and multiallelic site are broken into biallelic site (two or more variants have the same chr-pos) you should set this option to True. When it is set to True the output file also include alternate allele for each variants. By default the output file only include chr-pos for each variant.
+    Type: String
+    Default: ""
+    AllowedValues:
+      - ""
+      - "-ivb"
+  #VariantSpark Phenotype Parameters Group
+  PhenotypeFile:
+    Description: (-ff) S3 path to phenotype file. It should be in CSV format. The first row is header, the first column should be sample names.
+    Type: String
+    Default: "s3://variant-spark/datasets/Hipster2Small/Hipster.csv"
+  PhenotypeColumn:
+    Description: (-fc) The column name in the phenotype file that hold the phenotype value. Phenotype is binary and can be 0 (a control) or 1 (a case).
+    Type: String
+    Default: "Hipster"
+  #VariantSpark Output Parameters Group
   OutputFile:
     Description: (-of) S3 path to the output file (importance score)
     Type: String
-    #should not have a default value
     Default: "s3://csiro-tb/share/Hipster2/test-maciej1.out"
-  ModelFile:
-    Description: (-om) S3 path to the file. The program saves produced Random-Forest model in this file. For the file format see ModelType parameter
-    Type: String
-    #should not have a default value
-    Default: "s3://csiro-tb/share/Hipster2/test-maciej1.om"
   ModelType:
     Description: (??) The constructed Random-Forest model can be stored in java and json format. The json output is not optimised and may take a long time to produce. the java model file is only provided for programatic access.
     Type: String
@@ -60,133 +55,156 @@ Parameters:
     AllowedValues:
       - java
       - json
-  Biallelic:
-    Description: (-ivb) If input is VCF and multiallelic site are broken into biallelic site (two or more variants have the same chr-pos) you should set this option to True. If set to the true the output file also include alternate allele for each variants. By default the output file only include chr-pos for each variant.
+  ModelFile:
+    Description: (-om) S3 path to the file. The program saves produced Random-Forest model in this file. For the file format see ModelType parameter
     Type: String
-    Default: "False"
-    AllowedValues:
-      - "False"
-      - "True"
+    Default: "s3://csiro-tb/share/Hipster2/test-maciej1.om"
+  #VariantSpark Other Parameters Group
+  BatchSize:
+    Description: (-rbs) Number of trees to be built in parallel
+    Type: Number
+    Default: "100"
   OOB:
     Description: (-ro) Compute out-of-bag error rate for each batch of tree and the whole forest. If set to true slowdown the process. 
     Type: String
-    Default: "False"
+    Default: ""
     AllowedValues:
-      - "False"
-      - "True"
+      - ""
+      - "-ro"
   Seed:
     Description: (-sr) Random seed to be able to replicate the same process. 
     Type: Number
     Default: "13"
   # Hardware Group
   MasterNodePricing:
-    Description: Do you want master node EC2 instance with spot pricing or on-demand pricing.
+    Description: Choose the pricing option for master node EC2 instance with spot pricing or on-demand pricing. Spot is cheaper but the process may fail halfway through.
     Type: String
     Default: "Spot"
     AllowedValues:
       - Spot
       - OnDemand
   SpotNumCPU:
-    Description: Number of spot CPU for core instances. It is not the number of instances.
+    Description: Number of Spot CPUs for core instances. It is not the number of instances. Instances are AWS r4 EC2.
     Type: Number
     Default: "32"
   OnDemandNumCPU:
-    Description: Number of OnDemand CPU for core instances. It is not the number of instances.
+    Description: Number of OnDemand CPUs for core instances. It is not the number of instances. Instances are AWS r4 EC2.
     Type: Number
     Default: "0"
-  # Access:
+  # Security:
   EC2KeyPair:
-    Description: If you want to ssh to any node of the cluster you need to have a Ec+C2 Key Pair and use it for ssh. If you want to submit you job as step or you want to use Jupyter notebook you don't need to ssh to the master node. (see our brief tutorial on how to create EC2 Key Pair ???)
+    Description: You may need to assing an EC2 key pair in the folowing cases. If you want to ssh to any node of the cluster. How to create EC2 KeyPair -> https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html
     Type: AWS::EC2::KeyPair::KeyName
   SecurityGroup:
-    Description: If you want to ssh to the cluster or use the Jupyter notebook you should allow access to the cluster using security group. You don't need it if you submit you job as step. (see our brief tutorial on how to create security group ???)
+    Description: If you want to use Jupyter notebook or you want to ssh to any node of the cluster you should allow inbound connection from your IP address to the cluster. This can be done by using Security Group
     Type: AWS::EC2::SecurityGroup::Id
+  VPC:
+    Description: You may set it to your default VPC.
+    Type: AWS::EC2::VPC::Id
+  Subnet:
+    Description: You may set it to your default Subnet.
+    Type: AWS::EC2::Subnet::Id
+  #Jupyter Notebook
+  NotebookDir:
+    Description: S3 path to notebook directory for the Jupyter notebook (no slash at the end).
+    Type: String
+    Default: "s3://csiro-tb/notebooks"
   #General EMR options
   clusterName:
     Description: Name of the cluster
     Type: String
-  taskInstanceCount:
-    Description: Number of task instances
+    Default: "Test-VariantSpark"
+  LogPath:
+    Description: S3 path to store EMR and VariantSpark logs
+    Default: "s3://csiro-tb/var/logs/emr/"
     Type: String
-  emrVersion:
-    Description: Version of EMR
-    Type: String
-    Default: "emr-5.12.0"
-    ConstraintDescription: 'Must be EMR Version 5 (i.e: emr-5.3.0)'
-  masterInstanceType:
-    Description: Instance type of Master Node
-    Type: String
-    Default: "m4.large"
-    AllowedValues: 
-      - m4.large
-  coreInstanceType:
-    Description: Instance type of Core Node
-    Type: String
-    Default: "m4.large"
-    AllowedValues:
-      - m4.large
-  taskInstanceType:
-    Description: Instance type of Task Node
-    Type: String
-    Default: "m4.large"
-    AllowedValues: 
-      - m4.large
-  environmentType:
-    Description: What environment do you want the cluster to be in
-    Type: String
-    Default: "live"
-  s3BucketBasePath:
-    Description: Bucket to log EMR actions to
-    Type: String
-  taskBidPrice:
-    Description: Bid price for Task nodes
-    Type: String
-    Default: "OnDemandPrice"
   terminationProtected:
-    Description: Is the cluster to have termination protection enabled
+    Description: Is the cluster to have termination protection enabled. If you set it to true, deleting this stack will not terminate the EMR cluster. You should manually terminate the cluster. 
     Type: String
     AllowedValues:
     - 'true'
     - 'false'
     Default: 'false'
     ConstraintDescription: Boolean
-  awsRegion:
-    Description: awsRegion
-    Default: ap-southeast-2
-    AllowedValues:
-    - ap-southeast-2
+  # to be removed
+  taskInstanceCount:
+    Description: Number of task instances
+    Type: Number
+    Default: "2"
+    ConstraintDescription: 'Must be EMR Version 5 (i.e: emr-5.3.0)'
+  masterInstanceType:
+    Description: Instance type of Master Node
     Type: String
+    Default: "r4.xlarge"
+    AllowedValues: 
+      - r4.xlarge
+  coreInstanceType:
+    Description: Instance type of Core Node
+    Type: String
+    Default: "r4.2xlarge"
+    AllowedValues:
+      - r4.2xlarge
+  taskInstanceType:
+    Description: Instance type of Task Node
+    Type: String
+    Default: "r4.2xlarge"
+    AllowedValues: 
+      - r4.2xlarge
+  environmentType:
+    Description: What environment do you want the cluster to be in
+    Type: String
+    Default: "live"
+  taskBidPrice:
+    Description: Bid price for Task nodes
+    Type: String
+    Default: "OnDemandPrice"
 Metadata: 
   'AWS::CloudFormation::Interface': 
     ParameterGroups: 
       - Label: 
-          default: Random-Forest
+          default: Random-Forest parameters
         Parameters: 
           - NumTree
-          - mtry
           - mtryFraction
       - Label: 
-          default: VariantSpark
+          default: VariantSpark input data
+        Parameters:
+          - InputType
+          - InputFile
+          - MaxValue
+          - Biallelic
+      - Label: 
+          default: VariantSpark phenotype data
         Parameters: 
           - PhenotypeFile
           - PhenotypeColumn
-          - InputFile
-          - InputType
-          - MaxValue
+      - Label: 
+          default: VariantSpark output data
+        Parameters: 
           - OutputFile
-          - ModelFile
           - ModelType
-          - rfBatchSize
-          - Biallelic
+          - ModelFile
+      - Label: 
+          default: VariantSpark others parameters
+        Parameters: 
+          - BatchSize
           - OOB
           - Seed
       - Label: 
-          default: Access To the Cluster
+          default: Access and Security (if needed)
         Parameters: 
           - EC2KeyPair
           - SecurityGroup
+          - VPC
+          - Subnet
+      - Label:
+          default: Jupyter notebook parameters
+        Parameters:
+          - Port
+          - NotebookDir
+          - Password
       - Label: 
-          default: Hardware
+          default: Cluster size and pricing
         Parameters: 
           - MasterNodePricing
           - SpotNumCPU
@@ -195,16 +213,17 @@ Metadata:
           default: General
         Parameters: 
           - clusterName
+          - LogPath
+          - terminationProtected
+      - Label: 
+          default: To be removed
+        Parameters:
           - taskInstanceCount
-          - emrVersion
           - masterInstanceType
           - coreInstanceType
           - taskInstanceType
           - environmentType
-          - s3BucketBasePath
           - taskBidPrice
-          - terminationProtected
-          - awsRegion
 Conditions:
   isLive:
     Fn::Equals:
@@ -232,17 +251,20 @@ Resources:
       BootstrapActions:
       - Name: Install Jupyter
         ScriptBootstrapAction:
-          Path: "s3://csiro-tb/lib/jupyter/bootstrap/install-jupyter.sh"
+          Args:
+            - "--notebookPath"
+            - Ref: NotebookDir
+          Path: "s3://variant-spark/HailJupyter/install-jupyter.sh"
       - Name: Install Hail
         ScriptBootstrapAction:
           Args:
             - "--input-path"
-            - "s3://csiro-tb/lib/hail/0.1_2.2.1"
+            - "s3://variant-spark/HailJupyter/hail/0.1_2.2.1"
             - "--hail-version"
             - "0.1"
             - "--spark-version"
             - "2.2.1"
-          Path: "s3://csiro-tb/lib/jupyter/bootstrap/install-hail.sh"
+          Path: "s3://variant-spark/HailJupyter/install-hail.sh"
       Configurations:
       - Classification: emrfs-site
         ConfigurationProperties:
@@ -268,10 +290,9 @@ Resources:
         Ref: clusterName
       JobFlowRole: "EMR_EC2_DefaultRole"
       ServiceRole: "EMR_DefaultRole"
-      ReleaseLabel:
-        Ref: emrVersion
+      ReleaseLabel: "emr-5.12.0"
       LogUri:
-        Ref: s3BucketBasePath
+        Ref: LogPath
       VisibleToAllUsers: true
       Steps:
       - Name: "VariantSpark Job"
@@ -299,18 +320,18 @@ Resources:
           - Ref: ModelFile
           - "-rn"
           - Ref: NumTree
-          - "-rmt"
-          - Ref: mtry
           - "-rmtf"
           - Ref: mtryFraction
           - "-rbs"
-          - Ref: rfBatchSize
+          - Ref: BatchSize
           - "-ivo"
           - Ref: MaxValue
           - "-sr"
           - Ref: Seed
           - "-on"
           - "100000000"
+          #- Ref: Biallelic
+          #- Ref: OOB
           Jar: "command-runner.jar"
       Tags:
       - Key: Name
