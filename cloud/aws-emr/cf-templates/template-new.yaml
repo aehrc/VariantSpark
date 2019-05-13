@@ -191,6 +191,9 @@ Resources:
         CoreInstanceFleet:
           InstanceTypeConfigs:
           - InstanceType: "r4.2xlarge"
+          - InstanceType: "r4.4xlarge"
+          - InstanceType: "r4.8xlarge"
+          - InstanceType: "r4.16xlarge"
           Name: "Task fleet"
           TargetOnDemandCapacity:
             Ref: OnDemandNumCPU
