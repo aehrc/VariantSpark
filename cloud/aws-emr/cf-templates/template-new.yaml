@@ -183,6 +183,9 @@ Metadata:
           - clusterName
           - LogPath
           - terminationProtected
+Conditions: 
+  SpotMaster: !Equals [ !Ref MasterNodePricing, Spot ]
+  OnDemandMaster: !Equals [ !Ref MasterNodePricing, OnDemand ]
 Resources:
   EMRClusterV5:
     Type: AWS::EMR::Cluster
@@ -203,7 +206,10 @@ Resources:
           InstanceTypeConfigs:
           - InstanceType: "r4.xlarge"
           Name: "Master fleet"
-          TargetOnDemandCapacity: 1
+          TargetOnDemandCapacity:
+            !If [OnDemandMaster, 1, 0]
+          TargetSpotCapacity:
+            !If [SpotMaster, 1, 0]
         TerminationProtected:
           Ref: terminationProtected
       BootstrapActions:
