@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Cloudformation Template to spin up Variant Spark on EMR clusters V3 (Version 5 of EMR only)
+Description: CF Template (Fleet version) to spin up Variant Spark on EMR clusters V3 (Version 5 of EMR only)
 Parameters:
   # Random-Forest Parameters Group
   NumTree:
@@ -126,38 +126,6 @@ Parameters:
     - 'false'
     Default: 'false'
     ConstraintDescription: Boolean
-  # to be removed
-  taskInstanceCount:
-    Description: Number of task instances
-    Type: Number
-    Default: "2"
-    ConstraintDescription: 'Must be EMR Version 5 (i.e: emr-5.3.0)'
-  masterInstanceType:
-    Description: Instance type of Master Node
-    Type: String
-    Default: "r4.xlarge"
-    AllowedValues: 
-      - r4.xlarge
-  coreInstanceType:
-    Description: Instance type of Core Node
-    Type: String
-    Default: "r4.2xlarge"
-    AllowedValues:
-      - r4.2xlarge
-  taskInstanceType:
-    Description: Instance type of Task Node
-    Type: String
-    Default: "r4.2xlarge"
-    AllowedValues: 
-      - r4.2xlarge
-  environmentType:
-    Description: What environment do you want the cluster to be in
-    Type: String
-    Default: "live"
-  taskBidPrice:
-    Description: Bid price for Task nodes
-    Type: String
-    Default: "OnDemandPrice"
 Metadata: 
   'AWS::CloudFormation::Interface': 
     ParameterGroups: 
@@ -215,37 +183,24 @@ Metadata:
           - clusterName
           - LogPath
           - terminationProtected
-      - Label: 
-          default: To be removed
-        Parameters:
-          - taskInstanceCount
-          - masterInstanceType
-          - coreInstanceType
-          - taskInstanceType
-          - environmentType
-          - taskBidPrice
-Conditions:
-  isLive:
-    Fn::Equals:
-    - Ref: environmentType
-    - live
 Resources:
   EMRClusterV5:
     Type: AWS::EMR::Cluster
     Properties:
       Instances:
-        MasterInstanceGroup:
-          InstanceCount: 1
-          InstanceType:
-            Ref: masterInstanceType
-          Market: ON_DEMAND
-          Name: Master instance group - 1
-        CoreInstanceGroup:
-          InstanceCount: 1
-          InstanceType:
-            Ref: coreInstanceType
-          Market: ON_DEMAND
-          Name: Core instance group - 2
+        CoreInstanceFleet:
+          InstanceTypeConfigs:
+          - InstanceType: "r4.2xlarge"
+          Name: "Task fleet"
+          TargetOnDemandCapacity:
+            Ref: OnDemandNumCPU
+          TargetSpotCapacity:
+            Ref: SpotNumCPU
+        MasterInstanceFleet:
+          InstanceTypeConfigs:
+          - InstanceType: "r4.xlarge"
+          Name: "Master fleet"
+          TargetOnDemandCapacity: 1
         TerminationProtected:
           Ref: terminationProtected
       BootstrapActions:
@@ -341,26 +296,9 @@ Resources:
           - - emr-instance-
             - Ref: AWS::StackName
             - ''
-      - Key: Environment
-        Value:
-          Ref: environmentType
       - Key: Stack ID
         Value:
           Ref: AWS::StackName
-  EMRTaskNodes:
-    Type: AWS::EMR::InstanceGroupConfig
-    Properties:
-      InstanceCount:
-        Ref: taskInstanceCount
-      InstanceType:
-        Ref: taskInstanceType
-      BidPrice:
-        Ref: taskBidPrice
-      Market: SPOT
-      InstanceRole: TASK
-      Name: Task instance group - 3
-      JobFlowId:
-        Ref: EMRClusterV5
 Outputs:
   ClusterID:
     Description: "EMR Cluster ID"
