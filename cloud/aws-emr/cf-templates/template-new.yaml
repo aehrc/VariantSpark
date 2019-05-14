@@ -6,7 +6,7 @@ Parameters:
   NumTree:
     Description: (-rn) Number of trees to built in the forest.
     Type: Number
-    Default: "100"
+    Default: "1000"
   mtryFraction:
     Description: (-rmtf) mtry as a fraction of number of variable in the input file. mtry is the umber of randomly selected variable to test at each node of each tree.
     Type: Number
@@ -30,10 +30,10 @@ Parameters:
   Biallelic:
     Description: (-ivb) If the input file is VCF and multiallelic site are broken into biallelic site (two or more variants have the same chr-pos) you should set this option to True. When it is set to True the output file also include alternate allele for each variants. By default the output file only include chr-pos for each variant.
     Type: String
-    Default: ""
+    Default: "True"
     AllowedValues:
-      - ""
-      - "-ivb"
+      - "False"
+      - "True"
   #VariantSpark Phenotype Parameters Group
   PhenotypeFile:
     Description: (-ff) S3 path to phenotype file. It should be in CSV format. The first row is header, the first column should be sample names.
@@ -47,18 +47,18 @@ Parameters:
   OutputFile:
     Description: (-of) S3 path to the output file (importance score)
     Type: String
-    Default: "s3://csiro-tb/share/Hipster2/test-maciej1.out"
-  ModelType:
-    Description: (??) The constructed Random-Forest model can be stored in java and json format. The json output is not optimised and may take a long time to produce. the java model file is only provided for programatic access.
-    Type: String
-    Default: "java"
-    AllowedValues:
-      - java
-      - json
+    Default: ""
+  #ModelType:
+  #  Description: (??) The constructed Random-Forest model can be stored in java and json format. The json output is not optimised and may take a long time to produce. the java model file is only provided for programatic access.
+  #  Type: String
+  #  Default: "java"
+  #  AllowedValues:
+  #    - java
+  #    - json
   ModelFile:
-    Description: (-om) S3 path to the file. The program saves produced Random-Forest model in this file. For the file format see ModelType parameter
+    Description: (-om) S3 path to the file. The program saves produced Random-Forest model in this file. # For the file format see ModelType parameter
     Type: String
-    Default: "s3://csiro-tb/share/Hipster2/test-maciej1.om"
+    Default: ""
   #VariantSpark Other Parameters Group
   BatchSize:
     Description: (-rbs) Number of trees to be built in parallel
@@ -67,10 +67,10 @@ Parameters:
   OOB:
     Description: (-ro) Compute out-of-bag error rate for each batch of tree and the whole forest. If set to true slowdown the process. 
     Type: String
-    Default: ""
+    Default: "False"
     AllowedValues:
-      - ""
-      - "-ro"
+      - "False"
+      - "True"
   Seed:
     Description: (-sr) Random seed to be able to replicate the same process. 
     Type: Number
@@ -98,9 +98,6 @@ Parameters:
   SecurityGroup:
     Description: If you want to use Jupyter notebook or you want to ssh to any node of the cluster you should allow inbound connection from your IP address to the cluster. This can be done by using Security Group
     Type: AWS::EC2::SecurityGroup::Id
-  # VPC:
-  #   Description: You may set it to your default VPC.
-  #   Type: AWS::EC2::VPC::Id
   Subnet:
     Description: You may set it to your default Subnet.
     Type: AWS::EC2::Subnet::Id
@@ -108,15 +105,11 @@ Parameters:
   NotebookDir:
     Description: S3 path to notebook directory for the Jupyter notebook (no slash at the end).
     Type: String
-    Default: "s3://csiro-tb/notebooks"
+    Default: ""
   #General EMR options
-  clusterName:
-    Description: Name of the cluster
-    Type: String
-    Default: "Test-VariantSpark"
   LogPath:
     Description: S3 path to store EMR and VariantSpark logs
-    Default: "s3://csiro-tb/var/logs/emr/"
+    Default: ""
     Type: String
   terminationProtected:
     Description: Is the cluster to have termination protection enabled. If you set it to true, deleting this stack will not terminate the EMR cluster. You should manually terminate the cluster. 
@@ -150,7 +143,7 @@ Metadata:
           default: VariantSpark output data
         Parameters: 
           - OutputFile
-          - ModelType
+          #- ModelType
           - ModelFile
       - Label: 
           default: VariantSpark others parameters
@@ -163,7 +156,6 @@ Metadata:
         Parameters: 
           - EC2KeyPair
           - SecurityGroup
-          - VPC
           - Subnet
       - Label:
           default: Jupyter notebook parameters
@@ -180,12 +172,13 @@ Metadata:
       - Label: 
           default: General
         Parameters: 
-          - clusterName
           - LogPath
           - terminationProtected
 Conditions: 
   SpotMaster: !Equals [ !Ref MasterNodePricing, Spot ]
   OnDemandMaster: !Equals [ !Ref MasterNodePricing, OnDemand ]
+  IVB: !Equals [ !Ref Biallelic, "True" ]
+  RO: !Equals [ !Ref OOB, "True" ]
 Resources:
   EMRClusterV5:
     Type: AWS::EMR::Cluster
@@ -205,9 +198,9 @@ Resources:
           - InstanceType: "r4.16xlarge"
           Name: "Task fleet"
           TargetOnDemandCapacity:
-            Ref: OnDemandNumCPU
+            !Ref OnDemandNumCPU
           TargetSpotCapacity:
-            Ref: SpotNumCPU
+            !Ref SpotNumCPU
         MasterInstanceFleet:
           InstanceTypeConfigs:
           - InstanceType: "r4.xlarge"
@@ -257,7 +250,7 @@ Resources:
       - Name: Ganglia
       - Name: Spark
       Name:
-        Ref: clusterName
+        !Ref AWS::StackName
       JobFlowRole: "EMR_EC2_DefaultRole"
       ServiceRole: "EMR_DefaultRole"
       ReleaseLabel: "emr-5.12.0"
@@ -300,8 +293,8 @@ Resources:
           - Ref: Seed
           - "-on"
           - "100000000"
-          #- Ref: Biallelic
-          #- Ref: OOB
+          - !If [IVB, "-ivb", "-v"]
+          - !If [RO, "-ro", "-v"]
           Jar: "command-runner.jar"
       Tags:
       - Key: Name
@@ -318,3 +311,9 @@ Outputs:
   ClusterID:
     Description: "EMR Cluster ID"
     Value: !Ref "EMRClusterV5"
+  JupyterURL:
+    Description: Jupyter Notebook URL
+    Value: !Sub "http://${EMRClusterV5.MasterPublicDNS}:8888"
+  sshMasterNode:
+    Description: ssh to the master node of cluster
+    Value: !Sub "ssh -i \"${EC2KeyPair}.pem\" hadoop@${EMRClusterV5.MasterPublicDNS}"
