@@ -93,14 +93,14 @@ Parameters:
     Default: "0"
   # Security:
   EC2KeyPair:
-    Description: You may need to assing an EC2 key pair in the folowing cases. If you want to ssh to any node of the cluster. How to create EC2 KeyPair -> https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html
+    Description: EC2 key to ssh into master node as "hadoop" user. How to create EC2 KeyPair -> https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html
     Type: AWS::EC2::KeyPair::KeyName
   SecurityGroup:
     Description: If you want to use Jupyter notebook or you want to ssh to any node of the cluster you should allow inbound connection from your IP address to the cluster. This can be done by using Security Group
     Type: AWS::EC2::SecurityGroup::Id
-  VPC:
-    Description: You may set it to your default VPC.
-    Type: AWS::EC2::VPC::Id
+  # VPC:
+  #   Description: You may set it to your default VPC.
+  #   Type: AWS::EC2::VPC::Id
   Subnet:
     Description: You may set it to your default Subnet.
     Type: AWS::EC2::Subnet::Id
@@ -191,6 +191,12 @@ Resources:
     Type: AWS::EMR::Cluster
     Properties:
       Instances:
+        AdditionalMasterSecurityGroups:
+          - !Ref SecurityGroup
+        AdditionalSlaveSecurityGroups:
+          - !Ref SecurityGroup
+        Ec2KeyName: !Ref EC2KeyPair
+        Ec2SubnetId: !Ref Subnet
         CoreInstanceFleet:
           InstanceTypeConfigs:
           - InstanceType: "r4.2xlarge"
