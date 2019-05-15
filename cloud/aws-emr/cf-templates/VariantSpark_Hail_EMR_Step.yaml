@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: CF Template (Fleet version) to spin up Variant Spark on EMR clusters V3 (Version 5 of EMR only)
+Description: Variant Spark CF template to spin EMR cluster to process a single VariantSpark job.
 Parameters:
   # Random-Forest Parameters Group
   NumTree:
@@ -154,6 +154,7 @@ Resources:
     Type: AWS::EMR::Cluster
     Properties:
       Instances:
+        KeepJobFlowAliveWhenNoSteps: "false"
         CoreInstanceFleet:
           InstanceTypeConfigs:
           - InstanceType: "r4.2xlarge"
@@ -178,7 +179,7 @@ Resources:
       BootstrapActions:
       - Name: Install Jupyter
         ScriptBootstrapAction:
-          Path: "s3://variant-spark/HailJupyter/install-jupyter.sh"
+          Path: "s3://variant-spark/HailJupyter/install-jupyter-noNotebook.sh"
       - Name: Install Hail
         ScriptBootstrapAction:
           Args:
