@@ -47,7 +47,6 @@ Parameters:
   OutputFile:
     Description: (-of) S3 path to the output file (importance score)
     Type: String
-    Default: ""
   #ModelType:
   #  Description: (??) The constructed Random-Forest model can be stored in java and json format. The json output is not optimised and may take a long time to produce. the java model file is only provided for programatic access.
   #  Type: String
@@ -58,7 +57,6 @@ Parameters:
   ModelFile:
     Description: (-om) S3 path to the file. The program saves produced Random-Forest model in this file. # For the file format see ModelType parameter
     Type: String
-    Default: ""
   #VariantSpark Other Parameters Group
   BatchSize:
     Description: (-rbs) Number of trees to be built in parallel
@@ -91,25 +89,9 @@ Parameters:
     Description: Number of OnDemand CPUs for core instances. It is not the number of instances. Instances are AWS r4 EC2.
     Type: Number
     Default: "0"
-  # Security:
-  EC2KeyPair:
-    Description: EC2 key to ssh into master node as "hadoop" user. How to create EC2 KeyPair -> https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html
-    Type: AWS::EC2::KeyPair::KeyName
-  SecurityGroup:
-    Description: If you want to use Jupyter notebook or you want to ssh to any node of the cluster you should allow inbound connection from your IP address to the cluster. This can be done by using Security Group
-    Type: AWS::EC2::SecurityGroup::Id
-  Subnet:
-    Description: You may set it to your default Subnet.
-    Type: AWS::EC2::Subnet::Id
-  #Jupyter Notebook
-  NotebookDir:
-    Description: S3 path to notebook directory for the Jupyter notebook (no slash at the end).
-    Type: String
-    Default: ""
   #General EMR options
   LogPath:
     Description: S3 path to store EMR and VariantSpark logs
-    Default: ""
     Type: String
   terminationProtected:
     Description: Is the cluster to have termination protection enabled. If you set it to true, deleting this stack will not terminate the EMR cluster. You should manually terminate the cluster. 
@@ -152,18 +134,6 @@ Metadata:
           - OOB
           - Seed
       - Label: 
-          default: Access and Security (if needed)
-        Parameters: 
-          - EC2KeyPair
-          - SecurityGroup
-          - Subnet
-      - Label:
-          default: Jupyter notebook parameters
-        Parameters:
-          - Port
-          - NotebookDir
-          - Password
-      - Label: 
           default: Cluster size and pricing
         Parameters: 
           - MasterNodePricing
@@ -184,12 +154,6 @@ Resources:
     Type: AWS::EMR::Cluster
     Properties:
       Instances:
-        AdditionalMasterSecurityGroups:
-          - !Ref SecurityGroup
-        AdditionalSlaveSecurityGroups:
-          - !Ref SecurityGroup
-        Ec2KeyName: !Ref EC2KeyPair
-        Ec2SubnetId: !Ref Subnet
         CoreInstanceFleet:
           InstanceTypeConfigs:
           - InstanceType: "r4.2xlarge"
@@ -214,9 +178,6 @@ Resources:
       BootstrapActions:
       - Name: Install Jupyter
         ScriptBootstrapAction:
-          Args:
-            - "--notebookPath"
-            - Ref: NotebookDir
           Path: "s3://variant-spark/HailJupyter/install-jupyter.sh"
       - Name: Install Hail
         ScriptBootstrapAction:
@@ -311,9 +272,3 @@ Outputs:
   ClusterID:
     Description: "EMR Cluster ID"
     Value: !Ref "EMRClusterV5"
-  JupyterURL:
-    Description: Jupyter Notebook URL
-    Value: !Sub "http://${EMRClusterV5.MasterPublicDNS}:8888"
-  sshMasterNode:
-    Description: ssh to the master node of cluster
-    Value: !Sub "ssh -i \"${EC2KeyPair}.pem\" hadoop@${EMRClusterV5.MasterPublicDNS}"
