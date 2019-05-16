@@ -12,6 +12,9 @@ automatically, but not when you are using a CloudFormation template.
 More information on how to create these roles are in:
 https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-iam-roles-defaultroles.html
 
+You could also use the provided CloudFormation template `emr-roles.yaml`
+to create the two required roles (the template is untested at this moment).
+
 ## The VariantSpark templates
 
 The two templates to create a VariantSpark cluster on AWS EMR

@@ -1,0 +1,36 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create EMR default roles.
+Resources:
+  EMRDefaultRole:
+    Type: AWS::IAM::Role
+    Properties: 
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "elasticmapreduce.amazonaws.com" 
+            Action: 
+              - "sts:AssumeRole"
+      ManagedPolicyArns: 
+        - arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceRole
+      RoleName: EMR_DefaultRole
+  EMREC2DefaultRole:
+    Type: AWS::IAM::Role
+    Properties: 
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "ec2.amazonaws.com" 
+            Action: 
+              - "sts:AssumeRole"
+      ManagedPolicyArns: 
+        - arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceforEC2Role
+      RoleName: EMR_EC2_DefaultRole
