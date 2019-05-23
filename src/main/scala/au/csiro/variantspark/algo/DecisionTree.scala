@@ -24,6 +24,7 @@ import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 import au.csiro.variantspark.utils.MurMur3Hash
 
+
 /** Allows for a general description of the construct 
   *
   * Specify the 'indices', 'impurtity', and 'majoritylabel' these values will not be visible outside the class
@@ -203,6 +204,7 @@ case class VariableSplitter(val labels:Array[Int], mTryFraction:Double=1.0, val 
 
   val nCategories = labels.max + 1
 
+
   def initialSubset(sample:Sample):SubsetInfo = {
         val currentSet =  sample.indexes
         val (totalGini, totalLabel) = Gini.giniImpurity(currentSet, labels, nCategories)
@@ -269,7 +271,9 @@ case class VariableSplitter(val labels:Array[Int], mTryFraction:Double=1.0, val 
         splitByVarIndex.getOrElse(vi.index, Nil).map { case ((subsetInfo, splitInfo), si) =>
             (si, splitInfo.split(vi, labels, nCategories)(subsetInfo))
         }
+       
      }
+      
   }
 
   def createMerger(seed:Long):Merger = if (randomizeEquality) RandomizingMergerMurmur3(seed) else DeterministicMerger()
@@ -593,13 +597,12 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(), val tr
     logTrace(s"Initial subsets (details): ${subsets}")
     
     profReset()
-
+   
     val subsetsToSplit = subsets.zipWithIndex.filter {case (si, _) =>
       si.length >= params.minNodeSize && treeLevel < params.maxDepth
     }
     logDebug(s"Splittable subsets: ${summarize(subsetsToSplit.map(_._1))}")
     logTrace(s"Splittable subsets (details): ${subsetsToSplit}")
-    
       
     val (bestSplits, nextLevelSubsets) = findBestSplitsAndSubsets(indexedTypedData, subsetsToSplit.unzip._1.toList, br_splitter)
     logDebug(s"Best splits: ${bestSplits.toList}")
@@ -609,7 +612,7 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(), val tr
     profPoint("Best splits and splitting done")
  
     val nextLevelNodes = if (!nextLevelSubsets.isEmpty) buildSplit(indexedTypedData, nextLevelSubsets, br_splitter, treeLevel + 1) else List()
-     
+
     profPoint("Sublevels done")
     
     val (usefulSplits, usefulSplitsIndices) = bestSplits.zip(subsetsToSplit.unzip._2).filter(_._1 != null).unzip
@@ -620,7 +623,7 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(), val tr
         .getOrElse(LeafNode(subset))
     }.toList
     profPoint("building done")
-     
+
     result 
   }
   
@@ -635,6 +638,7 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(), val tr
       val subsetsToSplitAsIndices = subsetsToSplit.toArray
       withBroadcast(treeFeatures)(subsetsToSplitAsIndices){ br_splits => 
         val bestSplits = DecisionTree.findBestSplits(treeFeatures, br_splits, br_splitter)
+        
         (bestSplits, DecisionTree.splitSubsets(treeFeatures, bestSplits, br_splits, br_splitter))
       }
     }

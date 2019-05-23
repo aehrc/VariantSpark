@@ -104,7 +104,16 @@ class ImportanceCmd extends ArgsApp with SparkApp
 
   @Option(name="-sr", required=false, usage="Random seed to use (def=<random>)", aliases=Array("--seed"))
   val randomSeed: Long = defRng.nextLong
-   
+  
+  @Option(name="-md", required=false, usage="Maximum depth a tree should go after which it should stop splitting.",
+      aliases=Array("--max-depth"))
+  val rfMaxDepth:Int = Int.MaxValue
+ 
+  @Option(name="-mns", required=false, usage="Minimum node size after which tree should stop splitting.",
+      aliases=Array("--min-node-size"))
+  val rfMinNodeSize:Int = 1
+  
+  
   @Override
   def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ro", "-om",
       "target/ch22-model.json", "-omf","json", "-sr", "13", "-v", "-io", """{"separator":":"}""")
@@ -124,6 +133,8 @@ class ImportanceCmd extends ArgsApp with SparkApp
   
     val inputData = DefTreeRepresentationFactory.createRepresentation(featureSource.features.zipWithIndex()).cache() 
     val totalVariables = inputData.count()
+    echo(s"Input data: ${inputData}")
+    
     val variablePreview = inputData.map(_.label).take(defaultPreviewSize).toList
     echo(s"Loaded variables: ${dumpListHead(variablePreview, totalVariables)}, took: ${dataLoadingTimer.durationInSec}")
     echoDataPreview() 
@@ -140,10 +151,9 @@ class ImportanceCmd extends ArgsApp with SparkApp
     echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")  
     echo(s"Random seed is: ${randomSeed}")
     val treeBuildingTimer = Timer()
-    val rf:RandomForest = new RandomForest(RandomForestParams(oob=rfEstimateOob, seed = randomSeed, bootstrap = !rfSampleNoReplacement, 
+    val rf:RandomForest = new RandomForest(RandomForestParams(oob=rfEstimateOob, seed = randomSeed, maxDepth = rfMaxDepth, minNodeSize = rfMinNodeSize, bootstrap = !rfSampleNoReplacement, 
         subsample = rfSubsampleFraction, 
         nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction))
-        
         
     //
     val trainingData = inputData
