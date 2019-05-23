@@ -2,7 +2,7 @@ env:
   PYPI_URL: https://upload.pypi.org/legacy/
 language: java
 jdk:
-- oraclejdk8
+- oraclejdk13
 cache:
   directories:
   - "$HOME/.m2"
