@@ -24,7 +24,6 @@ import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 import au.csiro.variantspark.utils.MurMur3Hash
 
-
 /** Allows for a general description of the construct 
   *
   * Specify the 'indices', 'impurtity', and 'majoritylabel' these values will not be visible outside the class

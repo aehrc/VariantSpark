@@ -2,7 +2,7 @@ env:
   PYPI_URL: https://upload.pypi.org/legacy/
 language: java
 jdk:
-- oraclejdk8
+- oraclejdk9
 cache:
   directories:
   - "$HOME/.m2"
@@ -17,9 +17,9 @@ install:
   - source ~/virtualenv/python2.7/bin/activate
   - python --version
   - dev/py-setup.sh
-script: 
+script:
   - dev/travis-build.sh
-before_deploy: 
+before_deploy:
   - dev/travis-py-dist.sh
   - dev/travis-prepare-s3-release.sh
 deploy:

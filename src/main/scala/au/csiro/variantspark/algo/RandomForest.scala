@@ -16,7 +16,6 @@ import scala.reflect.ClassTag
 import au.csiro.variantspark.data.Feature
 import au.csiro.variantspark.data.FeatureBuilder
 
-
 /** Allows for normalization(scaling)of the input map values
   */
 trait VarImportanceNormalizer {
@@ -48,7 +47,7 @@ case object ToOneImportanceNormalizer extends StandardImportanceNormalizer(1.0)
   * @param nSamples the number of samples
   */
 case class VotingAggregator(val nLabels:Int, val nSamples:Int) {
-  lazy val votes = Array.fill(nSamples)(Array.fill(nLabels)(0)) 
+  lazy val votes = Array.fill(nSamples)(Array.fill(nLabels)(0))
 
   /** Adds a vote with predictions and indexes
     * @param predictions the number of predictions
@@ -202,16 +201,14 @@ class RandomForest(params:RandomForestParams=RandomForestParams()
     val treeFeatures:RDD[TreeFeature] = trf.createRepresentation(indexedData)
     batchTrainTyped(treeFeatures, labels, nTrees, nBatchSize)
   }
-  
-                  
+                    
   // TODO (Design): Make a param rather then an extra method
   // TODO (Func): Add OOB Calculation
   def batchTrainTyped(treeFeatures: RDD[TreeFeature], labels: Array[Int], nTrees: Int, nBatchSize:Int)
                 (implicit callback:RandomForestCallback = null): RandomForestModel = {
 
     require(nBatchSize > 0)
-    require(nTrees > 0)
-    
+    require(nTrees > 0)   
     val nSamples = labels.length
     val nVariables = treeFeatures.count().toInt
     val nLabels = labels.max + 1
