@@ -203,7 +203,6 @@ case class VariableSplitter(val labels:Array[Int], mTryFraction:Double=1.0, val 
 
   val nCategories = labels.max + 1
 
-
   def initialSubset(sample:Sample):SubsetInfo = {
         val currentSet =  sample.indexes
         val (totalGini, totalLabel) = Gini.giniImpurity(currentSet, labels, nCategories)
@@ -269,10 +268,8 @@ case class VariableSplitter(val labels:Array[Int], mTryFraction:Double=1.0, val 
       varData.flatMap { vi =>
         splitByVarIndex.getOrElse(vi.index, Nil).map { case ((subsetInfo, splitInfo), si) =>
             (si, splitInfo.split(vi, labels, nCategories)(subsetInfo))
-        }
-       
-     }
-      
+        }       
+     }     
   }
 
   def createMerger(seed:Long):Merger = if (randomizeEquality) RandomizingMergerMurmur3(seed) else DeterministicMerger()
@@ -636,8 +633,7 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(), val tr
     profIt("findBestSplitsAndSubsets") { 
       val subsetsToSplitAsIndices = subsetsToSplit.toArray
       withBroadcast(treeFeatures)(subsetsToSplitAsIndices){ br_splits => 
-        val bestSplits = DecisionTree.findBestSplits(treeFeatures, br_splits, br_splitter)
-        
+        val bestSplits = DecisionTree.findBestSplits(treeFeatures, br_splits, br_splitter)       
         (bestSplits, DecisionTree.splitSubsets(treeFeatures, bestSplits, br_splits, br_splitter))
       }
     }
