@@ -593,7 +593,7 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(), val tr
     logTrace(s"Initial subsets (details): ${subsets}")
     
     profReset()
-   
+
     val subsetsToSplit = subsets.zipWithIndex.filter {case (si, _) =>
       si.length >= params.minNodeSize && treeLevel < params.maxDepth
     }

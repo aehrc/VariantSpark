@@ -155,6 +155,14 @@ case class RandomForestParams(
         minNodeSize = minNodeSize
     )
   }
+  def toDecisionTreeParams(seed:Long): DecisionTreeParams = { 
+    DecisionTreeParams(
+        seed = seed, 
+        randomizeEquality = randomizeEquality, 
+        maxDepth = maxDepth, 
+        minNodeSize = minNodeSize
+    )
+  }
   override def toString = ToStringBuilder.reflectionToString(this)
 }
 
@@ -223,8 +231,7 @@ class RandomForest(params:RandomForestParams=RandomForestParams()
 
     val oobAggregator = if (actualParams.oob) Option(new VotingAggregator(nLabels,nSamples)) else None
 
-    val builder = modelBuilderFactory(DecisionTreeParams(seed = rng.nextLong, randomizeEquality = actualParams
-      .randomizeEquality, maxDepth = actualParams.maxDepth, minNodeSize = actualParams.minNodeSize))
+    val builder = modelBuilderFactory(actualParams.toDecisionTreeParams(rng.nextLong))
     val allSamples = Stream.fill(nTrees)(Sample.fraction(nSamples, actualParams.subsample, actualParams.bootstrap))
 
     val (allTrees, errors) = allSamples
