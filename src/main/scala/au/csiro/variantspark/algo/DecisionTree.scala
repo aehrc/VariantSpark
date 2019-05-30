@@ -268,8 +268,8 @@ case class VariableSplitter(val labels:Array[Int], mTryFraction:Double=1.0, val 
       varData.flatMap { vi =>
         splitByVarIndex.getOrElse(vi.index, Nil).map { case ((subsetInfo, splitInfo), si) =>
             (si, splitInfo.split(vi, labels, nCategories)(subsetInfo))
-        }
-     }
+        }       
+     }     
   }
 
   def createMerger(seed:Long):Merger = if (randomizeEquality) RandomizingMergerMurmur3(seed) else DeterministicMerger()
@@ -599,7 +599,6 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(), val tr
     }
     logDebug(s"Splittable subsets: ${summarize(subsetsToSplit.map(_._1))}")
     logTrace(s"Splittable subsets (details): ${subsetsToSplit}")
-    
       
     val (bestSplits, nextLevelSubsets) = findBestSplitsAndSubsets(indexedTypedData, subsetsToSplit.unzip._1.toList, br_splitter)
     logDebug(s"Best splits: ${bestSplits.toList}")
@@ -609,7 +608,7 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(), val tr
     profPoint("Best splits and splitting done")
  
     val nextLevelNodes = if (!nextLevelSubsets.isEmpty) buildSplit(indexedTypedData, nextLevelSubsets, br_splitter, treeLevel + 1) else List()
-     
+
     profPoint("Sublevels done")
     
     val (usefulSplits, usefulSplitsIndices) = bestSplits.zip(subsetsToSplit.unzip._2).filter(_._1 != null).unzip
@@ -620,7 +619,7 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(), val tr
         .getOrElse(LeafNode(subset))
     }.toList
     profPoint("building done")
-     
+
     result 
   }
   
@@ -634,7 +633,7 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(), val tr
     profIt("findBestSplitsAndSubsets") { 
       val subsetsToSplitAsIndices = subsetsToSplit.toArray
       withBroadcast(treeFeatures)(subsetsToSplitAsIndices){ br_splits => 
-        val bestSplits = DecisionTree.findBestSplits(treeFeatures, br_splits, br_splitter)
+        val bestSplits = DecisionTree.findBestSplits(treeFeatures, br_splits, br_splitter)       
         (bestSplits, DecisionTree.splitSubsets(treeFeatures, bestSplits, br_splits, br_splitter))
       }
     }
