@@ -31,7 +31,7 @@ deploy:
       tags: true
   - provider: s3
     access_key_id: "$AWS_ACCESS_KEY"
-    secret_access_key: "$AWS_SECRECT_KEY"
+    secret_access_key: "$AWS_SECRET_KEY"
     bucket: variant-spark
     local-dir: target/s3-release
     skip_cleanup: true
