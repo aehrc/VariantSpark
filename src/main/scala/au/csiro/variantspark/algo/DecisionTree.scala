@@ -22,6 +22,7 @@ import au.csiro.variantspark.utils.Sample
 import au.csiro.variantspark.utils.defRng
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
+import au.csiro.variantspark.utils.MurMur3Hash
 
 /** Allows for a general description of the construct 
   *
@@ -145,18 +146,23 @@ case class DeterministicMerger() extends Merger {
   }
 }
 
-/** Utilizes the Randomized Decision Tree model found here: [[https://en.wikipedia.org/wiki/Decision_tree_model#Randomized_decision_tree]]
-  * Extends the [[au.csiro.variantspark.algo.Merger]] class
-  * 
-  * Xorting the index of a variable with a random seed provides predicateble random ordering
-  * or variables.  
-  *
-  * @param seed: input a seed value to initialize the random number generator for rnd
-  */
-case class RandomizingMerger(seed:Long) extends Merger {
-
-  def chooseEqual(s1:VarSplitInfo, s2:VarSplitInfo):VarSplitInfo =  {
-      if ((s1.variableIndex ^ seed) < (s2.variableIndex ^ seed)) s1 else s2
+/** 
+ *  UsedsMurmur3 hashing to create random ordering of variables
+ *  dependent on the initial seed and split number.
+ *  
+ *  The assumption is that comparing the hashes of variable indexes will produce 
+ *  sufficently randomzized orderings given different seeds and split ids.
+ *  
+ * 	@param seed: input a seed value to initialize the random number generator for rnd
+ */
+case class RandomizingMergerMurmur3(seed:Long) extends Merger {
+  
+  def hashOrder(varIndex:Long, splitId:Int):Int  = {
+    MurMur3Hash.hashLong(varIndex, MurMur3Hash.hashLong(seed, splitId))
+  }
+  
+  def chooseEqual(s1:VarSplitInfo, s2:VarSplitInfo, id:Int):VarSplitInfo =  {
+      if (hashOrder(s1.variableIndex, id) < hashOrder(s2.variableIndex, id)) s1 else s2
   }
   
   /** Operates a merging function utilizing two arrays of the class [[au.csiro.variantspark.algo.VarSplitInfo]]
@@ -175,15 +181,13 @@ case class RandomizingMerger(seed:Long) extends Merger {
       * @param s2: input an [[au.csiro.variantspark.algo.VarSplitInfo]]
       * @return Returns either s1 or s2 based on the gini impurity calculation
       */
-    def mergeSplitInfo(s1:VarSplitInfo, s2:VarSplitInfo) = {
-      if (s1 == null) s2 else if (s2 == null) s1 else if (s1.gini < s2.gini) s1 else if (s2.gini < s1.gini) s2 else chooseEqual(s1,s2)
+    def mergeSplitInfo(s1:VarSplitInfo, s2:VarSplitInfo, id:Int) = {
+      if (s1 == null) s2 else if (s2 == null) s1 else if (s1.gini < s2.gini) s1 else if (s2.gini < s1.gini) s2 else chooseEqual(s1,s2, id)
     }
-    Range(0,a1.length).foreach(i=> a1(i) = mergeSplitInfo(a1(i), a2(i)))
+    Range(0,a1.length).foreach(i=> a1(i) = mergeSplitInfo(a1(i), a2(i), i))
     a1
   }
 }
-
-
 
 /** This is the main split function
   * 
@@ -264,11 +268,11 @@ case class VariableSplitter(val labels:Array[Int], mTryFraction:Double=1.0, val 
       varData.flatMap { vi =>
         splitByVarIndex.getOrElse(vi.index, Nil).map { case ((subsetInfo, splitInfo), si) =>
             (si, splitInfo.split(vi, labels, nCategories)(subsetInfo))
-        }
-     }
+        }       
+     }     
   }
 
-  def createMerger(seed:Long):Merger = if (randomizeEquality) RandomizingMerger(seed) else DeterministicMerger()
+  def createMerger(seed:Long):Merger = if (randomizeEquality) RandomizingMergerMurmur3(seed) else DeterministicMerger()
 
 }
 
@@ -595,7 +599,6 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(), val tr
     }
     logDebug(s"Splittable subsets: ${summarize(subsetsToSplit.map(_._1))}")
     logTrace(s"Splittable subsets (details): ${subsetsToSplit}")
-    
       
     val (bestSplits, nextLevelSubsets) = findBestSplitsAndSubsets(indexedTypedData, subsetsToSplit.unzip._1.toList, br_splitter)
     logDebug(s"Best splits: ${bestSplits.toList}")
@@ -605,7 +608,7 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(), val tr
     profPoint("Best splits and splitting done")
  
     val nextLevelNodes = if (!nextLevelSubsets.isEmpty) buildSplit(indexedTypedData, nextLevelSubsets, br_splitter, treeLevel + 1) else List()
-     
+
     profPoint("Sublevels done")
     
     val (usefulSplits, usefulSplitsIndices) = bestSplits.zip(subsetsToSplit.unzip._2).filter(_._1 != null).unzip
@@ -616,7 +619,7 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(), val tr
         .getOrElse(LeafNode(subset))
     }.toList
     profPoint("building done")
-     
+
     result 
   }
   
@@ -630,7 +633,7 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(), val tr
     profIt("findBestSplitsAndSubsets") { 
       val subsetsToSplitAsIndices = subsetsToSplit.toArray
       withBroadcast(treeFeatures)(subsetsToSplitAsIndices){ br_splits => 
-        val bestSplits = DecisionTree.findBestSplits(treeFeatures, br_splits, br_splitter)
+        val bestSplits = DecisionTree.findBestSplits(treeFeatures, br_splits, br_splitter)       
         (bestSplits, DecisionTree.splitSubsets(treeFeatures, bestSplits, br_splits, br_splitter))
       }
     }

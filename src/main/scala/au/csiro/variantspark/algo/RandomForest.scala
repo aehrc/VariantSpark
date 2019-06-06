@@ -130,6 +130,8 @@ case class RandomForestModel(val members: List[RandomForestMember], val labelCou
   * @param bootstrap the bootstrap value
   * @param subsample the subsample value
   * @param seed the seed value
+  * @param maxDepth the maxDepth value
+  * @param minNodeSize the minNodeSize value
   */
 case class RandomForestParams(
     oob:Boolean = true,
@@ -137,7 +139,9 @@ case class RandomForestParams(
     bootstrap:Boolean = true,
     subsample:Double = Double.NaN,
     randomizeEquality:Boolean = true,
-    seed:Long =  defRng.nextLong
+    seed:Long =  defRng.nextLong,
+    maxDepth:Int = Int.MaxValue,
+    minNodeSize:Int = 1
 ) {
   def resolveDefaults(nSamples:Int, nVariables:Int):RandomForestParams = {
     RandomForestParams(
@@ -146,7 +150,17 @@ case class RandomForestParams(
         bootstrap = bootstrap,
         subsample = if (!subsample.isNaN) subsample else if (bootstrap) 1.0 else 0.666,
         randomizeEquality  = randomizeEquality,
-        seed = seed
+        seed = seed,
+        maxDepth = maxDepth,
+        minNodeSize = minNodeSize
+    )
+  }
+  def toDecisionTreeParams(seed:Long): DecisionTreeParams = { 
+    DecisionTreeParams(
+        seed = seed, 
+        randomizeEquality = randomizeEquality, 
+        maxDepth = maxDepth, 
+        minNodeSize = minNodeSize
     )
   }
   override def toString = ToStringBuilder.reflectionToString(this)
@@ -191,20 +205,18 @@ class RandomForest(params:RandomForestParams=RandomForestParams()
 
   // TODO (Design):make this class keep random state (could be externalised to implicit random)
   implicit lazy val rng = new XorShift1024StarRandomGenerator(params.seed)
-
   def batchTrain(indexedData: RDD[(Feature, Long)],  labels: Array[Int], nTrees: Int, nBatchSize:Int = RandomForest.defaultBatchSize): RandomForestModel = {
     val treeFeatures:RDD[TreeFeature] = trf.createRepresentation(indexedData)
     batchTrainTyped(treeFeatures, labels, nTrees, nBatchSize)
   }
-                  
+                    
   // TODO (Design): Make a param rather then an extra method
   // TODO (Func): Add OOB Calculation
   def batchTrainTyped(treeFeatures: RDD[TreeFeature], labels: Array[Int], nTrees: Int, nBatchSize:Int)
                 (implicit callback:RandomForestCallback = null): RandomForestModel = {
 
     require(nBatchSize > 0)
-    require(nTrees > 0)
-
+    require(nTrees > 0)   
     val nSamples = labels.length
     val nVariables = treeFeatures.count().toInt
     val nLabels = labels.max + 1
@@ -219,8 +231,7 @@ class RandomForest(params:RandomForestParams=RandomForestParams()
 
     val oobAggregator = if (actualParams.oob) Option(new VotingAggregator(nLabels,nSamples)) else None
 
-    val builder = modelBuilderFactory(DecisionTreeParams(seed = rng.nextLong, randomizeEquality = actualParams
-      .randomizeEquality))
+    val builder = modelBuilderFactory(actualParams.toDecisionTreeParams(rng.nextLong))
     val allSamples = Stream.fill(nTrees)(Sample.fraction(nSamples, actualParams.subsample, actualParams.bootstrap))
 
     val (allTrees, errors) = allSamples
