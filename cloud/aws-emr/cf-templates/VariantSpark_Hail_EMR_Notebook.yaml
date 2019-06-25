@@ -89,9 +89,13 @@ Resources:
         CoreInstanceFleet:
           InstanceTypeConfigs:
           - InstanceType: "r4.2xlarge"
+            WeightedCapacity: 8
           - InstanceType: "r4.4xlarge"
+            WeightedCapacity: 16
           - InstanceType: "r4.8xlarge"
+            WeightedCapacity: 32
           - InstanceType: "r4.16xlarge"
+            WeightedCapacity: 64
           Name: "Core fleet"
           TargetOnDemandCapacity:
             !Ref OnDemandNumCPU
