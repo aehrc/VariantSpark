@@ -56,9 +56,7 @@ Metadata:
       - Label:
           default: Jupyter notebook parameters
         Parameters:
-          - Port
           - NotebookDir
-          - Password
       - Label:
           default: Cluster size and pricing
         Parameters:
@@ -92,34 +90,34 @@ Resources:
             WeightedCapacity: 8
             EbsConfiguration:
               EbsBlockDeviceConfigs:
-                VolumeSpecification:
-                  SizeInGB: 64
-                  VolumeType: 'gp2'
-                VolumesPerInstance: 1
+                - VolumeSpecification:
+                    SizeInGB: 64
+                    VolumeType: 'gp2'
+                  VolumesPerInstance: 1
           - InstanceType: "r4.4xlarge"
             WeightedCapacity: 16
             EbsConfiguration:
               EbsBlockDeviceConfigs:
-                VolumeSpecification:
-                  SizeInGB: 128
-                  VolumeType: 'gp2'
-                VolumesPerInstance: 1
+                - VolumeSpecification:
+                    SizeInGB: 128
+                    VolumeType: 'gp2'
+                  VolumesPerInstance: 1
           - InstanceType: "r4.8xlarge"
             WeightedCapacity: 32
             EbsConfiguration:
               EbsBlockDeviceConfigs:
-                VolumeSpecification:
-                  SizeInGB: 256
-                  VolumeType: 'gp2'
-                VolumesPerInstance: 1
+                - VolumeSpecification:
+                    SizeInGB: 256
+                    VolumeType: 'gp2'
+                  VolumesPerInstance: 1
           - InstanceType: "r4.16xlarge"
             WeightedCapacity: 64
             EbsConfiguration:
               EbsBlockDeviceConfigs:
-                VolumeSpecification:
-                  SizeInGB: 512
-                  VolumeType: 'gp2'
-                VolumesPerInstance: 1
+                - VolumeSpecification:
+                    SizeInGB: 512
+                    VolumeType: 'gp2'
+                  VolumesPerInstance: 1
           Name: "Core fleet"
           TargetOnDemandCapacity:
             !Ref OnDemandNumCPU
