@@ -25,6 +25,10 @@ while [ $# -gt 0 ]; do
       shift
       SPARK_VERSION=$1
       ;;
+    --notebookPath)
+      shift
+      NotebookPath=$1
+      ;;
     -*)
       error_msg "unrecognized option: $1"
       ;;
@@ -35,8 +39,16 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-# copy hail to both master and workers
-# as ther is not shared dir and the bgz codec is needed on classpath for both
 
-aws s3 cp ${INPUT_PATH}/hail-python.zip ${HOME}
-aws s3 cp ${INPUT_PATH}/hail-all-spark.jar ${HOME}
+if [ "$IS_MASTER" = true ]; then
+    #Install miniconda
+    wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh 
+    sh Miniconda2-latest-Linux-x86_64.sh -b
+    export PATH=~/miniconda2/bin:$PATH
+    conda create -y -n jupyter python=2.7
+    source activate jupyter
+    #Install other packages
+    #TODO: make these configurable
+    pip install --upgrade matplotlib pandas click variant-spark
+    
+fi
