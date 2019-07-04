@@ -82,6 +82,7 @@ if [ "$IS_MASTER" = true ]; then
     #Install other packages
     #TODO: make these configurable
     pip install --upgrade matplotlib pandas click variant-spark
+    ln -s "/home/hadoop/miniconda2/envs/jupyter/lib/python2.7/site-packages/varspark/jars/variant-spark"*.jar "/home/hadoop/miniconda2/envs/jupyter/lib/python2.7/site-packages/varspark/jars/varspark.jar"
     #Install jupyter components
     pip install --upgrade jupyter==1.0.0 s3contents==0.1.4 decorator==4.2.1 notebook==5.7.0 juspark 
     mkdir -p ~/.jupyter

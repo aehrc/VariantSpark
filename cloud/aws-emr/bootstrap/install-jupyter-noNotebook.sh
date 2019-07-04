@@ -54,5 +54,6 @@ if [ "$IS_MASTER" = true ]; then
     #Install other packages
     #TODO: make these configurable
     pip install --upgrade matplotlib pandas click variant-spark
+    ln -s "/home/hadoop/miniconda2/envs/jupyter/lib/python2.7/site-packages/varspark/jars/variant-spark"*.jar "/home/hadoop/miniconda2/envs/jupyter/lib/python2.7/site-packages/varspark/jars/varspark.jar"
     
 fi

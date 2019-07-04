@@ -252,7 +252,7 @@ Resources:
           - "client"
           - "--class"
           - "au.csiro.variantspark.cli.VariantSparkApp"
-          - "/home/hadoop/miniconda2/envs/jupyter/lib/python2.7/site-packages/varspark/jars/variant-spark_2.11-0.2.0-a1-all.jar"
+          - "/home/hadoop/miniconda2/envs/jupyter/lib/python2.7/site-packages/varspark/jars/varspark.jar"
           - "importance"
           - "-if"
           - Ref: InputFile
