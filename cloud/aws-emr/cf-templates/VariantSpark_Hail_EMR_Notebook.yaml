@@ -1,6 +1,11 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Variant Spark CF template to spin EMR clusters with Jupyter Notebook.
+Mappings:
+  Constants:
+    GitHub:
+      Repo: "https://github.com/bhosking/VariantSpark"
+      Version: "bootstrap-vcs"
 Parameters:
   # Hardware Group
   MasterNodePricing:
@@ -115,19 +120,33 @@ Resources:
       - Name: Install Jupyter
         ScriptBootstrapAction:
           Args:
+            - "--path-prefix"
+            - !Sub
+              - "${repo}/raw/${version}"
+              - {repo: !FindInMap [Constants, GitHub, Repo], version: !FindInMap [Constants, GitHub, Version]}
+            - "--bootstrap-file"
+            - "/cloud/aws-emr/bootstrap/install-jupyter.sh"
+            - "--"
             - "--notebookPath"
             - Ref: NotebookDir
-          Path: "s3://variant-spark/HailJupyter/install-jupyter.sh"
+          Path: "s3://variant-spark/s3-bootstrap.sh"
       - Name: Install Hail
         ScriptBootstrapAction:
           Args:
+            - "--path-prefix"
+            - !Sub
+              - "${repo}/raw/${version}"
+              - {repo: !FindInMap [Constants, GitHub, Repo], version: !FindInMap [Constants, GitHub, Version]}
+            - "--bootstrap-file"
+            - "/cloud/aws-emr/bootstrap/install-hail.sh"
+            - "--"
             - "--input-path"
             - "s3://variant-spark/HailJupyter/hail/0.1_2.2.1"
             - "--hail-version"
             - "0.1"
             - "--spark-version"
             - "2.2.1"
-          Path: "s3://variant-spark/HailJupyter/install-hail.sh"
+          Path: "s3://variant-spark/s3-bootstrap.sh"
       Configurations:
       - Classification: emrfs-site
         ConfigurationProperties:

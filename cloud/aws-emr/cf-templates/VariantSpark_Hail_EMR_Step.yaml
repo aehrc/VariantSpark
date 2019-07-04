@@ -1,6 +1,11 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Variant Spark CF template to spin EMR cluster to process a single VariantSpark job.
+Mappings:
+  Constants:
+    GitHub:
+      Repo: "https://github.com/bhosking/VariantSpark"
+      Version: "bootstrap-vcs"
 Parameters:
   # Random-Forest Parameters Group
   NumTree:
@@ -183,17 +188,31 @@ Resources:
       BootstrapActions:
       - Name: Install Jupyter
         ScriptBootstrapAction:
-          Path: "s3://variant-spark/HailJupyter/install-jupyter-noNotebook.sh"
+            - "--path-prefix"
+            - !Sub
+              - "${repo}/raw/${version}"
+              - {repo: !FindInMap [Constants, GitHub, Repo], version: !FindInMap [Constants, GitHub, Version]}
+            - "--bootstrap-file"
+            - "/cloud/aws-emr/bootstrap/install-jupyter-noNotebook.sh"
+            - "--"
+          Path: "s3://variant-spark/s3-bootstrap.sh"
       - Name: Install Hail
         ScriptBootstrapAction:
           Args:
+            - "--path-prefix"
+            - !Sub
+              - "${repo}/raw/${version}"
+              - {repo: !FindInMap [Constants, GitHub, Repo], version: !FindInMap [Constants, GitHub, Version]}
+            - "--bootstrap-file"
+            - "/cloud/aws-emr/bootstrap/install-hail.sh"
+            - "--"
             - "--input-path"
             - "s3://variant-spark/HailJupyter/hail/0.1_2.2.1"
             - "--hail-version"
             - "0.1"
             - "--spark-version"
             - "2.2.1"
-          Path: "s3://variant-spark/HailJupyter/install-hail.sh"
+          Path: "s3://variant-spark/s3-bootstrap.sh"
       Configurations:
       - Classification: emrfs-site
         ConfigurationProperties:
@@ -233,7 +252,7 @@ Resources:
           - "client"
           - "--class"
           - "au.csiro.variantspark.cli.VariantSparkApp"
-          - "/home/hadoop/miniconda2/envs/jupyter/lib/python2.7/site-packages/varspark/jars/variant-spark_2.11-0.2.0-a1-all.jar"
+          - "/home/hadoop/miniconda2/envs/jupyter/lib/python2.7/site-packages/varspark/jars/varspark.jar"
           - "importance"
           - "-if"
           - Ref: InputFile
