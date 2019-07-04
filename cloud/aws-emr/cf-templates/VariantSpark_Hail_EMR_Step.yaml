@@ -5,7 +5,7 @@ Mappings:
   Constants:
     GitHub:
       Repo: "https://github.com/bhosking/VariantSpark"
-      Version: "bootstrap-vcs"
+      Version: "master"
 Parameters:
   # Random-Forest Parameters Group
   NumTree:
