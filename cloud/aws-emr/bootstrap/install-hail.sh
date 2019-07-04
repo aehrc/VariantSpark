@@ -25,6 +25,10 @@ while [ $# -gt 0 ]; do
       shift
       SPARK_VERSION=$1
       ;;
+    --path-prefix)
+      # not used by this script
+      shift
+      ;;
     -*)
       error_msg "unrecognized option: $1"
       ;;

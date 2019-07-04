@@ -29,6 +29,10 @@ while [ $# -gt 0 ]; do
       shift
       NotebookPath=$1
       ;;
+    --path-prefix)
+      # Passed in by default, but not used here
+      shift
+      ;;
     -*)
       error_msg "unrecognized option: $1"
       ;;
