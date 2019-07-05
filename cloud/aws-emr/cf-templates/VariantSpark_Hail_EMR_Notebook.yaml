@@ -1,6 +1,11 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Variant Spark CF template to spin EMR clusters with Jupyter Notebook.
+Mappings:
+  Constants:
+    GitHub:
+      Repo: "https://github.com/aehrc/VariantSpark"
+      Version: "master"
 Parameters:
   # Hardware Group
   MasterNodePricing:
@@ -37,16 +42,16 @@ Parameters:
     Description: S3 path to store EMR and VariantSpark logs
     Type: String
   terminationProtected:
-    Description: Is the cluster to have termination protection enabled. If you set it to true, deleting this stack will not terminate the EMR cluster. You should manually terminate the cluster. 
+    Description: Is the cluster to have termination protection enabled. If you set it to true, deleting this stack will not terminate the EMR cluster. You should manually terminate the cluster.
     Type: String
     AllowedValues:
     - 'true'
     - 'false'
     Default: 'false'
     ConstraintDescription: Boolean
-Metadata: 
-  'AWS::CloudFormation::Interface': 
-    ParameterGroups: 
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
       - Label:
           default: Access and Security (if needed)
         Parameters:
@@ -68,7 +73,7 @@ Metadata:
         Parameters:
           - LogPath
           - terminationProtected
-Conditions: 
+Conditions:
   SpotMaster: !Equals [ !Ref MasterNodePricing, Spot ]
   OnDemandMaster: !Equals [ !Ref MasterNodePricing, OnDemand ]
 Resources:
@@ -137,19 +142,33 @@ Resources:
       - Name: Install Jupyter
         ScriptBootstrapAction:
           Args:
+            - "--path-prefix"
+            - !Sub
+              - "${repo}/raw/${version}"
+              - {repo: !FindInMap [Constants, GitHub, Repo], version: !FindInMap [Constants, GitHub, Version]}
+            - "--bootstrap-file"
+            - "/cloud/aws-emr/bootstrap/install-jupyter.sh"
+            - "--"
             - "--notebookPath"
             - Ref: NotebookDir
-          Path: "s3://variant-spark/HailJupyter/install-jupyter.sh"
+          Path: "s3://variant-spark/s3-bootstrap.sh"
       - Name: Install Hail
         ScriptBootstrapAction:
           Args:
+            - "--path-prefix"
+            - !Sub
+              - "${repo}/raw/${version}"
+              - {repo: !FindInMap [Constants, GitHub, Repo], version: !FindInMap [Constants, GitHub, Version]}
+            - "--bootstrap-file"
+            - "/cloud/aws-emr/bootstrap/install-hail.sh"
+            - "--"
             - "--input-path"
             - "s3://variant-spark/HailJupyter/hail/0.1_2.2.1"
             - "--hail-version"
             - "0.1"
             - "--spark-version"
             - "2.2.1"
-          Path: "s3://variant-spark/HailJupyter/install-hail.sh"
+          Path: "s3://variant-spark/s3-bootstrap.sh"
       Configurations:
       - Classification: emrfs-site
         ConfigurationProperties:

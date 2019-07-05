@@ -1,41 +1,35 @@
 #!/bin/bash
 set -x -e
 
-# AWS EMR bootstrap script 
-# Install hail
-
-# check for master node
+INPUT_PATH=""
+HAIL_VERSION="0.1"
+SPARK_VERSION="2.2.1"
 IS_MASTER=false
+
 if grep isMaster /mnt/var/lib/info/instance.json | grep true;
 then
   IS_MASTER=true
 fi
 
-# error message
-error_msg ()
-{
-  echo 1>&2 "Error: $1"
-}
-
-# error message
-fatal_error_msg ()
-{
-  echo 1>&2 "Fatal error: $1"
-  exit 1
-}
-
-VS_BUCKET="variant-spark"
-RELEASE_DIR=
-
-# get input parameters
 while [ $# -gt 0 ]; do
     case "$1" in
-    --release-url)
-	    shift
-      HAIL_RELEASE_URL="$1"
+    --input-path)
+      shift
+      INPUT_PATH=$1
+      ;;
+    --hail-version)
+      shift
+      HAIL_VERSION=$1
+      ;;
+    --spark-version)
+      shift
+      SPARK_VERSION=$1
+      ;;
+    --path-prefix)
+      # not used by this script
+      shift
       ;;
     -*)
-      # do not exit out, just note failure
       error_msg "unrecognized option: $1"
       ;;
     *)
@@ -45,21 +39,8 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-if [[ -z "${HAIL_RELEASE_URL}" ]]; then
-  fatal_error_msg "Parameter: --release-url is required"
-fi
+# copy hail to both master and workers
+# as ther is not shared dir and the bgz codec is needed on classpath for both
 
-echo "Hail release location is: ${HAIL_RELEASE_URL}"
-
-INST_VOL="${INST_VOL:-/mnt}"
-HAIL_INST_DIR="${INST_VOL}/hail"
-
-echo "Bootstraping hail"
-
-echo "Installing hail in: ${HAIL_INST_DIR}"
-mkdir -p "${HAIL_INST_DIR}"
-#download and install variant spark
-cd ${HAIL_INST_DIR}
-aws s3 cp --recursive "${HAIL_RELEASE_URL}/" .
-echo "Installed variant-spark in: ${HAIL_INST_DIR}"
-echo "Finished bootstraping hail"
+aws s3 cp ${INPUT_PATH}/hail-python.zip ${HOME}
+aws s3 cp ${INPUT_PATH}/hail-all-spark.jar ${HOME}
