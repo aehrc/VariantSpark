@@ -4,7 +4,7 @@ Description: Variant Spark CF template to spin EMR cluster to process a single V
 Mappings:
   Constants:
     GitHub:
-      Repo: "https://github.com/bhosking/VariantSpark"
+      Repo: "https://github.com/aehrc/VariantSpark"
       Version: "master"
 Parameters:
   # Random-Forest Parameters Group
@@ -25,7 +25,7 @@ Parameters:
       - vcf
       - csv
   InputFile:
-    Description: (-if) S3 path to the input file. Can be in CSV or VCF format. See InputType parameter for more details. 
+    Description: (-if) S3 path to the input file. Can be in CSV or VCF format. See InputType parameter for more details.
     Type: String
     Default: "s3://variant-spark/datasets/Hipster2Small/Small.558938.vcf.bz2"
   MaxValue:
@@ -68,14 +68,14 @@ Parameters:
     Type: Number
     Default: "100"
   OOB:
-    Description: (-ro) Compute out-of-bag error rate for each batch of tree and the whole forest. If set to true slowdown the process. 
+    Description: (-ro) Compute out-of-bag error rate for each batch of tree and the whole forest. If set to true slowdown the process.
     Type: String
     Default: "False"
     AllowedValues:
       - "False"
       - "True"
   Seed:
-    Description: (-sr) Random seed to be able to replicate the same process. 
+    Description: (-sr) Random seed to be able to replicate the same process.
     Type: Number
     Default: "13"
   # Hardware Group
@@ -99,57 +99,57 @@ Parameters:
     Description: S3 path to store EMR and VariantSpark logs
     Type: String
   terminationProtected:
-    Description: Is the cluster to have termination protection enabled. If you set it to true, deleting this stack will not terminate the EMR cluster. You should manually terminate the cluster. 
+    Description: Is the cluster to have termination protection enabled. If you set it to true, deleting this stack will not terminate the EMR cluster. You should manually terminate the cluster.
     Type: String
     AllowedValues:
     - 'true'
     - 'false'
     Default: 'false'
     ConstraintDescription: Boolean
-Metadata: 
-  'AWS::CloudFormation::Interface': 
-    ParameterGroups: 
-      - Label: 
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
           default: Random-Forest parameters
-        Parameters: 
+        Parameters:
           - NumTree
           - mtryFraction
-      - Label: 
+      - Label:
           default: VariantSpark input data
         Parameters:
           - InputType
           - InputFile
           - MaxValue
           - Biallelic
-      - Label: 
+      - Label:
           default: VariantSpark phenotype data
-        Parameters: 
+        Parameters:
           - PhenotypeFile
           - PhenotypeColumn
-      - Label: 
+      - Label:
           default: VariantSpark output data
-        Parameters: 
+        Parameters:
           - OutputFile
           #- ModelType
           - ModelFile
-      - Label: 
+      - Label:
           default: VariantSpark others parameters
-        Parameters: 
+        Parameters:
           - BatchSize
           - OOB
           - Seed
-      - Label: 
+      - Label:
           default: Cluster size and pricing
-        Parameters: 
+        Parameters:
           - MasterNodePricing
           - SpotNumCPU
           - OnDemandNumCPU
-      - Label: 
+      - Label:
           default: General
-        Parameters: 
+        Parameters:
           - LogPath
           - terminationProtected
-Conditions: 
+Conditions:
   SpotMaster: !Equals [ !Ref MasterNodePricing, Spot ]
   OnDemandMaster: !Equals [ !Ref MasterNodePricing, OnDemand ]
   IVB: !Equals [ !Ref Biallelic, "True" ]
@@ -269,7 +269,7 @@ Resources:
       Steps:
       - Name: "VariantSpark Job"
         ActionOnFailure: "CANCEL_AND_WAIT"
-        HadoopJarStep: 
+        HadoopJarStep:
           Args:
           - "spark-submit"
           - "--deploy-mode"

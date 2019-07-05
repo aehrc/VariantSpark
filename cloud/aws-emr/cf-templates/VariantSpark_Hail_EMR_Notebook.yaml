@@ -4,7 +4,7 @@ Description: Variant Spark CF template to spin EMR clusters with Jupyter Noteboo
 Mappings:
   Constants:
     GitHub:
-      Repo: "https://github.com/bhosking/VariantSpark"
+      Repo: "https://github.com/aehrc/VariantSpark"
       Version: "master"
 Parameters:
   # Hardware Group
@@ -42,16 +42,16 @@ Parameters:
     Description: S3 path to store EMR and VariantSpark logs
     Type: String
   terminationProtected:
-    Description: Is the cluster to have termination protection enabled. If you set it to true, deleting this stack will not terminate the EMR cluster. You should manually terminate the cluster. 
+    Description: Is the cluster to have termination protection enabled. If you set it to true, deleting this stack will not terminate the EMR cluster. You should manually terminate the cluster.
     Type: String
     AllowedValues:
     - 'true'
     - 'false'
     Default: 'false'
     ConstraintDescription: Boolean
-Metadata: 
-  'AWS::CloudFormation::Interface': 
-    ParameterGroups: 
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
       - Label:
           default: Access and Security (if needed)
         Parameters:
@@ -73,7 +73,7 @@ Metadata:
         Parameters:
           - LogPath
           - terminationProtected
-Conditions: 
+Conditions:
   SpotMaster: !Equals [ !Ref MasterNodePricing, Spot ]
   OnDemandMaster: !Equals [ !Ref MasterNodePricing, OnDemand ]
 Resources:
