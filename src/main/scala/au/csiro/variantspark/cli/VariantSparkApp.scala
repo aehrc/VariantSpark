@@ -16,9 +16,7 @@ class VariantSparkApp extends MultiCmdApp {
   registerClass("convert", classOf[ConvertCmd])  
   registerClass("analyze-rf", classOf[AnalyzeRFCmd])  
   registerClass("build-index", classOf[BuildVarIndexCmd])  
-  registerClass("pdist", classOf[PairWiseDistanceCmd])  
-  registerClass("gen-family", classOf[GenerateFamilyCmd])  
-  registerClass("gen-pop", classOf[GeneratePopulationCmd])  
+  registerClass("pdist", classOf[PairWiseDistanceCmd])   
 }
 
 object VariantSparkApp {
