@@ -189,11 +189,15 @@
 			<version>1.3.4</version>
 			<scope>test</scope>
 		</dependency>
+		<!--  TODO: This should be moved a public maven repository 
+			This is a temporaty solution based on : https://stackoverflow.com/questions/2229757/maven-add-a-dependency-to-a-jar-by-relative-path
+		-->
 		<dependency>
 		    <groupId>au.csiro.aehrc.third.hail-is</groupId>
-            <artifactId>hail</artifactId>
-            <version>0.1-SNAPSHOT</version>
-            <scope>provided</scope>
+            <artifactId>hail_2.11</artifactId>
+            <version>0.2.16</version>
+            <scope>system</scope>
+            <systemPath>${basedir}/lib/hail_2.11-0.2.16.jar</systemPath>
 		</dependency>
 	<dependency>
 		<groupId>org.easymock</groupId>
