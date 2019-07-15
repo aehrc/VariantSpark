@@ -194,10 +194,10 @@
 		-->
 		<dependency>
 		    <groupId>au.csiro.aehrc.third.hail-is</groupId>
-            <artifactId>hail_2.11</artifactId>
+            <artifactId>hail_2.11_all</artifactId>
             <version>0.2.16</version>
             <scope>system</scope>
-            <systemPath>${basedir}/lib/hail_2.11-0.2.16.jar</systemPath>
+            <systemPath>${basedir}/lib/hail_2.11_all-0.2.16.jar</systemPath>
 		</dependency>
 	<dependency>
 		<groupId>org.easymock</groupId>
