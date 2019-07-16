@@ -75,7 +75,7 @@ def manhattan_imp(pvals, locus=None, title=None, size=4, hover_fields=None, coll
     contig_ticks = hail.eval([hail.locus(contig, int(ref.lengths[contig]/2)).global_position() for contig in observed_contigs])
     color_mapper = CategoricalColorMapper(factors=ref.contigs, palette= palette[:2] * int((len(ref.contigs)+1)/2))
 
-    p = figure(title=title, x_axis_label='Chromosome', y_axis_label='P-value (-log10 scale)', width=1000)
+    p = figure(title=title, x_axis_label='Chromosome', y_axis_label='Importance (gini)', width=1000)
     p, _, legend, _, _, _ = _get_scatter_plot_elements(
         p, source_pd, x_col='_global_locus', y_col='_pval',
         label_cols=['_contig'], colors={'_contig': color_mapper},
