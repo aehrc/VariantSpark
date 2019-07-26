@@ -1,3 +1,37 @@
+Info on Hail Integration (hail 0.2)
+===================================
+
+
+## Building and deploying hail jar 
+
+### Building
+
+Follow the instructions from: https://hail.is/docs/0.2/getting_started_developing.html
+
+Checkout a specific tag
+
+Build with:
+
+	./gradlew -Dspark.version=2.2.0 clean jar shadowJar
+	
+(`spark.version` needs to be the one variant-spark is currently compiled with)
+
+The outputs are in `build/libs` : `hail.jar`, `hail-all-spark.jar`
+
+
+### Deploying to maven 
+
+The deployment is currently to: `https://oss.sonatype.org/content/repositories/snapshots` 
+because of lower requiremnts (no need for pgp signatures etc).
+
+Relevant passwords need to be set in: `~/.m2/settting.xml`
+
+To deploy use:
+
+	./misc-deploy-hail-to-maveh.sh <hail-root> 
+	
+where `<hail-root>` is the location of hail clone with  `jar` and `shadowJar` built.
+
 ## Expression resolution
 
 

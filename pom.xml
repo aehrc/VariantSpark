@@ -72,6 +72,7 @@
 		<scala.binary.version>2.11</scala.binary.version>
 		<scala.version>2.11.8</scala.version>
 		<spark.version>2.2.1</spark.version>
+		<spark.binary.version>2.2.</spark.binary.version>
         <sonata.autorelease>false</sonata.autorelease>
 	</properties>
 
