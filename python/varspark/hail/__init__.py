@@ -9,7 +9,7 @@ from __future__ import (
     division,
     print_function)
 
+from .context import init
 from . methods import *
 
-__all__ = ['random_forest_model']
-
+__all__ = ['init', 'random_forest_model']
