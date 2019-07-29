@@ -2,8 +2,6 @@ package au.csiro.variantspark.work.hail
 
 import is.hail.HailContext
 import is.hail.expr._
-import au.csiro.variantspark.hail.adapter.HailFeatureSource
-import au.csiro.variantspark.hail.adapter.HailLabelSource
 import au.csiro.variantspark.api.ImportanceAnalysis
 import au.csiro.variantspark.algo.RandomForestParams
 

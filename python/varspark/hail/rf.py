@@ -17,12 +17,15 @@ from hail.typecheck import *
 from hail.ir import *
 from hail.table import Table
 
+from hail.utils import java
+
 
 class RandomForestModel(object):
     
-    def __init__(self,_mir):
+    def __init__(self,_mir, mtry_fraction=None, oob=True, seed=None):
         self._mir = _mir
-        self._jrf_model = _jrf_model = Env.jvm().au.csiro.variantspark.hail.methods.RFModel.pyApply(Env.spark_backend('rf')._to_java_ir(self._mir))
+        self._jrf_model = _jrf_model = Env.jvm().au.csiro.variantspark.hail.methods.RFModel.pyApply(Env.spark_backend('rf')._to_java_ir(self._mir), 
+            java.joption(mtry_fraction), oob, java.joption(seed))
     
     def fit_trees(self, n_trees = 500, batch_size = 100):
         self._jrf_model.fitTrees(n_trees, batch_size)

@@ -2,7 +2,6 @@ package au.csiro.variantspark.work.hail
 
 import is.hail.HailContext
 import is.hail.expr._
-import au.csiro.variantspark.hail.adapter.HailFeatureSource
 import org.apache.spark.sql.Row
 import is.hail.table.Table
 import is.hail.expr.types.virtual.TInt64Required

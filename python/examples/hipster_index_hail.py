@@ -14,18 +14,6 @@ from pyspark.sql import SparkSession
 PROJECT_DIR=os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
 
 def main():
-#    HAIL_JAR=pkg_resources.resource_filename(hl.__name__, "hail-all-spark.jar")
-#    VS_JAR=vs.find_jar()
-#    
-#    spark = SparkSession.builder\
-#        .appName("HipsterIndex") \
-#        .config("spark.driver.extraClassPath", HAIL_JAR)\
-#        .config("spark.executor.extraClassPath", HAIL_JAR)\
-#        .config("spark.jars", ",".join([HAIL_JAR,VS_JAR]))\
-#        .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer") \
-#        .config("spark.kryo.registrator", "is.hail.kryo.HailKryoRegistrator") \
-#        .getOrCreate()
-#
     vshl.init()
     
     data = hl.import_vcf(os.path.join(PROJECT_DIR, 'data/hipsterIndex/hipster.vcf.bgz'))

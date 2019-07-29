@@ -2,7 +2,6 @@ package au.csiro.variantspark.work.hail
 
 import is.hail.HailContext
 import is.hail.expr._
-import au.csiro.variantspark.hail.adapter.HailFeatureSource
 import org.apache.spark.sql.Row
 import is.hail.table.Table
 import is.hail.expr.types.virtual.TInt64Required
@@ -110,7 +109,7 @@ object HailApiApp {
     println(matrixIR.typ.rowKey)
     
     
-    val rfModel = RFModel.pyApply(matrixIR)
+    val rfModel = RFModel.pyApply(matrixIR, None, true, None)
     rfModel.fitTrees(100, 50)
     println(s"OOB Error  = ${rfModel.oobError}")    
     val importanceTableValue = rfModel.variableImportance
