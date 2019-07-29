@@ -36,7 +36,7 @@ import java.io.FileOutputStream
 import org.apache.hadoop.conf.Configuration
 import au.csiro.variantspark.utils.HdfsPath
 import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
-import au.csiro.variantspark.cli.args.ImportanceOutputArgs
+import au.csiro.variantspark.cli.args.ImportanceArgs
 import au.csiro.variantspark.cli.args.RandomForestArgs
 import au.csiro.variantspark.cli.args.FeatureSourceArgs
 import au.csiro.variantspark.data.ContinuousVariable
@@ -52,7 +52,7 @@ import au.csiro.variantspark.cli.args.ModelOutputArgs
 
 class ImportanceCmd extends ArgsApp with SparkApp 
   with FeatureSourceArgs
-  with ImportanceOutputArgs
+  with ImportanceArgs
   with RandomForestArgs
   with ModelOutputArgs
   with Echoable with Logging with TestArgs {
@@ -79,8 +79,8 @@ class ImportanceCmd extends ArgsApp with SparkApp
   val randomSeed: Long = defRng.nextLong
 
   @Override
-  def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ro", "-om",
-      "target/ch22-model.json", "-omf","json", "-sr", "13", "-v", "-io", """{"separator":":"}""")
+  def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ovn", "raw", "-on", "1988", "-rn", "1000", "-rbs", "100", "-ic", 
+      "-om", "target/ch22-model.json", "-omf","json", "-sr", "13", "-v", "-io", """{"separator":":"}""")
     
   @Override
   def run():Unit = {    
@@ -116,7 +116,9 @@ class ImportanceCmd extends ArgsApp with SparkApp
     val treeBuildingTimer = Timer()
     val rf:RandomForest = new RandomForest(RandomForestParams(oob=rfEstimateOob, seed = randomSeed, maxDepth = rfMaxDepth, minNodeSize = rfMinNodeSize, bootstrap = !rfSampleNoReplacement, 
         subsample = rfSubsampleFraction, 
-        nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction))
+        nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction, 
+        correctImpurity = correctImportance
+    ))
         
     //
     val trainingData = inputData
