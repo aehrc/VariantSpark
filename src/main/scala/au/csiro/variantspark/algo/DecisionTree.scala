@@ -92,6 +92,12 @@ case class VarSplitInfo(val variableIndex: Long, val splitPoint:Double, val gini
         new SubsetInfo(subset.indices.filter(v.at(_) > splitPoint), rightGini, labels, nCategories)
     )
   }
+  def splitPermutated(v:TreeFeature, labels:Array[Int], nCategories:Int, permutationOder:Array[Int])(subset:SubsetInfo):(SubsetInfo, SubsetInfo) = {
+    (
+        new SubsetInfo(subset.indices.filter(i=> v.at(permutationOder(i)) <= splitPoint), leftGini, labels, nCategories),
+        new SubsetInfo(subset.indices.filter(i=> v.at(permutationOder(i)) > splitPoint), rightGini, labels, nCategories)
+    )
+  }
 }
 
 /** Utilized to return a VarSplitInfo object
@@ -306,7 +312,9 @@ case class StdVariableSplitter(val labels:Array[Int], mTryFraction:Double=1.0, v
   * @param mTryFraction:  the fraction of variable to try at each split (default to 1.0)
   * @param randomizeEquality: default to false
   */
-case class AirVariableSplitter(val labels:Array[Int], val permutatedLabels:Array[Int], mTryFraction:Double, val randomizeEquality:Boolean) extends VariableSplitter with Logging  with Prof {
+case class AirVariableSplitter(val labels:Array[Int], val permutationOrder:Array[Int], mTryFraction:Double, val randomizeEquality:Boolean) extends VariableSplitter with Logging  with Prof {
+
+  lazy val permutatedLabels:Array[Int] = permutationOrder.map(labels(_))
 
   val nCategories = labels.max + 1
 
@@ -330,11 +338,13 @@ case class AirVariableSplitter(val labels:Array[Int], val permutatedLabels:Array
     val permutatedSplitter = permutatedSbf.create(typedData)
     
     splits.map { subsetInfo =>
-      if (rng.nextDouble() <= mTryFraction) {
+      val rnd = rng.nextDouble()
+      if ( rnd <= mTryFraction) {
         // check wheter to use informative or permutated labels
-        val permutated = rng.nextBoolean()
-        val selectedSplitter = if (permutated) permutatedSplitter else splitter
-        val splitInfo = selectedSplitter.findSplit(subsetInfo.indices)
+        val permutated = rnd > mTryFraction/2
+        val selectedSplitter = if (!permutated) splitter else permutatedSplitter
+        val indices = if (!permutated) subsetInfo.indices else subsetInfo.indices.map(permutationOrder(_))
+        val splitInfo = selectedSplitter.findSplit(indices)
         if (splitInfo != null && splitInfo.gini < subsetInfo.impurity) VarSplitInfo(typedData.index, splitInfo, permutated) else null
       } else null
     }
@@ -374,7 +384,8 @@ case class AirVariableSplitter(val labels:Array[Int], val permutatedLabels:Array
       val splitByVarIndex = usefulSubsetSplitAndIndex.groupBy(_._1._2.variableIndex)
       varData.flatMap { vi =>
         splitByVarIndex.getOrElse(vi.index, Nil).map { case ((subsetInfo, splitInfo), si) =>
-            (si, splitInfo.split(vi, labels, nCategories)(subsetInfo))
+            if (!splitInfo.isPermutated) (si, splitInfo.split(vi, labels, nCategories)(subsetInfo)) 
+            else (si, splitInfo.splitPermutated(vi, labels, nCategories, permutationOrder)(subsetInfo)) 
         }       
      }     
   }
@@ -384,10 +395,11 @@ case class AirVariableSplitter(val labels:Array[Int], val permutatedLabels:Array
 }
 
 object AirVariableSplitter {
-  def apply(labels:Array[Int], mTryFraction:Double=1.0, randomizeEquality:Boolean = false)(implicit rng:RandomGenerator): AirVariableSplitter = {
-    val permutatedLabels = labels.clone()
-    MathArrays.shuffle(permutatedLabels, rng)
-    AirVariableSplitter(labels, permutatedLabels, mTryFraction, randomizeEquality)
+  def apply(labels:Array[Int], seed:Long, mTryFraction:Double=1.0, randomizeEquality:Boolean = false): AirVariableSplitter = {
+    val rng = new XorShift1024StarRandomGenerator(seed)
+    val permutationOrder = Range(0, labels.length).toArray    
+    MathArrays.shuffle(permutationOrder, rng)
+    AirVariableSplitter(labels, permutationOrder, mTryFraction, randomizeEquality)
   }
 }
 
@@ -684,7 +696,7 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(), val tr
     // manage persistence here - cache the features if not already cached
     withCached(features) { cachedFeatures =>
       
-      val splitter:VariableSplitter = if (params.correctImpurity) AirVariableSplitter(labels, nvarFraction, randomizeEquality = params.randomizeEquality) 
+      val splitter:VariableSplitter = if (params.correctImpurity) AirVariableSplitter(labels, params.seed, nvarFraction, randomizeEquality = params.randomizeEquality) 
                                       else StdVariableSplitter(labels, nvarFraction, randomizeEquality = params.randomizeEquality)
       val subsets = sample.map(splitter.initialSubset).toList
       val rootNodes = withBroadcast(cachedFeatures)(splitter) { br_splitter =>

@@ -17,7 +17,7 @@ class ModelConverter(varIndex:Map[Long, String]) {
       case SplitNode(majorityLabel, size, nodeImpurity, splitVariableIndex,
           splitPoint, impurityReduction,left, right, isPermutated) => {
             Split(majorityLabel, size, nodeImpurity, varIndex.getOrElse(splitVariableIndex, null),
-                splitVariableIndex, splitPoint, impurityReduction,
+                splitVariableIndex, isPermutated, splitPoint, impurityReduction,
                 toExternal(left), toExternal(right))
           }
       case _  => throw new IllegalArgumentException("Unknow node type:" + node)
