@@ -24,6 +24,9 @@ import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 import au.csiro.variantspark.utils.MurMur3Hash
 import org.apache.commons.math3.util.MathArrays
+import scala.collection.mutable.{Map => MutableMap} 
+import scala.collection.mutable.HashMap
+import au.csiro.variantspark.utils.ArraysUtils
 
 /** Allows for a general description of the construct 
   *
@@ -332,18 +335,19 @@ case class AirVariableSplitter(val labels:Array[Int], val permutationOrder:Array
     * @param splits: input an array of the [[au.csiro.variantspark.algo.SubsetInfo]] class
     * @return returns an array [[au.csiro.variantspark.algo.SplitInfo]]
     */
-  def findSplits(typedData:TreeFeature, splits:Array[SubsetInfo], sbf:IndexedSplitterFactory, permutatedSbf:IndexedSplitterFactory)(implicit rng:RandomGenerator):Array[VarSplitInfo] = {
+  def findSplits(typedData:TreeFeature, splits:Array[SubsetInfo], sbf:IndexedSplitterFactory,
+      permutatedSbf:IndexedSplitterFactory, permSubsets:Array[Array[Int]])(implicit rng:RandomGenerator):Array[VarSplitInfo] = {
 
     val splitter = sbf.create(typedData)
     val permutatedSplitter = permutatedSbf.create(typedData)
     
-    splits.map { subsetInfo =>
+    splits.zip(permSubsets).map { case (subsetInfo, permIndexes) =>
       val rnd = rng.nextDouble()
       if ( rnd <= mTryFraction) {
         // check wheter to use informative or permutated labels
         val permutated = rnd > mTryFraction/2
         val selectedSplitter = if (!permutated) splitter else permutatedSplitter
-        val indices = if (!permutated) subsetInfo.indices else subsetInfo.indices.map(permutationOrder(_))
+        val indices = if (!permutated) subsetInfo.indices else permIndexes
         val splitInfo = selectedSplitter.findSplit(indices)
         if (splitInfo != null && splitInfo.gini < subsetInfo.impurity) VarSplitInfo(typedData.index, splitInfo, permutated) else null
       } else null
@@ -368,7 +372,11 @@ case class AirVariableSplitter(val labels:Array[Int], val permutationOrder:Array
     profIt("Local: splitting") {
       val sbf = threadSafeSpliterBuilderFactory(labels)
       val permutatedSbf = threadSafeSpliterBuilderFactory(permutatedLabels)
-      varData.map(vi => findSplits(vi, splits, sbf, permutatedSbf))
+      
+      // TODO: [Performance] maybe there is not need to permutata all the splits up front
+      
+      val permSubsets = splits.map(s => ArraysUtils.permutate(s.indices, permutationOrder))
+      varData.map(vi => findSplits(vi, splits, sbf, permutatedSbf, permSubsets))
     }
   }
   /** Splits the subsets of the RDD and returns a split based on the variable of split index 
