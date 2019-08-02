@@ -23,6 +23,10 @@ import au.csiro.variantspark.utils.defRng
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 import au.csiro.variantspark.utils.MurMur3Hash
+import org.apache.commons.math3.util.MathArrays
+import scala.collection.mutable.{Map => MutableMap} 
+import scala.collection.mutable.HashMap
+import au.csiro.variantspark.utils.ArraysUtils
 
 /** Allows for a general description of the construct 
   *
@@ -74,7 +78,7 @@ case class SubsetInfo(indices:Array[Int], impurity:Double, majorityLabel:Int) {
   * @param leftGini: the gini impurity of the left split of the dataset
   * @param rightGini: the gini impurity of the right split of the dataset 
   */
-case class VarSplitInfo(val variableIndex: Long, val splitPoint:Double, val gini:Double, val leftGini:Double, val rightGini:Double) {
+case class VarSplitInfo(val variableIndex: Long, val splitPoint:Double, val gini:Double, val leftGini:Double, val rightGini:Double, val isPermutated:Boolean) {
 
   /** Creates a list of the subsetInfos for the dataset split
     *
@@ -91,6 +95,12 @@ case class VarSplitInfo(val variableIndex: Long, val splitPoint:Double, val gini
         new SubsetInfo(subset.indices.filter(v.at(_) > splitPoint), rightGini, labels, nCategories)
     )
   }
+  def splitPermutated(v:TreeFeature, labels:Array[Int], nCategories:Int, permutationOder:Array[Int])(subset:SubsetInfo):(SubsetInfo, SubsetInfo) = {
+    (
+        new SubsetInfo(subset.indices.filter(i=> v.at(permutationOder(i)) <= splitPoint), leftGini, labels, nCategories),
+        new SubsetInfo(subset.indices.filter(i=> v.at(permutationOder(i)) > splitPoint), rightGini, labels, nCategories)
+    )
+  }
 }
 
 /** Utilized to return a VarSplitInfo object
@@ -103,7 +113,7 @@ object VarSplitInfo {
     * @param split: input a [[au.csiro.variantspark.algo.SplitInfo]] object
     * @return returns a [[au.csiro.variantspark.algo.VarSplitInfo]] object
     */
-  def apply(variableIndex:Long, split:SplitInfo):VarSplitInfo  = apply(variableIndex, split.splitPoint, split.gini, split.leftGini, split.rightGini)
+  def apply(variableIndex:Long, split:SplitInfo, isPermutated:Boolean):VarSplitInfo  = apply(variableIndex, split.splitPoint, split.gini, split.leftGini, split.rightGini, isPermutated)
 }
 
 /** Defines the trait for the case class [[au.csiro.variantspark.algo.DeterministicMerger]]
@@ -189,6 +199,24 @@ case class RandomizingMergerMurmur3(seed:Long) extends Merger {
   }
 }
 
+
+trait VariableSplitter {
+  
+   def initialSubset(sample:Sample):SubsetInfo
+   
+  /** Splits the subsets of the RDD and returns a split based on the variable of split index 
+    *
+    * @param varData: input an interator containing the dataset and an index
+    * @param subsets: input an array of [[au.csiro.variantspark.algo.SubsetInfo]]
+    * @param bestSplits: input an array of the [[au.csiro.variantspark.algo.VarSplitInfo]]
+    * @return returns a flattened iterator  
+    */
+  def splitSubsets(varData:Iterator[TreeFeature], subsets:Array[SubsetInfo], bestSplits:Array[VarSplitInfo]):Iterator[(Int, (SubsetInfo, SubsetInfo))]
+  def findSplitsForVars(varData:Iterator[TreeFeature], splits:Array[SubsetInfo])(implicit rng:RandomGenerator):Iterator[Array[VarSplitInfo]]
+  def createMerger(seed:Long):Merger
+}
+
+
 /** This is the main split function
   * 
   * 1. specifies the number of categories based on the label input
@@ -199,7 +227,7 @@ case class RandomizingMergerMurmur3(seed:Long) extends Merger {
   * @param mTryFraction:  the fraction of variable to try at each split (default to 1.0)
   * @param randomizeEquality: default to false
   */
-case class VariableSplitter(val labels:Array[Int], mTryFraction:Double=1.0, val randomizeEquality:Boolean = false) extends Logging  with Prof {
+case class StdVariableSplitter(val labels:Array[Int], mTryFraction:Double=1.0, val randomizeEquality:Boolean = false) extends VariableSplitter with Logging  with Prof {
 
   val nCategories = labels.max + 1
 
@@ -249,7 +277,7 @@ case class VariableSplitter(val labels:Array[Int], mTryFraction:Double=1.0, val 
       val result = varData
         .map{vi =>
           val thisVarSplits = findSplits(vi, splits, sbf)
-          thisVarSplits.map(si => if (si != null) VarSplitInfo(vi.index, si) else null).toArray
+          thisVarSplits.map(si => if (si != null) VarSplitInfo(vi.index, si, false) else null).toArray
         }
       result
     }
@@ -275,6 +303,114 @@ case class VariableSplitter(val labels:Array[Int], mTryFraction:Double=1.0, val 
   def createMerger(seed:Long):Merger = if (randomizeEquality) RandomizingMergerMurmur3(seed) else DeterministicMerger()
 
 }
+
+
+/** This is the main split function
+  * 
+  * 1. specifies the number of categories based on the label input
+  * 2. Finds the splits in the data based on the gini value
+  *
+  * @param dataType: specify the basic data type of the variable split on
+  * @param labels: input an array of labels used by the dataset
+  * @param mTryFraction:  the fraction of variable to try at each split (default to 1.0)
+  * @param randomizeEquality: default to false
+  */
+case class AirVariableSplitter(val labels:Array[Int], val permutationOrder:Array[Int], mTryFraction:Double, val randomizeEquality:Boolean) extends VariableSplitter with Logging  with Prof {
+
+  lazy val permutatedLabels:Array[Int] = permutationOrder.map(labels(_))
+
+  val nCategories = labels.max + 1
+
+  def initialSubset(sample:Sample):SubsetInfo = {
+        val currentSet =  sample.indexes
+        val (totalGini, totalLabel) = Gini.giniImpurity(currentSet, labels, nCategories)
+        SubsetInfo(currentSet, totalGini, totalLabel)    
+  }
+  
+  /** Find the splits in the data based on the gini value 
+    * 
+    * Specify the 'data' and 'splits' inputs
+    *
+    * @param data: input the data from the dataset of generic type V
+    * @param splits: input an array of the [[au.csiro.variantspark.algo.SubsetInfo]] class
+    * @return returns an array [[au.csiro.variantspark.algo.SplitInfo]]
+    */
+  def findSplits(typedData:TreeFeature, splits:Array[SubsetInfo], sbf:IndexedSplitterFactory,
+      permutatedSbf:IndexedSplitterFactory, permSubsets:Array[Array[Int]])(implicit rng:RandomGenerator):Array[VarSplitInfo] = {
+
+    val splitter = sbf.create(typedData)
+    val permutatedSplitter = permutatedSbf.create(typedData)
+    
+    splits.zip(permSubsets).map { case (subsetInfo, permIndexes) =>
+      val rnd = rng.nextDouble()
+      if ( rnd <= mTryFraction) {
+        // check wheter to use informative or permutated labels
+        val permutated = rnd > mTryFraction/2
+        val selectedSplitter = if (!permutated) splitter else permutatedSplitter
+        val indices = if (!permutated) subsetInfo.indices else permIndexes
+        val splitInfo = selectedSplitter.findSplit(indices)
+        if (splitInfo != null && splitInfo.gini < subsetInfo.impurity) VarSplitInfo(typedData.index, splitInfo, permutated) else null
+      } else null
+    }
+  }
+
+  def threadSafeSpliterBuilderFactory(labels:Array[Int]): IndexedSplitterFactory = {
+      //TODO: this should be actually passed externally (or at least part of it 
+      // as it essentially determines what kind of tree are we bulding (e.g what is the metric used for impurity)
+      // This should obtain a statefule and somehow compartmenalised impurity calculator
+      // (Try trhead local perhaps here, but creating a new one (per partition) also fits the bill)
+    new DefStatefullIndexedSpliterFactory(GiniImpurity, labels, nCategories)
+  }
+  
+  /** Returns the result of a split based on a variable
+    *
+    * @param varData: input an Iterator of a tuple containing the dataset and indices
+    * @param splits: input an Array of the [[au.csiro.variantspark.algo.SubsetInfo]] class
+    * @return takes the varData and maps the value of the dataset 
+    */
+  def findSplitsForVars(varData:Iterator[TreeFeature], splits:Array[SubsetInfo])(implicit rng:RandomGenerator):Iterator[Array[VarSplitInfo]] = {
+    profIt("Local: splitting") {
+      val sbf = threadSafeSpliterBuilderFactory(labels)
+      val permutatedSbf = threadSafeSpliterBuilderFactory(permutatedLabels)
+      
+      // TODO: [Performance] maybe there is not need to permutata all the splits up front
+      
+      val permSubsets = splits.map(s => ArraysUtils.permutate(s.indices, permutationOrder))
+      varData.map(vi => findSplits(vi, splits, sbf, permutatedSbf, permSubsets))
+    }
+  }
+  /** Splits the subsets of the RDD and returns a split based on the variable of split index 
+    *
+    * @param varData: input an interator containing the dataset and an index
+    * @param subsets: input an array of [[au.csiro.variantspark.algo.SubsetInfo]]
+    * @param bestSplits: input an array of the [[au.csiro.variantspark.algo.VarSplitInfo]]
+    * @return returns a flattened iterator  
+    */
+  def splitSubsets(varData:Iterator[TreeFeature], subsets:Array[SubsetInfo], bestSplits:Array[VarSplitInfo])  = {
+        
+      val usefulSubsetSplitAndIndex = subsets.zip(bestSplits).filter(_._2 != null).zipWithIndex.toList
+      val splitByVarIndex = usefulSubsetSplitAndIndex.groupBy(_._1._2.variableIndex)
+      varData.flatMap { vi =>
+        splitByVarIndex.getOrElse(vi.index, Nil).map { case ((subsetInfo, splitInfo), si) =>
+            if (!splitInfo.isPermutated) (si, splitInfo.split(vi, labels, nCategories)(subsetInfo)) 
+            else (si, splitInfo.splitPermutated(vi, labels, nCategories, permutationOrder)(subsetInfo)) 
+        }       
+     }     
+  }
+
+  def createMerger(seed:Long):Merger = if (randomizeEquality) RandomizingMergerMurmur3(seed) else DeterministicMerger()
+
+}
+
+object AirVariableSplitter {
+  def apply(labels:Array[Int], seed:Long, mTryFraction:Double=1.0, randomizeEquality:Boolean = false): AirVariableSplitter = {
+    val rng = new XorShift1024StarRandomGenerator(seed)
+    val permutationOrder = Range(0, labels.length).toArray    
+    MathArrays.shuffle(permutationOrder, rng)
+    AirVariableSplitter(labels, permutationOrder, mTryFraction, randomizeEquality)
+  }
+}
+
 
 
 /** Object utilized with the DecisionTreeModel class
@@ -359,7 +495,7 @@ object LeafNode {
 
 @SerialVersionUID(1l)
 case class SplitNode(override val majorityLabel: Int, override val size: Int,override val  nodeImpurity: Double, splitVariableIndex: Long, splitPoint: Double,
-    impurityReduction: Double,left: DecisionTreeNode, right: DecisionTreeNode) extends DecisionTreeNode(majorityLabel,size,nodeImpurity) {
+    impurityReduction: Double,left: DecisionTreeNode, right: DecisionTreeNode, isPermutated:Boolean = false) extends DecisionTreeNode(majorityLabel,size,nodeImpurity) {
 
   val isLeaf = false
 
@@ -374,13 +510,16 @@ case class SplitNode(override val majorityLabel: Int, override val size: Int,ove
 
   def childFor(value:Double):DecisionTreeNode =  if (value <= splitPoint) left else right
 
-  def impurityDelta  = impurityContribution - (left.impurityContribution + right.impurityContribution)
+  def impurityDelta:Double = {
+    val deltaAbs = impurityContribution - (left.impurityContribution + right.impurityContribution)
+    if (isPermutated) - deltaAbs else deltaAbs
+  }
   def toStream:Stream[DecisionTreeNode] = this #:: left.toStream #::: right.toStream
 }
 
 object SplitNode {
   def apply(subset:SubsetInfo, split:VarSplitInfo, left: DecisionTreeNode, right: DecisionTreeNode): SplitNode = apply(subset.majorityLabel, subset.length,  subset.impurity
-                 ,split.variableIndex, split.splitPoint, subset.impurity - split.gini, left, right)
+                 ,split.variableIndex, split.splitPoint, subset.impurity - split.gini, left, right, split.isPermutated)
 }
 
 @SerialVersionUID(1l)
@@ -490,7 +629,9 @@ case class DecisionTreeParams(
     val maxDepth:Int = Int.MaxValue,
     val minNodeSize:Int = 1,
     val seed:Long = defRng.nextLong,
-    val randomizeEquality:Boolean = false) {
+    val randomizeEquality:Boolean = false, 
+    val correctImpurity: Boolean = false, 
+    val airRandomSeed:Long = 0L) {
 
   override def toString = ToStringBuilder.reflectionToString(this)
 }
@@ -564,7 +705,8 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(), val tr
     // manage persistence here - cache the features if not already cached
     withCached(features) { cachedFeatures =>
       
-      val splitter = VariableSplitter(labels, nvarFraction, randomizeEquality = params.randomizeEquality)
+      val splitter:VariableSplitter = if (params.correctImpurity) AirVariableSplitter(labels, if (params.airRandomSeed != 0L) params.airRandomSeed else params.seed, nvarFraction, randomizeEquality = params.randomizeEquality) 
+                                      else StdVariableSplitter(labels, nvarFraction, randomizeEquality = params.randomizeEquality)
       val subsets = sample.map(splitter.initialSubset).toList
       val rootNodes = withBroadcast(cachedFeatures)(splitter) { br_splitter =>
         buildSplit(cachedFeatures, subsets, br_splitter, 0)
