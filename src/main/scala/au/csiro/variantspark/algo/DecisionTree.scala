@@ -630,7 +630,8 @@ case class DecisionTreeParams(
     val minNodeSize:Int = 1,
     val seed:Long = defRng.nextLong,
     val randomizeEquality:Boolean = false, 
-    val correctImpurity: Boolean = false) {
+    val correctImpurity: Boolean = false, 
+    val airRandomSeed:Long = 0L) {
 
   override def toString = ToStringBuilder.reflectionToString(this)
 }
@@ -704,7 +705,7 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(), val tr
     // manage persistence here - cache the features if not already cached
     withCached(features) { cachedFeatures =>
       
-      val splitter:VariableSplitter = if (params.correctImpurity) AirVariableSplitter(labels, params.seed, nvarFraction, randomizeEquality = params.randomizeEquality) 
+      val splitter:VariableSplitter = if (params.correctImpurity) AirVariableSplitter(labels, if (params.airRandomSeed != 0L) params.airRandomSeed else params.seed, nvarFraction, randomizeEquality = params.randomizeEquality) 
                                       else StdVariableSplitter(labels, nvarFraction, randomizeEquality = params.randomizeEquality)
       val subsets = sample.map(splitter.initialSubset).toList
       val rootNodes = withBroadcast(cachedFeatures)(splitter) { br_splitter =>

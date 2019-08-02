@@ -117,7 +117,8 @@ class ImportanceCmd extends ArgsApp with SparkApp
     val rf:RandomForest = new RandomForest(RandomForestParams(oob=rfEstimateOob, seed = randomSeed, maxDepth = rfMaxDepth, minNodeSize = rfMinNodeSize, bootstrap = !rfSampleNoReplacement, 
         subsample = rfSubsampleFraction, 
         nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction, 
-        correctImpurity = correctImportance
+        correctImpurity = correctImportance, 
+        airRandomSeed = airRandomSeed
     ))
         
     //

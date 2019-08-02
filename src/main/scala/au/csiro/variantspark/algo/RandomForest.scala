@@ -142,7 +142,8 @@ case class RandomForestParams(
     seed:Long =  defRng.nextLong,
     maxDepth:Int = Int.MaxValue,
     minNodeSize:Int = 1, 
-    correctImpurity:Boolean = false
+    correctImpurity:Boolean = false, 
+    airRandomSeed:Long = 0L
 ) {
   def resolveDefaults(nSamples:Int, nVariables:Int):RandomForestParams = {
     RandomForestParams(
@@ -154,7 +155,8 @@ case class RandomForestParams(
         seed = seed,
         maxDepth = maxDepth,
         minNodeSize = minNodeSize, 
-        correctImpurity = correctImpurity
+        correctImpurity = correctImpurity, 
+        airRandomSeed = airRandomSeed
     )
   }
   def toDecisionTreeParams(seed:Long): DecisionTreeParams = { 
@@ -163,7 +165,8 @@ case class RandomForestParams(
         randomizeEquality = randomizeEquality, 
         maxDepth = maxDepth, 
         minNodeSize = minNodeSize, 
-        correctImpurity = correctImpurity
+        correctImpurity = correctImpurity, 
+        airRandomSeed = airRandomSeed
     )
   }
   override def toString = ToStringBuilder.reflectionToString(this)

@@ -15,6 +15,9 @@ trait ImportanceArgs {
       aliases=Array("--importance-corrected"))
   val correctImportance:Boolean = false
 
+  @Option(name="-isr", required=false, usage="The radom seed used to permutate samples for AIR. Use 0 to use the global random seed (def=0)",
+      aliases=Array("--importance-random-seed"))
+  val airRandomSeed:Long = 0L
 
   @Option(name="-oc", required=false, usage="The number of output paritions. Use `0` for spark default (def=0)",
       aliases=Array("--output-partitions"))
