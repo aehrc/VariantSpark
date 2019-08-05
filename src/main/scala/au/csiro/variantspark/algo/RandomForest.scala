@@ -180,9 +180,12 @@ object RandomForestParams {
       subsample:Option[Double] = None,
       seed:Option[Long] =  None,
       maxDepth:Option[Int] = None,
-      minNodeSize:Option[Int] = None    
+      minNodeSize:Option[Int] = None, 
+      correctImpurity:Option[Boolean] = None,
+      airRandomSeed:Option[Long] = None
     ):RandomForestParams = RandomForestParams(oob.getOrElse(true), mTryFraction.getOrElse( Double.NaN), bootstrap.getOrElse(true), 
-          subsample.getOrElse(Double.NaN), true, seed.getOrElse(defRng.nextLong), maxDepth.getOrElse(Int.MaxValue), minNodeSize.getOrElse(1))
+          subsample.getOrElse(Double.NaN), true, seed.getOrElse(defRng.nextLong), maxDepth.getOrElse(Int.MaxValue), minNodeSize.getOrElse(1),
+          correctImpurity.getOrElse(false), airRandomSeed.getOrElse(0L))
 }
 
 
