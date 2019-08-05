@@ -51,10 +51,10 @@ import org.apache.spark.sql.SaveMode
 import au.csiro.variantspark.algo.To100ImportanceNormalizer
 import au.csiro.variantspark.algo.RawVarImportanceNormalizer
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
-import au.csiro.variantspark.cli.args.ImportanceOutputArgs
+import au.csiro.variantspark.cli.args.ImportanceArgs
 
 class NullImportanceCmd extends ArgsApp with SparkApp with FeatureSourceArgs 
-  with ImportanceOutputArgs
+  with ImportanceArgs
   with Echoable with Logging with TestArgs {
   
   @Option(name="-pn", required=false, usage="Number of permutations to generate (def = 30)" 

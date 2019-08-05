@@ -32,7 +32,7 @@ class ModelConverterTest {
         
     val expectedRepresntation  = Forest(None, Seq(
         Tree(
-            Split(1, 4, 0.6, null, 0L, 1.0, 0.3,
+            Split(1, 4, 0.6, null, 0L, false, 1.0, 0.3,
               Leaf(0, 1, 0.0), 
               Leaf(3, 1, 0.1)
             ),
@@ -48,7 +48,7 @@ class ModelConverterTest {
   def testConvertsSimpleModelCorrectlyWithExistingMapping() {
     val expectedRepresntation  = Forest(None, Seq(
         Tree(
-            Split(1, 4, 0.6, "VAR_0", 0L, 1.0, 0.3,
+            Split(1, 4, 0.6, "VAR_0", 0L, false, 1.0, 0.3,
               Leaf(0, 1, 0.0), 
               Leaf(3, 1, 0.1)
             ),
