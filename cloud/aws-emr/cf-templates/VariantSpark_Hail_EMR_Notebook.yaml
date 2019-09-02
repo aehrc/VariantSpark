@@ -1,0 +1,221 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Variant Spark CF template to spin EMR clusters with Jupyter Notebook.
+Mappings:
+  Constants:
+    GitHub:
+      Repo: "https://github.com/aehrc/VariantSpark"
+      Version: "master"
+Parameters:
+  # Hardware Group
+  MasterNodePricing:
+    Description: Choose the pricing option for master node EC2 instance with spot pricing or on-demand pricing. Spot is cheaper but the process may fail halfway through.
+    Type: String
+    Default: "Spot"
+    AllowedValues:
+      - Spot
+      - OnDemand
+  SpotNumCPU:
+    Description: Number of Spot CPUs for core instances. It is not the number of instances. Instances are AWS r4 EC2.
+    Type: Number
+    Default: "32"
+  OnDemandNumCPU:
+    Description: Number of OnDemand CPUs for core instances. It is not the number of instances. Instances are AWS r4 EC2.
+    Type: Number
+    Default: "0"
+  # Security:
+  EC2KeyPair:
+    Description: EC2 key to ssh into your cluster nodes as "hadoop" user. How to create EC2 KeyPair -> https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html
+    Type: AWS::EC2::KeyPair::KeyName
+  SecurityGroup:
+    Description: The security group needs to allow traffic from your computer's IP.
+    Type: AWS::EC2::SecurityGroup::Id
+  Subnet:
+    Description: Public subnet in your VPC. You may set it to your default Subnet.
+    Type: AWS::EC2::Subnet::Id
+  #Jupyter Notebook
+  NotebookDir:
+    Description: S3 path to notebook directory for the Jupyter notebook (no slash at the end).
+    Type: String
+  #General EMR options
+  LogPath:
+    Description: S3 path to store EMR and VariantSpark logs
+    Type: String
+  terminationProtected:
+    Description: Is the cluster to have termination protection enabled. If you set it to true, deleting this stack will not terminate the EMR cluster. You should manually terminate the cluster.
+    Type: String
+    AllowedValues:
+    - 'true'
+    - 'false'
+    Default: 'false'
+    ConstraintDescription: Boolean
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: Access and Security (if needed)
+        Parameters:
+          - EC2KeyPair
+          - SecurityGroup
+          - Subnet
+      - Label:
+          default: Jupyter notebook parameters
+        Parameters:
+          - NotebookDir
+      - Label:
+          default: Cluster size and pricing
+        Parameters:
+          - MasterNodePricing
+          - SpotNumCPU
+          - OnDemandNumCPU
+      - Label:
+          default: General
+        Parameters:
+          - LogPath
+          - terminationProtected
+Conditions:
+  SpotMaster: !Equals [ !Ref MasterNodePricing, Spot ]
+  OnDemandMaster: !Equals [ !Ref MasterNodePricing, OnDemand ]
+Resources:
+  EMRClusterV5:
+    Type: AWS::EMR::Cluster
+    Properties:
+      Instances:
+        AdditionalMasterSecurityGroups:
+          - Ref: SecurityGroup
+        AdditionalSlaveSecurityGroups:
+          - Ref: SecurityGroup
+        Ec2KeyName:
+          Ref: EC2KeyPair
+        Ec2SubnetId:
+          Ref: Subnet
+        CoreInstanceFleet:
+          InstanceTypeConfigs:
+          - InstanceType: "r4.2xlarge"
+            WeightedCapacity: 8
+            EbsConfiguration:
+              EbsBlockDeviceConfigs:
+                - VolumeSpecification:
+                    SizeInGB: 64
+                    VolumeType: 'gp2'
+                  VolumesPerInstance: 1
+          - InstanceType: "r4.4xlarge"
+            WeightedCapacity: 16
+            EbsConfiguration:
+              EbsBlockDeviceConfigs:
+                - VolumeSpecification:
+                    SizeInGB: 128
+                    VolumeType: 'gp2'
+                  VolumesPerInstance: 1
+          - InstanceType: "r4.8xlarge"
+            WeightedCapacity: 32
+            EbsConfiguration:
+              EbsBlockDeviceConfigs:
+                - VolumeSpecification:
+                    SizeInGB: 256
+                    VolumeType: 'gp2'
+                  VolumesPerInstance: 1
+          - InstanceType: "r4.16xlarge"
+            WeightedCapacity: 64
+            EbsConfiguration:
+              EbsBlockDeviceConfigs:
+                - VolumeSpecification:
+                    SizeInGB: 512
+                    VolumeType: 'gp2'
+                  VolumesPerInstance: 1
+          Name: "Core fleet"
+          TargetOnDemandCapacity:
+            !Ref OnDemandNumCPU
+          TargetSpotCapacity:
+            !Ref SpotNumCPU
+        MasterInstanceFleet:
+          InstanceTypeConfigs:
+          - InstanceType: "r4.xlarge"
+          Name: "Master fleet"
+          TargetOnDemandCapacity:
+            !If [OnDemandMaster, 1, 0]
+          TargetSpotCapacity:
+            !If [SpotMaster, 1, 0]
+        TerminationProtected:
+          Ref: terminationProtected
+      BootstrapActions:
+      - Name: Install Jupyter
+        ScriptBootstrapAction:
+          Args:
+            - "--path-prefix"
+            - !Sub
+              - "${repo}/raw/${version}"
+              - {repo: !FindInMap [Constants, GitHub, Repo], version: !FindInMap [Constants, GitHub, Version]}
+            - "--bootstrap-file"
+            - "/cloud/aws-emr/bootstrap/install-jupyter.sh"
+            - "--"
+            - "--notebookPath"
+            - Ref: NotebookDir
+          Path: "s3://variant-spark/s3-bootstrap.sh"
+      - Name: Install Hail
+        ScriptBootstrapAction:
+          Args:
+            - "--path-prefix"
+            - !Sub
+              - "${repo}/raw/${version}"
+              - {repo: !FindInMap [Constants, GitHub, Repo], version: !FindInMap [Constants, GitHub, Version]}
+            - "--bootstrap-file"
+            - "/cloud/aws-emr/bootstrap/install-hail.sh"
+            - "--"
+            - "--input-path"
+            - "s3://variant-spark/HailJupyter/hail/0.1_2.2.1"
+            - "--hail-version"
+            - "0.1"
+            - "--spark-version"
+            - "2.2.1"
+          Path: "s3://variant-spark/s3-bootstrap.sh"
+      Configurations:
+      - Classification: emrfs-site
+        ConfigurationProperties:
+          fs.s3.maxConnections: '500'
+      - Classification: spark
+        ConfigurationProperties:
+          maximizeResourceAllocation: 'true'
+      - Classification: spark-defaults
+        ConfigurationProperties:
+          spark.sql.files.openCostInBytes: '1099511627776'
+          spark.hadoop.io.compression.codecs: 'org.apache.hadoop.io.compress.DefaultCodec,is.hail.io.compress.BGzipCodec,org.apache.hadoop.io.compress.GzipCodec'
+          spark.hadoop.parquet.block.size: '1099511627776'
+          spark.executor.extraClassPath: '/usr/lib/hadoop-lzo/lib/*:/usr/lib/hadoop/hadoop-aws.jar:/usr/share/aws/aws-java-sdk/*:/usr/share/aws/emr/emrfs/conf:/usr/share/aws/emr/emrfs/lib/*:/usr/share/aws/emr/emrfs/auxlib/*:/usr/share/aws/emr/security/conf:/usr/share/aws/emr/security/lib/*:/home/hadoop/hail-all-spark.jar'
+          spark.locality.wait: '10s'
+          spark.driver.extraClassPath: '/usr/lib/hadoop-lzo/lib/*:/usr/lib/hadoop/hadoop-aws.jar:/usr/share/aws/aws-java-sdk/*:/usr/share/aws/emr/emrfs/conf:/usr/share/aws/emr/emrfs/lib/*:/usr/share/aws/emr/emrfs/auxlib/*:/usr/share/aws/emr/security/conf:/usr/share/aws/emr/security/lib/*:/home/hadoop/hail-all-spark.jar'
+          spark.serializer: 'org.apache.spark.serializer.KryoSerializer'
+          spark.sql.files.maxPartitionBytes: '1099511627776'
+          spark.dynamicAllocation.enabled: 'false'
+      Applications:
+      - Name: Ganglia
+      - Name: Spark
+      Name:
+        !Ref AWS::StackName
+      JobFlowRole: "EMR_EC2_DefaultRole"
+      ServiceRole: "EMR_DefaultRole"
+      ReleaseLabel: "emr-5.12.0"
+      LogUri:
+        Ref: LogPath
+      VisibleToAllUsers: true
+      Tags:
+      - Key: Name
+        Value:
+          Fn::Join:
+          - ''
+          - - emr-instance-
+            - Ref: AWS::StackName
+            - ''
+      - Key: Stack ID
+        Value:
+          Ref: AWS::StackName
+Outputs:
+  ClusterID:
+    Description: "EMR Cluster ID"
+    Value: !Ref "EMRClusterV5"
+  JupyterURL:
+    Description: Jupyter Notebook URL
+    Value: !Sub "http://${EMRClusterV5.MasterPublicDNS}:8888"
+  sshMasterNode:
+    Description: ssh to the master node of cluster
+    Value: !Sub "ssh -i \"${EC2KeyPair}.pem\" hadoop@${EMRClusterV5.MasterPublicDNS}"

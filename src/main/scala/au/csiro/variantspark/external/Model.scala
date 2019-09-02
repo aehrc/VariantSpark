@@ -15,9 +15,9 @@ case class Leaf(val majorityLabel: Int, val  size: Int, val  impurity: Double) e
 
 @SerialVersionUID(1l)
 case class Split(val majorityLabel: Int, val size: Int, val  impurity: Double, 
-    splitVar:String, splitVarIndex: Long, splitPoint: Double,
+    splitVar:String, splitVarIndex: Long, permutated:Boolean, splitPoint: Double,
     impurityReduction: Double,left: Node, right: Node) extends Node with  Serializable
-
+    
 @SerialVersionUID(1l)
 case class OOBInfo(val oobSamples:Array[Int], val oobPredictions:Array[Int]) extends Object with Serializable
     

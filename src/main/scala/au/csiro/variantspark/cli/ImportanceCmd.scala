@@ -36,7 +36,8 @@ import java.io.FileOutputStream
 import org.apache.hadoop.conf.Configuration
 import au.csiro.variantspark.utils.HdfsPath
 import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
-import au.csiro.variantspark.cli.args.ImportanceOutputArgs
+import au.csiro.variantspark.cli.args.ImportanceArgs
+import au.csiro.variantspark.cli.args.RandomForestArgs
 import au.csiro.variantspark.cli.args.FeatureSourceArgs
 import au.csiro.variantspark.data.ContinuousVariable
 import au.csiro.variantspark.algo.RandomForest
@@ -51,7 +52,8 @@ import au.csiro.variantspark.cli.args.ModelOutputArgs
 
 class ImportanceCmd extends ArgsApp with SparkApp 
   with FeatureSourceArgs
-  with ImportanceOutputArgs
+  with ImportanceArgs
+  with RandomForestArgs
   with ModelOutputArgs
   with Echoable with Logging with TestArgs {
   
@@ -72,42 +74,13 @@ class ImportanceCmd extends ArgsApp with SparkApp
   @Option(name="-od", required=false, usage="Include important variables data in output file (def=no)"
         , aliases=Array("--output-include-data") )
   val includeData = false
-    
-  // random forrest options
   
-  @Option(name="-rn", required=false, usage="RandomForest: number of trees to build (def=20)", aliases=Array("--rf-n-trees") )
-  val nTrees:Int = 20
- 
-  @Option(name="-rmt", required=false, usage="RandomForest: mTry(def=sqrt(<num-vars>))" , aliases=Array("--rf-mtry"))
-  val rfMTry:Long = -1L
-  
-  @Option(name="-rmtf", required=false, usage="RandomForest: mTry fraction" , aliases=Array("--rf-mtry-fraction"))
-  val rfMTryFraction:Double = Double.NaN
-  
-  @Option(name="-ro", required=false, usage="RandomForest: estimate oob (def=no)" , aliases=Array("--rf-oob"))
-  val rfEstimateOob:Boolean = false
-
-  
-  @Option(name="-rre", required=false, usage="RandomForest: [DEPRICATED] randomize equal gini recursion is on by default now" , aliases=Array("--rf-randomize-equal"))
-  val rfRandomizeEqual:Boolean = false
-
-  
-  @Option(name="-rsf", required=false, usage="RandomForest: sample with no replacement (def=1.0 for bootstrap  else 0.6666)" , aliases=Array("--rf-subsample-fraction"))
-  val rfSubsampleFraction:Double = Double.NaN
-  
-  @Option(name="-rsn", required=false, usage="RandomForest: sample with no replacement (def=false -- bootstrap)" , aliases=Array("--rf-sample-no-replacement"))
-  val rfSampleNoReplacement:Boolean = false
-
-  @Option(name="-rbs", required=false, usage="RandomForest: batch size (def=10))" 
-      , aliases=Array("--rf-batch-size"))
-  val rfBatchSize:Int = 10
-
   @Option(name="-sr", required=false, usage="Random seed to use (def=<random>)", aliases=Array("--seed"))
   val randomSeed: Long = defRng.nextLong
-   
+
   @Override
-  def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ro", "-om",
-      "target/ch22-model.json", "-omf","json", "-sr", "13", "-v", "-io", """{"separator":":"}""")
+  def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ovn", "raw", "-on", "1988", "-rn", "1000", "-rbs", "100", "-ic", 
+      "-om", "target/ch22-model.json", "-omf","json", "-sr", "13", "-v", "-io", """{"separator":":"}""")
     
   @Override
   def run():Unit = {    
@@ -124,6 +97,7 @@ class ImportanceCmd extends ArgsApp with SparkApp
   
     val inputData = DefTreeRepresentationFactory.createRepresentation(featureSource.features.zipWithIndex()).cache() 
     val totalVariables = inputData.count()
+    
     val variablePreview = inputData.map(_.label).take(defaultPreviewSize).toList
     echo(s"Loaded variables: ${dumpListHead(variablePreview, totalVariables)}, took: ${dataLoadingTimer.durationInSec}")
     echoDataPreview() 
@@ -140,10 +114,12 @@ class ImportanceCmd extends ArgsApp with SparkApp
     echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")  
     echo(s"Random seed is: ${randomSeed}")
     val treeBuildingTimer = Timer()
-    val rf:RandomForest = new RandomForest(RandomForestParams(oob=rfEstimateOob, seed = randomSeed, bootstrap = !rfSampleNoReplacement, 
+    val rf:RandomForest = new RandomForest(RandomForestParams(oob=rfEstimateOob, seed = randomSeed, maxDepth = rfMaxDepth, minNodeSize = rfMinNodeSize, bootstrap = !rfSampleNoReplacement, 
         subsample = rfSubsampleFraction, 
-        nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction))
-        
+        nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction, 
+        correctImpurity = correctImportance, 
+        airRandomSeed = airRandomSeed
+    ))
         
     //
     val trainingData = inputData

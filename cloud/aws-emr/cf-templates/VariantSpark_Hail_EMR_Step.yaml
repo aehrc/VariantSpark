@@ -1,0 +1,322 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Variant Spark CF template to spin EMR cluster to process a single VariantSpark job.
+Mappings:
+  Constants:
+    GitHub:
+      Repo: "https://github.com/aehrc/VariantSpark"
+      Version: "master"
+Parameters:
+  # Random-Forest Parameters Group
+  NumTree:
+    Description: (-rn) Number of trees to built in the forest.
+    Type: Number
+    Default: "1000"
+  mtryFraction:
+    Description: (-rmtf) mtry as a fraction of number of variable in the input file. mtry is the umber of randomly selected variable to test at each node of each tree.
+    Type: Number
+    Default: "0.1"
+  #VariantSpark Input Parameters Group
+  InputType:
+    Description: (-it) It can be VCF or CSV. The VCF file can be compressed using bzip2 (.vcf.bz2) or bgzip (.vcf.bgz). For the CSV file, the first row includes sample names and the first column includes variable names. All variable should be ordinal, descreet and starting from 0 like 0,1,2,3,...,n where n is a small number. If the input is VCF, VariantSpark translate 0/0, 0/1 and 1/1 genotypes to 0, 1 and 2 respectively and treat them as descreet ordinal values. VariantSpark ignore phasing information so 0/1, 1/0, 0|1 and 1|0 genotypes are all translated to 1. VariantSpark also ignore multiallelic genotype so 0/1, 0/3 and 2/3 genotypes are translated to 1, 1 and 2 respectively. So each variable can take only 3 different values (0,1,2).
+    Type: String
+    Default: "vcf"
+    AllowedValues:
+      - vcf
+      - csv
+  InputFile:
+    Description: (-if) S3 path to the input file. Can be in CSV or VCF format. See InputType parameter for more details.
+    Type: String
+    Default: "s3://variant-spark/datasets/Hipster2Small/Small.558938.vcf.bz2"
+  MaxValue:
+    Description: (-ivo) If the input is VCF leave it to default (3). See InputType parameter for more details. In case the input file is CSV, there could be a variable that takes more than 3 values. This parameter should be set to the maximum number of values a variable can take. For example if it is set to 6 (0,1,2,3,4,5) none of the variable can have value greater than 5.
+    Type: Number
+    Default: "3"
+  Biallelic:
+    Description: (-ivb) If the input file is VCF and multiallelic site are broken into biallelic site (two or more variants have the same chr-pos) you should set this option to True. When it is set to True the output file also include alternate allele for each variants. By default the output file only include chr-pos for each variant.
+    Type: String
+    Default: "True"
+    AllowedValues:
+      - "False"
+      - "True"
+  #VariantSpark Phenotype Parameters Group
+  PhenotypeFile:
+    Description: (-ff) S3 path to phenotype file. It should be in CSV format. The first row is header, the first column should be sample names.
+    Type: String
+    Default: "s3://variant-spark/datasets/Hipster2Small/Hipster.csv"
+  PhenotypeColumn:
+    Description: (-fc) The column name in the phenotype file that hold the phenotype value. Phenotype is binary and can be 0 (a control) or 1 (a case).
+    Type: String
+    Default: "Hipster"
+  #VariantSpark Output Parameters Group
+  OutputFile:
+    Description: (-of) S3 path to the output file (importance score)
+    Type: String
+  #ModelType:
+  #  Description: (??) The constructed Random-Forest model can be stored in java and json format. The json output is not optimised and may take a long time to produce. the java model file is only provided for programatic access.
+  #  Type: String
+  #  Default: "java"
+  #  AllowedValues:
+  #    - java
+  #    - json
+  ModelFile:
+    Description: (-om) S3 path to the file. The program saves produced Random-Forest model in this file. # For the file format see ModelType parameter
+    Type: String
+  #VariantSpark Other Parameters Group
+  BatchSize:
+    Description: (-rbs) Number of trees to be built in parallel
+    Type: Number
+    Default: "100"
+  OOB:
+    Description: (-ro) Compute out-of-bag error rate for each batch of tree and the whole forest. If set to true slowdown the process.
+    Type: String
+    Default: "False"
+    AllowedValues:
+      - "False"
+      - "True"
+  Seed:
+    Description: (-sr) Random seed to be able to replicate the same process.
+    Type: Number
+    Default: "13"
+  # Hardware Group
+  MasterNodePricing:
+    Description: Choose the pricing option for master node EC2 instance with spot pricing or on-demand pricing. Spot is cheaper but the process may fail halfway through.
+    Type: String
+    Default: "Spot"
+    AllowedValues:
+      - Spot
+      - OnDemand
+  SpotNumCPU:
+    Description: Number of Spot CPUs for core instances. It is not the number of instances. Instances are AWS r4 EC2.
+    Type: Number
+    Default: "32"
+  OnDemandNumCPU:
+    Description: Number of OnDemand CPUs for core instances. It is not the number of instances. Instances are AWS r4 EC2.
+    Type: Number
+    Default: "0"
+  #General EMR options
+  LogPath:
+    Description: S3 path to store EMR and VariantSpark logs
+    Type: String
+  terminationProtected:
+    Description: Is the cluster to have termination protection enabled. If you set it to true, deleting this stack will not terminate the EMR cluster. You should manually terminate the cluster.
+    Type: String
+    AllowedValues:
+    - 'true'
+    - 'false'
+    Default: 'false'
+    ConstraintDescription: Boolean
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: Random-Forest parameters
+        Parameters:
+          - NumTree
+          - mtryFraction
+      - Label:
+          default: VariantSpark input data
+        Parameters:
+          - InputType
+          - InputFile
+          - MaxValue
+          - Biallelic
+      - Label:
+          default: VariantSpark phenotype data
+        Parameters:
+          - PhenotypeFile
+          - PhenotypeColumn
+      - Label:
+          default: VariantSpark output data
+        Parameters:
+          - OutputFile
+          #- ModelType
+          - ModelFile
+      - Label:
+          default: VariantSpark others parameters
+        Parameters:
+          - BatchSize
+          - OOB
+          - Seed
+      - Label:
+          default: Cluster size and pricing
+        Parameters:
+          - MasterNodePricing
+          - SpotNumCPU
+          - OnDemandNumCPU
+      - Label:
+          default: General
+        Parameters:
+          - LogPath
+          - terminationProtected
+Conditions:
+  SpotMaster: !Equals [ !Ref MasterNodePricing, Spot ]
+  OnDemandMaster: !Equals [ !Ref MasterNodePricing, OnDemand ]
+  IVB: !Equals [ !Ref Biallelic, "True" ]
+  RO: !Equals [ !Ref OOB, "True" ]
+Resources:
+  EMRClusterV5:
+    Type: AWS::EMR::Cluster
+    Properties:
+      Instances:
+        KeepJobFlowAliveWhenNoSteps: "false"
+        CoreInstanceFleet:
+          InstanceTypeConfigs:
+          - InstanceType: "r4.2xlarge"
+            WeightedCapacity: 8
+            EbsConfiguration:
+              EbsBlockDeviceConfigs:
+                - VolumeSpecification:
+                    SizeInGB: 64
+                    VolumeType: 'gp2'
+                  VolumesPerInstance: 1
+          - InstanceType: "r4.4xlarge"
+            WeightedCapacity: 16
+            EbsConfiguration:
+              EbsBlockDeviceConfigs:
+                - VolumeSpecification:
+                    SizeInGB: 128
+                    VolumeType: 'gp2'
+                  VolumesPerInstance: 1
+          - InstanceType: "r4.8xlarge"
+            WeightedCapacity: 32
+            EbsConfiguration:
+              EbsBlockDeviceConfigs:
+                - VolumeSpecification:
+                    SizeInGB: 256
+                    VolumeType: 'gp2'
+                  VolumesPerInstance: 1
+          - InstanceType: "r4.16xlarge"
+            WeightedCapacity: 64
+            EbsConfiguration:
+              EbsBlockDeviceConfigs:
+                - VolumeSpecification:
+                    SizeInGB: 512
+                    VolumeType: 'gp2'
+                  VolumesPerInstance: 1
+          Name: "Task fleet"
+          TargetOnDemandCapacity:
+            !Ref OnDemandNumCPU
+          TargetSpotCapacity:
+            !Ref SpotNumCPU
+        MasterInstanceFleet:
+          InstanceTypeConfigs:
+          - InstanceType: "r4.xlarge"
+          Name: "Master fleet"
+          TargetOnDemandCapacity:
+            !If [OnDemandMaster, 1, 0]
+          TargetSpotCapacity:
+            !If [SpotMaster, 1, 0]
+        TerminationProtected:
+          Ref: terminationProtected
+      BootstrapActions:
+      - Name: Install Jupyter
+        ScriptBootstrapAction:
+            - "--path-prefix"
+            - !Sub
+              - "${repo}/raw/${version}"
+              - {repo: !FindInMap [Constants, GitHub, Repo], version: !FindInMap [Constants, GitHub, Version]}
+            - "--bootstrap-file"
+            - "/cloud/aws-emr/bootstrap/install-jupyter-noNotebook.sh"
+            - "--"
+          Path: "s3://variant-spark/s3-bootstrap.sh"
+      - Name: Install Hail
+        ScriptBootstrapAction:
+          Args:
+            - "--path-prefix"
+            - !Sub
+              - "${repo}/raw/${version}"
+              - {repo: !FindInMap [Constants, GitHub, Repo], version: !FindInMap [Constants, GitHub, Version]}
+            - "--bootstrap-file"
+            - "/cloud/aws-emr/bootstrap/install-hail.sh"
+            - "--"
+            - "--input-path"
+            - "s3://variant-spark/HailJupyter/hail/0.1_2.2.1"
+            - "--hail-version"
+            - "0.1"
+            - "--spark-version"
+            - "2.2.1"
+          Path: "s3://variant-spark/s3-bootstrap.sh"
+      Configurations:
+      - Classification: emrfs-site
+        ConfigurationProperties:
+          fs.s3.maxConnections: '500'
+      - Classification: spark
+        ConfigurationProperties:
+          maximizeResourceAllocation: 'true'
+      - Classification: spark-defaults
+        ConfigurationProperties:
+          spark.sql.files.openCostInBytes: '1099511627776'
+          spark.hadoop.io.compression.codecs: 'org.apache.hadoop.io.compress.DefaultCodec,is.hail.io.compress.BGzipCodec,org.apache.hadoop.io.compress.GzipCodec'
+          spark.hadoop.parquet.block.size: '1099511627776'
+          spark.executor.extraClassPath: '/usr/lib/hadoop-lzo/lib/*:/usr/lib/hadoop/hadoop-aws.jar:/usr/share/aws/aws-java-sdk/*:/usr/share/aws/emr/emrfs/conf:/usr/share/aws/emr/emrfs/lib/*:/usr/share/aws/emr/emrfs/auxlib/*:/usr/share/aws/emr/security/conf:/usr/share/aws/emr/security/lib/*:/home/hadoop/hail-all-spark.jar'
+          spark.locality.wait: '10s'
+          spark.driver.extraClassPath: '/usr/lib/hadoop-lzo/lib/*:/usr/lib/hadoop/hadoop-aws.jar:/usr/share/aws/aws-java-sdk/*:/usr/share/aws/emr/emrfs/conf:/usr/share/aws/emr/emrfs/lib/*:/usr/share/aws/emr/emrfs/auxlib/*:/usr/share/aws/emr/security/conf:/usr/share/aws/emr/security/lib/*:/home/hadoop/hail-all-spark.jar'
+          spark.serializer: 'org.apache.spark.serializer.KryoSerializer'
+          spark.sql.files.maxPartitionBytes: '1099511627776'
+          spark.dynamicAllocation.enabled: 'false'
+      Applications:
+      - Name: Ganglia
+      - Name: Spark
+      Name:
+        !Ref AWS::StackName
+      JobFlowRole: "EMR_EC2_DefaultRole"
+      ServiceRole: "EMR_DefaultRole"
+      ReleaseLabel: "emr-5.12.0"
+      LogUri:
+        Ref: LogPath
+      VisibleToAllUsers: true
+      Steps:
+      - Name: "VariantSpark Job"
+        ActionOnFailure: "CANCEL_AND_WAIT"
+        HadoopJarStep:
+          Args:
+          - "spark-submit"
+          - "--deploy-mode"
+          - "client"
+          - "--class"
+          - "au.csiro.variantspark.cli.VariantSparkApp"
+          - "/home/hadoop/miniconda2/envs/jupyter/lib/python2.7/site-packages/varspark/jars/varspark.jar"
+          - "importance"
+          - "-if"
+          - Ref: InputFile
+          - "-it"
+          - Ref: InputType
+          - "-of"
+          - Ref: OutputFile
+          - "-ff"
+          - Ref: PhenotypeFile
+          - "-fc"
+          - Ref: PhenotypeColumn
+          - "-om"
+          - Ref: ModelFile
+          - "-rn"
+          - Ref: NumTree
+          - "-rmtf"
+          - Ref: mtryFraction
+          - "-rbs"
+          - Ref: BatchSize
+          - "-ivo"
+          - Ref: MaxValue
+          - "-sr"
+          - Ref: Seed
+          - "-on"
+          - "100000000"
+          - !If [IVB, "-ivb", "-v"]
+          - !If [RO, "-ro", "-v"]
+          Jar: "command-runner.jar"
+      Tags:
+      - Key: Name
+        Value:
+          Fn::Join:
+          - ''
+          - - emr-instance-
+            - Ref: AWS::StackName
+            - ''
+      - Key: Stack ID
+        Value:
+          Ref: AWS::StackName
+Outputs:
+  ClusterID:
+    Description: "EMR Cluster ID"
+    Value: !Ref "EMRClusterV5"
