@@ -105,9 +105,13 @@ object RFModel {
     StdFeature.from(varName, BoundedOrdinalVariable(3), data)    
   }
   
-  def pyApply(inputIR: MatrixIR, mTryFraction:Option[Double], oob:Boolean, seed:Option[Long]):RFModel  = {
+  def pyApply(inputIR: MatrixIR, mTryFraction:Option[Double], oob:Boolean, minNodeSize:Option[Int], 
+      maxDepth:Option[Int],
+      seed:Option[Int]):RFModel  = {
     //println(Pretty(inputIR))
     val mv = Interpret(inputIR)
-    RFModel(mv, RandomForestParams.fromOptions(mTryFraction=mTryFraction, oob=Some(oob), seed =seed ))
+    RFModel(mv, RandomForestParams.fromOptions(mTryFraction=mTryFraction, oob=Some(oob), 
+        minNodeSize = minNodeSize, maxDepth = maxDepth,
+        seed=seed.map(_.longValue)))
   }
 }

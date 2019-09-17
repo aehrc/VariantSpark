@@ -24,7 +24,7 @@ def main():
     print(mt.count())
     
     rf_model = vshl.random_forest_model(y=mt.hipster.label,
-                    x=mt.GT.n_alt_alleles())
+                    x=mt.GT.n_alt_alleles(), seed = 13, mtry_fraction = 0.05, min_node_size = 5, max_depth = 10)
     rf_model.fit_trees(100, 50)
 
     print("OOB error: %s" % rf_model.oob_error())

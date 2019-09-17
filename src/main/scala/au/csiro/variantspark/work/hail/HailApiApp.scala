@@ -109,7 +109,7 @@ object HailApiApp {
     println(matrixIR.typ.rowKey)
     
     
-    val rfModel = RFModel.pyApply(matrixIR, None, true, None)
+    val rfModel = RFModel.pyApply(matrixIR, None, true, None, None, None)
     rfModel.fitTrees(100, 50)
     println(s"OOB Error  = ${rfModel.oobError}")    
     val importanceTableValue = rfModel.variableImportance
