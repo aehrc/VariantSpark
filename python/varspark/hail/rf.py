@@ -22,7 +22,6 @@ from hail.utils import java
 
 class RandomForestModel(object):
     
-    
     @typecheck_method(
         _mir=MatrixIR,
         oob=bool, 
@@ -33,7 +32,7 @@ class RandomForestModel(object):
     )
     def __init__(self,_mir, oob=True, mtry_fraction=None, min_node_size=None, max_depth=None, seed=None):
         self._mir = _mir
-        self._jrf_model = _jrf_model = Env.jvm().au.csiro.variantspark.hail.methods.RFModel.pyApply(Env.spark_backend('rf')._to_java_ir(self._mir), 
+        self._jrf_model = Env.jvm().au.csiro.variantspark.hail.methods.RFModel.pyApply(Env.spark_backend('rf')._to_java_ir(self._mir), 
             java.joption(mtry_fraction), oob, java.joption(min_node_size), java.joption(max_depth), java.joption(seed))
      
     @typecheck_method(

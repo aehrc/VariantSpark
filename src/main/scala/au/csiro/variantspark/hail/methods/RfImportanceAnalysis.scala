@@ -35,14 +35,17 @@ import org.apache.spark.storage.StorageLevel
 
 case class RFModel(mv:MatrixValue, rfParams: RandomForestParams) { 
  
-  val sig = TStruct(
-      // The keys fields need to be coppied from input
-      ("locus", TLocus(ReferenceGenome.GRCh37)),
-      ("alleles", TArray.apply(TString())),
-      ("importance", TFloat64()))
-
-  private val keys: IndexedSeq[String] = Array("locus", "alleles")
-    
+  // for now we need to assert that the MatrixValue 
+  // is actually indexed by the locus 
+  // TODO: otherwise I need some way to serialize and deserialize the keys 
+  // which may be possible in the future
+  // one more reason to make this API work for genotypes only ... 
+  
+  // maintain the same key as in the original matrix
+  lazy private val keys: IndexedSeq[String] = mv.typ.rowKey
+  // the result should keep the key + importance field
+  lazy val sig = mv.typ.rowKeyStruct.insertFields(Array(("importance", TFloat64())))
+      
   lazy val rf = new  RandomForest(rfParams)
   val featuresRDD = mv.rvd.toRows.map(RFModel.rowToFeature)   
   lazy val inputData:RDD[TreeFeature] = DefTreeRepresentationFactory.createRepresentation(featuresRDD.zipWithIndex())

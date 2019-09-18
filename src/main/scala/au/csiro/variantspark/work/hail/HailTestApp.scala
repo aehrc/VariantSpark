@@ -156,12 +156,15 @@ object HailTestApp {
   println(lrIR)
   
   val lrResult = new Table(hc, lrIR)
+   
+  println("#### KKey : " + lrResult.key)
+  
   
   //println("Result lr count: " + lrResult.count())
-  println(lrResult.signature)
+  println(lrResult.signature) 
   lrResult.collect().take(10).foreach(println _)  
   
-  System.exit(0)
+  //System.exit(0)
   
   
   val table:Table = hc.importTable("data/hipsterIndex/hipster_labels.txt", 
@@ -195,11 +198,26 @@ object HailTestApp {
   val matLit = irArray.head
   println(matLit)
    
-//  val matrixValue = matLit match { 
-//      case MatrixLiteral(v) => v  
-//  }
-//  
-//  println(matrixValue)
+  val matrixValue = matLit match {       
+      case MatrixLiteral(v) => v  
+  }
+  
+  println(matrixValue)
+  
+  val tv = matrixValue.typ.rowKey
+ 
+  
+  println("XXXXXX XXXXXX")
+  
+  
+  println(tv)
+  println(matrixValue.typ.rowType)
+  println(matrixValue.typ.rowKeyStruct)
+  println(matrixValue.typ.rowValueStruct)
+  println(matrixValue.typ.rowValueFieldIdx)
+  
+  
+  System.exit(0)
 //  
 //  println(matrixValue.stringSampleIds) 
 //  val tableValue:TableValue = matrixValue.toTableValue
