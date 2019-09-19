@@ -102,6 +102,9 @@ object HailApiApp {
         (Ref g)))))
   """
   
+    println(matrixExpr)
+    
+    
     val matrixIR = IRParser.parse_matrix_ir(matrixExpr)
     println(matrixIR)
   
