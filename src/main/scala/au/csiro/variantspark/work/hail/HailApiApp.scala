@@ -26,11 +26,8 @@ import au.csiro.variantspark.hail.methods.RFModel
  */
 object HailApiApp {
   
-  def main(args:Array[String]) = {
-    println("Hello")
-    val hc = HailContext()
  
-    val matrixExpr = """
+  def loadDataToMatrixIr(vcfFilename:String, labelFilename:String, sampleName:String, labelName:String):String = s"""
 (MatrixRename () () ("__uid_4" "__uid_5") ("y" "z") () () ("__uid_6") ("e")     
   (MatrixMapEntries
     (MatrixMapCols None
@@ -41,23 +38,23 @@ object HailApiApp {
               (MatrixMapCols None
                 (MatrixMapCols None
                   (MatrixAnnotateColsTable "__uid_3"
-                    (MatrixRead None False False "{\"name\":\"MatrixVCFReader\",\"files\":[\"data/hipsterIndex/hipster.vcf.bgz\"],\"callFields\":[\"PGT\"],\"entryFloatTypeName\":\"Float64\",\"rg\":\"GRCh37\",\"contigRecoding\":{},\"arrayElementsRequired\":true,\"skipInvalidLoci\":false,\"gzAsBGZ\":false,\"forceGZ\":false,\"filterAndReplace\":{\"name\":\"TextInputFilterAndReplace\"},\"partitionsJSON\":null}")
-                    (TableKeyBy (samples) False
-                      (TableRead None False "{\"name\":\"TextTableReader\",\"options\":{\"files\":[\"data/hipsterIndex/hipster_labels.txt\"],\"typeMapStr\":{\"label\":\"Float64\",\"score\":\"Float64\"},\"comment\":[],\"separator\":\",\",\"missing\":[\"NA\"],\"noHeader\":false,\"impute\":false,\"quoteStr\":null,\"skipBlankLines\":false,\"forceBGZ\":false,\"filterAndReplace\":{\"name\":\"TextInputFilterAndReplace\"},\"forceGZ\":false}}")))
+                    (MatrixRead None False False "{\\"name\\":\\"MatrixVCFReader\\",\\"files\\":[\\"${vcfFilename}\\"],\\"callFields\\":[\\"PGT\\"],\\"entryFloatTypeName\\":\\"Float64\\",\\"rg\\":\\"GRCh37\\",\\"contigRecoding\\":{},\\"arrayElementsRequired\\":true,\\"skipInvalidLoci\\":false,\\"gzAsBGZ\\":false,\\"forceGZ\\":false,\\"filterAndReplace\\":{\\"name\\":\\"TextInputFilterAndReplace\\"},\\"partitionsJSON\\":null}")
+                    (TableKeyBy (${sampleName}) False
+                      (TableRead None False "{\\"name\\":\\"TextTableReader\\",\\"options\\":{\\"files\\":[\\"${labelFilename}\\"],\\"typeMapStr\\":{\\"${labelName}\\":\\"Float64\\"},\\"comment\\":[],\\"separator\\":\\",\\",\\"missing\\":[\\"NA\\"],\\"noHeader\\":false,\\"impute\\":false,\\"quoteStr\\":null,\\"skipBlankLines\\":false,\\"forceBGZ\\":false,\\"filterAndReplace\\":{\\"name\\":\\"TextInputFilterAndReplace\\"},\\"forceGZ\\":false}}")))
                   (InsertFields
                     (SelectFields (s)
                       (Ref sa))
                     None
-                    (label
+                    (${labelName}
                       (GetField __uid_3
                         (Ref sa)))))
                 (InsertFields
-                  (SelectFields (s label)
+                  (SelectFields (s ${labelName})
                     (Ref sa))
                   None
                   (__uid_4
-                    (GetField label
-                      (GetField label
+                    (GetField ${labelName}
+                      (GetField ${labelName}
                         (Ref sa))))
                   (__uid_5
                     (F64 1.0))))
@@ -69,10 +66,10 @@ object HailApiApp {
                   (Apply nNonRefAlleles
                     (GetField GT
                       (Ref g))))))
-            (SelectFields (s label __uid_4 __uid_5)
+            (SelectFields (s ${labelName} __uid_4 __uid_5)
               (Ref sa)))
-          (SelectFields (label __uid_4 __uid_5)
-            (SelectFields (s label __uid_4 __uid_5)
+          (SelectFields (${labelName} __uid_4 __uid_5)
+            (SelectFields (s ${labelName} __uid_4 __uid_5)
               (Ref sa))))
         (SelectFields (locus alleles)
           (MakeStruct
@@ -95,19 +92,29 @@ object HailApiApp {
               (GetField info
                 (Ref va))))))
       (SelectFields (__uid_4 __uid_5)
-        (SelectFields (label __uid_4 __uid_5)
+        (SelectFields (${labelName} __uid_4 __uid_5)
           (Ref sa))))
     (SelectFields (__uid_6)
       (SelectFields (GT __uid_6)
         (Ref g)))))
-  """
+  """    
+
   
+  
+  
+ 
+  def main(args:Array[String]) = {
+    println("Hello")
+    val hc = HailContext()
+ 
+    val matrixExpr = loadDataToMatrixIr("data/hipsterIndex/hipster.vcf.bgz", "data/hipsterIndex/hipster_labels.txt", "samples", "label")  
     println(matrixExpr)
     
     
     val matrixIR = IRParser.parse_matrix_ir(matrixExpr)
     println(matrixIR)
   
+    println(matrixIR.typ)
     println(matrixIR.typ.rowKeyStruct)
     println(matrixIR.typ.rowKey)
     

@@ -47,3 +47,6 @@ class RandomForestModel(object):
     
     def variable_importance(self):
         return Table._from_java(self._jrf_model.variableImportance())   
+        
+    def release(self):
+         self._jrf_model.release()

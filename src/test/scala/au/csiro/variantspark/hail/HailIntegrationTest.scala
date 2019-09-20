@@ -92,7 +92,6 @@ class HailIntegrationTest extends SparkTest {
   @Test
   def testRunImportanceAnalysis() {
     val hc = HailContext(sc)
-    // val strMatrixIR = loadDataToMatrixIr("data/hipsterIndex/hipster.vcf.bgz", "data/hipsterIndex/hipster_labels.txt", "samples", "label")
     val strMatrixIR = loadDataToMatrixIr("data/chr22_1000.vcf", "data/chr22-labels-hail.csv", "sample", "x22_16051480")
     val matrixIR = IRParser.parse_matrix_ir(strMatrixIR)    
     val rfModel = RFModel.pyApply(matrixIR, None, true, None, None, Some(13))
@@ -102,5 +101,6 @@ class HailIntegrationTest extends SparkTest {
     val importanceTable = new Table(hc, importanceTableValue)    
     assertEquals(List("locus", "alleles", "importance"), importanceTable.signature.fieldNames.toList)
     assertEquals("All variables have reported importance", 1988, importanceTable.count())
+    rfModel.release()
   } 
 }

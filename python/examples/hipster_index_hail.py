@@ -30,6 +30,7 @@ def main():
     print("OOB error: %s" % rf_model.oob_error())
     impTable = rf_model.variable_importance()
     impTable.show(3)
+    rf_model.release()
 
 if __name__ == '__main__':
     main()
