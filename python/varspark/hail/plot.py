@@ -1,3 +1,4 @@
+from typing import *
 import warnings
 import math
 
@@ -13,10 +14,8 @@ from bokeh.plotting import figure
 from bokeh.transform import transform
 from bokeh.layouts import gridplot
 
-from typing import *
 import hail
 from hail.plot.plots import *
-
 from hail.plot.plots import _collect_scatter_plot_data, _get_scatter_plot_elements
 
 
