@@ -1,7 +1,10 @@
 #!/bin/bash
 set -e -x 
 
-HAIL_JAR="$1"
+HAIL_ROOT="$1"
+
+HAIL_JAR="${HAIL_ROOT}/hail/build/libs/hail.jar"
+HAIL_JAR_ALL="${HAIL_ROOT}/hail/build/libs/hail-all-spark.jar"
 
 mvn deploy:deploy-file \
   -Durl=https://oss.sonatype.org/content/repositories/snapshots \
@@ -10,7 +13,19 @@ mvn deploy:deploy-file \
   -Dpackaging=jar \
   -DgeneratePom=true \
   -DgroupId=au.csiro.aehrc.third.hail-is \
-  -DartifactId=hail \
-  -Dversion=0.1-SNAPSHOT \
+  -DartifactId=hail_2.11_2.2 \
+  -Dversion=0.2.16-SNAPSHOT \
   -DgeneratePom.description="Private deployment of hail to maven"
 
+
+mvn deploy:deploy-file \
+  -Durl=https://oss.sonatype.org/content/repositories/snapshots \
+  -DrepositoryId=ossrh \
+  -Dfile=${HAIL_JAR_ALL} \
+  -Dpackaging=jar \
+  -DgeneratePom=true \
+  -DgroupId=au.csiro.aehrc.third.hail-is \
+  -DartifactId=hail_2.11_2.2 \
+  -Dversion=0.2.16-SNAPSHOT \
+  -Dclassifier=all \
+  -DgeneratePom.description="Private deployment of hail to maven"

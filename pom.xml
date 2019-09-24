@@ -72,6 +72,7 @@
 		<scala.binary.version>2.11</scala.binary.version>
 		<scala.version>2.11.8</scala.version>
 		<spark.version>2.2.1</spark.version>
+		<spark.binary.version>2.2.</spark.binary.version>
         <sonata.autorelease>false</sonata.autorelease>
 	</properties>
 
@@ -191,36 +192,35 @@
 		</dependency>
 		<dependency>
 		    <groupId>au.csiro.aehrc.third.hail-is</groupId>
-            <artifactId>hail</artifactId>
-            <version>0.1-SNAPSHOT</version>
+            <artifactId>hail_2.11_2.2</artifactId>
+            <version>0.2.16-SNAPSHOT</version>
+            <classifier>all</classifier>
             <scope>provided</scope>
 		</dependency>
-	<dependency>
-		<groupId>org.easymock</groupId>
-		<artifactId>easymock</artifactId>
-		<version>3.5.1</version>
-		<scope>test</scope>
-	</dependency>
-	<dependency>
-      <groupId>org.ow2.asm</groupId>
-      <artifactId>asm</artifactId>
-      <version>5.1</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.ow2.asm</groupId>
-      <artifactId>asm-util</artifactId>
-      <version>5.1</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.ow2.asm</groupId>
-      <artifactId>asm-analysis</artifactId>
-      <version>5.1</version>
-      <scope>provided</scope>
-    </dependency>
-
-
+		<dependency>
+			<groupId>org.easymock</groupId>
+			<artifactId>easymock</artifactId>
+			<version>3.5.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+	      <groupId>org.ow2.asm</groupId>
+	      <artifactId>asm</artifactId>
+	      <version>5.1</version>
+	      <scope>provided</scope>
+	    </dependency>
+	    <dependency>
+	      <groupId>org.ow2.asm</groupId>
+	      <artifactId>asm-util</artifactId>
+	      <version>5.1</version>
+	      <scope>provided</scope>
+	    </dependency>
+	    <dependency>
+	      <groupId>org.ow2.asm</groupId>
+	      <artifactId>asm-analysis</artifactId>
+	      <version>5.1</version>
+	      <scope>provided</scope>
+	    </dependency>
 	</dependencies>
 	<build>
 		<plugins>

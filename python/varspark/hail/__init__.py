@@ -9,12 +9,7 @@ from __future__ import (
     division,
     print_function)
 
-from varspark.lang import extend_cls
-from hail import VariantDataset
-from . extend import VariantsDatasetFunctions
+from .context import init
+from . methods import *
 
-#
-# Pimp methods from VariantsDatasetFunctions to VariantDataset
-#
-
-extend_cls(VariantDataset, VariantsDatasetFunctions)
+__all__ = ['init', 'random_forest_model']

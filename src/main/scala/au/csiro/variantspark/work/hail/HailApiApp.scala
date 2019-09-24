@@ -1,22 +1,32 @@
-package au.csiro.variantspark.hail
-
-import au.csiro.variantspark.test.SparkTest
-import org.junit.Test
-import org.junit.Assert._
+package au.csiro.variantspark.work.hail
 
 import is.hail.HailContext
 import is.hail.expr._
-import au.csiro.variantspark.hail._
-import au.csiro.variantspark.algo.metrics.ManhattanPairwiseMetric
-import is.hail.expr.ir.IRParser
-import au.csiro.variantspark.hail.methods.RFModel
+import org.apache.spark.sql.Row
 import is.hail.table.Table
+import is.hail.expr.types.virtual.TInt64Required
+import is.hail.io.vcf.VCFsReader
+import is.hail.utils.TextInputFilterAndReplace
 import is.hail.expr.ir.MatrixIR
+import is.hail.expr.ir.MatrixLiteral
+import is.hail.expr.ir.TableValue
+import is.hail.expr.ir.TableLiteral
+import is.hail.expr.{ir, _}
+import is.hail.expr.ir._
+import is.hail.expr.types.virtual.TFloat64
+import is.hail.expr.types.virtual._
+import is.hail.expr.types.virtual.TStruct
+import is.hail.methods.LinearRegressionRowsSingle
+import au.csiro.variantspark.hail.methods.RFModel
 
-class HailIntegrationTest extends SparkTest {
+
+
+/**
+ * INFO: Simulates calling from python
+ */
+object HailApiApp {
+  
  
-  // This is textual version of the expression 
-  // that is normally prouduced by python call to the API
   def loadDataToMatrixIr(vcfFilename:String, labelFilename:String, sampleName:String, labelName:String):String = s"""
 (MatrixRename () () ("__uid_4" "__uid_5") ("y" "z") () () ("__uid_6") ("e")     
   (MatrixMapEntries
@@ -88,19 +98,34 @@ class HailIntegrationTest extends SparkTest {
       (SelectFields (GT __uid_6)
         (Ref g)))))
   """    
-        
-  @Test
-  def testRunImportanceAnalysis() {
-    val hc = HailContext(sc)
-    val strMatrixIR = loadDataToMatrixIr("data/chr22_1000.vcf", "data/chr22-labels-hail.csv", "sample", "x22_16051480")
-    val matrixIR = IRParser.parse_matrix_ir(strMatrixIR)    
-    val rfModel = RFModel.pyApply(matrixIR, None, true, None, None, Some(13))
+
+  
+  
+  
+ 
+  def main(args:Array[String]) = {
+    println("Hello")
+    val hc = HailContext()
+ 
+    val matrixExpr = loadDataToMatrixIr("data/hipsterIndex/hipster.vcf.bgz", "data/hipsterIndex/hipster_labels.txt", "samples", "label")  
+    println(matrixExpr)
+    
+    
+    val matrixIR = IRParser.parse_matrix_ir(matrixExpr)
+    println(matrixIR)
+  
+    println(matrixIR.typ)
+    println(matrixIR.typ.rowKeyStruct)
+    println(matrixIR.typ.rowKey)
+    
+    
+    val rfModel = RFModel.pyApply(matrixIR, None, true, None, None, None)
     rfModel.fitTrees(100, 50)
-    assertTrue("OOB Error is defined", !rfModel.oobError.isNaN) 
-    val importanceTableValue = rfModel.variableImportance    
-    val importanceTable = new Table(hc, importanceTableValue)    
-    assertEquals(List("locus", "alleles", "importance"), importanceTable.signature.fieldNames.toList)
-    assertEquals("All variables have reported importance", 1988, importanceTable.count())
-    rfModel.release()
-  } 
+    println(s"OOB Error  = ${rfModel.oobError}")    
+    val importanceTableValue = rfModel.variableImportance
+    
+    val importanceTable = new Table(hc, importanceTableValue)
+    println(importanceTable.signature)
+    importanceTable.collect().take(10).foreach(println _)
+  }
 }

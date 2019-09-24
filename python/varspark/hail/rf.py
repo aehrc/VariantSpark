@@ -9,32 +9,47 @@ from __future__ import (
     division,
     print_function)
 
-from typedecorator import params, Nullable
-from hail import  KeyTable
 
-class ImportanceAnalysis(object):
-    """ Model for random forest based importance analysis
-    """
-    def __init__(self, hc, _jia):
-        self.hc = hc
-        self._jia = _jia
+from typing import *
+from hail.expr.expressions import *
+from hail.expr.types import *
+from hail.typecheck import *
+from hail.ir import *
+from hail.table import Table
 
-    @property
+from hail.utils import java
+
+
+class RandomForestModel(object):
+
+    @typecheck_method(
+        _mir=MatrixIR,
+        oob=bool,
+        mtry_fraction=nullable(float),
+        min_node_size=nullable(int),
+        max_depth=nullable(int),
+        seed=nullable(int)
+    )
+    def __init__(self,_mir, oob=True, mtry_fraction=None, min_node_size=None,
+            max_depth=None, seed=None):
+        self._mir = _mir
+        self._jrf_model = Env.jvm().au.csiro.variantspark.hail.methods.RFModel.pyApply(
+            Env.spark_backend('rf')._to_java_ir(self._mir),
+            java.joption(mtry_fraction), oob, java.joption(min_node_size),
+            java.joption(max_depth), java.joption(seed))
+
+    @typecheck_method(
+        n_trees=int,
+        batch_size=int
+    )
+    def fit_trees(self, n_trees = 500, batch_size = 100):
+        self._jrf_model.fitTrees(n_trees, batch_size)
+
     def oob_error(self):
-        """ OOB (Out of Bag) error estimate for the model
+        return self._jrf_model.oobError()
 
-        :rtype: float
-        """
-        return self._jia.oobError()
+    def variable_importance(self):
+        return Table._from_java(self._jrf_model.variableImportance())
 
-
-    @params(self=object, n_limit=Nullable(int))
-    def important_variants(self, n_limit=1000):
-        """ Gets the top n most important loci.
-
-        :param int n_limit: the limit of the number of loci to return
-
-        :return: A KeyTable with the variant in the first column and importance in the second.
-        :rtype: :py:class:`hail.KeyTable`
-        """
-        return KeyTable(self.hc, self._jia.variantImportance(n_limit))
+    def release(self):
+        self._jrf_model.release()
