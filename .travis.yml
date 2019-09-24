@@ -3,7 +3,7 @@ env:
 language: java
 dist: xenial
 jdk:
-- oraclejdk8
+- openjdk8
 cache:
   directories:
   - "$HOME/.m2"
