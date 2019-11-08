@@ -17,6 +17,9 @@ if sys.version_info > (3,):
 MAX_LONG =  long(9223372036854775807)
 MIN_LONG = long(-9223372036854775808)
 
+MAX_INT =  2147483647
+MIN_INT = -2147483648
+
 NAN = float('nan')
 
 def jtype_or(t, v, def_v):

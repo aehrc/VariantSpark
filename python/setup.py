@@ -14,7 +14,7 @@ TEMP_PATH = "target"
 
 in_src = os.path.isfile(os.path.join(ROOT_DIR, "pom.xml"))
         
-VERSION = '0.3.0a0'    
+VERSION = '0.3.0a0.dev0'    
     
 # Provide guidance about how to use setup.py
 incorrect_invocation_message = """
@@ -65,7 +65,7 @@ try:
         version= VERSION,    
         packages=find_packages(exclude=["*.test"]) + ['varspark.jars'], 
         install_requires=[
-            'typedecorator'
+            'typedecorator==0.0.5'
         ],
 #        test_suite = 'varspark.test',
 #        test_requires = [
@@ -76,19 +76,15 @@ try:
                 'pandas>=0.22.0', 
             ],
             'spark': [ 
-                'pyspark==2.2.1', 
+                'pyspark==2.4.1', 
             ],
             'test': [ 
-                'pyspark==2.2.1', 
+                'pyspark==2.4.1', 
             ],
             'hail': [
-                'decorator==4.1.2',
-                'hail==devel',
+                'hail==0.2.26',
             ]
         },
-        dependency_links = [
-            'https://s3-ap-southeast-2.amazonaws.com/variant-spark/deps/hail-0.1/latest/hail-devel.tar.gz#egg=hail-devel'
-        ],
         include_package_data=True,
         package_dir={
             'varspark.jars': 'target/jars',

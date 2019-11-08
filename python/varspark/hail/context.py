@@ -1,9 +1,9 @@
 import os
 import sys
 import pkg_resources
-import hail as hl
-import varspark as vs
 from pyspark import SparkConf, SparkContext
+import varspark as vs
+import hail as hl
 
 def init(**kwargs):
 

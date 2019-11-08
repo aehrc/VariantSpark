@@ -10,8 +10,8 @@ from __future__ import (
     print_function)
 
 import numpy as np
-import pandas as pd
 from pyspark.mllib.linalg.distributed import IndexedRowMatrix, RowMatrix
+import pandas as pd
 
 def dist_mat_to_array(dist_mat):
     """ Converts a (small) distributed  matrix to dense numpy narray
