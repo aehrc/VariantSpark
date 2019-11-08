@@ -199,7 +199,6 @@ case class RandomizingMergerMurmur3(seed:Long) extends Merger {
   }
 }
 
-
 trait VariableSplitter {
   
    def initialSubset(sample:Sample):SubsetInfo
@@ -215,7 +214,6 @@ trait VariableSplitter {
   def findSplitsForVars(varData:Iterator[TreeFeature], splits:Array[SubsetInfo])(implicit rng:RandomGenerator):Iterator[Array[VarSplitInfo]]
   def createMerger(seed:Long):Merger
 }
-
 
 /** This is the main split function
   * 
