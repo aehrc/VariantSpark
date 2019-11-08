@@ -9,8 +9,8 @@ from __future__ import (
     division,
     print_function)
 
-from pyspark.mllib.linalg.distributed import IndexedRowMatrix, RowMatrix
 import numpy as np
+from pyspark.mllib.linalg.distributed import IndexedRowMatrix, RowMatrix
 import pandas as pd
 
 def dist_mat_to_array(dist_mat):
