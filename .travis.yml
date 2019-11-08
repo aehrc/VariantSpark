@@ -38,4 +38,4 @@ deploy:
     acl: public_read
     region: ap-southeast-2
     on:
-      tags: true
+      tags: false 
