@@ -9,9 +9,9 @@ from __future__ import (
     division,
     print_function)
 
+from pyspark.mllib.linalg.distributed import IndexedRowMatrix, RowMatrix
 import numpy as np
 import pandas as pd
-from pyspark.mllib.linalg.distributed import IndexedRowMatrix, RowMatrix
 
 def dist_mat_to_array(dist_mat):
     """ Converts a (small) distributed  matrix to dense numpy narray

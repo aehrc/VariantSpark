@@ -97,9 +97,10 @@ class FeatureSource(object):
 
     @params(self=object, label_source=object, n_trees=Nullable(int), mtry_fraction=Nullable(float),
             oob=Nullable(bool), seed=Nullable(Union(int, long)), batch_size=Nullable(int),
-            var_ordinal_levels=Nullable(int))
+            var_ordinal_levels=Nullable(int), max_depth=int, min_node_size=int)
     def importance_analysis(self, label_source, n_trees=1000, mtry_fraction=None,
-                            oob=True, seed=None, batch_size=100, var_ordinal_levels=3):
+                            oob=True, seed=None, batch_size=100, var_ordinal_levels=3,
+                            max_depth=java.MAX_INT, min_node_size=1):
         """Builds random forest classifier.
 
         :param label_source: The ingested label source
@@ -115,7 +116,8 @@ class FeatureSource(object):
         """
         jrf_params = self._jvm.au.csiro.variantspark.algo.RandomForestParams(bool(oob),
                                 java.jfloat_or(mtry_fraction), True, java.NAN, True,
-                                java.jlong_or(seed, randint(java.MIN_LONG, java.MAX_LONG)))
+                                java.jlong_or(seed, randint(java.MIN_LONG, java.MAX_LONG)),
+                                max_depth, min_node_size, False, 0)
         jia = self._vs_api.ImportanceAnalysis(self._jsql, self._jfs, label_source,
                                               jrf_params, n_trees, batch_size, var_ordinal_levels)
         return ImportanceAnalysis(jia, self.sql)
