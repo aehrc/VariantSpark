@@ -72,7 +72,8 @@
 		<scala.binary.version>2.11</scala.binary.version>
 		<scala.version>2.11.8</scala.version>
 		<spark.version>2.2.1</spark.version>
-		<spark.binary.version>2.2.</spark.binary.version>
+		<spark.binary.version>2.2</spark.binary.version>
+		<hail.version>0.2.27</hail.version>
         <sonata.autorelease>false</sonata.autorelease>
 	</properties>
 
@@ -192,8 +193,8 @@
 		</dependency>
 		<dependency>
 		    <groupId>au.csiro.aehrc.third.hail-is</groupId>
-            <artifactId>hail_2.11_2.2</artifactId>
-            <version>0.2.16-SNAPSHOT</version>
+            <artifactId>hail_${scala.binary.version}_${spark.binary.version}</artifactId>
+            <version>${hail.version}-SNAPSHOT</version>
             <classifier>all</classifier>
             <scope>provided</scope>
 		</dependency>
