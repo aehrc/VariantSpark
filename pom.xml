@@ -71,9 +71,9 @@
 		<encoding>UTF-8</encoding>
 		<scala.binary.version>2.11</scala.binary.version>
 		<scala.version>2.11.8</scala.version>
-		<spark.version>2.2.1</spark.version>
-		<spark.binary.version>2.2.</spark.binary.version>
-        <sonata.autorelease>false</sonata.autorelease>
+		<spark.version>2.4.4</spark.version>
+		<spark.binary.version>2.4</spark.binary.version>
+    <sonata.autorelease>false</sonata.autorelease>
 	</properties>
 
     <repositories>
@@ -117,12 +117,6 @@
 		    <artifactId>graph-core_${scala.binary.version}</artifactId>
 		    <version>1.12.3</version>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.json4s/json4s-ext -->
-		<dependency>
-		    <groupId>org.json4s</groupId>
-		    <artifactId>json4s-ext_${scala.binary.version}</artifactId>
-		    <version>3.2.11</version>
-		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
@@ -156,16 +150,16 @@
 			<version>2.0.29</version>
 		</dependency>
         <!-- https://mvnrepository.com/artifact/org.json4s/json4s -->
-        <dependency>
+        <!--  dependency>
             <groupId>org.json4s</groupId>
             <artifactId>json4s_${scala.binary.version}</artifactId>
             <version>3.2.11</version>
-        </dependency>        
+        </dependency-->        
         <!-- https://mvnrepository.com/artifact/org.json4s/json4s-ext -->
         <dependency>
             <groupId>org.json4s</groupId>
             <artifactId>json4s-ext_${scala.binary.version}</artifactId>
-            <version>3.2.11</version>
+            <version>3.5.3</version>
         </dependency>
 		<!-- https://mvnrepository.com/artifact/it.unimi.dsi/dsiutils -->
 		<dependency>
@@ -192,7 +186,7 @@
 		</dependency>
 		<dependency>
 		    <groupId>au.csiro.aehrc.third.hail-is</groupId>
-            <artifactId>hail_2.11_2.2</artifactId>
+            <artifactId>hail_2.11_${spark.binary.version}</artifactId>
             <version>0.2.16-SNAPSHOT</version>
             <classifier>all</classifier>
             <scope>provided</scope>
