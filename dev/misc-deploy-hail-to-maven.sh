@@ -13,7 +13,7 @@ mvn deploy:deploy-file \
   -Dpackaging=jar \
   -DgeneratePom=true \
   -DgroupId=au.csiro.aehrc.third.hail-is \
-  -DartifactId=hail_2.11_2.2 \
+  -DartifactId=hail_2.11_2.4 \
   -Dversion=0.2.16-SNAPSHOT \
   -DgeneratePom.description="Private deployment of hail to maven"
 
@@ -25,7 +25,7 @@ mvn deploy:deploy-file \
   -Dpackaging=jar \
   -DgeneratePom=true \
   -DgroupId=au.csiro.aehrc.third.hail-is \
-  -DartifactId=hail_2.11_2.2 \
+  -DartifactId=hail_2.11_2.4 \
   -Dversion=0.2.16-SNAPSHOT \
   -Dclassifier=all \
   -DgeneratePom.description="Private deployment of hail to maven"
