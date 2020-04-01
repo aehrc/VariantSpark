@@ -10,6 +10,7 @@ from pyspark.sql import SparkSession
 PROJECT_DIR=os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
 
 def main():
+    print(VariantsContext.spark_conf())
     spark = SparkSession.builder\
         .config(conf=VariantsContext.spark_conf()) \
         .appName("HipsterIndex") \
@@ -20,7 +21,7 @@ def main():
     model  = features.importance_analysis(labels, mtry_fraction = 0.1, seed = 13, n_trees = 200)
     print("Oob = %s" % model.oob_error())
     for entry in model.important_variables(10):
-        print entry
+        print(entry)
         
 if __name__ == '__main__':
     main()
