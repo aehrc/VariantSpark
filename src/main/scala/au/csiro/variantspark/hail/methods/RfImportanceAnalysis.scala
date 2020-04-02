@@ -59,8 +59,14 @@ case class RFModel(mv:MatrixValue, rfParams: RandomForestParams) {
   // which may be possible in the future
   // one more reason to make this API work for genotypes only ... 
 
-  require(keySignature == TStruct(("locus", TLocus(ReferenceGenome.GRCh37)),	
-      ("alleles", TArray.apply(TString()))), "The key needs to be (for now): (locus<GRCh37>, alleles: array<str>)")
+  require(keySignature.fields.size == 2, "The key needs to be (for now): (locus<*>, alleles: array<str>)")
+  require(keySignature.fields(0).typ.isInstanceOf[TLocus], 
+    s"The first field in key needs to be TLocus[*] but is ${keySignature.fields(0).typ}")
+  require(keySignature.fields(1).typ.isOfType(TArray.apply(TString())),
+    s"The second field in key needs to be TArray[String] but is ${keySignature.fields(1).typ}")
+  
+//  require(keySignature == TStruct(("locus", TLocus(ReferenceGenome.GRCh37)),	
+//      ("alleles", TArray.apply(TString()))), "The key needs to be (for now): (locus<GRCh37>, alleles: array<str>)")
   
   // the result should keep the key + add importance related field
   lazy val sig = keySignature.insertFields(Array(("importance", TFloat64())))
