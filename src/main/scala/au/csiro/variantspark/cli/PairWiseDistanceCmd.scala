@@ -23,27 +23,23 @@ import au.csiro.variantspark.algo.metrics.MultiPairwiseRevMetric
 import au.csiro.variantspark.algo.metrics.SharedAltAlleleCount
 import au.csiro.variantspark.algo.metrics.AtLeastOneSharedAltAlleleCount
 import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
-import  au.csiro.variantspark.input._
-
+import au.csiro.variantspark.input._
 
 class PairWiseDistanceCmd extends ArgsApp with FeatureSourceArgs with Logging with TestArgs {
 
-  @Option(name="-of", required=true, usage="Path to output distance file", aliases=Array("--output-file"))
-  val outputFile:String = null
+  @Option(name = "-of", required = true, usage = "Path to output distance file",
+    aliases = Array("--output-file"))
+  val outputFile: String = null
 
-  @Option(name="-m", required=false, usage="Metric to use, one of: euclidean, manhattan, invBitAnd, invMul",
-        aliases=Array("--metric"))
-  val metricName:String = "euclidean"
-
-  
+  @Option(name = "-m", required = false,
+    usage = "Metric to use, one of: euclidean, manhattan, invBitAnd, invMul",
+    aliases = Array("--metric"))
+  val metricName: String = "euclidean"
   @Override
-  def testArgs = Array("-if", "data/chr22_1000.vcf", 
-      "-of", "target/ch22-disc.csv", "-v",
-      "-m", "manhattan"
-      )
-      
-      
-  def  buildMetricFromName(metricName:String): PairwiseOperation = {
+  def testArgs =
+    Array("-if", "data/chr22_1000.vcf", "-of", "target/ch22-disc.csv", "-v", "-m", "manhattan")
+
+  def buildMetricFromName(metricName: String): PairwiseOperation = {
     metricName match {
       case "euclidean" => EuclideanPairwiseMetric
       case "manhattan" => ManhattanPairwiseMetric
@@ -54,9 +50,9 @@ class PairWiseDistanceCmd extends ArgsApp with FeatureSourceArgs with Logging wi
       case _ => throw new IllegalArgumentException(metricName)
     }
   }
-      
+
   @Override
-  def run():Unit = {
+  def run(): Unit = {
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
     val metric = buildMetricFromName(metricName)
     echo(s"Calculating pair wise distance: ${metric}")
@@ -68,13 +64,14 @@ class PairWiseDistanceCmd extends ArgsApp with FeatureSourceArgs with Logging wi
     CSVUtils.withFile(new File(outputFile)) { writer =>
       writer.writeRow("" :: sampleNames)
       // since the matrix is symmetric does not matter that we output columns as rows
-      Range(0, noOfSamples).foreach(i => writer.writeRow(sampleNames(i) :: resultAsMatrix(::,i).toArray.toList))
-    }   
-  }  
+      Range(0, noOfSamples)
+        .foreach(i => writer.writeRow(sampleNames(i) :: resultAsMatrix(::, i).toArray.toList))
+    }
+  }
 }
 
-object PairWiseDistanceCmd  {
-  def main(args:Array[String]) {
+object PairWiseDistanceCmd {
+  def main(args: Array[String]) {
     AppRunner.mains[PairWiseDistanceCmd](args)
   }
 }

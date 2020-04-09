@@ -9,7 +9,7 @@ import collection.JavaConverters._
 import au.csiro.variantspark.input.VCFSource
 import au.csiro.variantspark.input.VCFFeatureSource
 import au.csiro.variantspark.input.HashingLabelSource
-import org.apache.spark.mllib.linalg.{Vector,Vectors}
+import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import au.csiro.variantspark.input.CsvLabelSource
 import au.csiro.variantspark.cmd.Echoable
 import au.csiro.pbdava.ssparkle.common.utils.Logging
@@ -49,138 +49,159 @@ import au.csiro.variantspark.data.VariableType
 import org.apache.spark.rdd.RDD
 import au.csiro.variantspark.cli.args.ModelOutputArgs
 
+class ImportanceCmd
+    extends ArgsApp with SparkApp with FeatureSourceArgs with ImportanceArgs with RandomForestArgs
+    with ModelOutputArgs with Echoable with Logging with TestArgs {
 
-class ImportanceCmd extends ArgsApp with SparkApp 
-  with FeatureSourceArgs
-  with ImportanceArgs
-  with RandomForestArgs
-  with ModelOutputArgs
-  with Echoable with Logging with TestArgs {
-  
-  @Option(name="-ff", required=true, usage="Path to feature file", aliases=Array("--feature-file"))
-  val featuresFile:String = null
+  @Option(name = "-ff", required = true, usage = "Path to feature file",
+    aliases = Array("--feature-file"))
+  val featuresFile: String = null
 
-  @Option(name="-fc", required=true, usage="Name of the feature column", aliases=Array("--feature-column"))
-  val featureColumn:String = null
-    
+  @Option(name = "-fc", required = true, usage = "Name of the feature column",
+    aliases = Array("--feature-column"))
+  val featureColumn: String = null
+
   // output options
-  @Option(name="-of", required=false, usage="Path to output file (def = stdout)", aliases=Array("--output-file") )
-  val outputFile:String = null
-  
-  @Option(name="-on", required=false, usage="The number of top important variables to include in output. Use `0` for all variables. (def=20)",
-      aliases=Array("--output-n-variables"))
-  val nVariables:Int = 20
+  @Option(name = "-of", required = false, usage = "Path to output file (def = stdout)",
+    aliases = Array("--output-file"))
+  val outputFile: String = null
 
-  @Option(name="-od", required=false, usage="Include important variables data in output file (def=no)"
-        , aliases=Array("--output-include-data") )
+  @Option(name = "-on", required = false,
+    usage = "The number of top important variables to include in output. Use `0` for all variables. (def=20)",
+    aliases = Array("--output-n-variables"))
+  val nVariables: Int = 20
+
+  @Option(name = "-od", required = false,
+    usage = "Include important variables data in output file (def=no)",
+    aliases = Array("--output-include-data"))
   val includeData = false
-  
-  @Option(name="-sr", required=false, usage="Random seed to use (def=<random>)", aliases=Array("--seed"))
+
+  @Option(name = "-sr", required = false, usage = "Random seed to use (def=<random>)",
+    aliases = Array("--seed"))
   val randomSeed: Long = defRng.nextLong
 
   @Override
-  def testArgs = Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249", "-ovn", "raw", "-on", "1988", "-rn", "1000", "-rbs", "100", "-ic", 
-      "-om", "target/ch22-model.json", "-omf","json", "-sr", "13", "-v", "-io", """{"separator":":"}""")
-    
+  def testArgs =
+    Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249",
+      "-ovn", "raw", "-on", "1988", "-rn", "1000", "-rbs", "100", "-ic", "-om",
+      "target/ch22-model.json", "-omf", "json", "-sr", "13", "-v", "-io", """{"separator":":"}""")
+
   @Override
-  def run():Unit = {    
-    implicit val fs = FileSystem.get(sc.hadoopConfiguration)  
-    implicit val hadoopConf:Configuration = sc.hadoopConfiguration
+  def run(): Unit = {
+    implicit val fs = FileSystem.get(sc.hadoopConfiguration)
+    implicit val hadoopConf: Configuration = sc.hadoopConfiguration
     logDebug(s"Running with filesystem: ${fs}, home: ${fs.getHomeDirectory}")
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
- 
+
     echo(s"Finding  ${nVariables}  most important features using random forest")
 
-    val dataLoadingTimer = Timer()    
+    val dataLoadingTimer = Timer()
     echo(s"Loaded rows: ${dumpList(featureSource.sampleNames)}")
-    
-  
-    val inputData = DefTreeRepresentationFactory.createRepresentation(featureSource.features.zipWithIndex()).cache() 
+
+    val inputData = DefTreeRepresentationFactory
+      .createRepresentation(featureSource.features.zipWithIndex())
+      .cache()
     val totalVariables = inputData.count()
-    
+
     val variablePreview = inputData.map(_.label).take(defaultPreviewSize).toList
     echo(s"Loaded variables: ${dumpListHead(variablePreview, totalVariables)}, took: ${dataLoadingTimer.durationInSec}")
-    echoDataPreview() 
-    
+    echoDataPreview()
+
     //if (isVerbose) {
     //  verbose("Representation preview:")
     //  inputData.take(defaultPreviewSize).foreach(f=> verbose(s"${f.label}:${f.variableType}:${dumpList(f.valueAsStrings, longPreviewSize)}(${f.getClass.getName})"))
-    //} 
-    
+    //}
+
     echo(s"Loading labels from: ${featuresFile}, column: ${featureColumn}")
     val labelSource = new CsvLabelSource(featuresFile, featureColumn)
     val labels = labelSource.getLabels(featureSource.sampleNames)
     echo(s"Loaded labels: ${dumpList(labels.toList)}")
-    echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")  
+    echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")
     echo(s"Random seed is: ${randomSeed}")
     val treeBuildingTimer = Timer()
-    val rf:RandomForest = new RandomForest(RandomForestParams(oob=rfEstimateOob, seed = randomSeed, maxDepth = rfMaxDepth, minNodeSize = rfMinNodeSize, bootstrap = !rfSampleNoReplacement, 
-        subsample = rfSubsampleFraction, 
-        nTryFraction = if (rfMTry > 0) rfMTry.toDouble/totalVariables else rfMTryFraction, 
-        correctImpurity = correctImportance, 
-        airRandomSeed = airRandomSeed
-    ))
-        
+    val rf: RandomForest = new RandomForest(RandomForestParams(oob = rfEstimateOob,
+        seed = randomSeed, maxDepth = rfMaxDepth, minNodeSize = rfMinNodeSize,
+        bootstrap = !rfSampleNoReplacement, subsample = rfSubsampleFraction,
+        nTryFraction = if (rfMTry > 0) rfMTry.toDouble / totalVariables else rfMTryFraction,
+        correctImpurity = correctImportance, airRandomSeed = airRandomSeed))
+
     //
     val trainingData = inputData
-    
+
     implicit val rfCallback = new RandomForestCallback() {
-      var totalTime = 0l
+      var totalTime = 0L
       var totalTrees = 0
-      override   def onParamsResolved(actualParams:RandomForestParams) {
+      override def onParamsResolved(actualParams: RandomForestParams) {
         echo(s"RF Params: ${actualParams}")
         echo(s"RF Params mTry: ${(actualParams.nTryFraction * totalVariables).toLong}")
       }
-      override  def onTreeComplete(nTrees:Int, oobError:Double, elapsedTimeMs:Long) {
+      override def onTreeComplete(nTrees: Int, oobError: Double, elapsedTimeMs: Long) {
         totalTime += elapsedTimeMs
         totalTrees += nTrees
-        echo(s"Finished trees: ${totalTrees}, current oobError: ${oobError}, totalTime: ${totalTime/1000.0} s, avg timePerTree: ${totalTime/(1000.0*totalTrees)} s")
-        echo(s"Last build trees: ${nTrees}, time: ${elapsedTimeMs} ms, timePerTree: ${elapsedTimeMs/nTrees} ms")
-        
+        echo(
+            s"Finished trees: ${totalTrees}, current oobError: ${oobError}, totalTime: ${totalTime / 1000.0} s, avg timePerTree: ${totalTime / (1000.0 * totalTrees)} s")
+        echo(
+            s"Last build trees: ${nTrees}, time: ${elapsedTimeMs} ms, timePerTree: ${elapsedTimeMs / nTrees} ms")
+
       }
     }
-    
+
     val result = rf.batchTrainTyped(trainingData, labels, nTrees, rfBatchSize)
-    
-    echo(s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s") 
-        
-    
+
+    echo(
+        s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s")
+
     // build index for names
-    val allImportantVariables  = result.normalizedVariableImportance(importanceNormalizer).toSeq
+    val allImportantVariables = result.normalizedVariableImportance(importanceNormalizer).toSeq
     val topImportantVariables = limitVariables(allImportantVariables, nVariables)
     val topImportantVariableIndexes = topImportantVariables.map(_._1).toSet
-    
-    val variablesToIndex = if (requiresFullIndex)  {
+
+    val variablesToIndex = if (requiresFullIndex) {
       allImportantVariables.map(_._1).toSet
     } else {
-      topImportantVariableIndexes      
+      topImportantVariableIndexes
     }
-    
-    val index = SparkUtils.withBroadcast(sc)(variablesToIndex) { br_indexes => 
-      inputData.filter(t => br_indexes.value.contains(t.index)).map(f => (f.index, f.label)).collectAsMap()
+
+    val index = SparkUtils.withBroadcast(sc)(variablesToIndex) { br_indexes =>
+      inputData
+        .filter(t => br_indexes.value.contains(t.index))
+        .map(f => (f.index, f.label))
+        .collectAsMap()
     }
-    
-    val varImportance = topImportantVariables.map({ case (i, importance) => (index(i), importance)})
-    
-    if (isEcho && outputFile!=null) {
+
+    val varImportance = topImportantVariables.map({
+      case (i, importance) => (index(i), importance)
+    })
+
+    if (isEcho && outputFile != null) {
       echo("Variable importance preview")
-      varImportance.take(math.min(math.max(nVariables, defaultPreviewSize), defaultPreviewSize)).foreach({case(label, importance) => echo(s"${label}: ${importance}")})
+      varImportance
+        .take(math.min(math.max(nVariables, defaultPreviewSize), defaultPreviewSize))
+        .foreach({ case (label, importance) => echo(s"${label}: ${importance}") })
     }
-    
-    val importantVariableData = if (includeData) trainingData.collectAtIndexes(topImportantVariableIndexes) else null
-   
-    CSVUtils.withStream(if (outputFile != null ) HdfsPath(outputFile).create() else ReusablePrintStream.stdout) { writer =>
-      val header = List("variable","importance") ::: (if (includeData) featureSource.sampleNames else Nil)
-      writer.writeRow(header)
-      writer.writeAll(topImportantVariables.map({case (i, importance) => 
-        List(index(i), importance) ::: (if (includeData) (importantVariableData(i).valueAsStrings) else Nil)}))
+
+    val importantVariableData =
+      if (includeData) trainingData.collectAtIndexes(topImportantVariableIndexes) else null
+
+    CSVUtils.withStream(
+        if (outputFile != null) HdfsPath(outputFile).create() else ReusablePrintStream.stdout) {
+      writer =>
+        val header =
+          List("variable", "importance") ::: (if (includeData) featureSource.sampleNames else Nil)
+        writer.writeRow(header)
+        writer.writeAll(topImportantVariables.map({
+          case (i, importance) =>
+            List(index(i), importance) ::: (if (includeData)
+                                              (importantVariableData(i).valueAsStrings)
+                                            else Nil)
+        }))
     }
     saveModel(result, index.toMap)
   }
 }
 
-object ImportanceCmd  {
-  def main(args:Array[String]) {
+object ImportanceCmd {
+  def main(args: Array[String]) {
     AppRunner.mains[ImportanceCmd](args)
   }
 }

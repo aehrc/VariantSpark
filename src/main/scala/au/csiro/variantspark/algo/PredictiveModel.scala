@@ -8,11 +8,11 @@ import scala.reflect.ClassTag
 import au.csiro.variantspark.data.Feature
 
 trait PredictiveModel {
-  def predict(data: RDD[(Feature, Long)]): Array[Int]  
-  def printout() 
+  def predict(data: RDD[(Feature, Long)]): Array[Int]
+  def printout()
 }
 
 trait PredictiveModelWithImportance extends PredictiveModel {
-  def variableImportanceAsFastMap: Long2DoubleOpenHashMap 
-  def variableImportance(): Map[Long, Double] =  variableImportanceAsFastMap.asScala
+  def variableImportanceAsFastMap: Long2DoubleOpenHashMap
+  def variableImportance(): Map[Long, Double] = variableImportanceAsFastMap.asScala
 }

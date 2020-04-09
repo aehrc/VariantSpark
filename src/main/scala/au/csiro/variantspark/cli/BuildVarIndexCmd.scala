@@ -28,16 +28,18 @@ import org.apache.spark.Accumulable
 import org.apache.spark.AccumulableParam
 import java.io.FileOutputStream
 import java.io.ObjectOutputStream
-import  au.csiro.variantspark.input._
+import au.csiro.variantspark.input._
 
-
-object IndexAccumulator extends AccumulableParam[Long2ObjectOpenHashMap[String], (Long,String)] {
-  def addAccumulator(r: Long2ObjectOpenHashMap[String], t: (Long, String)): Long2ObjectOpenHashMap[String] = {
+object IndexAccumulator
+    extends AccumulableParam[Long2ObjectOpenHashMap[String], (Long, String)] {
+  def addAccumulator(r: Long2ObjectOpenHashMap[String],
+      t: (Long, String)): Long2ObjectOpenHashMap[String] = {
     r.put(t._1, t._2)
     r
   }
-  
-  def addInPlace(r1: Long2ObjectOpenHashMap[String], r2: Long2ObjectOpenHashMap[String]): Long2ObjectOpenHashMap[String] = {
+
+  def addInPlace(r1: Long2ObjectOpenHashMap[String],
+      r2: Long2ObjectOpenHashMap[String]): Long2ObjectOpenHashMap[String] = {
     r1.putAll(r2)
     r1
   }
@@ -49,33 +51,35 @@ object IndexAccumulator extends AccumulableParam[Long2ObjectOpenHashMap[String],
 
 class BuildVarIndexCmd extends ArgsApp with FeatureSourceArgs with Logging with TestArgs {
 
-  @Option(name="-oi", required=true, usage="Path to output index file", aliases=Array("--output-index"))
-  val outputIndex:String = null
+  @Option(name = "-oi", required = true, usage = "Path to output index file",
+    aliases = Array("--output-index"))
+  val outputIndex: String = null
 
   @Override
-  def testArgs = Array("-if", "data/chr22_1000.vcf", 
-      "-oi", "target/ch22-idx.ser"
-      )
-      
+  def testArgs = Array("-if", "data/chr22_1000.vcf", "-oi", "target/ch22-idx.ser")
+
   @Override
-  def run():Unit = {
+  def run(): Unit = {
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
     echo(s"Building full variable index")
-    
+
     val indexAccumulator = sc.accumulable(new Long2ObjectOpenHashMap[String]())(IndexAccumulator)
-    featureSource.features.zipWithIndex().map(t => (t._2, t._1.label)).foreach(indexAccumulator.add(_))
-    
+    featureSource.features
+      .zipWithIndex()
+      .map(t => (t._2, t._1.label))
+      .foreach(indexAccumulator.add(_))
+
     val index = indexAccumulator.value
-    
+
     echo(s"Saving index of ${index.size()} variables to: ${outputIndex}")
-    LoanUtils.withCloseable(new ObjectOutputStream(new FileOutputStream(outputIndex))) { objectOut =>
-        objectOut.writeObject(index)
+    LoanUtils.withCloseable(new ObjectOutputStream(new FileOutputStream(outputIndex))) {
+      objectOut => objectOut.writeObject(index)
     }
-  }  
+  }
 }
 
-object BuildVarIndexCmd  {
-  def main(args:Array[String]) {
+object BuildVarIndexCmd {
+  def main(args: Array[String]) {
     AppRunner.mains[BuildVarIndexCmd](args)
   }
 }

@@ -7,22 +7,21 @@ import com.github.tototoshi.csv.DefaultCSVFormat
 import java.io.File
 
 object CSVUtils {
-  
+
   implicit object MyFormat extends DefaultCSVFormat {
     override val lineTerminator = System.lineSeparator()
   }
-  
-  def withStream(os:OutputStream)(func: CSVWriter => Unit) {
-    LoanUtils.withCloseable(CSVWriter.open(os))(func)  
+
+  def withStream(os: OutputStream)(func: CSVWriter => Unit) {
+    LoanUtils.withCloseable(CSVWriter.open(os))(func)
   }
 
-  def withPath(path:String)(func: CSVWriter => Unit) {
-    LoanUtils.withCloseable(CSVWriter.open(path))(func)  
+  def withPath(path: String)(func: CSVWriter => Unit) {
+    LoanUtils.withCloseable(CSVWriter.open(path))(func)
   }
 
-  def withFile(file:File)(func: CSVWriter => Unit) {
-    LoanUtils.withCloseable(CSVWriter.open(file))(func)  
+  def withFile(file: File)(func: CSVWriter => Unit) {
+    LoanUtils.withCloseable(CSVWriter.open(file))(func)
   }
 
-  
 }

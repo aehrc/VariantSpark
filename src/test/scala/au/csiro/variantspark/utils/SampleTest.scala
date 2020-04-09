@@ -18,8 +18,6 @@ class SampleTest {
     assertTrue("There are out of bag indexes", !sample.distinctIndexesOut.isEmpty)
     assertTrue("There are in  bag indexes", !sample.distinctIndexesIn.isEmpty)
   }
-
-
   @Test
   def testFullSampleWithoutReplacement() {
     val nSize = 100
@@ -44,8 +42,6 @@ class SampleTest {
     assertEquals(sample.length, sample.distinctIndexesIn.size)
     assertEquals(sample.length, sample.distinctIndexesOut.size)
   }
-
-
   @Test
   def testFractionSampleWithReplacement() {
     val nSize = 100

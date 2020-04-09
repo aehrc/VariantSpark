@@ -1,6 +1,6 @@
 package au.csiro.variantspark.cli.args
 
-import org.kohsuke.args4j.{Option => ArgsOption} 
+import org.kohsuke.args4j.{Option => ArgsOption}
 import au.csiro.variantspark.cmd.Echoable
 import au.csiro.variantspark.input.CsvLabelSource
 import org.apache.hadoop.fs.FileSystem
@@ -20,42 +20,44 @@ import au.csiro.variantspark.external.Forest
 import au.csiro.variantspark.external.ModelConverter
 import org.apache.hadoop.conf.Configuration
 
-
 trait ModelOutputArgs extends SparkArgs with Echoable {
 
-  @ArgsOption(name="-om", required=false, usage="Path to model file", aliases=Array("--model-file"))
-  val modelFile:String = null
+  @ArgsOption(name = "-om", required = false, usage = "Path to model file",
+    aliases = Array("--model-file"))
+  val modelFile: String = null
 
-  @ArgsOption(name="-omf", required=false, usage="Format of the model file, one of: `json`, `java` (def=`java`)", 
-        aliases=Array("--model-file-format"))
-  val modelFileFormat:String = "java"
+  @ArgsOption(name = "-omf", required = false,
+    usage = "Format of the model file, one of: `json`, `java` (def=`java`)",
+    aliases = Array("--model-file-format"))
+  val modelFileFormat: String = "java"
 
   def requiresFullIndex = modelFile != null
- 
-  def saveModelJson(rfModel:RandomForestModel, variableIndex:Map[Long,String]) {
-      implicit val hadoopConf:Configuration = sc.hadoopConfiguration
-      implicit val formats = Serialization.formats(NoTypeHints)
-      LoanUtils.withCloseable(new OutputStreamWriter(HdfsPath(modelFile).create())) { objectOut =>
-        writePretty(new ModelConverter(variableIndex).toExternal(rfModel), objectOut)
-      }
+
+  def saveModelJson(rfModel: RandomForestModel, variableIndex: Map[Long, String]) {
+    implicit val hadoopConf: Configuration = sc.hadoopConfiguration
+    implicit val formats = Serialization.formats(NoTypeHints)
+    LoanUtils.withCloseable(new OutputStreamWriter(HdfsPath(modelFile).create())) { objectOut =>
+      writePretty(new ModelConverter(variableIndex).toExternal(rfModel), objectOut)
+    }
   }
-  
-  def saveModelJava(rfModel:RandomForestModel, variableIndex:Map[Long,String]) {
-    implicit val hadoopConf:Configuration = sc.hadoopConfiguration
+
+  def saveModelJava(rfModel: RandomForestModel, variableIndex: Map[Long, String]) {
+    implicit val hadoopConf: Configuration = sc.hadoopConfiguration
     LoanUtils.withCloseable(new ObjectOutputStream(HdfsPath(modelFile).create())) { objectOut =>
       objectOut.writeObject(rfModel)
     }
   }
-  
-  def saveModel(rfModel:RandomForestModel, variableIndex:Map[Long,String]) {    
+
+  def saveModel(rfModel: RandomForestModel, variableIndex: Map[Long, String]) {
     if (modelFile != null) {
-      echo(s"Saving random forest model as `${modelFileFormat}` to: ${modelFile}") 
-      modelFileFormat  match {
+      echo(s"Saving random forest model as `${modelFileFormat}` to: ${modelFile}")
+      modelFileFormat match {
         case "java" => saveModelJava(rfModel, variableIndex)
         case "json" => saveModelJson(rfModel, variableIndex)
-        case _ => throw new IllegalArgumentException("Unrecognized model format type: " + modelFileFormat)
+        case _ =>
+          throw new IllegalArgumentException("Unrecognized model format type: " + modelFileFormat)
       }
-      
+
     }
-  }    
+  }
 }

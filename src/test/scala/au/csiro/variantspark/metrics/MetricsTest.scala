@@ -3,7 +3,6 @@ package au.csiro.variantspark.metrics
 import org.junit.Assert._
 import org.junit.Test
 
-
 class MetricsTest {
 
   @Test def testRandIndexForPerfectClustering() {

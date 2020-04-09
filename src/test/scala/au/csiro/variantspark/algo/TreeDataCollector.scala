@@ -8,7 +8,10 @@ import org.apache.spark.rdd.RDD
 import scala.collection.mutable.MutableList
 import au.csiro.variantspark.data.Feature
 
-class TreeDataCollector(treeStream: Stream[PredictiveModelWithImportance] = Stream.continually(TestPredictorWithImportance(null, null))) extends BatchTreeModel {
+class TreeDataCollector(
+    treeStream: Stream[PredictiveModelWithImportance] = Stream.continually(
+        TestPredictorWithImportance(null, null)))
+    extends BatchTreeModel {
   val allTypedData = MutableList[RDD[TreeFeature]]()
   val allLabels = MutableList[Array[Int]]()
   val allTryFration = MutableList[Double]()
@@ -16,7 +19,8 @@ class TreeDataCollector(treeStream: Stream[PredictiveModelWithImportance] = Stre
   val allTreest = MutableList[PredictiveModelWithImportance]()
   val treeIter = treeStream.toIterator
 
-  override def batchTrain(indexedData: RDD[TreeFeature], labels: Array[Int], nTryFraction: Double, samples: Seq[Sample]): Seq[PredictiveModelWithImportance] = {
+  override def batchTrain(indexedData: RDD[TreeFeature], labels: Array[Int], nTryFraction: Double,
+      samples: Seq[Sample]): Seq[PredictiveModelWithImportance] = {
     allTypedData += indexedData
     allLabels += labels
     allTryFration += nTryFraction
@@ -26,10 +30,14 @@ class TreeDataCollector(treeStream: Stream[PredictiveModelWithImportance] = Stre
     newTrees
   }
 
-  override def batchPredict(indexedTypedData: RDD[TreeFeature], models: Seq[PredictiveModelWithImportance], indexes: Seq[Array[Int]]): Seq[Array[Int]] = {
+  override def batchPredict(indexedTypedData: RDD[TreeFeature],
+      models: Seq[PredictiveModelWithImportance], indexes: Seq[Array[Int]]): Seq[Array[Int]] = {
     //TODO I should be projecting with indexes here
     //but it does not matter in this case
-    models.zip(indexes).map { case (model, indexes) => model.predict(indexedTypedData.map(tf => (tf.asInstanceOf[Feature], tf.index)))}
+    models.zip(indexes).map {
+      case (model, indexes) =>
+        model.predict(indexedTypedData.map(tf => (tf.asInstanceOf[Feature], tf.index)))
+    }
   }
 
   def factory(params: DecisionTreeParams) = this

@@ -7,8 +7,10 @@ import org.apache.spark.rdd.RDD
 import scala.reflect.ClassTag
 import au.csiro.variantspark.data.Feature
 
-case class TestPredictorWithImportance(val predictions: Array[Int], val importance: Long2DoubleOpenHashMap) extends PredictiveModelWithImportance {
- 
+case class TestPredictorWithImportance(val predictions: Array[Int],
+    val importance: Long2DoubleOpenHashMap)
+    extends PredictiveModelWithImportance {
+
   def predict(data: RDD[(Feature, Long)]): Array[Int] = predictions
   def variableImportanceAsFastMap: Long2DoubleOpenHashMap = importance
   def printout() {}

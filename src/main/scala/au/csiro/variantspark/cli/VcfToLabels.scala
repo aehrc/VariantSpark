@@ -13,43 +13,40 @@ import org.apache.spark.mllib.linalg.Vectors
 import java.io.File
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
-import  au.csiro.variantspark.input._
-
+import au.csiro.variantspark.input._
 
 class VcfToLabels extends ArgsApp with SparkApp {
 
-  @Option(name="-if", required=false, usage="This is input files", aliases=Array("--input-file"))
-  val inputFile:String = "data/small.vcf"
+  @Option(name = "-if", required = false, usage = "This is input files",
+    aliases = Array("--input-file"))
+  val inputFile: String = "data/small.vcf"
 
-  @Option(name="-of", required=false, usage="Output file", aliases=Array("--output-file"))
-  val outputFile:String = "data/small-labels.csv"
-
-  
-  @Option(name="-l", required=false)
-  val limit:Int = 10
-
-  
+  @Option(name = "-of", required = false, usage = "Output file", aliases = Array("--output-file"))
+  val outputFile: String = "data/small-labels.csv"
+  @Option(name = "-l", required = false)
+  val limit: Int = 10
   @Override
-  def run():Unit = {
+  def run(): Unit = {
     val vcfSource = VCFSource(sc.textFile(inputFile))
     val header = vcfSource.header
-    val version = vcfSource.version  
+    val version = vcfSource.version
     println(header)
     println(version)
-    val source  = VCFFeatureSource(vcfSource)
+    val source = VCFFeatureSource(vcfSource)
     val columns = source.features.take(limit)
     CSVUtils.withFile(new File(outputFile)) { writer =>
       writer.writeRow("" :: columns.map(_.label).toList)
-      source.sampleNames.zipWithIndex.foreach { case( row, i) =>
-        writer.writeRow(row :: columns.map(_.valueAsByteArray(i)).toList)        
+      source.sampleNames.zipWithIndex.foreach {
+        case (row, i) =>
+          writer.writeRow(row :: columns.map(_.valueAsByteArray(i)).toList)
       }
     }
-    
+
   }
 }
 
-object VcfToLabels  {
-  def main(args:Array[String]) {
+object VcfToLabels {
+  def main(args: Array[String]) {
     AppRunner.mains[VcfToLabels](args)
   }
 }

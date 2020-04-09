@@ -39,31 +39,34 @@ import au.csiro.variantspark.output.CSVFeatureSink2
 
 class ConvertCmd extends ArgsApp with FeatureSourceArgs with Echoable with Logging with TestArgs {
 
-  @Option(name="-of", required=true, usage="Path to output file", aliases=Array("--output-file") )
-  val outputFile:String = null
-  
-  @Option(name="-ot", required=false, usage="Input file type, one of: vcf, csv (def=vcf)", aliases=Array("--output-type") )
-  val outputType:String = null  
-   
+  @Option(name = "-of", required = true, usage = "Path to output file",
+    aliases = Array("--output-file"))
+  val outputFile: String = null
+
+  @Option(name = "-ot", required = false, usage = "Input file type, one of: vcf, csv (def=vcf)",
+    aliases = Array("--output-type"))
+  val outputType: String = null
+
   @Override
-  def testArgs = Array("-if", "data/chr22_1000.vcf", "-it", "vcf", "-sp", "4", "-of", "target/getds.csv")
-    
+  def testArgs =
+    Array("-if", "data/chr22_1000.vcf", "-it", "vcf", "-sp", "4", "-of", "target/getds.csv")
+
   @Override
-  def run():Unit = {
-    logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))    
-  
+  def run(): Unit = {
+    logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
+
     echo(s"Converting from: ${inputType} to: ${outputType}")
-    
+
     echo(s"Loading parquet file: ${inputFile}")
-    echo(s"Loaded rows: ${dumpList(featureSource.sampleNames)}")  
-    
+    echo(s"Loaded rows: ${dumpList(featureSource.sampleNames)}")
+
     val sink = CSVFeatureSink2(outputFile)
     sink.save(featureSource)
-  }    
+  }
 }
 
-object ConvertCmd  {
-  def main(args:Array[String]) {
+object ConvertCmd {
+  def main(args: Array[String]) {
     AppRunner.mains[ConvertCmd](args)
   }
 }

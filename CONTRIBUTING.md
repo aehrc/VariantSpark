@@ -38,3 +38,7 @@ Follow the [Apache Spark - Code Style Guide](http://spark.apache.org/contributin
 In particular:
 
 * For Python code follow PEP 8 with one exception: lines can be up to 100 characters in length, not 79.
+* Scala code is formatted with `scalafmt` with the configuration file in .scalafmt.conf - maven build 
+checks the formatting but does not apply automatically. You can setup you IDE (e.g. IntelJ) to apply the 
+formatting or run `./dev/scalafmt` to apply formatting to all new files.
+

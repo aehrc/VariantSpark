@@ -6,12 +6,12 @@ import au.csiro.variantspark.utils.CanSize
 import au.csiro.variantspark.data.Feature
 
 package object algo {
-  type IndexedFeature = (Feature,Long)
-   
+  type IndexedFeature = (Feature, Long)
+
   implicit case object CanSizeFeature extends CanSize[Feature] {
-    override def size(f:Feature):Int = f.size
+    override def size(f: Feature): Int = f.size
     override def runtimeClass = classOf[Feature]
   }
-      
-  implicit def toTreeFeatueRDD(rdd:RDD[TreeFeature]) = new TreeFeatureRDDFunction(rdd)
+
+  implicit def toTreeFeatueRDD(rdd: RDD[TreeFeature]) = new TreeFeatureRDDFunction(rdd)
 }

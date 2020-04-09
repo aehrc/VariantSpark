@@ -8,25 +8,26 @@ import au.csiro.variantspark.algo.RandomForestMember
 import au.csiro.variantspark.algo.DecisionTreeModel
 import au.csiro.variantspark.algo.RandomForestParams
 
-trait Node 
+trait Node
 
-@SerialVersionUID(1l)
-case class Leaf(val majorityLabel: Int, val  size: Int, val  impurity: Double) extends Node with Serializable
+@SerialVersionUID(1L)
+case class Leaf(val majorityLabel: Int, val size: Int, val impurity: Double)
+    extends Node with Serializable
 
-@SerialVersionUID(1l)
-case class Split(val majorityLabel: Int, val size: Int, val  impurity: Double, 
-    splitVar:String, splitVarIndex: Long, permutated:Boolean, splitPoint: Double,
-    impurityReduction: Double,left: Node, right: Node) extends Node with  Serializable
-    
-@SerialVersionUID(1l)
-case class OOBInfo(val oobSamples:Array[Int], val oobPredictions:Array[Int]) extends Object with Serializable
-    
-@SerialVersionUID(1l)
-case class Tree(val rootNode: Node, val oobInfo:Option[OOBInfo]) extends Object with Serializable
+@SerialVersionUID(1L)
+case class Split(val majorityLabel: Int, val size: Int, val impurity: Double, splitVar: String,
+    splitVarIndex: Long, permutated: Boolean, splitPoint: Double, impurityReduction: Double,
+    left: Node, right: Node)
+    extends Node with Serializable
 
-@SerialVersionUID(1l)
-case class Forest(val params:Option[RandomForestParams], 
-    val trees:Seq[Tree], oobErrors:Option[Seq[Double]]) extends Object with Serializable
+@SerialVersionUID(1L)
+case class OOBInfo(val oobSamples: Array[Int], val oobPredictions: Array[Int])
+    extends Object with Serializable
 
+@SerialVersionUID(1L)
+case class Tree(val rootNode: Node, val oobInfo: Option[OOBInfo]) extends Object with Serializable
 
-
+@SerialVersionUID(1L)
+case class Forest(val params: Option[RandomForestParams], val trees: Seq[Tree],
+    oobErrors: Option[Seq[Double]])
+    extends Object with Serializable

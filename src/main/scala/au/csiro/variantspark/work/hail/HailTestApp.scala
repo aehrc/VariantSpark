@@ -18,16 +18,15 @@ import is.hail.expr.types.virtual._
 import is.hail.expr.types.virtual.TStruct
 import is.hail.methods.LinearRegressionRowsSingle
 
-
 object HailTestApp {
-  
-  def main(args:Array[String]) = {
+
+  def main(args: Array[String]) = {
     println("Hello")
-  
+
     val hc = HailContext()
-  
-  
-  val expr = """
+
+    val expr =
+      """
 	(TableCount
 	  (MatrixColsTable
 	    (MatrixMapCols None
@@ -43,11 +42,12 @@ object HailTestApp {
 	          (GetField __uid_44
 	            (Ref sa)))))))
   """
-  
-  val ir = IRParser.parse_value_ir(expr)
-  println(ir)
-  
-  val lrIRString = """
+
+    val ir = IRParser.parse_value_ir(expr)
+    println(ir)
+
+    val lrIRString =
+      """
   	(TableMapRows
 	  (MatrixToTableApply "{\"name\":\"LinearRegressionRowsSingle\",\"yFields\":[\"__y_0\"],\"xField\":\"__uid_102\",\"covFields\":[\"__cov0\"],\"rowBlockSize\":16,\"passThrough\":[]}"
 	    (MatrixRename () () ("__uid_103" "__uid_104") ("__y_0" "__cov0") () () ("__uid_105") ("__uid_102")
@@ -149,143 +149,122 @@ object HailTestApp {
 	        (GetField p_value
 	          (Ref row))
 	        (I32 0)))))
-"""  
-  
-  
-  val lrIR = IRParser.parse_table_ir(lrIRString)
-  println(lrIR)
-  
-  val lrResult = new Table(hc, lrIR)
-   
-  println("#### KKey : " + lrResult.key)
-  
-  
-  //println("Result lr count: " + lrResult.count())
-  println(lrResult.signature) 
-  lrResult.collect().take(10).foreach(println _)  
-  
-  //System.exit(0)
-  
-  
-  val table:Table = hc.importTable("data/hipsterIndex/hipster_labels.txt", 
-      keyNames = Some(Array("samples")), separator=",", types=Map("label" -> TInt64Required, "score"->TFloat64Required)) 
-  
-  println("Table tir: " + table.tir)
-  
-  println(table)
-  println("Signature: " + table.signature)
+"""
 
-  val reader = new VCFsReader(
-      Array("data/hipsterIndex/hipster.vcf.bgz"),
-      Set.empty,
-      "Float64",
-      None,
-      Map.empty,
-      true,
-      true,
-      true,
-      false,
-      TextInputFilterAndReplace(None, None, None),
+    val lrIR = IRParser.parse_table_ir(lrIRString)
+    println(lrIR)
+
+    val lrResult = new Table(hc, lrIR)
+
+    println("#### KKey : " + lrResult.key)
+
+    //println("Result lr count: " + lrResult.count())
+    println(lrResult.signature)
+    lrResult.collect().take(10).foreach(println _)
+
+    //System.exit(0)
+
+    val table: Table =
+      hc.importTable("data/hipsterIndex/hipster_labels.txt", keyNames = Some(Array("samples")),
+        separator = ",", types = Map("label" -> TInt64Required, "score" -> TFloat64Required))
+
+    println("Table tir: " + table.tir)
+
+    println(table)
+    println("Signature: " + table.signature)
+
+    val reader = new VCFsReader(Array("data/hipsterIndex/hipster.vcf.bgz"), Set.empty, "Float64",
+      None, Map.empty, true, true, true, false, TextInputFilterAndReplace(None, None, None),
       "[]", //partitionsJSON,
-      None,
-      None
-   )
+      None, None)
 
-  val irArray = reader.read()
-  
-  println(irArray.toList)
-  
-  val matLit = irArray.head
-  println(matLit)
-   
-  val matrixValue = matLit match {       
-      case MatrixLiteral(v) => v  
-  }
-  
-  println(matrixValue)
-  
-  val tv = matrixValue.typ.rowKey
- 
-  
-  println("XXXXXX XXXXXX")
-  
-  
-  println(tv)
-  println(matrixValue.typ.rowType)
-  println(matrixValue.typ.rowKeyStruct)
-  println(matrixValue.typ.rowValueStruct)
-  println(matrixValue.typ.rowValueFieldIdx)
-  
-  
-  System.exit(0)
-//  
-//  println(matrixValue.stringSampleIds) 
+    val irArray = reader.read()
+
+    println(irArray.toList)
+
+    val matLit = irArray.head
+    println(matLit)
+
+    val matrixValue = matLit match {
+      case MatrixLiteral(v) => v
+    }
+
+    println(matrixValue)
+
+    val tv = matrixValue.typ.rowKey
+
+    println("XXXXXX XXXXXX")
+
+    println(tv)
+    println(matrixValue.typ.rowType)
+    println(matrixValue.typ.rowKeyStruct)
+    println(matrixValue.typ.rowValueStruct)
+    println(matrixValue.typ.rowValueFieldIdx)
+
+    System.exit(0)
+//
+//  println(matrixValue.stringSampleIds)
 //  val tableValue:TableValue = matrixValue.toTableValue
 //  println(tableValue)
-//  
+//
 //  val colTable = new Table(table.hc, TableLiteral(tableValue))
-//  println(colTable.signature)  //    
+//  println(colTable.signature)  //
 ////  val vcf = hc.
-//  
+//
 //  val count = table.count()
 //  println(s"Count: ${count}")
-  
-    
-  val joinded_type = TStruct(("s",TStringOptional), ("_xxx", TStruct(("score",TFloat64Optional),("label", TInt64Optional))))   
 
-  val matAnnot =  MatrixAnnotateColsTable(matLit, table.tir, "label")
-  println(matAnnot.typ.colType)
-  
-  
+    val joinded_type = TStruct(("s", TStringOptional),
+      ("_xxx", TStruct(("score", TFloat64Optional), ("label", TInt64Optional))))
+
+    val matAnnot = MatrixAnnotateColsTable(matLit, table.tir, "label")
+    println(matAnnot.typ.colType)
+
 //  val exptr = //TableCount(
-//    MatrixColsTable( 
+//    MatrixColsTable(
 //        MatrixMapCols(
-//          matAnnot, 
+//          matAnnot,
 //          InsertFields(
-//              SelectFields(Ref("sa", TStruct(("s", TStringOptional))), Seq("s")), 
+//              SelectFields(Ref("sa", TStruct(("s", TStringOptional))), Seq("s")),
 //              Seq(("label", GetField(Ref("sa", joinded_type) , "_xxx")))
 //          ),
 //          None
 //         )
 //      )
-   
-   val exptr = //TableCount(
-    MatrixColsTable( 
-          matAnnot
-    )
-  
-  //val result = ir.Interpret[Long](exptr)
-  //println(result)
-      
-  val colTable = new Table(table.hc, exptr)
-  println(colTable.signature)  //     
-  colTable.collect().take(10).foreach(println _)
-  
-  
-  val lr = LinearRegressionRowsSingle(Seq("label.score"), "GT.n_alt_alleles()", Seq.empty, 1, Seq.empty)
-  
-  val tableIR = MatrixToTableApply(matAnnot,lr)
 
-    
+    val exptr = //TableCount(
+      MatrixColsTable(matAnnot)
+
+    //val result = ir.Interpret[Long](exptr)
+    //println(result)
+
+    val colTable = new Table(table.hc, exptr)
+    println(colTable.signature) //
+    colTable.collect().take(10).foreach(println _)
+
+    val lr = LinearRegressionRowsSingle(Seq("label.score"), "GT.n_alt_alleles()", Seq.empty, 1,
+      Seq.empty)
+
+    val tableIR = MatrixToTableApply(matAnnot, lr)
 //  .importVCF("data/chr22_1000.vcf")
 //  println("Samples schema: " + vcf.saSignature)
-//    
+//
 //    val annotatedVcf =  vcf.annotateSamplesTable(table, root="sa.pheno")
-//    
+//
 //    println("Samples schema annotated: " + annotatedVcf.saSignature)
-//    
+//
 //    val res2 = annotatedVcf.sampleIdsAndAnnotations.head._2
 //    val res1 = annotatedVcf.sampleIdsAndAnnotations.head._1
 //    //val res  = annotatedVcf.querySamples("samples.pheno.x22_16050408")
 //    println(res1, res1.getClass())
 //    println(res2, res2.getClass())
-//    
+//
 //    val row  = res2.asInstanceOf[Row]
 //    println("Row: " + row)
 //    println(annotatedVcf.saSignature.query(List("pheno", "x22_16050408"))(row))
 //    val fs = new HailFeatureSource(vcf)
 //    println(fs.sampleNames)
 //    fs.features.take(10).map(f => (f.label, f.valueAsStrings)).foreach(println)
-//  
-    }
+//
+  }
 }

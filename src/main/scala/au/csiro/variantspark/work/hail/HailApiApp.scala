@@ -19,15 +19,13 @@ import is.hail.expr.types.virtual.TStruct
 import is.hail.methods.LinearRegressionRowsSingle
 import au.csiro.variantspark.hail.methods.RFModel
 
-
-
 /**
- * INFO: Simulates calling from python
- */
+  * INFO: Simulates calling from python
+  */
 object HailApiApp {
-  
- 
-  def loadDataToMatrixIr(vcfFilename:String, labelFilename:String, sampleName:String, labelName:String):String = s"""
+
+  def loadDataToMatrixIr(vcfFilename: String, labelFilename: String, sampleName: String,
+      labelName: String): String = s"""
 (MatrixRename () () ("__uid_4" "__uid_5") ("y" "z") () () ("__uid_6") ("e")     
   (MatrixMapEntries
     (MatrixMapCols None
@@ -97,33 +95,28 @@ object HailApiApp {
     (SelectFields (__uid_6)
       (SelectFields (GT __uid_6)
         (Ref g)))))
-  """    
+  """
 
-  
-  
-  
- 
-  def main(args:Array[String]) = {
+  def main(args: Array[String]) = {
     println("Hello")
     val hc = HailContext()
- 
-    val matrixExpr = loadDataToMatrixIr("data/hipsterIndex/hipster.vcf.bgz", "data/hipsterIndex/hipster_labels.txt", "samples", "label")  
+
+    val matrixExpr = loadDataToMatrixIr("data/hipsterIndex/hipster.vcf.bgz",
+      "data/hipsterIndex/hipster_labels.txt", "samples", "label")
     println(matrixExpr)
-    
-    
+
     val matrixIR = IRParser.parse_matrix_ir(matrixExpr)
     println(matrixIR)
-  
+
     println(matrixIR.typ)
     println(matrixIR.typ.rowKeyStruct)
     println(matrixIR.typ.rowKey)
-    
-    
+
     val rfModel = RFModel.pyApply(matrixIR, None, true, None, None, None)
     rfModel.fitTrees(100, 50)
-    println(s"OOB Error  = ${rfModel.oobError}")    
+    println(s"OOB Error  = ${rfModel.oobError}")
     val importanceTableValue = rfModel.variableImportance
-    
+
     val importanceTable = new Table(hc, importanceTableValue)
     println(importanceTable.signature)
     importanceTable.collect().take(10).foreach(println _)
