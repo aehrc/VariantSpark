@@ -77,6 +77,7 @@
         <!-- for now, not running scalafmt as part of default verify pipeline -->
         <scalafmt.skip>false</scalafmt.skip>
         <scalafmt.validateOnly>true</scalafmt.validateOnly>
+		<scalafmt.onlyChangedFiles>false</scalafmt.onlyChangedFiles>
         <sonata.autorelease>false</sonata.autorelease>
 	</properties>
 
@@ -331,7 +332,7 @@
                 <skipSources>${scalafmt.skip}</skipSources>
                 <skipTestSources>${scalafmt.skip}</skipTestSources>
                 <configLocation>${project.basedir}/.scalafmt.conf</configLocation> <!-- (Optional) config location -->
-                <onlyChangedFiles>false</onlyChangedFiles>
+                <onlyChangedFiles>${scalafmt.onlyChangedFiles}</onlyChangedFiles>
                 <validateOnly>${scalafmt.validateOnly}</validateOnly>
             </configuration>
             <executions>
