@@ -14,9 +14,7 @@ trait HailArgs extends SparkApp {
       .set("spark.sql.files.openCostInBytes", "53687091200") // 50GB : min for hail
       .set("spark.sql.files.maxPartitionBytes", "53687091200") // 50GB : min for hail
 
-  @Option(
-    name = "-mp",
-    required = false,
+  @Option(name = "-mp", required = false,
     usage = "Min partition to use for input dataset(default=spark.default.pararellism)",
     aliases = Array("--min-partitions"))
   val minPartitions: Int = -1

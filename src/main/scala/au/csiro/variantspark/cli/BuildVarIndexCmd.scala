@@ -52,10 +52,7 @@ object IndexAccumulator extends AccumulableParam[Long2ObjectOpenHashMap[String],
 
 class BuildVarIndexCmd extends ArgsApp with FeatureSourceArgs with Logging with TestArgs {
 
-  @Option(
-    name = "-oi",
-    required = true,
-    usage = "Path to output index file",
+  @Option(name = "-oi", required = true, usage = "Path to output index file",
     aliases = Array("--output-index"))
   val outputIndex: String = null
 

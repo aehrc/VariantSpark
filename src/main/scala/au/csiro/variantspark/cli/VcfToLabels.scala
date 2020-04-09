@@ -17,10 +17,7 @@ import au.csiro.variantspark.input._
 
 class VcfToLabels extends ArgsApp with SparkApp {
 
-  @Option(
-    name = "-if",
-    required = false,
-    usage = "This is input files",
+  @Option(name = "-if", required = false, usage = "This is input files",
     aliases = Array("--input-file"))
   val inputFile: String = "data/small.vcf"
 

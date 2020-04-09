@@ -19,9 +19,7 @@ abstract class IndexedSplitterGiniTest {
   def splitter(data: Array[Double], labels: Array[Int], nLabels: Int = 2): IndexedSplitter = {
 
     val confusionAgg = new ConfusionAggregator(GiniImpurity, 10, nLabels, labels)
-    splitterFromAgg(
-      ClassificationSplitAggregator(GiniImpurity, labels, nLabels),
-      confusionAgg,
+    splitterFromAgg(ClassificationSplitAggregator(GiniImpurity, labels, nLabels), confusionAgg,
       data)
   }
 

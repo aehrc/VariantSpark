@@ -16,10 +16,7 @@ import au.csiro.pbdava.ssparkle.common.utils.Timed
 
 class FilterCmd extends ArgsApp with TestArgs with SparkApp {
 
-  @Option(
-    name = "-if",
-    required = true,
-    usage = "This is input files",
+  @Option(name = "-if", required = true, usage = "This is input files",
     aliases = Array("--input-files"))
   val inputFile: String = null
 

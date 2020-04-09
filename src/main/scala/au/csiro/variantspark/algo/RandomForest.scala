@@ -156,27 +156,17 @@ case class RandomForestParams(
     correctImpurity: Boolean = false,
     airRandomSeed: Long = 0L) {
   def resolveDefaults(nSamples: Int, nVariables: Int): RandomForestParams = {
-    RandomForestParams(
-      oob = oob,
+    RandomForestParams(oob = oob,
       nTryFraction =
         if (!nTryFraction.isNaN) nTryFraction else Math.sqrt(nVariables.toDouble) / nVariables,
       bootstrap = bootstrap,
       subsample = if (!subsample.isNaN) subsample else if (bootstrap) 1.0 else 0.666,
-      randomizeEquality = randomizeEquality,
-      seed = seed,
-      maxDepth = maxDepth,
-      minNodeSize = minNodeSize,
-      correctImpurity = correctImpurity,
-      airRandomSeed = airRandomSeed)
+      randomizeEquality = randomizeEquality, seed = seed, maxDepth = maxDepth,
+      minNodeSize = minNodeSize, correctImpurity = correctImpurity, airRandomSeed = airRandomSeed)
   }
   def toDecisionTreeParams(seed: Long): DecisionTreeParams = {
-    DecisionTreeParams(
-      seed = seed,
-      randomizeEquality = randomizeEquality,
-      maxDepth = maxDepth,
-      minNodeSize = minNodeSize,
-      correctImpurity = correctImpurity,
-      airRandomSeed = airRandomSeed)
+    DecisionTreeParams(seed = seed, randomizeEquality = randomizeEquality, maxDepth = maxDepth,
+      minNodeSize = minNodeSize, correctImpurity = correctImpurity, airRandomSeed = airRandomSeed)
   }
   override def toString = ToStringBuilder.reflectionToString(this)
 }
@@ -192,17 +182,10 @@ object RandomForestParams {
       minNodeSize: Option[Int] = None,
       correctImpurity: Option[Boolean] = None,
       airRandomSeed: Option[Long] = None): RandomForestParams =
-    RandomForestParams(
-      oob.getOrElse(true),
-      mTryFraction.getOrElse(Double.NaN),
-      bootstrap.getOrElse(true),
-      subsample.getOrElse(Double.NaN),
-      true,
-      seed.getOrElse(defRng.nextLong),
-      maxDepth.getOrElse(Int.MaxValue),
-      minNodeSize.getOrElse(1),
-      correctImpurity.getOrElse(false),
-      airRandomSeed.getOrElse(0L))
+    RandomForestParams(oob.getOrElse(true), mTryFraction.getOrElse(Double.NaN),
+      bootstrap.getOrElse(true), subsample.getOrElse(Double.NaN), true,
+      seed.getOrElse(defRng.nextLong), maxDepth.getOrElse(Int.MaxValue), minNodeSize.getOrElse(1),
+      correctImpurity.getOrElse(false), airRandomSeed.getOrElse(0L))
 }
 
 trait RandomForestCallback {
@@ -239,10 +222,8 @@ object RandomForest {
           indexedData: RDD[TreeFeature],
           models: Seq[PredictiveModelWithImportance],
           indexes: Seq[Array[Int]]) =
-        DecisionTreeModel.batchPredict(
-          indexedData.map(tf => (tf, tf.index)),
-          models.asInstanceOf[Seq[DecisionTreeModel]],
-          indexes)
+        DecisionTreeModel.batchPredict(indexedData.map(tf => (tf, tf.index)),
+          models.asInstanceOf[Seq[DecisionTreeModel]], indexes)
     }
   }
 
@@ -297,8 +278,8 @@ class RandomForest(
       if (actualParams.oob) Option(new VotingAggregator(nLabels, nSamples)) else None
 
     val builder = modelBuilderFactory(actualParams.toDecisionTreeParams(rng.nextLong))
-    val allSamples = Stream.fill(nTrees)(
-      Sample.fraction(nSamples, actualParams.subsample, actualParams.bootstrap))
+    val allSamples = Stream
+      .fill(nTrees)(Sample.fraction(nSamples, actualParams.subsample, actualParams.bootstrap))
 
     val (allTrees, errors) = allSamples
       .sliding(nBatchSize, nBatchSize)
@@ -330,9 +311,9 @@ class RandomForest(
         }.withResultAndTime {
           case (treesAndErrors, elapsedTime) =>
             logDebug(
-              s"Trees: ${treesAndErrors.size} >> oobError: ${treesAndErrors.last._2}, time: ${elapsedTime}")
-            Option(callback).foreach(
-              _.onTreeComplete(treesAndErrors.size, treesAndErrors.last._2, elapsedTime))
+                s"Trees: ${treesAndErrors.size} >> oobError: ${treesAndErrors.last._2}, time: ${elapsedTime}")
+            Option(callback).foreach(_.onTreeComplete(treesAndErrors.size, treesAndErrors.last._2,
+                elapsedTime))
         }.result
       }
       .toList

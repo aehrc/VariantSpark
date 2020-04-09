@@ -41,9 +41,7 @@ object Sampling {
 
   def subsampleFraction(size: Int, fraction: Double, withReplacement: Boolean = false)(
       implicit rg: RandomGenerator): Array[Int] =
-    subsample(
-      size,
-      if (fraction == 1.0) size else math.round(size * fraction).toInt,
+    subsample(size, if (fraction == 1.0) size else math.round(size * fraction).toInt,
       withReplacement)
 
   def folds(size: Int, nFolds: Int): List[Array[Int]] = {

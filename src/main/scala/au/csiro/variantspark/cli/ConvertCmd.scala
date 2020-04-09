@@ -39,17 +39,11 @@ import au.csiro.variantspark.output.CSVFeatureSink2
 
 class ConvertCmd extends ArgsApp with FeatureSourceArgs with Echoable with Logging with TestArgs {
 
-  @Option(
-    name = "-of",
-    required = true,
-    usage = "Path to output file",
+  @Option(name = "-of", required = true, usage = "Path to output file",
     aliases = Array("--output-file"))
   val outputFile: String = null
 
-  @Option(
-    name = "-ot",
-    required = false,
-    usage = "Input file type, one of: vcf, csv (def=vcf)",
+  @Option(name = "-ot", required = false, usage = "Input file type, one of: vcf, csv (def=vcf)",
     aliases = Array("--output-type"))
   val outputType: String = null
 

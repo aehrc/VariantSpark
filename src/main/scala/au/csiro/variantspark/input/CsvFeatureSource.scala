@@ -41,9 +41,7 @@ case class CsvFeatureSource(
         .map {
           case label :: stringValues =>
             val variableType = types.flatMap(_.get(label)).getOrElse(defaultType)
-            StdFeature(
-              label,
-              variableType,
+            StdFeature(label, variableType,
               representationFactory.createRepresentation(variableType, stringValues))
         }
     }
@@ -70,8 +68,7 @@ case class CsvFeatureSource(
       val types = br_types.value
       it.filter(!_.equals(header))
         .map(csvParser.parseLine(_).get)
-        .map(l =>
-          StdFeature.from[V](l.head, types.flatMap(_.get(l.head)).getOrElse(defaultType), l.tail))
+        .map(l => StdFeature.from[V](l.head, types.flatMap(_.get(l.head)).getOrElse(defaultType), l.tail))
     }
   }
 }

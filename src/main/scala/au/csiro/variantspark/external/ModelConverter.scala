@@ -14,26 +14,10 @@ class ModelConverter(varIndex: Map[Long, String]) {
   def toExternal(node: DecisionTreeNode): Node = {
     node match {
       case LeafNode(majorityLabel, size, nodeImpurity) => Leaf(majorityLabel, size, nodeImpurity)
-      case SplitNode(
-          majorityLabel,
-          size,
-          nodeImpurity,
-          splitVariableIndex,
-          splitPoint,
-          impurityReduction,
-          left,
-          right,
-          isPermutated) => {
-        Split(
-          majorityLabel,
-          size,
-          nodeImpurity,
-          varIndex.getOrElse(splitVariableIndex, null),
-          splitVariableIndex,
-          isPermutated,
-          splitPoint,
-          impurityReduction,
-          toExternal(left),
+      case SplitNode(majorityLabel, size, nodeImpurity, splitVariableIndex, splitPoint,
+          impurityReduction, left, right, isPermutated) => {
+        Split(majorityLabel, size, nodeImpurity, varIndex.getOrElse(splitVariableIndex, null),
+          splitVariableIndex, isPermutated, splitPoint, impurityReduction, toExternal(left),
           toExternal(right))
       }
       case _ => throw new IllegalArgumentException("Unknow node type:" + node)
@@ -45,8 +29,7 @@ class ModelConverter(varIndex: Map[Long, String]) {
       case DecisionTreeModel(rootNode) => toExternal(rootNode)
       case _ => throw new IllegalArgumentException("Unknow predictory type:" + rfMember.predictor)
     }
-    Tree(
-      rootNode,
+    Tree(rootNode,
       Option(rfMember.oobIndexes).map(_ => OOBInfo(rfMember.oobIndexes, rfMember.oobPred)))
   }
 

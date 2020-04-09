@@ -18,8 +18,7 @@ class CommonPairwiseOperationTest extends SparkTest {
     assertEquals(ManhattanPairwiseMetric, CommonPairwiseOperation.withName("manhattan"))
     assertEquals(EuclideanPairwiseMetric, CommonPairwiseOperation.withName("euclidean"))
     assertEquals(SharedAltAlleleCount, CommonPairwiseOperation.withName("sharedAltAlleleCount"))
-    assertEquals(
-      AtLeastOneSharedAltAlleleCount,
+    assertEquals(AtLeastOneSharedAltAlleleCount,
       CommonPairwiseOperation.withName("anySharedAltAlleleCount"))
   }
 

@@ -32,14 +32,7 @@ class AnalyticsFunctions(val featureSource: FeatureSource) extends AnyVal {
       seed: Option[Long] = None,
       batchSize: Int = 100,
       varOrdinalLevels: Int = 3)(implicit vsContext: SqlContextHolder): ImportanceAnalysis = {
-    ImportanceAnalysis(
-      featureSource,
-      labelSource,
-      nTrees,
-      mtryFraction,
-      oob,
-      seed,
-      batchSize,
+    ImportanceAnalysis(featureSource, labelSource, nTrees, mtryFraction, oob, seed, batchSize,
       varOrdinalLevels)
   }
 

@@ -37,7 +37,7 @@ class ImportanceStatsTest extends AbstractCmdLineTest with TestData {
     val nTrees = 2000
 
     runVariantSpark(
-      s"""importance -if ${dataFile} -ff ${labelsFile} -fc cat2 -it csv -v -rn ${nTrees} -rbs 250 -sr 13 -on 0 -ovn raw -sp 4 -of ${outputFile}""")
+        s"""importance -if ${dataFile} -ff ${labelsFile} -fc cat2 -it csv -v -rn ${nTrees} -rbs 250 -sr 13 -on 0 -ovn raw -sp 4 -of ${outputFile}""")
 
     val importanceStats =
       CsvParser.parse(CsvFile(data(s"${fullCaseName}-stats.csv"))).withRowIndex(0).withColIndex(0)

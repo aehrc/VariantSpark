@@ -164,31 +164,19 @@ object HailTestApp {
 
     //System.exit(0)
 
-    val table: Table = hc.importTable(
-      "data/hipsterIndex/hipster_labels.txt",
-      keyNames = Some(Array("samples")),
-      separator = ",",
-      types = Map("label" -> TInt64Required, "score" -> TFloat64Required))
+    val table: Table =
+      hc.importTable("data/hipsterIndex/hipster_labels.txt", keyNames = Some(Array("samples")),
+        separator = ",", types = Map("label" -> TInt64Required, "score" -> TFloat64Required))
 
     println("Table tir: " + table.tir)
 
     println(table)
     println("Signature: " + table.signature)
 
-    val reader = new VCFsReader(
-      Array("data/hipsterIndex/hipster.vcf.bgz"),
-      Set.empty,
-      "Float64",
-      None,
-      Map.empty,
-      true,
-      true,
-      true,
-      false,
-      TextInputFilterAndReplace(None, None, None),
+    val reader = new VCFsReader(Array("data/hipsterIndex/hipster.vcf.bgz"), Set.empty, "Float64",
+      None, Map.empty, true, true, true, false, TextInputFilterAndReplace(None, None, None),
       "[]", //partitionsJSON,
-      None,
-      None)
+      None, None)
 
     val irArray = reader.read()
 
@@ -226,8 +214,7 @@ object HailTestApp {
 //  val count = table.count()
 //  println(s"Count: ${count}")
 
-    val joinded_type = TStruct(
-      ("s", TStringOptional),
+    val joinded_type = TStruct(("s", TStringOptional),
       ("_xxx", TStruct(("score", TFloat64Optional), ("label", TInt64Optional))))
 
     val matAnnot = MatrixAnnotateColsTable(matLit, table.tir, "label")
@@ -255,11 +242,7 @@ object HailTestApp {
     println(colTable.signature) //
     colTable.collect().take(10).foreach(println _)
 
-    val lr = LinearRegressionRowsSingle(
-      Seq("label.score"),
-      "GT.n_alt_alleles()",
-      Seq.empty,
-      1,
+    val lr = LinearRegressionRowsSingle(Seq("label.score"), "GT.n_alt_alleles()", Seq.empty, 1,
       Seq.empty)
 
     val tableIR = MatrixToTableApply(matAnnot, lr)

@@ -58,9 +58,9 @@ class NoisyEffectLabelGenerator(featureSource: FeatureSource)(
             it =>
               val normalizer = DenseVector.fill(nSamples)(zeroLevelValue)
               it.map(
-                f =>
-                  (DenseVector(f.valueAsVector.toArray) -= normalizer) *= (br_effects.value(
-                    f.label)))
+                  f =>
+                    (DenseVector(f.valueAsVector.toArray) -= normalizer) *= (
+                        br_effects.value(f.label)))
           }
         if (multiplicative) foldMulitiplicative(nSamples, rdd) else foldAdditive(nSamples, rdd)
     }
@@ -75,7 +75,7 @@ class NoisyEffectLabelGenerator(featureSource: FeatureSource)(
     val actualNoiseVar =
       baseContinuousStats.variance * (1 - fractionVarianceExplained) / fractionVarianceExplained
     logDebug(
-      s"Signal varinace: ${baseContinuousStats.variance}, fractio to explain: ${fractionVarianceExplained}")
+        s"Signal varinace: ${baseContinuousStats.variance}, fractio to explain: ${fractionVarianceExplained}")
     logDebug(s"Actual noise variance: ${actualNoiseVar}")
 
     val actualNoiseSigma = Math.sqrt(actualNoiseVar)
@@ -92,8 +92,7 @@ class NoisyEffectLabelGenerator(featureSource: FeatureSource)(
 
     logDebug(s"Actual fraction variance explained: ${actualFractionVarianceExplained}")
 
-    val classThreshold = DescriptiveStats.percentile(
-      noisyContinuousResponse.valuesIterator,
+    val classThreshold = DescriptiveStats.percentile(noisyContinuousResponse.valuesIterator,
       classThresholdPercentile)
     logDebug(s"Actual class threshold: ${classThreshold}")
 
@@ -112,11 +111,6 @@ object NoisyEffectLabelGenerator {
       classThresholdPercentile: Double = 0.75,
       multiplicative: Boolean = false,
       seed: Long = 13L) =
-    new NoisyEffectLabelGenerator(featureSource)(
-      zeroLevel,
-      effects,
-      fractionVarianceExplained,
-      classThresholdPercentile,
-      multiplicative,
-      seed)
+    new NoisyEffectLabelGenerator(featureSource)(zeroLevel, effects, fractionVarianceExplained,
+      classThresholdPercentile, multiplicative, seed)
 }

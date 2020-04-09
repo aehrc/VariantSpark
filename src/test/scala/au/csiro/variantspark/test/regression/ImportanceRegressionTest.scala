@@ -46,8 +46,7 @@ object ImportanceRegressionTest {
 
   //TODO: Refactor with AsertJ
   def assertSameContent(pathToExpectedFile: String, pathToActualFile: String) {
-    assertEquals(
-      FileUtils.readLines(new File(pathToExpectedFile)),
+    assertEquals(FileUtils.readLines(new File(pathToExpectedFile)),
       FileUtils.readLines(new File(pathToActualFile)))
   }
 

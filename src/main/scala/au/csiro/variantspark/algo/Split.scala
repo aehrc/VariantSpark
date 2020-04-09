@@ -82,9 +82,7 @@ object ClassificationSplitAggregator {
       impurity: ClassficationImpurity,
       labels: Array[Int],
       nCategories: Int): ClassificationSplitAggregator =
-    new ClassificationSplitAggregator(
-      labels,
-      impurity.createAggregator(nCategories),
+    new ClassificationSplitAggregator(labels, impurity.createAggregator(nCategories),
       impurity.createAggregator(nCategories))
 }
 
@@ -208,11 +206,8 @@ class DefStatefullIndexedSpliterFactory(
   def create(sf: SplitterProvider): IndexedSplitter = {
     sf match {
       case fsf: FastSplitterProvider if (fsf.confusionSize <= maxConfusionSize) =>
-        ThresholdIndexedSplitter(
-          fsf.createSplitter(splitAggregator, confusionAgg),
-          fsf.confusionSize,
-          sf.createSplitter(splitAggregator),
-          qThreshold)
+        ThresholdIndexedSplitter(fsf.createSplitter(splitAggregator, confusionAgg),
+          fsf.confusionSize, sf.createSplitter(splitAggregator), qThreshold)
       case _ => sf.createSplitter(splitAggregator)
     }
   }

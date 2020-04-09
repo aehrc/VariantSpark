@@ -24,11 +24,9 @@ object Gini {
 
   def splitGiniInpurity(leftCounts: Array[Int], totalCounts: Array[Int]) = {
     val (leftGini, leftTotal) = giniImpurityWithTotal(leftCounts)
-    val (rightGini, rightTotal) = giniImpurityWithTotal(
-      totalCounts.zip(leftCounts).map(t => t._1 - t._2).toArray)
-    (
-      leftGini,
-      rightGini,
+    val (rightGini, rightTotal) =
+      giniImpurityWithTotal(totalCounts.zip(leftCounts).map(t => t._1 - t._2).toArray)
+    (leftGini, rightGini,
       (leftGini * leftTotal + rightGini * rightTotal) / (leftTotal + rightTotal))
   }
 

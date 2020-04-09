@@ -11,10 +11,8 @@ object CommonPairwiseOperation {
   /**
     * Mapping class for commong pairwise operations
     */
-  val mapping = Map(
-    "manhattan" -> ManhattanPairwiseMetric,
-    "euclidean" -> EuclideanPairwiseMetric,
-    "sharedAltAlleleCount" -> SharedAltAlleleCount,
+  val mapping = Map("manhattan" -> ManhattanPairwiseMetric,
+    "euclidean" -> EuclideanPairwiseMetric, "sharedAltAlleleCount" -> SharedAltAlleleCount,
     "anySharedAltAlleleCount" -> AtLeastOneSharedAltAlleleCount)
 
   /**

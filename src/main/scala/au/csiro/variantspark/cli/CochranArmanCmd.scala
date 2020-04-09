@@ -38,85 +38,54 @@ import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
 
 class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
-  @Option(
-    name = "-if",
-    required = true,
-    usage = "Path to input file or directory",
+  @Option(name = "-if", required = true, usage = "Path to input file or directory",
     aliases = Array("--input-file"))
   val inputFile: String = null
 
-  @Option(
-    name = "-it",
-    required = false,
+  @Option(name = "-it", required = false,
     usage = "Input file type, one of: vcf, csv, parquet (def=vcf)",
     aliases = Array("--input-type"))
   val inputType: String = "vcf"
 
-  @Option(
-    name = "-ivo",
-    required = false,
+  @Option(name = "-ivo", required = false,
     usage = "Variable type ordinal with this number of levels (def = 3)",
     aliases = Array("--input-var-ordinal"))
   val varOrdinalLevels: Int = 3
 
-  @Option(
-    name = "-ff",
-    required = true,
-    usage = "Path to feature file",
+  @Option(name = "-ff", required = true, usage = "Path to feature file",
     aliases = Array("--feature-file"))
   val featuresFile: String = null
 
-  @Option(
-    name = "-fc",
-    required = true,
-    usage = "Name of the feature column",
+  @Option(name = "-fc", required = true, usage = "Name of the feature column",
     aliases = Array("--feature-column"))
   val featureColumn: String = null
-  @Option(
-    name = "-of",
-    required = false,
-    usage = "Path to output file (def = stdout)",
+  @Option(name = "-of", required = false, usage = "Path to output file (def = stdout)",
     aliases = Array("--output-file"))
   val outputFile: String = null
 
-  @Option(
-    name = "-on",
-    required = false,
+  @Option(name = "-on", required = false,
     usage = "The number of top important variables to include in output (def=20)",
     aliases = Array("--output-n-variables"))
   val nVariables: Int = 20
 
-  @Option(
-    name = "-od",
-    required = false,
+  @Option(name = "-od", required = false,
     usage = "Include important variables data in output file (def=no)",
     aliases = Array("--output-include-data"))
   val includeData = false
 
-  @Option(
-    name = "-sp",
-    required = false,
-    usage = "Spark parallelism (def=<default-spark-par>)",
+  @Option(name = "-sp", required = false, usage = "Spark parallelism (def=<default-spark-par>)",
     aliases = Array("--spark-par"))
   val sparkPar = 0
 
   @Override
   def testArgs =
-    Array(
-      "-if",
-      "target/getds.parquet",
-      "-it",
-      "parquet",
-      "-ff",
-      "target/features.csv",
-      "-fc",
-      "resp",
-      "-od")
+    Array("-if", "target/getds.parquet", "-it", "parquet", "-ff", "target/features.csv", "-fc",
+      "resp", "-od")
 
   def loadVCF() = {
     echo(s"Loading header from VCF file: ${inputFile}")
-    val vcfSource = VCFSource(
-      sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
+    val vcfSource =
+      VCFSource(sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
     verbose(s"VCF Version: ${vcfSource.version}")
     verbose(s"VCF Header: ${vcfSource.header}")
     VCFFeatureSource(vcfSource)
@@ -124,8 +93,8 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
 
   def loadCSV() = {
     echo(s"Loading csv file: ${inputFile}")
-    CsvFeatureSource(
-      sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
+    CsvFeatureSource(sc.textFile(inputFile,
+        if (sparkPar > 0) sparkPar else sc.defaultParallelism))
   }
 
   def loadParquet() = {
@@ -166,8 +135,7 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
     val variablePreview =
       inputData.map({ case (f, i) => f.label }).take(defaultPreviewSize).toList
 
-    echo(
-      s"Loaded variables: ${dumpListHead(variablePreview, totalVariables)}, took: ${dataLoadingTimer.durationInSec}")
+    echo(s"Loaded variables: ${dumpListHead(variablePreview, totalVariables)}, took: ${dataLoadingTimer.durationInSec}")
 
     // discover variable type
     // for now assume it's ordered factor with provided number of levels
@@ -185,9 +153,7 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
     echo(s"Running two sided CochranArmitage test")
     val trainingData = inputData.map { case (f, i) => (f.valueAsByteArray, i) }
 
-    val scorer = new CochranArmitageTestScorer(
-      labels,
-      CochranArmitageTestCalculator.WEIGHT_TREND,
+    val scorer = new CochranArmitageTestScorer(labels, CochranArmitageTestCalculator.WEIGHT_TREND,
       nVariables)
     val topImportantVariables = scorer.topN(trainingData)
     val topImportantVariableIndexes = topImportantVariables.map(_._1).toSet
@@ -214,7 +180,7 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
       if (includeData) trainingData.collectAtIndexes(topImportantVariableIndexes) else null
 
     CSVUtils.withStream(
-      if (outputFile != null) HdfsPath(outputFile).create() else ReusablePrintStream.stdout) {
+        if (outputFile != null) HdfsPath(outputFile).create() else ReusablePrintStream.stdout) {
       writer =>
         val header =
           List("variable", "importance") ::: (if (includeData) source.sampleNames else Nil)

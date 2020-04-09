@@ -20,17 +20,12 @@ import au.csiro.variantspark.data._
 class PolymorphicDecisionTreeTest extends SparkTest {
   @Test
   def testTrainPolymorphicTree() {
-    val genomicFeatureSource = new TestFeatureSource(
-      Seq(("gen_1", List("0", "0", "1", "2")), ("gen_2", List("0", "1", "0", "2"))),
-      BoundedOrdinalVariable(3),
-      ByteArrayDataBuilder)
+    val genomicFeatureSource = new TestFeatureSource(Seq(("gen_1", List("0", "0", "1", "2")),
+        ("gen_2", List("0", "1", "0", "2"))), BoundedOrdinalVariable(3), ByteArrayDataBuilder)
 
-    val otherFeatureSource = new TestFeatureSource(
-      Seq(
-        ("cont_1", List("0.2", "0.3", "1.4", "2.5")),
-        ("cont_2", List("0.1", "1.3", "0.3", "2.6"))),
-      ContinuousVariable,
-      VectorDataBuilder)
+    val otherFeatureSource =
+      new TestFeatureSource(Seq(("cont_1", List("0.2", "0.3", "1.4", "2.5")),
+          ("cont_2", List("0.1", "1.3", "0.3", "2.6"))), ContinuousVariable, VectorDataBuilder)
 
     // load polymorphic features (possibly combining two homogenous sources)
 
@@ -55,10 +50,7 @@ class PolymorphicDecisionTreeTest extends SparkTest {
     // does not make sense really have per representation tree (does it?)
 
     val tree = new DecisionTree()
-    tree.batchTrain(
-      allFeatures,
-      Array[Int](0, 1, 0, 1),
-      1.0,
+    tree.batchTrain(allFeatures, Array[Int](0, 1, 0, 1), 1.0,
       List(Sample.all(allFeatures.first._1.size)))
     // so again limit the legacy cases for contruction only
     // and maybe can get rid of them in the future

@@ -56,14 +56,11 @@ case class RFModel(mv: MatrixValue, rfParams: RandomForestParams) {
   // which may be possible in the future
   // one more reason to make this API work for genotypes only ...
 
-  require(
-    keySignature.fields.size == 2,
+  require(keySignature.fields.size == 2,
     "The key needs to be (for now): (locus<*>, alleles: array<str>)")
-  require(
-    keySignature.fields(0).typ.isInstanceOf[TLocus],
+  require(keySignature.fields(0).typ.isInstanceOf[TLocus],
     s"The first field in key needs to be TLocus[*] but is ${keySignature.fields(0).typ}")
-  require(
-    keySignature.fields(1).typ.isOfType(TArray.apply(TString())),
+  require(keySignature.fields(1).typ.isOfType(TArray.apply(TString())),
     s"The second field in key needs to be TArray[String] but is ${keySignature.fields(1).typ}")
 
 //  require(keySignature == TStruct(("locus", TLocus(ReferenceGenome.GRCh37)),	
@@ -96,14 +93,13 @@ case class RFModel(mv: MatrixValue, rfParams: RandomForestParams) {
     // completeColIdx are indexes of the complete samples. These can be used to subsample the entry data
     // but for now let's just assume that there are no NAs in the labels (and or covariates).
     // TODO: allow for NAs in the labels and/or covariates
-    require(
-      completeColIdx.length == mv.nCols,
+    require(completeColIdx.length == mv.nCols,
       "NAs are not currenlty supported in response variable. Filter the data first.")
     val labelVector = yMat(::, 0)
     // TODO: allow for multi class classification
     if (!labelVector.forall(yi => yi == 0d || yi == 1d))
       fatal(
-        s"For classification random forestlabel must be bool or numeric with all present values equal to 0 or 1")
+          s"For classification random forestlabel must be bool or numeric with all present values equal to 0 or 1")
     val labels = labelVector.map(_.toInt).toArray
 
     // now we somehow need to get to row data
@@ -175,13 +171,8 @@ object RFModel {
       maxDepth: Option[Int],
       seed: Option[Int]): RFModel = {
     val mv = Interpret(inputIR)
-    RFModel(
-      mv,
-      RandomForestParams.fromOptions(
-        mTryFraction = mTryFraction,
-        oob = Some(oob),
-        minNodeSize = minNodeSize,
-        maxDepth = maxDepth,
-        seed = seed.map(_.longValue)))
+    RFModel(mv,
+      RandomForestParams.fromOptions(mTryFraction = mTryFraction, oob = Some(oob),
+        minNodeSize = minNodeSize, maxDepth = maxDepth, seed = seed.map(_.longValue)))
   }
 }

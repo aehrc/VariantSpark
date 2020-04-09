@@ -104,11 +104,8 @@ object HailApiApp {
     println("Hello")
     val hc = HailContext()
 
-    val matrixExpr = loadDataToMatrixIr(
-      "data/hipsterIndex/hipster.vcf.bgz",
-      "data/hipsterIndex/hipster_labels.txt",
-      "samples",
-      "label")
+    val matrixExpr = loadDataToMatrixIr("data/hipsterIndex/hipster.vcf.bgz",
+      "data/hipsterIndex/hipster_labels.txt", "samples", "label")
     println(matrixExpr)
 
     val matrixIR = IRParser.parse_matrix_ir(matrixExpr)

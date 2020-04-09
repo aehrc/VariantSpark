@@ -39,9 +39,7 @@ case class VCFFeatureSourceFactory(
     verbose(s"VCF Header: ${vcfSource.header}")
 
     import VCFFeatureSourceFactory._
-    VCFFeatureSource(
-      vcfSource,
-      isBiallelic.getOrElse(DEF_IS_BIALLELIC),
+    VCFFeatureSource(vcfSource, isBiallelic.getOrElse(DEF_IS_BIALLELIC),
       separator.getOrElse(DEF_SEPARATOR))
   }
 }
@@ -62,7 +60,7 @@ case class CSVFeatureSourceFactory(
     val inputVariableType =
       defVariableType.map(VariableType.fromString).getOrElse(DEF_VARIABLE_TYPE)
     echo(
-      s"Default input variable type is ${inputVariableType}, variable type file is ${variableTypeFile}")
+        s"Default input variable type is ${inputVariableType}, variable type file is ${variableTypeFile}")
     val typeRDD = variableTypeFile.map(fileName => sparkArgs.sc.textFile(fileName))
     val dataRDD = sparkArgs.textFile(inputFile)
     CsvFeatureSource(dataRDD, inputVariableType, typeRDD)
@@ -118,32 +116,21 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable {
   import org.json4s.JsonDSL._
   implicit val formats = DefaultFormats
 
-  @ArgsOption(
-    name = "-if",
-    required = false,
-    usage = "Path to input file or directory",
+  @ArgsOption(name = "-if", required = false, usage = "Path to input file or directory",
     aliases = Array("--input-file"))
   val inputFile: String = null
 
-  @ArgsOption(
-    name = "-it",
-    required = false,
+  @ArgsOption(name = "-it", required = false,
     usage = "Input file type, one of: vcf, csv, parquet (def=vcf)",
     aliases = Array("--input-type"))
   val inputType: String = "vcf"
 
-  @ArgsOption(
-    name = "-io",
-    required = false,
-    usage =
-      "a JSON object with the additional options for the input file type (depends on input file type)",
+  @ArgsOption(name = "-io", required = false,
+    usage = "a JSON object with the additional options for the input file type (depends on input file type)",
     aliases = Array("--input-options"))
   val inputOptions: String = null
 
-  @ArgsOption(
-    name = "-ij",
-    required = false,
-    usage = "Input JSON specification",
+  @ArgsOption(name = "-ij", required = false, usage = "Input JSON specification",
     aliases = Array("--input-json"))
   val inputJSON: String = null
 
@@ -153,14 +140,14 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable {
       case jsonArray: JArray => featureSourceFactory(jsonArray)
       case _ =>
         throw new IllegalArgumentException(
-          s"Cannot create source from spec of class ${inputJSON.getClass}")
+            s"Cannot create source from spec of class ${inputJSON.getClass}")
     }
   }
 
   def featureSourceFactory(inputJSON: JArray): FeatureSourceFactory = {
     val sourceFactories = inputJSON.children.map(featureSourceFactory)
     CompositeFeatureSourceFactory(
-      sourceFactories.foldLeft(ArrayBuffer[FeatureSourceFactory]())(_ += _).toSeq)
+        sourceFactories.foldLeft(ArrayBuffer[FeatureSourceFactory]())(_ += _).toSeq)
   }
 
   def featureSourceFactory(inputJSON: JObject): FeatureSourceFactory = {
@@ -192,9 +179,7 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable {
       verbose("Data preview:")
       featureSource.features
         .take(defaultPreviewSize)
-        .foreach(f =>
-          verbose(
-            s"${f.label}:${f.variableType}:${dumpList(f.valueAsStrings, longPreviewSize)} (${f.getClass.getName})"))
+        .foreach(f => verbose(s"${f.label}:${f.variableType}:${dumpList(f.valueAsStrings, longPreviewSize)} (${f.getClass.getName})"))
     }
   }
 

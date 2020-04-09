@@ -24,8 +24,8 @@ class ImportanceSynthRegressionTest(caseFile: String) extends ImportanceRegressi
     caseFile match {
       case caseFileRE(prefix, _, _, ivo, _, response) =>
         runRegression(
-          s"""importance -if ${synth(prefix)}-wide.csv -ff ${synth(prefix)}-labels.csv -fc ${response} -it csv -io {"defVariableType":"ORDINAL(${ivo})"} -v -rn 100 -rbs 50 -ro -sr 17 -on 100 -sp 4 -ovn to100 -of $${outputFile}""",
-          caseFile)
+            s"""importance -if ${synth(prefix)}-wide.csv -ff ${synth(prefix)}-labels.csv -fc ${response} -it csv -io {"defVariableType":"ORDINAL(${ivo})"} -v -rn 100 -rbs 50 -ro -sr 17 -on 100 -sp 4 -ovn to100 -of $${outputFile}""",
+            caseFile)
     }
   }
 }

@@ -27,16 +27,11 @@ import au.csiro.variantspark.input._
 
 class PairWiseDistanceCmd extends ArgsApp with FeatureSourceArgs with Logging with TestArgs {
 
-  @Option(
-    name = "-of",
-    required = true,
-    usage = "Path to output distance file",
+  @Option(name = "-of", required = true, usage = "Path to output distance file",
     aliases = Array("--output-file"))
   val outputFile: String = null
 
-  @Option(
-    name = "-m",
-    required = false,
+  @Option(name = "-m", required = false,
     usage = "Metric to use, one of: euclidean, manhattan, invBitAnd, invMul",
     aliases = Array("--metric"))
   val metricName: String = "euclidean"
@@ -69,8 +64,8 @@ class PairWiseDistanceCmd extends ArgsApp with FeatureSourceArgs with Logging wi
     CSVUtils.withFile(new File(outputFile)) { writer =>
       writer.writeRow("" :: sampleNames)
       // since the matrix is symmetric does not matter that we output columns as rows
-      Range(0, noOfSamples).foreach(i =>
-        writer.writeRow(sampleNames(i) :: resultAsMatrix(::, i).toArray.toList))
+      Range(0, noOfSamples)
+        .foreach(i => writer.writeRow(sampleNames(i) :: resultAsMatrix(::, i).toArray.toList))
     }
   }
 }

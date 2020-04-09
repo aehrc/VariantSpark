@@ -45,134 +45,77 @@ class GenerateLabelsNoiseCmd
     with TestArgs {
 
   // input options
-  @Option(
-    name = "-if",
-    required = true,
-    usage = "Path to input file or directory",
+  @Option(name = "-if", required = true, usage = "Path to input file or directory",
     aliases = Array("--input-file"))
   val inputFile: String = null
 
-  @Option(
-    name = "-it",
-    required = false,
-    usage = "Input file type, one of: vcf, csv (def=parquet)",
-    aliases = Array("--input-type"))
+  @Option(name = "-it", required = false,
+    usage = "Input file type, one of: vcf, csv (def=parquet)", aliases = Array("--input-type"))
   val inputType: String = "parquet"
 
-  @Option(
-    name = "-ivo",
-    required = false,
+  @Option(name = "-ivo", required = false,
     usage = "Variable type ordinal with this number of levels (def = 3)",
     aliases = Array("--input-var-ordinal"))
   val varOrdinalLevels: Int = 3
 
   // output options
 
-  @Option(
-    name = "-ff",
-    required = true,
-    usage = "Path to feature file",
+  @Option(name = "-ff", required = true, usage = "Path to feature file",
     aliases = Array("--feature-file"))
   val featuresFile: String = null
 
-  @Option(
-    name = "-fc",
-    required = true,
-    usage = "Name of the dichotomous response column",
+  @Option(name = "-fc", required = true, usage = "Name of the dichotomous response column",
     aliases = Array("--feature-column"))
   val featureColumn: String = null
 
-  @Option(
-    name = "-fcc",
-    required = false,
+  @Option(name = "-fcc", required = false,
     usage = "Name of the continuous response column(def=None)",
     aliases = Array("--feature-continuous-column"))
   val featureContinuousColumn: String = null
 
-  @Option(
-    name = "-fiv",
-    required = false,
-    usage = "Include effect variable data",
+  @Option(name = "-fiv", required = false, usage = "Include effect variable data",
     aliases = Array("--feature-include-variables"))
   val includeEffectVarData: Boolean = false
 
   // generator options
-  @Option(
-    name = "-gfve",
-    required = false,
+  @Option(name = "-gfve", required = false,
     usage = "Fraction of variance explained by the effects (def=0.2)",
     aliases = Array("--gen-frac-var-explained"))
   val fracVarExplained: Double = 0.2
 
-  @Option(
-    name = "-gct",
-    required = false,
+  @Option(name = "-gct", required = false,
     usage = "Generator class threshold percentile (def=0.750",
     aliases = Array("--gen-class-threshold"))
   val classThresholdPercentile: Double = 0.75
 
-  @Option(
-    name = "-gz",
-    required = false,
-    usage = "Generator zero level (def = <factor-levels>/2)",
-    aliases = Array("--gen-zero-level"))
+  @Option(name = "-gz", required = false,
+    usage = "Generator zero level (def = <factor-levels>/2)", aliases = Array("--gen-zero-level"))
   val zeroLevel: Int = -1
 
-  @Option(
-    name = "-gm",
-    required = false,
-    usage = "Multiply effect contributions",
+  @Option(name = "-gm", required = false, usage = "Multiply effect contributions",
     aliases = Array("--gen-multiplicative-effect"))
   val multiplicativeEffects: Boolean = false
-  @Option(
-    name = "-ge",
-    required = false,
+  @Option(name = "-ge", required = false,
     usage = "Generator effects <var-name>:<effect-size> (can be used may times)",
     aliases = Array("--gen-effect"))
   val effectsDef: ArrayList[String] = new ArrayList()
 
   // common options
 
-  @Option(
-    name = "-sr",
-    required = false,
-    usage = "Random seed to use (def=<random>)",
+  @Option(name = "-sr", required = false, usage = "Random seed to use (def=<random>)",
     aliases = Array("--seed"))
   val randomSeed: Long = defRng.nextLong
 
   // spark related
-  @Option(
-    name = "-sp",
-    required = false,
-    usage = "Spark parallelism (def=<default-spark-par>)",
+  @Option(name = "-sp", required = false, usage = "Spark parallelism (def=<default-spark-par>)",
     aliases = Array("--spark-par"))
   val sparkPar = 0
 
   @Override
   def testArgs =
-    Array(
-      "-if",
-      "target/getds.parquet",
-      "-sp",
-      "4",
-      "-ff",
-      "target/features.csv",
-      "-fc",
-      "resp",
-      "-sr",
-      "133",
-      "-v",
-      "-fcc",
-      "resp_cont",
-      "-fiv",
-      "-ge",
-      "v_0:1.0",
-      "-ge",
-      "v_1:1.0",
-      "-gfve",
-      "0.5",
-      "-gct",
-      "0.66")
+    Array("-if", "target/getds.parquet", "-sp", "4", "-ff", "target/features.csv", "-fc", "resp",
+      "-sr", "133", "-v", "-fcc", "resp_cont", "-fiv", "-ge", "v_0:1.0", "-ge", "v_1:1.0",
+      "-gfve", "0.5", "-gct", "0.66")
 
   @Override
   def run(): Unit = {
@@ -180,7 +123,7 @@ class GenerateLabelsNoiseCmd
 
     val actualZeroLevel = if (zeroLevel > 0) zeroLevel else varOrdinalLevels / 2
     echo(
-      s"Generating a dichotomous response, zeroLevel: ${actualZeroLevel}, fracVarExplained: ${fracVarExplained}")
+        s"Generating a dichotomous response, zeroLevel: ${actualZeroLevel}, fracVarExplained: ${fracVarExplained}")
 
     val effects =
       effectsDef.asScala.map(_.split(":")).map { case Array(v, e) => (v, e.toDouble) }.toMap
@@ -192,19 +135,16 @@ class GenerateLabelsNoiseCmd
     val featureSource = new ParquetFeatureSource(inputFile)
     echo(s"Loaded rows: ${dumpList(featureSource.sampleNames)}")
 
-    val generator = NoisyEffectLabelGenerator(featureSource)(
-      zeroLevel = actualZeroLevel,
-      effects = effects,
-      fractionVarianceExplained = fracVarExplained,
-      classThresholdPercentile = classThresholdPercentile,
-      multiplicative = multiplicativeEffects,
+    val generator = NoisyEffectLabelGenerator(featureSource)(zeroLevel = actualZeroLevel,
+      effects = effects, fractionVarianceExplained = fracVarExplained,
+      classThresholdPercentile = classThresholdPercentile, multiplicative = multiplicativeEffects,
       seed = randomSeed)
     echo(s"Saving feature output to: ${featuresFile}, column: ${featureColumn}")
 
     val labels = generator.getLabels(featureSource.sampleNames)
 
     echo(
-      s"Continous response mean: ${generator.noisyContinuousStats.mean} , total variance: ${generator.noisyContinuousStats.variance}")
+        s"Continous response mean: ${generator.noisyContinuousStats.mean} , total variance: ${generator.noisyContinuousStats.variance}")
 
     val effectVarData = if (includeEffectVarData) {
       SparkUtils.withBroadcast(sc)(effects) { br_effects =>
@@ -216,15 +156,14 @@ class GenerateLabelsNoiseCmd
     } else Map.empty
 
     CSVUtils.withFile(new File(featuresFile)) { writer =>
-      writer.writeRow(
-        List("", featureColumn) ::: (if (featureContinuousColumn != null)
-                                       List(featureContinuousColumn)
-                                     else Nil) ::: effectVarData.toList.map(_._1))
+      writer.writeRow(List("", featureColumn) ::: (if (featureContinuousColumn != null)
+                                                     List(featureContinuousColumn)
+                                                   else Nil) ::: effectVarData.toList.map(_._1))
       val outputColumns =
-        List(featureSource.sampleNames, labels.toList) ::: (if (featureContinuousColumn != null)
-                                                              List(
-                                                                generator.noisyContinuousResponse.data.toList)
-                                                            else Nil) ::: effectVarData.toList
+        List(featureSource.sampleNames,
+          labels.toList) ::: (if (featureContinuousColumn != null)
+                                List(generator.noisyContinuousResponse.data.toList)
+                              else Nil) ::: effectVarData.toList
           .map(_._2.toList)
       writer.writeAll(outputColumns.transpose)
     }
@@ -232,9 +171,9 @@ class GenerateLabelsNoiseCmd
 
   def withFileOrStdout(fileName: String)(f: PrintStream => Unit) = {
     LoanUtils.withCloseable(
-      if (fileName != null) new PrintStream(fileName)
-      else
-        ReusablePrintStream.stdout)(f)
+        if (fileName != null) new PrintStream(fileName)
+        else
+          ReusablePrintStream.stdout)(f)
   }
 
 }

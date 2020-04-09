@@ -27,12 +27,8 @@ case class OrdinalFeatureGenerator(
       .mapPartitionsWithIndex {
         case (pi, iter) =>
           implicit val rf = new XorShift1024StarRandomGenerator(pi ^ seed)
-          iter.map(
-            i =>
-              StdFeature.from(
-                "v_" + i,
-                BoundedOrdinalVariable(nLevels),
-                Sampling.subsample(nLevels, nSamples, true).map(_.toByte)))
+          iter
+            .map(i => StdFeature.from("v_" + i, BoundedOrdinalVariable(nLevels), Sampling.subsample(nLevels, nSamples, true).map(_.toByte)))
       }
   }
   def sampleNames: List[String] = Range(0, nSamples).map("s_" + _).toList

@@ -47,9 +47,8 @@ class EffectLabelGenerator(featureSource: FeatureSource)(
     }
     // generate noise effect
     noiseVariables
-      .zip(
-        Stream.fill(noiseVariables.size)(
-          gs.nextNormalizedDouble() * noiseEffectSigma + noiseEffectMean))
+      .zip(Stream.fill(noiseVariables.size)(
+            gs.nextNormalizedDouble() * noiseEffectSigma + noiseEffectMean))
       .toMap
   }
 
@@ -59,7 +58,7 @@ class EffectLabelGenerator(featureSource: FeatureSource)(
   lazy val noiseSigma = {
     println(s"Noise effect size: ${noiseEffects.size}")
     val r = Math.sqrt(
-      noiseEffects.size * (2.0 / 3.0) * (2.0 * noiseEffectSigma) * (2.0 * noiseEffectSigma))
+        noiseEffects.size * (2.0 / 3.0) * (2.0 * noiseEffectSigma) * (2.0 * noiseEffectSigma))
     println(s"R: ${r}")
     r
   }
@@ -82,9 +81,10 @@ class EffectLabelGenerator(featureSource: FeatureSource)(
           .filter(f => br_effects.value.contains(f.label))
           .mapPartitions { it =>
             val normalizer = DenseVector.fill(nSamples)(zeroLevelValue)
-            it.map(f =>
-              (DenseVector(f.valueAsVector.toArray) -= normalizer) *= (2 * br_effects.value(
-                f.label)))
+            it.map(
+                f =>
+                  (DenseVector(f.valueAsVector.toArray) -= normalizer) *= (2 * br_effects.value(
+                      f.label)))
           }
           .fold(DenseVector.zeros[Double](nSamples))(_ += _)
     }
@@ -117,11 +117,6 @@ object EffectLabelGenerator {
       noiseEffectMean: Double = 0.0,
       noiseVarFraction: Double = 0.0,
       seed: Long = 13L) =
-    new EffectLabelGenerator(featureSource)(
-      zeroLevel,
-      effects,
-      noiseEffectSigma,
-      noiseEffectMean,
-      noiseVarFraction,
-      seed)
+    new EffectLabelGenerator(featureSource)(zeroLevel, effects, noiseEffectSigma, noiseEffectMean,
+      noiseVarFraction, seed)
 }

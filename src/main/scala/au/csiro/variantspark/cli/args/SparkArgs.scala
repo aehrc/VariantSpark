@@ -6,10 +6,7 @@ import org.apache.spark.rdd.RDD
 
 trait SparkArgs extends SparkApp {
 
-  @Option(
-    name = "-sp",
-    required = false,
-    usage = "Spark parallelism (def=<default-spark-par>)",
+  @Option(name = "-sp", required = false, usage = "Spark parallelism (def=<default-spark-par>)",
     aliases = Array("--spark-par"))
   val sparkPar = 0
 

@@ -62,132 +62,76 @@ class NullImportanceCmd
     with Logging
     with TestArgs {
 
-  @Option(
-    name = "-pn",
-    required = false,
-    usage = "Number of permutations to generate (def = 30)",
+  @Option(name = "-pn", required = false, usage = "Number of permutations to generate (def = 30)",
     aliases = Array("--n-permutations"))
   val nPermutations: Int = 30
 
-  @Option(
-    name = "-pnv",
-    required = false,
-    usage =
-      "Number of top important variables from each permutations to include. Use `0` for all variables (def = 0)",
+  @Option(name = "-pnv", required = false,
+    usage = "Number of top important variables from each permutations to include. Use `0` for all variables (def = 0)",
     aliases = Array("--permutations-n-variables"))
   val permutationsVarLimit: Int = 0
 
-  @Option(
-    name = "-ivo",
-    required = false,
+  @Option(name = "-ivo", required = false,
     usage = "Variable type ordinal with this number of levels (def = 3)",
     aliases = Array("--input-var-ordinal"))
   val varOrdinalLevels: Int = 3
 
-  @Option(
-    name = "-ff",
-    required = true,
-    usage = "Path to feature file",
+  @Option(name = "-ff", required = true, usage = "Path to feature file",
     aliases = Array("--feature-file"))
   val featuresFile: String = null
 
-  @Option(
-    name = "-fc",
-    required = true,
-    usage = "Name of the feature column",
+  @Option(name = "-fc", required = true, usage = "Name of the feature column",
     aliases = Array("--feature-column"))
   val featureColumn: String = null
 
   // output options
-  @Option(
-    name = "-of",
-    required = false,
-    usage = "Path to output file (def = stdout)",
+  @Option(name = "-of", required = false, usage = "Path to output file (def = stdout)",
     aliases = Array("--output-file"))
   val outputFile: String = null
 
   // random forrest options
 
-  @Option(
-    name = "-rn",
-    required = false,
-    usage = "RandomForest: number of trees to build (def=20)",
-    aliases = Array("--rf-n-trees"))
+  @Option(name = "-rn", required = false,
+    usage = "RandomForest: number of trees to build (def=20)", aliases = Array("--rf-n-trees"))
   val nTrees: Int = 20
 
-  @Option(
-    name = "-rmt",
-    required = false,
-    usage = "RandomForest: mTry(def=sqrt(<num-vars>))",
+  @Option(name = "-rmt", required = false, usage = "RandomForest: mTry(def=sqrt(<num-vars>))",
     aliases = Array("--rf-mtry"))
   val rfMTry: Long = -1L
 
-  @Option(
-    name = "-rmtf",
-    required = false,
-    usage = "RandomForest: mTry fraction",
+  @Option(name = "-rmtf", required = false, usage = "RandomForest: mTry fraction",
     aliases = Array("--rf-mtry-fraction"))
   val rfMTryFraction: Double = Double.NaN
 
-  @Option(
-    name = "-ro",
-    required = false,
-    usage = "RandomForest: estimate oob (def=no)",
+  @Option(name = "-ro", required = false, usage = "RandomForest: estimate oob (def=no)",
     aliases = Array("--rf-oob"))
   val rfEstimateOob: Boolean = false
-  @Option(
-    name = "-rre",
-    required = false,
+  @Option(name = "-rre", required = false,
     usage = "RandomForest: [DEPRICATED] randomize equal gini recursion is on by default now",
     aliases = Array("--rf-randomize-equal"))
   val rfRandomizeEqual: Boolean = false
-  @Option(
-    name = "-rsf",
-    required = false,
+  @Option(name = "-rsf", required = false,
     usage = "RandomForest: sample with no replacement (def=1.0 for bootstrap  else 0.6666)",
     aliases = Array("--rf-subsample-fraction"))
   val rfSubsampleFraction: Double = Double.NaN
 
-  @Option(
-    name = "-rsn",
-    required = false,
+  @Option(name = "-rsn", required = false,
     usage = "RandomForest: sample with no replacement (def=false -- bootstrap)",
     aliases = Array("--rf-sample-no-replacement"))
   val rfSampleNoReplacement: Boolean = false
 
-  @Option(
-    name = "-rbs",
-    required = false,
-    usage = "RandomForest: batch size (def=10))",
+  @Option(name = "-rbs", required = false, usage = "RandomForest: batch size (def=10))",
     aliases = Array("--rf-batch-size"))
   val rfBatchSize: Int = 10
 
-  @Option(
-    name = "-sr",
-    required = false,
-    usage = "Random seed to use (def=<random>)",
+  @Option(name = "-sr", required = false, usage = "Random seed to use (def=<random>)",
     aliases = Array("--seed"))
   val randomSeed: Long = defRng.nextLong
 
   @Override
   def testArgs =
-    Array(
-      "-if",
-      "data/chr22_1000.vcf",
-      "-ff",
-      "data/chr22-labels.csv",
-      "-fc",
-      "22_16051249",
-      "-ro",
-      "-of",
-      "target/null-importances.csv",
-      "-sr",
-      "13",
-      "-pn",
-      "5",
-      "-v",
-      "-ivb",
-      "-ovn",
+    Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249",
+      "-ro", "-of", "target/null-importances.csv", "-sr", "13", "-pn", "5", "-v", "-ivb", "-ovn",
       "raw")
 
   @Override
@@ -205,8 +149,7 @@ class NullImportanceCmd
     val totalVariables = inputData.count()
     val variablePreview =
       inputData.map({ case (f, i) => f.label }).take(defaultPreviewSize).toList
-    echo(
-      s"Loaded variables: ${dumpListHead(variablePreview, totalVariables)}, took: ${dataLoadingTimer.durationInSec}")
+    echo(s"Loaded variables: ${dumpListHead(variablePreview, totalVariables)}, took: ${dataLoadingTimer.durationInSec}")
     echoDataPreview()
 
     echo(s"Loading labels from: ${featuresFile}, column: ${featureColumn}")
@@ -233,12 +176,8 @@ class NullImportanceCmd
       echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")
       echo(s"Random seed is: ${randomSeed}")
       val treeBuildingTimer = Timer()
-      val rf = new RandomForest(
-        RandomForestParams(
-          oob = rfEstimateOob,
-          seed = randomSeed,
-          bootstrap = !rfSampleNoReplacement,
-          subsample = rfSubsampleFraction,
+      val rf = new RandomForest(RandomForestParams(oob = rfEstimateOob, seed = randomSeed,
+          bootstrap = !rfSampleNoReplacement, subsample = rfSubsampleFraction,
           nTryFraction = if (rfMTry > 0) rfMTry.toDouble / totalVariables else rfMTryFraction))
       val trainingData = inputData
 
@@ -253,9 +192,9 @@ class NullImportanceCmd
           totalTime += elapsedTimeMs
           totalTrees += nTrees
           echo(
-            s"Finished trees: ${totalTrees}, current oobError: ${oobError}, totalTime: ${totalTime / 1000.0} s, avg timePerTree: ${totalTime / (1000.0 * totalTrees)} s")
+              s"Finished trees: ${totalTrees}, current oobError: ${oobError}, totalTime: ${totalTime / 1000.0} s, avg timePerTree: ${totalTime / (1000.0 * totalTrees)} s")
           echo(
-            s"Last build trees: ${nTrees}, time: ${elapsedTimeMs} ms, timePerTree: ${elapsedTimeMs / nTrees} ms")
+              s"Last build trees: ${nTrees}, time: ${elapsedTimeMs} ms, timePerTree: ${elapsedTimeMs / nTrees} ms")
 
         }
       }
@@ -263,11 +202,10 @@ class NullImportanceCmd
       val result = rf.batchTrain(trainingData, labels, nTrees, rfBatchSize)
 
       echo(
-        s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s")
+          s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s")
 
       val topImportantVariables = limitVariables(
-        result.normalizedVariableImportance(importanceNormalizer).toSeq,
-        permutationsVarLimit)
+          result.normalizedVariableImportance(importanceNormalizer).toSeq, permutationsVarLimit)
       (pn, topImportantVariables)
     }
 
@@ -277,10 +215,10 @@ class NullImportanceCmd
     // actually I do not need to to transpose just build it transposed and convert to indexed row matrix
 
     val importanceMatrix = new CoordinateMatrix(
-      sc.parallelize(
-        iterationImportances
-          .flatMap(ii => ii._2.map(vi => new MatrixEntry(vi._1, ii._1, vi._2)))
-          .toSeq))
+        sc.parallelize(
+            iterationImportances
+              .flatMap(ii => ii._2.map(vi => new MatrixEntry(vi._1, ii._1, vi._2)))
+              .toSeq))
       .toIndexedRowMatrix()
 
     val mappedOutput = importanceMatrix.rows
@@ -289,13 +227,12 @@ class NullImportanceCmd
       .sortByKey()
       .map(_._2)
 
-    val permutationImpSchema = StructType(
-      Seq(StructField("variable", StringType, false))
+    val permutationImpSchema = StructType(Seq(StructField("variable", StringType, false))
         ++ Range(0, nPermutations).map(p => StructField(s"perm_${p}", DoubleType, true)))
 
-    val df = spark.createDataFrame(
-      mappedOutput.map(r => Row.merge(Row(r._2), Row(r._1.toArray: _*))),
-      permutationImpSchema)
+    val df =
+      spark.createDataFrame(mappedOutput.map(r => Row.merge(Row(r._2), Row(r._1.toArray: _*))),
+        permutationImpSchema)
     val outputDf = if (nOuputParitions > 0) df.repartition(nOuputParitions) else df
     outputDf.write.mode(SaveMode.Overwrite).option("header", true).csv(outputFile)
 

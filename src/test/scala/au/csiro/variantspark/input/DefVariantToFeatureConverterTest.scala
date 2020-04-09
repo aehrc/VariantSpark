@@ -18,21 +18,15 @@ class DefVariantToFeatureConverterTest {
 
   val bialellicVC: VariantContext =
     new VariantContextBuilder("", "chr1", 10L, 10L, Arrays.asList(refAllele, altAllele))
-      .genotypes(
-        GenotypeBuilder.create("NC-NC", Arrays.asList(Allele.NO_CALL, Allele.NO_CALL)),
+      .genotypes(GenotypeBuilder.create("NC-NC", Arrays.asList(Allele.NO_CALL, Allele.NO_CALL)),
         GenotypeBuilder.create("REF-REF", Arrays.asList(refAllele, refAllele)),
         GenotypeBuilder.create("ALT-REF", Arrays.asList(altAllele, refAllele)),
         GenotypeBuilder.create("ALT-ALT", Arrays.asList(altAllele, altAllele)))
       .make()
 
-  val multialleciVC: VariantContext = new VariantContextBuilder(
-    "",
-    "chr1",
-    10L,
-    10L,
+  val multialleciVC: VariantContext = new VariantContextBuilder("", "chr1", 10L, 10L,
     Arrays.asList(refAllele, altAllele, altAllele1))
-    .genotypes(
-      GenotypeBuilder.create("NC-NC", Arrays.asList(Allele.NO_CALL, Allele.NO_CALL)),
+    .genotypes(GenotypeBuilder.create("NC-NC", Arrays.asList(Allele.NO_CALL, Allele.NO_CALL)),
       GenotypeBuilder.create("REF-REF", Arrays.asList(refAllele, refAllele)),
       GenotypeBuilder.create("ALT1-REF", Arrays.asList(altAllele1, refAllele)),
       GenotypeBuilder.create("ALT1-ALT", Arrays.asList(altAllele1, altAllele)))

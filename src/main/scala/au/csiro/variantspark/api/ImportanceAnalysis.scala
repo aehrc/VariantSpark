@@ -39,8 +39,8 @@ class ImportanceAnalysis(
   private def sc = featureSource.features.sparkContext
   private lazy val inputData = featureSource.features.zipWithIndex().cache()
 
-  val variableImportanceSchema = StructType(
-    Seq(StructField("variable", StringType, true), StructField("importance", DoubleType, true)))
+  val variableImportanceSchema = StructType(Seq(StructField("variable", StringType, true),
+      StructField("importance", DoubleType, true)))
 
   lazy val rfModel = {
     val labels = labelSource.getLabels(featureSource.sampleNames)
@@ -52,9 +52,8 @@ class ImportanceAnalysis(
 
   private lazy val br_normalizedVariableImportance = {
     val indexImportance = rfModel.normalizedVariableImportance()
-    sc.broadcast(
-      new Long2DoubleOpenHashMap(
-        indexImportance.asInstanceOf[Map[java.lang.Long, java.lang.Double]]))
+    sc.broadcast(new Long2DoubleOpenHashMap(indexImportance.asInstanceOf[Map[java.lang.Long,
+          java.lang.Double]]))
   }
 
   def variableImportance = {
@@ -104,17 +103,11 @@ object ImportanceAnalysis {
       batchSize: Int = 100,
       varOrdinalLevels: Int = 3)(implicit vsContext: SqlContextHolder): ImportanceAnalysis = {
 
-    new ImportanceAnalysis(
-      vsContext.sqlContext,
-      featureSource,
-      labelSource,
+    new ImportanceAnalysis(vsContext.sqlContext, featureSource, labelSource,
       rfParams = RandomForestParams(
-        nTryFraction = mtryFraction.getOrElse(defaultRFParams.nTryFraction),
-        seed = seed.getOrElse(defaultRFParams.seed),
-        oob = oob),
-      nTrees = nTrees,
-      rfBatchSize = batchSize,
-      varOrdinalLevels = varOrdinalLevels)
+          nTryFraction = mtryFraction.getOrElse(defaultRFParams.nTryFraction),
+          seed = seed.getOrElse(defaultRFParams.seed), oob = oob),
+      nTrees = nTrees, rfBatchSize = batchSize, varOrdinalLevels = varOrdinalLevels)
   }
 
   def fromParams(
@@ -125,14 +118,8 @@ object ImportanceAnalysis {
       batchSize: Int = 100,
       varOrdinalLevels: Int = 3)(implicit vsContext: SqlContextHolder): ImportanceAnalysis = {
 
-    new ImportanceAnalysis(
-      vsContext.sqlContext,
-      featureSource,
-      labelSource,
-      rfParams = rfParams,
-      nTrees = nTrees,
-      rfBatchSize = batchSize,
-      varOrdinalLevels = varOrdinalLevels)
+    new ImportanceAnalysis(vsContext.sqlContext, featureSource, labelSource, rfParams = rfParams,
+      nTrees = nTrees, rfBatchSize = batchSize, varOrdinalLevels = varOrdinalLevels)
   }
 
 }

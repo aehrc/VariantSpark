@@ -33,51 +33,30 @@ import au.csiro.variantspark.output.ParquetFeatureSink
 
 class GenerateFeaturesCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
-  @Option(
-    name = "-gl",
-    required = false,
-    usage = "Number of levels to generate (def=3)",
+  @Option(name = "-gl", required = false, usage = "Number of levels to generate (def=3)",
     aliases = Array("--gen-n-levels"))
   val nLevels: Int = 3
 
-  @Option(
-    name = "-gv",
-    required = false,
-    usage = "Number of variables to generate (def=10000)",
+  @Option(name = "-gv", required = false, usage = "Number of variables to generate (def=10000)",
     aliases = Array("--gen-n-variables"))
   val nVariables: Long = 10000L
 
-  @Option(
-    name = "-gs",
-    required = false,
-    usage = "Number of samples to generate (def=100)",
+  @Option(name = "-gs", required = false, usage = "Number of samples to generate (def=100)",
     aliases = Array("--gen-n-samples"))
   val nSamples: Int = 100
-  @Option(
-    name = "-of",
-    required = true,
-    usage = "Path to output file (def = stdout)",
+  @Option(name = "-of", required = true, usage = "Path to output file (def = stdout)",
     aliases = Array("--output-file"))
   val outputFile: String = null
 
-  @Option(
-    name = "-ot",
-    required = false,
-    usage = "Input file type, one of: vcf, csv (def=vcf)",
+  @Option(name = "-ot", required = false, usage = "Input file type, one of: vcf, csv (def=vcf)",
     aliases = Array("--output-type"))
   val outputType: String = null
 
-  @Option(
-    name = "-sr",
-    required = false,
-    usage = "Random seed to use (def=<random>)",
+  @Option(name = "-sr", required = false, usage = "Random seed to use (def=<random>)",
     aliases = Array("--seed"))
   val randomSeed: Long = defRng.nextLong
 
-  @Option(
-    name = "-sp",
-    required = false,
-    usage = "Spark parallelism (def=<default-spark-par>)",
+  @Option(name = "-sp", required = false, usage = "Spark parallelism (def=<default-spark-par>)",
     aliases = Array("--spark-par"))
   val sparkPar = 0
 
@@ -88,15 +67,11 @@ class GenerateFeaturesCmd extends ArgsApp with SparkApp with Echoable with Loggi
   def run(): Unit = {
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
     echo(
-      s"Generating a synthetic dataset, variables: ${nVariables}, samples: ${nSamples}, levels:${nLevels}")
+        s"Generating a synthetic dataset, variables: ${nVariables}, samples: ${nSamples}, levels:${nLevels}")
     verbose(s"Random seed is: ${randomSeed}")
 
-    val generator = new OrdinalFeatureGenerator(
-      nLevels = nLevels,
-      nSamples = nSamples,
-      nVariables = nVariables,
-      seed = randomSeed,
-      sparkPar = sparkPar)
+    val generator = new OrdinalFeatureGenerator(nLevels = nLevels, nSamples = nSamples,
+      nVariables = nVariables, seed = randomSeed, sparkPar = sparkPar)
 
     echo(s"Saving output to ${outputFile}")
     val sink = new ParquetFeatureSink(outputFile)

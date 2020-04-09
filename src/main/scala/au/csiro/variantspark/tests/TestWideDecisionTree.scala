@@ -28,10 +28,8 @@ object TestWideDecisionTree extends SparkApp {
     val centersNo = 3
     val samples = 100
     val clusterVariance = 0.005
-    val centers = sc.parallelize(
-      Range(0, dims).map(i =>
-        Vectors.dense(Array.fill(centersNo)((Math.random() * 3).toInt.toDouble))),
-      10)
+    val centers = sc.parallelize(Range(0, dims)
+        .map(i => Vectors.dense(Array.fill(centersNo)((Math.random() * 3).toInt.toDouble))), 10)
     val clusterAssignment =
       Range(0, samples).map(i => Math.floor(Math.random() * centersNo).toInt).toList
     println(clusterAssignment)
@@ -40,9 +38,9 @@ object TestWideDecisionTree extends SparkApp {
       case (v, i) =>
         if (i < importantDims)
           Vectors.dense(
-            clusterAssignment
-              .map(c => ((v(c).toInt + (Math.random() * 1.3).toInt) % centersNo).toDouble)
-              .toArray)
+              clusterAssignment
+                .map(c => ((v(c).toInt + (Math.random() * 1.3).toInt) % centersNo).toDouble)
+                .toArray)
         else
           Vectors.dense(Array.fill(samples)((Math.random() * 3).toInt.toDouble))
     }

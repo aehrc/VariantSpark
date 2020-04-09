@@ -96,8 +96,7 @@ case class VarSplitInfo(
     */
   def split(v: TreeFeature, labels: Array[Int], nCategories: Int)(
       subset: SubsetInfo): (SubsetInfo, SubsetInfo) = {
-    (
-      new SubsetInfo(subset.indices.filter(v.at(_) <= splitPoint), leftGini, labels, nCategories),
+    (new SubsetInfo(subset.indices.filter(v.at(_) <= splitPoint), leftGini, labels, nCategories),
       new SubsetInfo(subset.indices.filter(v.at(_) > splitPoint), rightGini, labels, nCategories))
   }
   def splitPermutated(
@@ -105,17 +104,10 @@ case class VarSplitInfo(
       labels: Array[Int],
       nCategories: Int,
       permutationOder: Array[Int])(subset: SubsetInfo): (SubsetInfo, SubsetInfo) = {
-    (
-      new SubsetInfo(
-        subset.indices.filter(i => v.at(permutationOder(i)) <= splitPoint),
-        leftGini,
-        labels,
-        nCategories),
-      new SubsetInfo(
-        subset.indices.filter(i => v.at(permutationOder(i)) > splitPoint),
-        rightGini,
-        labels,
-        nCategories))
+    (new SubsetInfo(subset.indices.filter(i => v.at(permutationOder(i)) <= splitPoint), leftGini,
+        labels, nCategories),
+      new SubsetInfo(subset.indices.filter(i => v.at(permutationOder(i)) > splitPoint), rightGini,
+        labels, nCategories))
   }
 }
 
@@ -130,12 +122,7 @@ object VarSplitInfo {
     * @return returns a [[au.csiro.variantspark.algo.VarSplitInfo]] object
     */
   def apply(variableIndex: Long, split: SplitInfo, isPermutated: Boolean): VarSplitInfo =
-    apply(
-      variableIndex,
-      split.splitPoint,
-      split.gini,
-      split.leftGini,
-      split.rightGini,
+    apply(variableIndex, split.splitPoint, split.gini, split.leftGini, split.rightGini,
       isPermutated)
 }
 
@@ -507,8 +494,7 @@ object DecisionTree extends Logging with Prof {
     profIt("REM: splitSubsets") {
       val indexedSplittedSubsets = withBroadcast(indexedData)(bestSplits) { br_bestSplits =>
         indexedData
-          .mapPartitions(it =>
-            br_splitter.value.splitSubsets(it, br_subsets.value, br_bestSplits.value))
+          .mapPartitions(it => br_splitter.value.splitSubsets(it, br_subsets.value, br_bestSplits.value))
           .collectAsMap()
       }
       indexedSplittedSubsets
@@ -539,8 +525,8 @@ object DecisionTree extends Logging with Prof {
       treeFeatures
         .mapPartitionsWithIndex {
           case (pi, it) =>
-            br_splitter.value.findSplitsForVars(it, br_splits.value)(
-              new XorShift1024StarRandomGenerator(seed ^ pi))
+            br_splitter.value.findSplitsForVars(it,
+              br_splits.value)(new XorShift1024StarRandomGenerator(seed ^ pi))
         }
         .fold(Array.fill(br_splits.value.length)(null))(merger.merge)
     }
@@ -607,7 +593,7 @@ case class SplitNode(
     print(new String(Array.fill(level)(' ')))
     val nodeType = "split"
     println(
-      s"${nodeType}[${splitVariableIndex}, ${splitPoint}, ${majorityLabel}, ${size}, ${impurityReduction}, ${nodeImpurity}]")
+        s"${nodeType}[${splitVariableIndex}, ${splitPoint}, ${majorityLabel}, ${size}, ${impurityReduction}, ${nodeImpurity}]")
     left.printout(level + 1)
     right.printout(level + 1)
   }
@@ -629,16 +615,8 @@ object SplitNode {
       split: VarSplitInfo,
       left: DecisionTreeNode,
       right: DecisionTreeNode): SplitNode =
-    apply(
-      subset.majorityLabel,
-      subset.length,
-      subset.impurity,
-      split.variableIndex,
-      split.splitPoint,
-      subset.impurity - split.gini,
-      left,
-      right,
-      split.isPermutated)
+    apply(subset.majorityLabel, subset.length, subset.impurity, split.variableIndex,
+      split.splitPoint, subset.impurity - split.gini, left, right, split.isPermutated)
 }
 
 @SerialVersionUID(1L)
@@ -657,8 +635,7 @@ case class DecisionTreeModel(val rootNode: DecisionTreeNode)
   def predict(indexedData: RDD[(Feature, Long)]): Array[Int] = {
     val treeVariableData = indexedData.collectAtIndexes(splitVariableIndexes)
     Range(0, indexedData.size)
-      .map(
-        i =>
+      .map(i =>
           rootNode
             .traverse(s => treeVariableData(s.splitVariableIndex).at(i) <= s.splitPoint)
             .majorityLabel)
@@ -872,10 +849,8 @@ class DecisionTree(
     withCached(features) { cachedFeatures =>
       val splitter: VariableSplitter =
         if (params.correctImpurity)
-          AirVariableSplitter(
-            labels,
-            if (params.airRandomSeed != 0L) params.airRandomSeed else params.seed,
-            nvarFraction,
+          AirVariableSplitter(labels,
+            if (params.airRandomSeed != 0L) params.airRandomSeed else params.seed, nvarFraction,
             randomizeEquality = params.randomizeEquality)
         else
           StdVariableSplitter(labels, nvarFraction, randomizeEquality = params.randomizeEquality)
@@ -940,13 +915,7 @@ class DecisionTree(
       case (subset, i) =>
         subsetIndexToSplitIndexMap
           .get(i)
-          .map(
-            splitIndex =>
-              SplitNode(
-                subset,
-                usefulSplits(splitIndex),
-                nextLevelNodes(2 * splitIndex),
-                nextLevelNodes(2 * splitIndex + 1)))
+          .map(splitIndex => SplitNode(subset, usefulSplits(splitIndex), nextLevelNodes(2 * splitIndex), nextLevelNodes(2 * splitIndex + 1)))
           .getOrElse(LeafNode(subset))
     }.toList
     profPoint("building done")

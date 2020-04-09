@@ -17,10 +17,7 @@ import org.apache.spark.util.random.BernoulliSampler
 
 class TestCmd extends ArgsApp with TestArgs /*with SparkApp*/ {
 
-  @Option(
-    name = "-if",
-    required = false,
-    usage = "This is input files",
+  @Option(name = "-if", required = false, usage = "This is input files",
     aliases = Array("--input-files"))
   val inputFile: String = null
 

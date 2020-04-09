@@ -34,72 +34,39 @@ class AnalyzeRFCmd
     with Logging
     with TestArgs {
 
-  @Option(
-    name = "-im",
-    required = true,
-    usage = "Path to input model",
+  @Option(name = "-im", required = true, usage = "Path to input model",
     aliases = Array("--input-model"))
   val inputModel: String = null
 
-  @Option(
-    name = "-ii",
-    required = false,
-    usage = "Path to input variable index file",
+  @Option(name = "-ii", required = false, usage = "Path to input variable index file",
     aliases = Array("--input-idnex"))
   val inputIndex: String = null
 
-  @Option(
-    name = "-ob",
-    required = false,
-    usage = "Path to output importance",
+  @Option(name = "-ob", required = false, usage = "Path to output importance",
     aliases = Array("--output-oob"))
   val outputOobError: String = null
 
-  @Option(
-    name = "-obt",
-    required = false,
-    usage = "Path to output importance",
+  @Option(name = "-obt", required = false, usage = "Path to output importance",
     aliases = Array("--output-oob-per-tree"))
   val outputOobPerTree: String = null
 
-  @Option(
-    name = "-oi",
-    required = false,
-    usage = "Path to output importance",
+  @Option(name = "-oi", required = false, usage = "Path to output importance",
     aliases = Array("--output-importance"))
   val outputImportance: String = null
 
-  @Option(
-    name = "-oti",
-    required = false,
-    usage = "Path to output importance",
+  @Option(name = "-oti", required = false, usage = "Path to output importance",
     aliases = Array("--output-top-importance"))
   val outputTopImportance: String = null
 
-  @Option(
-    name = "-otin",
-    required = false,
-    usage = "Path to output importance",
+  @Option(name = "-otin", required = false, usage = "Path to output importance",
     aliases = Array("--output-top-importance-number"))
   val outputTopImportanceNumber: Int = 100
 
   @Override
   def testArgs =
-    Array(
-      "-ii",
-      "target/ch22-idx.ser",
-      "-im",
-      "target/ch22-model.ser",
-      "-if",
-      "data/chr22_1000.vcf",
-      "-ob",
-      "target/ch22-oob.csv",
-      "-obt",
-      "target/ch22-oob-tree.csv",
-      "-oi",
-      "target/ch22-imp.csv",
-      "-oti",
-      "target/ch22-top-imp.csv")
+    Array("-ii", "target/ch22-idx.ser", "-im", "target/ch22-model.ser", "-if",
+      "data/chr22_1000.vcf", "-ob", "target/ch22-oob.csv", "-obt", "target/ch22-oob-tree.csv",
+      "-oi", "target/ch22-imp.csv", "-oti", "target/ch22-top-imp.csv")
 
   lazy val variableIndex =
     LoanUtils.withCloseable(new ObjectInputStream(new FileInputStream(inputIndex))) { objIn =>

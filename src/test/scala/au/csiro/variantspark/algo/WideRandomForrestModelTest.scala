@@ -19,9 +19,9 @@ class WideRandomForrestModelTest extends SparkTest {
     val importances =
       List(Map(1L -> 1.0, 2L -> 1.0), Map(1L -> 1.0, 2L -> 0.5, 3L -> 6.0), Map(1L -> 1.0))
         .map(m => new Long2DoubleOpenHashMap(m.keys.toArray, m.values.toArray))
-    val model = new RandomForestModel(
-      importances.map(TestPredictorWithImportance(null, _).toMember).toList,
-      nLabels)
+    val model =
+      new RandomForestModel(importances.map(TestPredictorWithImportance(null, _).toMember).toList,
+        nLabels)
     val totalImportance = model.variableImportance
     assertEquals(Map(1L -> 1.0, 2L -> 0.5, 3L -> 2.0), totalImportance)
   }
@@ -36,9 +36,9 @@ class WideRandomForrestModelTest extends SparkTest {
   @Test
   def whenOnePredictorPassesThePrediction() {
     val assumedPredictions = Array(1, 2)
-    val model = new RandomForestModel(
-      List(TestPredictorWithImportance(assumedPredictions, null).toMember),
-      nLabels)
+    val model =
+      new RandomForestModel(List(TestPredictorWithImportance(assumedPredictions, null).toMember),
+        nLabels)
     val prediction = model.predict(testData)
     assertArrayEquals(assumedPredictions, prediction)
   }
@@ -46,9 +46,9 @@ class WideRandomForrestModelTest extends SparkTest {
   @Test
   def whenManyPredictorsThenPredictsByVoting() {
     val assumedPredictions = List(Array(1, 0), Array(1, 2), Array(1, 0))
-    val model = new RandomForestModel(
-      assumedPredictions.map(TestPredictorWithImportance(_, null).toMember).toList,
-      nLabels)
+    val model =
+      new RandomForestModel(assumedPredictions.map(TestPredictorWithImportance(_, null).toMember).toList,
+        nLabels)
     val prediction = model.predict(testData)
     assertArrayEquals(Array(1, 0), prediction)
   }

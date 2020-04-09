@@ -20,20 +20,17 @@ class WideRandomForrestTest extends SparkTest {
   def testBuildsCorrectBoostedModelWithoutOob() {
     val nTryFraction = 0.6
     val collector = new TreeDataCollector()
-    val rf = new RandomForest(
-      RandomForestParams(oob = false, nTryFraction = nTryFraction, bootstrap = true),
-      modelBuilderFactory = collector.factory)
+    val rf = new RandomForest(RandomForestParams(oob = false, nTryFraction = nTryFraction,
+        bootstrap = true), modelBuilderFactory = collector.factory)
     val model = rf.batchTrain(testData, labels, 10)
     assertEquals("All trees in the model", collector.allTreest, model.trees)
 
     //TODO: Fix
     //    assertTrue("All trees trained on the same data", collector.allData.forall(_.collect().toList == testData.collect().toList))
-    assertTrue(
-      "All trees trained with expected nTryFactor",
+    assertTrue("All trees trained with expected nTryFactor",
       collector.allTryFration.forall(_ == nTryFraction))
     assertTrue("All trees trained same labels", collector.allLabels.forall(_ sameElements labels))
-    assertTrue(
-      "All trees trained with requested samples",
+    assertTrue("All trees trained with requested samples",
       collector.allSamples.forall(s => s.nSize == nSamples && !s.distinctIndexesOut.isEmpty))
   }
 
@@ -42,21 +39,17 @@ class WideRandomForrestTest extends SparkTest {
     val nTryFraction = 0.6
     val nTrees = 10
     val collector = new TreeDataCollector(
-      Stream.continually(1).map(pl => TestPredictorWithImportance(Array.fill(nLabels)(pl), null)))
-    val rf = new RandomForest(
-      RandomForestParams(
-        oob = true,
-        nTryFraction = nTryFraction,
-        bootstrap = false,
-        subsample = 0.5),
-      modelBuilderFactory = collector.factory)
+        Stream
+          .continually(1)
+          .map(pl => TestPredictorWithImportance(Array.fill(nLabels)(pl), null)))
+    val rf = new RandomForest(RandomForestParams(oob = true, nTryFraction = nTryFraction,
+        bootstrap = false, subsample = 0.5), modelBuilderFactory = collector.factory)
     val model = rf.batchTrain(testData, labels, nTrees)
     assertEquals("All trees in the model", collector.allTreest, model.trees)
     // TODO: Fix.
     //
     //assertTrue("All trees trained on the same data", collector.allData.forall(_ == testData))
-    assertTrue(
-      "All trees trained with expected nTryFactor",
+    assertTrue("All trees trained with expected nTryFactor",
       collector.allTryFration.forall(_ == nTryFraction))
     assertTrue("All trees trained same labels", collector.allLabels.forall(_ sameElements labels))
     // the oob errors should follow the 1 0 1 pattern
@@ -64,8 +57,7 @@ class WideRandomForrestTest extends SparkTest {
     assertEquals("Oob errors should always decrease", model.oobErrors.sortBy(-_), model.oobErrors)
     assertEquals("The first error should be 0.5", 0.5, model.oobErrors.head, 0)
     assertEquals("The last error should be 0", 0, model.oobErrors.last, 0.01)
-    assertTrue(
-      "All trees trained with requested samples",
+    assertTrue("All trees trained with requested samples",
       collector.allSamples.forall(s => s.length == nSamples / 2 && !s.distinctIndexesOut.isEmpty))
   }
 

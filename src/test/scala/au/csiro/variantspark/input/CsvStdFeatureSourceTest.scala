@@ -15,27 +15,15 @@ class CsvStdFeatureSourceTest extends SparkTest {
   @Test
   def testConvetsCSVCorectly() {
 
-    val testCSV = sc.parallelize(
-      Seq(
-        ",var0,var1,var2,var3,var4",
-        "s1,0,1,2,3,4",
-        "s2,1,2,3,4,5",
-        "s3,2,3,4,5,6",
-        "s4,3,4,5,6,7",
-        "s5,4,5,6,7,8",
-        "s6,5,6,7,8,9"),
-      3)
+    val testCSV = sc.parallelize(Seq(",var0,var1,var2,var3,var4", "s1,0,1,2,3,4", "s2,1,2,3,4,5",
+        "s3,2,3,4,5,6", "s4,3,4,5,6,7", "s5,4,5,6,7,8", "s6,5,6,7,8,9"), 3)
 
     val featureSource = CsvStdFeatureSource(testCSV)
     val features = featureSource.featuresAs[Vector].collect()
     assertEquals((1 to 6).map("s" + _).toList, featureSource.sampleNames)
     (0 to 4).foreach { i =>
-      assertEquals(
-        StdFeature(
-          "var" + i,
-          ContinuousVariable,
-          VectorData(Vectors.dense((i to (i + 5)).map(_.toDouble).toArray))),
-        features(i))
+      assertEquals(StdFeature("var" + i, ContinuousVariable,
+          VectorData(Vectors.dense((i to (i + 5)).map(_.toDouble).toArray))), features(i))
     }
   }
 

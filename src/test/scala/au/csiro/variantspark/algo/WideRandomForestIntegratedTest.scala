@@ -33,9 +33,7 @@ class WideRandomForestIntegratedTest extends SparkTest {
     // additional check on the model itself
     assertEquals(NoTrees, rfModel.members.size)
     rfModel.members.foreach { p =>
-      assertEquals(
-        "All trees are build on bootstraped sample of original size",
-        NoSamples,
+      assertEquals("All trees are build on bootstraped sample of original size", NoSamples,
         p.predictor.asInstanceOf[DecisionTreeModel].rootNode.size)
     }
   }

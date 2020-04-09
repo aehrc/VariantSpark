@@ -22,16 +22,11 @@ import org.apache.hadoop.conf.Configuration
 
 trait ModelOutputArgs extends SparkArgs with Echoable {
 
-  @ArgsOption(
-    name = "-om",
-    required = false,
-    usage = "Path to model file",
+  @ArgsOption(name = "-om", required = false, usage = "Path to model file",
     aliases = Array("--model-file"))
   val modelFile: String = null
 
-  @ArgsOption(
-    name = "-omf",
-    required = false,
+  @ArgsOption(name = "-omf", required = false,
     usage = "Format of the model file, one of: `json`, `java` (def=`java`)",
     aliases = Array("--model-file-format"))
   val modelFileFormat: String = "java"

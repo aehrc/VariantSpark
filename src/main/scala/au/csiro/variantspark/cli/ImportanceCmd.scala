@@ -60,77 +60,38 @@ class ImportanceCmd
     with Logging
     with TestArgs {
 
-  @Option(
-    name = "-ff",
-    required = true,
-    usage = "Path to feature file",
+  @Option(name = "-ff", required = true, usage = "Path to feature file",
     aliases = Array("--feature-file"))
   val featuresFile: String = null
 
-  @Option(
-    name = "-fc",
-    required = true,
-    usage = "Name of the feature column",
+  @Option(name = "-fc", required = true, usage = "Name of the feature column",
     aliases = Array("--feature-column"))
   val featureColumn: String = null
 
   // output options
-  @Option(
-    name = "-of",
-    required = false,
-    usage = "Path to output file (def = stdout)",
+  @Option(name = "-of", required = false, usage = "Path to output file (def = stdout)",
     aliases = Array("--output-file"))
   val outputFile: String = null
 
-  @Option(
-    name = "-on",
-    required = false,
-    usage =
-      "The number of top important variables to include in output. Use `0` for all variables. (def=20)",
+  @Option(name = "-on", required = false,
+    usage = "The number of top important variables to include in output. Use `0` for all variables. (def=20)",
     aliases = Array("--output-n-variables"))
   val nVariables: Int = 20
 
-  @Option(
-    name = "-od",
-    required = false,
+  @Option(name = "-od", required = false,
     usage = "Include important variables data in output file (def=no)",
     aliases = Array("--output-include-data"))
   val includeData = false
 
-  @Option(
-    name = "-sr",
-    required = false,
-    usage = "Random seed to use (def=<random>)",
+  @Option(name = "-sr", required = false, usage = "Random seed to use (def=<random>)",
     aliases = Array("--seed"))
   val randomSeed: Long = defRng.nextLong
 
   @Override
   def testArgs =
-    Array(
-      "-if",
-      "data/chr22_1000.vcf",
-      "-ff",
-      "data/chr22-labels.csv",
-      "-fc",
-      "22_16051249",
-      "-ovn",
-      "raw",
-      "-on",
-      "1988",
-      "-rn",
-      "1000",
-      "-rbs",
-      "100",
-      "-ic",
-      "-om",
-      "target/ch22-model.json",
-      "-omf",
-      "json",
-      "-sr",
-      "13",
-      "-v",
-      "-io",
-      """{"separator":":"}""")
+    Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249",
+      "-ovn", "raw", "-on", "1988", "-rn", "1000", "-rbs", "100", "-ic", "-om",
+      "target/ch22-model.json", "-omf", "json", "-sr", "13", "-v", "-io", """{"separator":":"}""")
 
   @Override
   def run(): Unit = {
@@ -150,8 +111,7 @@ class ImportanceCmd
     val totalVariables = inputData.count()
 
     val variablePreview = inputData.map(_.label).take(defaultPreviewSize).toList
-    echo(
-      s"Loaded variables: ${dumpListHead(variablePreview, totalVariables)}, took: ${dataLoadingTimer.durationInSec}")
+    echo(s"Loaded variables: ${dumpListHead(variablePreview, totalVariables)}, took: ${dataLoadingTimer.durationInSec}")
     echoDataPreview()
 
     //if (isVerbose) {
@@ -166,17 +126,11 @@ class ImportanceCmd
     echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")
     echo(s"Random seed is: ${randomSeed}")
     val treeBuildingTimer = Timer()
-    val rf: RandomForest = new RandomForest(
-      RandomForestParams(
-        oob = rfEstimateOob,
-        seed = randomSeed,
-        maxDepth = rfMaxDepth,
-        minNodeSize = rfMinNodeSize,
-        bootstrap = !rfSampleNoReplacement,
-        subsample = rfSubsampleFraction,
+    val rf: RandomForest = new RandomForest(RandomForestParams(oob = rfEstimateOob,
+        seed = randomSeed, maxDepth = rfMaxDepth, minNodeSize = rfMinNodeSize,
+        bootstrap = !rfSampleNoReplacement, subsample = rfSubsampleFraction,
         nTryFraction = if (rfMTry > 0) rfMTry.toDouble / totalVariables else rfMTryFraction,
-        correctImpurity = correctImportance,
-        airRandomSeed = airRandomSeed))
+        correctImpurity = correctImportance, airRandomSeed = airRandomSeed))
 
     //
     val trainingData = inputData
@@ -192,9 +146,9 @@ class ImportanceCmd
         totalTime += elapsedTimeMs
         totalTrees += nTrees
         echo(
-          s"Finished trees: ${totalTrees}, current oobError: ${oobError}, totalTime: ${totalTime / 1000.0} s, avg timePerTree: ${totalTime / (1000.0 * totalTrees)} s")
+            s"Finished trees: ${totalTrees}, current oobError: ${oobError}, totalTime: ${totalTime / 1000.0} s, avg timePerTree: ${totalTime / (1000.0 * totalTrees)} s")
         echo(
-          s"Last build trees: ${nTrees}, time: ${elapsedTimeMs} ms, timePerTree: ${elapsedTimeMs / nTrees} ms")
+            s"Last build trees: ${nTrees}, time: ${elapsedTimeMs} ms, timePerTree: ${elapsedTimeMs / nTrees} ms")
 
       }
     }
@@ -202,7 +156,7 @@ class ImportanceCmd
     val result = rf.batchTrainTyped(trainingData, labels, nTrees, rfBatchSize)
 
     echo(
-      s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s")
+        s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s")
 
     // build index for names
     val allImportantVariables = result.normalizedVariableImportance(importanceNormalizer).toSeq
@@ -237,7 +191,7 @@ class ImportanceCmd
       if (includeData) trainingData.collectAtIndexes(topImportantVariableIndexes) else null
 
     CSVUtils.withStream(
-      if (outputFile != null) HdfsPath(outputFile).create() else ReusablePrintStream.stdout) {
+        if (outputFile != null) HdfsPath(outputFile).create() else ReusablePrintStream.stdout) {
       writer =>
         val header =
           List("variable", "importance") ::: (if (includeData) featureSource.sampleNames else Nil)

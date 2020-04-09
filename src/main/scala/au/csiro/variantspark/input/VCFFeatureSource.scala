@@ -24,7 +24,7 @@ case class DefVariantToFeatureConverter(biallelic: Boolean = false, separator: S
 
     if (biallelic && !vc.isBiallelic()) {
       throw new IllegalArgumentException(
-        s"Variant ${vc.toStringWithoutGenotypes()} is not biallelic!")
+          s"Variant ${vc.toStringWithoutGenotypes()} is not biallelic!")
     }
     val labelBuilder = new StringBuilder()
     labelBuilder

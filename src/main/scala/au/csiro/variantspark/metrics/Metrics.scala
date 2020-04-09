@@ -17,7 +17,7 @@ object Metrics {
     val sumAi = c1Bound.map(over2).sum
     val sumBi = c2Bound.map(over2).sum
     (index.toDouble - sumAi * sumBi / over2(n).toDouble) / ((sumAi + sumBi) / 2.0 - sumAi * sumBi / over2(
-      n).toDouble)
+        n).toDouble)
   }
 
   def accuracy(expected: Array[Int], predicted: Array[Int]): Double = {
