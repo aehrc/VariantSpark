@@ -14,7 +14,8 @@ import au.csiro.variantspark.data.FeatureBuilder
 import au.csiro.variantspark.data.DataBuilder
 import au.csiro.variantspark.data.StdFeature
 
-class MapAccumulator extends AccumulatorV2[(Int, Array[String]), Array[String]] {
+class MapAccumulator
+    extends AccumulatorV2[(Int, Array[String]), Array[String]] {
 
   val buffer = ArrayBuffer[Array[String]]()
 
@@ -76,10 +77,8 @@ class MapAccumulator extends AccumulatorV2[(Int, Array[String]), Array[String]] 
   * NOTE: This class may be removed in the future but for now is here to simplify
   * ingestion of traditional CSV files for analysis.
   */
-case class CsvStdFeatureSource[V](
-    data: RDD[String],
-    defaultType: VariableType = ContinuousVariable,
-    csvFormat: CSVFormat = DefaultCSVFormatSpec)
+case class CsvStdFeatureSource[V](data: RDD[String],
+    defaultType: VariableType = ContinuousVariable, csvFormat: CSVFormat = DefaultCSVFormatSpec)
     extends FeatureSource {
 
   val variableNames = new CSVParser(csvFormat).parseLine(data.first).get.tail

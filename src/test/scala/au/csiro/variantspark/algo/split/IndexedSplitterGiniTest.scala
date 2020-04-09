@@ -12,9 +12,7 @@ import au.csiro.variantspark.algo.ConfusionAggregator
 
 abstract class IndexedSplitterGiniTest {
 
-  def splitterFromAgg(
-      agg: IndexedSplitAggregator,
-      confAgg: ConfusionAggregator,
+  def splitterFromAgg(agg: IndexedSplitAggregator, confAgg: ConfusionAggregator,
       data: Array[Double]): IndexedSplitter
   def splitter(data: Array[Double], labels: Array[Int], nLabels: Int = 2): IndexedSplitter = {
 
@@ -72,24 +70,18 @@ abstract class IndexedSplitterGiniTest {
 }
 
 class JNaiveContinousIndexedSplitterTest extends IndexedSplitterGiniTest {
-  override def splitterFromAgg(
-      agg: IndexedSplitAggregator,
-      confAgg: ConfusionAggregator,
+  override def splitterFromAgg(agg: IndexedSplitAggregator, confAgg: ConfusionAggregator,
       data: Array[Double]): IndexedSplitter = new JNaiveContinousIndexedSplitter(agg, data)
 }
 
 class JOrderedIndexedSplitterTest extends IndexedSplitterGiniTest {
-  override def splitterFromAgg(
-      agg: IndexedSplitAggregator,
-      confAgg: ConfusionAggregator,
+  override def splitterFromAgg(agg: IndexedSplitAggregator, confAgg: ConfusionAggregator,
       data: Array[Double]): IndexedSplitter =
     new JOrderedIndexedSplitter(agg, data.map(_.toByte), 4)
 }
 
 class JOrderedFastIndexedSplitterTest extends IndexedSplitterGiniTest {
-  override def splitterFromAgg(
-      agg: IndexedSplitAggregator,
-      confAgg: ConfusionAggregator,
+  override def splitterFromAgg(agg: IndexedSplitAggregator, confAgg: ConfusionAggregator,
       data: Array[Double]): IndexedSplitter =
     new JOrderedFastIndexedSplitter(confAgg, agg, data.map(_.toByte), 4)
 }

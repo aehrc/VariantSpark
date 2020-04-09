@@ -18,15 +18,11 @@ import au.csiro.variantspark.input.FeatureSource
 /**
   * Generate a dichotomous response
   */
-class NoisyEffectLabelGenerator(featureSource: FeatureSource)(
-    zeroLevel: Int,
-    effects: Map[String, Double],
-    val fractionVarianceExplained: Double,
-    val classThresholdPercentile: Double = 0.75,
-    val multiplicative: Boolean = false,
+class NoisyEffectLabelGenerator(featureSource: FeatureSource)(zeroLevel: Int,
+    effects: Map[String, Double], val fractionVarianceExplained: Double,
+    val classThresholdPercentile: Double = 0.75, val multiplicative: Boolean = false,
     seed: Long = 13L)
-    extends LabelSource
-    with Logging {
+    extends LabelSource with Logging {
 
   def logistic(d: Double) = 1.0 / (1.0 + Math.exp(-d))
 
@@ -104,13 +100,9 @@ class NoisyEffectLabelGenerator(featureSource: FeatureSource)(
 }
 
 object NoisyEffectLabelGenerator {
-  def apply(featureSource: FeatureSource)(
-      zeroLevel: Int,
-      effects: Map[String, Double],
-      fractionVarianceExplained: Double,
-      classThresholdPercentile: Double = 0.75,
-      multiplicative: Boolean = false,
-      seed: Long = 13L) =
+  def apply(featureSource: FeatureSource)(zeroLevel: Int, effects: Map[String, Double],
+      fractionVarianceExplained: Double, classThresholdPercentile: Double = 0.75,
+      multiplicative: Boolean = false, seed: Long = 13L) =
     new NoisyEffectLabelGenerator(featureSource)(zeroLevel, effects, fractionVarianceExplained,
       classThresholdPercentile, multiplicative, seed)
 }

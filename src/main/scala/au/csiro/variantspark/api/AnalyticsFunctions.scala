@@ -24,14 +24,10 @@ class AnalyticsFunctions(val featureSource: FeatureSource) extends AnyVal {
     *
     * @return [[au.csiro.variantspark.api.ImportanceAnalysis.apply]] importance analysis model
     */
-  def importanceAnalysis(
-      labelSource: LabelSource,
-      nTrees: Int = 1000,
-      mtryFraction: Option[Double] = None,
-      oob: Boolean = true,
-      seed: Option[Long] = None,
-      batchSize: Int = 100,
-      varOrdinalLevels: Int = 3)(implicit vsContext: SqlContextHolder): ImportanceAnalysis = {
+  def importanceAnalysis(labelSource: LabelSource, nTrees: Int = 1000,
+      mtryFraction: Option[Double] = None, oob: Boolean = true, seed: Option[Long] = None,
+      batchSize: Int = 100, varOrdinalLevels: Int = 3)(
+      implicit vsContext: SqlContextHolder): ImportanceAnalysis = {
     ImportanceAnalysis(featureSource, labelSource, nTrees, mtryFraction, oob, seed, batchSize,
       varOrdinalLevels)
   }

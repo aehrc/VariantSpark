@@ -9,8 +9,8 @@ import scala.collection.mutable.MutableList
 import au.csiro.variantspark.data.Feature
 
 class TreeDataCollector(
-    treeStream: Stream[PredictiveModelWithImportance] =
-      Stream.continually(TestPredictorWithImportance(null, null)))
+    treeStream: Stream[PredictiveModelWithImportance] = Stream.continually(
+        TestPredictorWithImportance(null, null)))
     extends BatchTreeModel {
   val allTypedData = MutableList[RDD[TreeFeature]]()
   val allLabels = MutableList[Array[Int]]()
@@ -19,10 +19,7 @@ class TreeDataCollector(
   val allTreest = MutableList[PredictiveModelWithImportance]()
   val treeIter = treeStream.toIterator
 
-  override def batchTrain(
-      indexedData: RDD[TreeFeature],
-      labels: Array[Int],
-      nTryFraction: Double,
+  override def batchTrain(indexedData: RDD[TreeFeature], labels: Array[Int], nTryFraction: Double,
       samples: Seq[Sample]): Seq[PredictiveModelWithImportance] = {
     allTypedData += indexedData
     allLabels += labels
@@ -33,10 +30,8 @@ class TreeDataCollector(
     newTrees
   }
 
-  override def batchPredict(
-      indexedTypedData: RDD[TreeFeature],
-      models: Seq[PredictiveModelWithImportance],
-      indexes: Seq[Array[Int]]): Seq[Array[Int]] = {
+  override def batchPredict(indexedTypedData: RDD[TreeFeature],
+      models: Seq[PredictiveModelWithImportance], indexes: Seq[Array[Int]]): Seq[Array[Int]] = {
     //TODO I should be projecting with indexes here
     //but it does not matter in this case
     models.zip(indexes).map {

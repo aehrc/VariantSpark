@@ -54,13 +54,8 @@ import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 import au.csiro.variantspark.cli.args.ImportanceArgs
 
 class NullImportanceCmd
-    extends ArgsApp
-    with SparkApp
-    with FeatureSourceArgs
-    with ImportanceArgs
-    with Echoable
-    with Logging
-    with TestArgs {
+    extends ArgsApp with SparkApp with FeatureSourceArgs with ImportanceArgs with Echoable
+    with Logging with TestArgs {
 
   @Option(name = "-pn", required = false, usage = "Number of permutations to generate (def = 30)",
     aliases = Array("--n-permutations"))

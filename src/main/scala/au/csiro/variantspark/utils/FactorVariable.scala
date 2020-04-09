@@ -1,8 +1,6 @@
 package au.csiro.variantspark.utils
 
-case class FactorVariable(
-    val values: Array[Int],
-    val nCategories: Int,
+case class FactorVariable(val values: Array[Int], val nCategories: Int,
     subset: Option[Array[Int]] = None) {
 
   def indices: Iterator[Int] =

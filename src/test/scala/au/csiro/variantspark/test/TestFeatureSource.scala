@@ -7,9 +7,7 @@ import au.csiro.variantspark.data._
 import au.csiro.variantspark.input.FeatureSource
 import au.csiro.variantspark.data.DataBuilder
 
-class TestFeatureSource(
-    val samples: Seq[(String, List[String])],
-    variableType: VariableType,
+class TestFeatureSource(val samples: Seq[(String, List[String])], variableType: VariableType,
     db: DataBuilder[_])(implicit sc: SparkContext)
     extends FeatureSource {
   def features: RDD[Feature] =

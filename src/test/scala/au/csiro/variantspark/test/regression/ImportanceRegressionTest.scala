@@ -23,9 +23,7 @@ abstract class ImportanceRegressionTest {
   def synth(fileName: String): String = new File(SynthDataDir, fileName).getPath
   def actual(fileName: String): String = new File(ActualDir, fileName).getPath
 
-  def runRegression(
-      cmdLine: String,
-      expextedFileName: String,
+  def runRegression(cmdLine: String, expextedFileName: String,
       sessionBuilder: SparkSession.Builder = MasterLocal2) {
     withSessionBuilder(sessionBuilder) { _ =>
       val outputFile = actual(expextedFileName)

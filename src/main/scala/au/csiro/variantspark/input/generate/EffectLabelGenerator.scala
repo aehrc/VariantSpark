@@ -16,15 +16,10 @@ import breeze.stats.MeanAndVariance
 /**
   * Generate a dichotomous response
   */
-class EffectLabelGenerator(featureSource: FeatureSource)(
-    zeroLevel: Int,
-    effects: Map[String, Double],
-    val noiseEffectSigma: Double,
-    val noiseEffectMean: Double = 0.1,
-    val noiseVarFraction: Double = 0.0,
-    seed: Long = 13L)
-    extends LabelSource
-    with Logging {
+class EffectLabelGenerator(featureSource: FeatureSource)(zeroLevel: Int,
+    effects: Map[String, Double], val noiseEffectSigma: Double, val noiseEffectMean: Double = 0.1,
+    val noiseVarFraction: Double = 0.0, seed: Long = 13L)
+    extends LabelSource with Logging {
 
   def logistic(d: Double) = 1.0 / (1.0 + Math.exp(-d))
 
@@ -110,13 +105,9 @@ class EffectLabelGenerator(featureSource: FeatureSource)(
 }
 
 object EffectLabelGenerator {
-  def apply(featureSource: FeatureSource)(
-      zeroLevel: Int,
-      effects: Map[String, Double],
-      noiseEffectSigma: Double = 0.0,
-      noiseEffectMean: Double = 0.0,
-      noiseVarFraction: Double = 0.0,
-      seed: Long = 13L) =
+  def apply(featureSource: FeatureSource)(zeroLevel: Int, effects: Map[String, Double],
+      noiseEffectSigma: Double = 0.0, noiseEffectMean: Double = 0.0,
+      noiseVarFraction: Double = 0.0, seed: Long = 13L) =
     new EffectLabelGenerator(featureSource)(zeroLevel, effects, noiseEffectSigma, noiseEffectMean,
       noiseVarFraction, seed)
 }

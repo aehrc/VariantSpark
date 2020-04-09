@@ -30,16 +30,15 @@ import java.io.FileOutputStream
 import java.io.ObjectOutputStream
 import au.csiro.variantspark.input._
 
-object IndexAccumulator extends AccumulableParam[Long2ObjectOpenHashMap[String], (Long, String)] {
-  def addAccumulator(
-      r: Long2ObjectOpenHashMap[String],
+object IndexAccumulator
+    extends AccumulableParam[Long2ObjectOpenHashMap[String], (Long, String)] {
+  def addAccumulator(r: Long2ObjectOpenHashMap[String],
       t: (Long, String)): Long2ObjectOpenHashMap[String] = {
     r.put(t._1, t._2)
     r
   }
 
-  def addInPlace(
-      r1: Long2ObjectOpenHashMap[String],
+  def addInPlace(r1: Long2ObjectOpenHashMap[String],
       r2: Long2ObjectOpenHashMap[String]): Long2ObjectOpenHashMap[String] = {
     r1.putAll(r2)
     r1

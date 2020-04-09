@@ -10,12 +10,8 @@ import au.csiro.variantspark.input._
 import au.csiro.variantspark.data.BoundedOrdinalVariable
 import au.csiro.variantspark.data.Feature
 
-case class OrdinalFeatureGenerator(
-    val nLevels: Int,
-    val nVariables: Long,
-    val nSamples: Int,
-    val seed: Long = 13L,
-    val sparkPar: Int = 0)(implicit sc: SparkContext)
+case class OrdinalFeatureGenerator(val nLevels: Int, val nVariables: Long, val nSamples: Int,
+    val seed: Long = 13L, val sparkPar: Int = 0)(implicit sc: SparkContext)
     extends FeatureSource {
 
   def features: RDD[Feature] = {

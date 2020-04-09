@@ -14,7 +14,8 @@ package object data {
     def defaultVariableType = ContinuousVariable
   }
 
-  implicit case object ByteArrayDataBuilder extends DataBuilder[Array[Byte]] {
+  implicit case object ByteArrayDataBuilder
+      extends DataBuilder[Array[Byte]] {
     def from(l: List[String]): Data = {
       ByteArrayData(l.map(_.toByte).toArray)
     }
@@ -26,7 +27,8 @@ package object data {
     def defaultVariableType = BoundedOrdinalVariable(3)
   }
 
-  implicit case object IntArrayDataBuilder extends DataBuilder[Array[Int]] {
+  implicit case object IntArrayDataBuilder
+      extends DataBuilder[Array[Int]] {
     def from(l: List[String]): Data = {
       IntArrayData(l.map(_.toInt).toArray)
     }

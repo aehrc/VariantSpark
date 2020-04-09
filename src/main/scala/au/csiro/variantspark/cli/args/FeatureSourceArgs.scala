@@ -26,12 +26,9 @@ object VCFFeatureSourceFactory {
   val DEF_SEPARATOR = "_"
 }
 
-case class VCFFeatureSourceFactory(
-    inputFile: String,
-    isBiallelic: Option[Boolean],
+case class VCFFeatureSourceFactory(inputFile: String, isBiallelic: Option[Boolean],
     separator: Option[String])
-    extends FeatureSourceFactory
-    with Echoable {
+    extends FeatureSourceFactory with Echoable {
   def createSource(sparkArgs: SparkArgs): FeatureSource = {
     echo(s"Loading header from VCF file: ${inputFile}")
     val vcfSource = VCFSource(sparkArgs.textFile(inputFile))
@@ -48,12 +45,9 @@ object CSVFeatureSourceFactory {
   val DEF_VARIABLE_TYPE = ContinuousVariable
 }
 
-case class CSVFeatureSourceFactory(
-    inputFile: String,
-    defVariableType: Option[String],
+case class CSVFeatureSourceFactory(inputFile: String, defVariableType: Option[String],
     variableTypeFile: Option[String])
-    extends FeatureSourceFactory
-    with Echoable {
+    extends FeatureSourceFactory with Echoable {
   import CSVFeatureSourceFactory._
   def createSource(sparkArgs: SparkArgs): FeatureSource = {
     echo(s"Loading csv file: ${inputFile}")
@@ -68,8 +62,7 @@ case class CSVFeatureSourceFactory(
 }
 
 case class ParquetFeatureSourceFactory(inputFile: String)
-    extends FeatureSourceFactory
-    with Echoable {
+    extends FeatureSourceFactory with Echoable {
   def createSource(sparkArgs: SparkArgs): FeatureSource = {
     import sparkArgs._
     echo(s"Loading parquet file: ${inputFile}")
@@ -78,8 +71,7 @@ case class ParquetFeatureSourceFactory(inputFile: String)
 }
 
 case class StdCSVFeatureSourceFactory(inputFile: String)
-    extends FeatureSourceFactory
-    with Echoable {
+    extends FeatureSourceFactory with Echoable {
   def createSource(sparkArgs: SparkArgs): FeatureSource = {
     import sparkArgs._
     echo(s"Loading standard csv file: ${inputFile}")

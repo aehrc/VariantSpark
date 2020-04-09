@@ -7,8 +7,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
 class DelegatingLineIterator(val it: Iterator[String])
-    extends AbstractIterator[String]
-    with LineIterator {
+    extends AbstractIterator[String] with LineIterator {
 
   override def advance(): String = if (it.hasNext) it.next() else null
 }

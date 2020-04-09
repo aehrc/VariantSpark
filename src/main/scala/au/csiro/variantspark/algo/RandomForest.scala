@@ -78,10 +78,8 @@ case class VotingAggregator(val nLabels: Int, val nSamples: Int) {
   * @param oobIndexes an array of out-of-bag index values
   */
 @SerialVersionUID(2L)
-case class RandomForestMember(
-    val predictor: PredictiveModelWithImportance,
-    val oobIndexes: Array[Int] = null,
-    val oobPred: Array[Int] = null) {}
+case class RandomForestMember(val predictor: PredictiveModelWithImportance,
+    val oobIndexes: Array[Int] = null, val oobPred: Array[Int] = null) {}
 
 /** Implements random forest models conditionally
   * @param members the RF members
@@ -89,11 +87,8 @@ case class RandomForestMember(
   * @param oobErrors the out-of-bag errors
   */
 @SerialVersionUID(2L)
-case class RandomForestModel(
-    val members: List[RandomForestMember],
-    val labelCount: Int,
-    val oobErrors: List[Double] = List.empty,
-    val params: RandomForestParams = null) {
+case class RandomForestModel(val members: List[RandomForestMember], val labelCount: Int,
+    val oobErrors: List[Double] = List.empty, val params: RandomForestParams = null) {
 
   def size = members.size
   def trees = members.map(_.predictor)
@@ -144,17 +139,10 @@ case class RandomForestModel(
   * @param maxDepth the maxDepth value
   * @param minNodeSize the minNodeSize value
   */
-case class RandomForestParams(
-    oob: Boolean = true,
-    nTryFraction: Double = Double.NaN,
-    bootstrap: Boolean = true,
-    subsample: Double = Double.NaN,
-    randomizeEquality: Boolean = true,
-    seed: Long = defRng.nextLong,
-    maxDepth: Int = Int.MaxValue,
-    minNodeSize: Int = 1,
-    correctImpurity: Boolean = false,
-    airRandomSeed: Long = 0L) {
+case class RandomForestParams(oob: Boolean = true, nTryFraction: Double = Double.NaN,
+    bootstrap: Boolean = true, subsample: Double = Double.NaN, randomizeEquality: Boolean = true,
+    seed: Long = defRng.nextLong, maxDepth: Int = Int.MaxValue, minNodeSize: Int = 1,
+    correctImpurity: Boolean = false, airRandomSeed: Long = 0L) {
   def resolveDefaults(nSamples: Int, nVariables: Int): RandomForestParams = {
     RandomForestParams(oob = oob,
       nTryFraction =
@@ -172,14 +160,9 @@ case class RandomForestParams(
 }
 
 object RandomForestParams {
-  def fromOptions(
-      oob: Option[Boolean] = None,
-      mTryFraction: Option[Double] = None,
-      bootstrap: Option[Boolean] = None,
-      subsample: Option[Double] = None,
-      seed: Option[Long] = None,
-      maxDepth: Option[Int] = None,
-      minNodeSize: Option[Int] = None,
+  def fromOptions(oob: Option[Boolean] = None, mTryFraction: Option[Double] = None,
+      bootstrap: Option[Boolean] = None, subsample: Option[Double] = None,
+      seed: Option[Long] = None, maxDepth: Option[Int] = None, minNodeSize: Option[Int] = None,
       correctImpurity: Option[Boolean] = None,
       airRandomSeed: Option[Long] = None): RandomForestParams =
     RandomForestParams(oob.getOrElse(true), mTryFraction.getOrElse(Double.NaN),
@@ -195,14 +178,9 @@ trait RandomForestCallback {
 
 // TODO (Design): Avoid using type cast change design
 trait BatchTreeModel {
-  def batchTrain(
-      indexedData: RDD[TreeFeature],
-      labels: Array[Int],
-      nTryFraction: Double,
+  def batchTrain(indexedData: RDD[TreeFeature], labels: Array[Int], nTryFraction: Double,
       samples: Seq[Sample]): Seq[PredictiveModelWithImportance]
-  def batchPredict(
-      indexedData: RDD[TreeFeature],
-      models: Seq[PredictiveModelWithImportance],
+  def batchPredict(indexedData: RDD[TreeFeature], models: Seq[PredictiveModelWithImportance],
       indexes: Seq[Array[Int]]): Seq[Array[Int]]
 }
 
@@ -212,16 +190,11 @@ object RandomForest {
   def wideDecisionTreeBuilder(params: DecisionTreeParams): BatchTreeModel = {
     val decisionTree = new DecisionTree(params)
     new BatchTreeModel() {
-      override def batchTrain(
-          indexedData: RDD[TreeFeature],
-          labels: Array[Int],
-          nTryFraction: Double,
-          samples: Seq[Sample]) =
+      override def batchTrain(indexedData: RDD[TreeFeature], labels: Array[Int],
+          nTryFraction: Double, samples: Seq[Sample]) =
         decisionTree.batchTrainInt(indexedData, labels, nTryFraction, samples)
-      override def batchPredict(
-          indexedData: RDD[TreeFeature],
-          models: Seq[PredictiveModelWithImportance],
-          indexes: Seq[Array[Int]]) =
+      override def batchPredict(indexedData: RDD[TreeFeature],
+          models: Seq[PredictiveModelWithImportance], indexes: Seq[Array[Int]]) =
         DecisionTreeModel.batchPredict(indexedData.map(tf => (tf, tf.index)),
           models.asInstanceOf[Seq[DecisionTreeModel]], indexes)
     }
@@ -234,8 +207,7 @@ object RandomForest {
   * @param params the RF params
   * @param modelBuilderFactory the type of model, i.e. 'wide decision tree builder'
   */
-class RandomForest(
-    params: RandomForestParams = RandomForestParams(),
+class RandomForest(params: RandomForestParams = RandomForestParams(),
     modelBuilderFactory: RandomForest.ModelBuilderFactory =
       RandomForest.wideDecisionTreeBuilder _,
     trf: TreeRepresentationFactory = DefTreeRepresentationFactory)
@@ -243,10 +215,7 @@ class RandomForest(
 
   // TODO (Design):make this class keep random state (could be externalised to implicit random)
   implicit lazy val rng = new XorShift1024StarRandomGenerator(params.seed)
-  def batchTrain(
-      indexedData: RDD[(Feature, Long)],
-      labels: Array[Int],
-      nTrees: Int,
+  def batchTrain(indexedData: RDD[(Feature, Long)], labels: Array[Int], nTrees: Int,
       nBatchSize: Int = RandomForest.defaultBatchSize): RandomForestModel = {
     val treeFeatures: RDD[TreeFeature] = trf.createRepresentation(indexedData)
     batchTrainTyped(treeFeatures, labels, nTrees, nBatchSize)
@@ -254,10 +223,7 @@ class RandomForest(
 
   // TODO (Design): Make a param rather then an extra method
   // TODO (Func): Add OOB Calculation
-  def batchTrainTyped(
-      treeFeatures: RDD[TreeFeature],
-      labels: Array[Int],
-      nTrees: Int,
+  def batchTrainTyped(treeFeatures: RDD[TreeFeature], labels: Array[Int], nTrees: Int,
       nBatchSize: Int)(implicit callback: RandomForestCallback = null): RandomForestModel = {
 
     require(nBatchSize > 0)

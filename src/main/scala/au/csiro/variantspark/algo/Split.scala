@@ -10,10 +10,7 @@ package au.csiro.variantspark.algo
   * @param leftGini: the gini impurity of the left split of the dataset
   * @param rightGini: the gini impurity of the right split of the dataset
   */
-case class SplitInfo(
-    val splitPoint: Double,
-    val gini: Double,
-    val leftGini: Double,
+case class SplitInfo(val splitPoint: Double, val gini: Double, val leftGini: Double,
     val rightGini: Double)
 
 /**
@@ -55,10 +52,8 @@ trait IndexedSplitAggregator {
 /**
   * Split aggregator for classification. The indexes refer to nominal labels.
   */
-class ClassificationSplitAggregator private (
-    val labels: Array[Int],
-    val left: ClassificationImpurityAggregator,
-    val right: ClassificationImpurityAggregator)
+class ClassificationSplitAggregator private (val labels: Array[Int],
+    val left: ClassificationImpurityAggregator, val right: ClassificationImpurityAggregator)
     extends IndexedSplitAggregator {
 
   def initLabel(label: Int) {
@@ -78,9 +73,7 @@ class ClassificationSplitAggregator private (
 }
 
 object ClassificationSplitAggregator {
-  def apply(
-      impurity: ClassficationImpurity,
-      labels: Array[Int],
+  def apply(impurity: ClassficationImpurity, labels: Array[Int],
       nCategories: Int): ClassificationSplitAggregator =
     new ClassificationSplitAggregator(labels, impurity.createAggregator(nCategories),
       impurity.createAggregator(nCategories))
@@ -90,8 +83,7 @@ object ClassificationSplitAggregator {
   * Fast but memory intensive split aggregator keeping partial impurity statistics for
   * all the unique values of the feature (only makes senses with indexed features)
   */
-class ConfusionAggregator private (
-    val matrix: Array[ClassificationImpurityAggregator],
+class ConfusionAggregator private (val matrix: Array[ClassificationImpurityAggregator],
     val labels: Array[Int]) {
 
   def this(impurity: ClassficationImpurity, size: Int, nCategories: Int, labels: Array[Int]) {
@@ -147,8 +139,7 @@ trait FastSplitterProvider extends SplitterProvider {
     * The size of the required confusino aggregator
     */
   def confusionSize: Int
-  def createSplitter(
-      impCalc: IndexedSplitAggregator,
+  def createSplitter(impCalc: IndexedSplitAggregator,
       confusionAgg: ConfusionAggregator): IndexedSplitter
 }
 
@@ -171,9 +162,7 @@ trait IndexedSplitterFactory {
   *
   *  The value of Q_THRESHOLD is 0.02
   */
-case class ThresholdIndexedSplitter(
-    fastSplitter: IndexedSplitter,
-    confusionSize: Int,
+case class ThresholdIndexedSplitter(fastSplitter: IndexedSplitter, confusionSize: Int,
     defaultSplitter: IndexedSplitter,
     qThreshold: Double = ThresholdIndexesSplitter.DefaultQThredhold)
     extends SwitchingIndexedSplitter {
@@ -192,11 +181,8 @@ object ThresholdIndexesSplitter {
   * The default implementation of the {{IndexedSplitterFactory}} for classification
   *
   */
-class DefStatefullIndexedSpliterFactory(
-    val impurity: ClassficationImpurity,
-    val labels: Array[Int],
-    val nCategories: Int,
-    val maxConfusionSize: Int = 10,
+class DefStatefullIndexedSpliterFactory(val impurity: ClassficationImpurity,
+    val labels: Array[Int], val nCategories: Int, val maxConfusionSize: Int = 10,
     val qThreshold: Double = ThresholdIndexesSplitter.DefaultQThredhold)
     extends IndexedSplitterFactory {
 

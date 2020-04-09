@@ -38,11 +38,7 @@ import java.io.PrintStream
 import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
 
 class GenerateLabelsNoiseCmd
-    extends ArgsApp
-    with SparkApp
-    with Echoable
-    with Logging
-    with TestArgs {
+    extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
   // input options
   @Option(name = "-if", required = true, usage = "Path to input file or directory",

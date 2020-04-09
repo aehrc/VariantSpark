@@ -28,11 +28,7 @@ import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 
 class AnalyzeRFCmd
-    extends ArgsApp
-    with FeatureSourceArgs
-    with Echoable
-    with Logging
-    with TestArgs {
+    extends ArgsApp with FeatureSourceArgs with Echoable with Logging with TestArgs {
 
   @Option(name = "-im", required = true, usage = "Path to input model",
     aliases = Array("--input-model"))

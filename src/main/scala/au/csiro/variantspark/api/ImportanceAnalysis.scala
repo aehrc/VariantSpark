@@ -27,14 +27,9 @@ import au.csiro.variantspark.algo.RandomForest
   *
   * @example class ImportanceAnalysis(featureSource, labelSource, nTrees = 1000)
   */
-class ImportanceAnalysis(
-    val sqlContext: SQLContext,
-    val featureSource: FeatureSource,
-    val labelSource: LabelSource,
-    val rfParams: RandomForestParams,
-    val nTrees: Int,
-    val rfBatchSize: Int,
-    varOrdinalLevels: Int) {
+class ImportanceAnalysis(val sqlContext: SQLContext, val featureSource: FeatureSource,
+    val labelSource: LabelSource, val rfParams: RandomForestParams, val nTrees: Int,
+    val rfBatchSize: Int, varOrdinalLevels: Int) {
 
   private def sc = featureSource.features.sparkContext
   private lazy val inputData = featureSource.features.zipWithIndex().cache()
@@ -52,8 +47,9 @@ class ImportanceAnalysis(
 
   private lazy val br_normalizedVariableImportance = {
     val indexImportance = rfModel.normalizedVariableImportance()
-    sc.broadcast(new Long2DoubleOpenHashMap(indexImportance.asInstanceOf[Map[java.lang.Long,
-          java.lang.Double]]))
+    sc.broadcast(
+        new Long2DoubleOpenHashMap(
+            indexImportance.asInstanceOf[Map[java.lang.Long, java.lang.Double]]))
   }
 
   def variableImportance = {
@@ -93,15 +89,10 @@ object ImportanceAnalysis {
 
   val defaultRFParams = RandomForestParams()
 
-  def apply(
-      featureSource: FeatureSource,
-      labelSource: LabelSource,
-      nTrees: Int = 1000,
-      mtryFraction: Option[Double] = None,
-      oob: Boolean = true,
-      seed: Option[Long] = None,
-      batchSize: Int = 100,
-      varOrdinalLevels: Int = 3)(implicit vsContext: SqlContextHolder): ImportanceAnalysis = {
+  def apply(featureSource: FeatureSource, labelSource: LabelSource, nTrees: Int = 1000,
+      mtryFraction: Option[Double] = None, oob: Boolean = true, seed: Option[Long] = None,
+      batchSize: Int = 100, varOrdinalLevels: Int = 3)(
+      implicit vsContext: SqlContextHolder): ImportanceAnalysis = {
 
     new ImportanceAnalysis(vsContext.sqlContext, featureSource, labelSource,
       rfParams = RandomForestParams(
@@ -110,12 +101,8 @@ object ImportanceAnalysis {
       nTrees = nTrees, rfBatchSize = batchSize, varOrdinalLevels = varOrdinalLevels)
   }
 
-  def fromParams(
-      featureSource: FeatureSource,
-      labelSource: LabelSource,
-      rfParams: RandomForestParams,
-      nTrees: Int = 1000,
-      batchSize: Int = 100,
+  def fromParams(featureSource: FeatureSource, labelSource: LabelSource,
+      rfParams: RandomForestParams, nTrees: Int = 1000, batchSize: Int = 100,
       varOrdinalLevels: Int = 3)(implicit vsContext: SqlContextHolder): ImportanceAnalysis = {
 
     new ImportanceAnalysis(vsContext.sqlContext, featureSource, labelSource, rfParams = rfParams,

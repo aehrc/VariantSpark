@@ -58,24 +58,24 @@ class WideKMeans(k: Int, iterations: Int) {
 
       val clusterAssignment = data
         .zip(clusterCenters)
-        .aggregate(Array.fill(dimension)(Array.fill(numOfClusters)(0.0)))((distances, vectorsAndCenters) =>
-            {
+        .aggregate(Array.fill(dimension)(Array.fill(numOfClusters)(0.0)))(
+            (distances, vectorsAndCenters) => {
 
-            val dv = vectorsAndCenters._1.toArray
-            for (i <- Range(0, dimension); j <- Range(0, numOfClusters)) {
-              distances(i)(j) += WideKMeans.square(dv(i) - vectorsAndCenters._2(j))
-            }
-            distances
+              val dv = vectorsAndCenters._1.toArray
+              for (i <- Range(0, dimension); j <- Range(0, numOfClusters)) {
+                distances(i)(j) += WideKMeans.square(dv(i) - vectorsAndCenters._2(j))
+              }
+              distances
 
-          },
-          (distance1, distance2) => {
+            },
+            (distance1, distance2) => {
 
-          for (i <- Range(0, dimension); j <- Range(0, numOfClusters)) {
-            distance1(i)(j) += distance2(i)(j)
-          }
-          distance1
+              for (i <- Range(0, dimension); j <- Range(0, numOfClusters)) {
+                distance1(i)(j) += distance2(i)(j)
+              }
+              distance1
 
-        })
+            })
         .map(v => v.zipWithIndex.min._2)
 
       val clusterSizes = Array.fill(numOfClusters)(0)
@@ -116,23 +116,24 @@ class WideKMeans(k: Int, iterations: Int) {
 
     val clusterAssignment = data
       .zip(clusterCenters)
-      .aggregate(Array.fill(dimension)(Array.fill(k)(0.0)))((distances, vectorsAndCenters) => {
+      .aggregate(Array.fill(dimension)(Array.fill(k)(0.0)))(
+          (distances, vectorsAndCenters) => {
 
-        val dv = vectorsAndCenters._1.toArray
-        for (i <- Range(0, dimension); j <- Range(0, k)) {
-          distances(i)(j) += WideKMeans.square(dv(i) - vectorsAndCenters._2(j))
-        }
-        distances
+            val dv = vectorsAndCenters._1.toArray
+            for (i <- Range(0, dimension); j <- Range(0, k)) {
+              distances(i)(j) += WideKMeans.square(dv(i) - vectorsAndCenters._2(j))
+            }
+            distances
 
-      },
-        (distance1, distance2) => {
+          },
+          (distance1, distance2) => {
 
-        for (i <- Range(0, dimension); j <- Range(0, k)) {
-          distance1(i)(j) += distance2(i)(j)
-        }
-        distance1
+            for (i <- Range(0, dimension); j <- Range(0, k)) {
+              distance1(i)(j) += distance2(i)(j)
+            }
+            distance1
 
-      })
+          })
       .map(v => v.zipWithIndex.min._2)
 
     clusterAssignment

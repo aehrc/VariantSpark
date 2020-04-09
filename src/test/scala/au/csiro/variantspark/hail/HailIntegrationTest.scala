@@ -24,12 +24,8 @@ class HailIntegrationTest extends SparkTest {
 
   // This is textual version of the expression
   // that is normally prouduced by python call to the API
-  def loadDataToMatrixIr(
-      vcfFilename: String,
-      labelFilename: String,
-      sampleName: String,
-      labelName: String,
-      refGenome: String = "GRCh37"): String = s"""
+  def loadDataToMatrixIr(vcfFilename: String, labelFilename: String, sampleName: String,
+      labelName: String, refGenome: String = "GRCh37"): String = s"""
 (MatrixRename () () ("__uid_4" "__uid_5") ("y" "z") () () ("__uid_6") ("e")     
   (MatrixMapEntries
     (MatrixMapCols None

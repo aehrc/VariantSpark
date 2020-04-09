@@ -12,11 +12,8 @@ class DefaultCSVFormatSpec extends DefaultCSVFormat with Serializable
 
 case object DefaultCSVFormatSpec extends DefaultCSVFormatSpec
 
-case class CsvFeatureSource(
-    data: RDD[String],
-    defaultType: VariableType = ContinuousVariable,
-    optVariableTypes: Option[RDD[String]] = None,
-    csvFormat: CSVFormat = DefaultCSVFormatSpec)
+case class CsvFeatureSource(data: RDD[String], defaultType: VariableType = ContinuousVariable,
+    optVariableTypes: Option[RDD[String]] = None, csvFormat: CSVFormat = DefaultCSVFormatSpec)
     extends FeatureSource {
 
   lazy val fileHeader: String = data.first

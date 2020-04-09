@@ -50,15 +50,8 @@ import org.apache.spark.rdd.RDD
 import au.csiro.variantspark.cli.args.ModelOutputArgs
 
 class ImportanceCmd
-    extends ArgsApp
-    with SparkApp
-    with FeatureSourceArgs
-    with ImportanceArgs
-    with RandomForestArgs
-    with ModelOutputArgs
-    with Echoable
-    with Logging
-    with TestArgs {
+    extends ArgsApp with SparkApp with FeatureSourceArgs with ImportanceArgs with RandomForestArgs
+    with ModelOutputArgs with Echoable with Logging with TestArgs {
 
   @Option(name = "-ff", required = true, usage = "Path to feature file",
     aliases = Array("--feature-file"))

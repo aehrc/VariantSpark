@@ -24,10 +24,7 @@ import au.csiro.variantspark.hail.methods.RFModel
   */
 object HailApiApp {
 
-  def loadDataToMatrixIr(
-      vcfFilename: String,
-      labelFilename: String,
-      sampleName: String,
+  def loadDataToMatrixIr(vcfFilename: String, labelFilename: String, sampleName: String,
       labelName: String): String = s"""
 (MatrixRename () () ("__uid_4" "__uid_5") ("y" "z") () () ("__uid_6") ("e")     
   (MatrixMapEntries
