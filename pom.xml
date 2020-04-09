@@ -328,11 +328,9 @@
             <artifactId>mvn-scalafmt_${scala.binary.version}</artifactId>
             <version>1.0.3</version>
             <configuration>
-                <parameters>${scalafmt.parameters}</parameters> <!-- (Optional) Additional command line arguments -->
-                <skip>${scalafmt.skip}</skip> <!-- (Optional) skip formatting -->
                 <skipSources>${scalafmt.skip}</skipSources>
                 <skipTestSources>${scalafmt.skip}</skipTestSources>
-                <configLocation>dev/.scalafmt.conf</configLocation> <!-- (Optional) config location -->
+                <configLocation>${project.basedir}/.scalafmt.conf</configLocation> <!-- (Optional) config location -->
                 <onlyChangedFiles>false</onlyChangedFiles>
                 <validateOnly>${scalafmt.validateOnly}</validateOnly>
             </configuration>
