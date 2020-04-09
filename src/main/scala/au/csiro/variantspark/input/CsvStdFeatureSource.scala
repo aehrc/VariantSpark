@@ -95,28 +95,27 @@ case class CsvStdFeatureSource[V](
     // of (VariableName, (PartitionIndex, [values for samples]])
 
     val transposedPartitions: RDD[(String, (Int, Array[String]))] =
-      data.mapPartitionsWithIndex({
-        case (partIndex, it) =>
-          val csvParser = new CSVParser(csvFormat)
-          val variableNames = br_variableNames.value
-          val variableValues = Array.fill(variableNames.size)(ArrayBuffer[String]())
-          val sampleNames = ArrayBuffer[String]()
-          it.drop(if (partIndex == 0) 1
-            else 0) // skip header line (the first line of the first partition)
-            .map(csvParser.parseLine(_).get) // parse the line
-            .foreach({
-              case sampleId :: sampleValues =>
-                sampleNames.append(sampleId)
-                sampleValues.zipWithIndex.foreach({
-                  case (
-                      v,
-                      i
-                      ) => // transpose: assign the values of a sample to corresponding variables
-                    variableValues(i).append(v)
-                })
-            })
-          variableNames.zip(variableValues.map(c => (partIndex, c.toArray))).toIterator
-      }, true)
+      data.mapPartitionsWithIndex(
+        {
+          case (partIndex, it) =>
+            val csvParser = new CSVParser(csvFormat)
+            val variableNames = br_variableNames.value
+            val variableValues = Array.fill(variableNames.size)(ArrayBuffer[String]())
+            val sampleNames = ArrayBuffer[String]()
+            it.drop(if (partIndex == 0) 1
+              else 0) // skip header line (the first line of the first partition)
+              .map(csvParser.parseLine(_).get) // parse the line
+              .foreach({
+                case sampleId :: sampleValues =>
+                  sampleNames.append(sampleId)
+                  sampleValues.zipWithIndex.foreach({
+                    case (v, i) => // transpose: assign the values of a sample to corresponding variables
+                      variableValues(i).append(v)
+                  })
+              })
+            variableNames.zip(variableValues.map(c => (partIndex, c.toArray))).toIterator
+        },
+        true)
 
     // The second step is to combine all the values for each variable originating
     // from differenrt partitions (in the order of partitions)
