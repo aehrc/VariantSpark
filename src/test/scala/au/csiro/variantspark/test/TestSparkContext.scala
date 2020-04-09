@@ -4,10 +4,13 @@ import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 
 object TestSparkContext {
-  lazy val spark = SparkSession.builder.config(new SparkConf(false)).appName("test").master("local")
-    .config("spark.sql.files.openCostInBytes",53687091200L)
+  lazy val spark = SparkSession.builder
+    .config(new SparkConf(false))
+    .appName("test")
+    .master("local")
+    .config("spark.sql.files.openCostInBytes", 53687091200L)
     .config("spark.sql.files.maxPartitionBytes", 53687091200L)
     .config("spark.kryo.registrator", "is.hail.kryo.HailKryoRegistrator")
     .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-  .getOrCreate()
+    .getOrCreate()
 }

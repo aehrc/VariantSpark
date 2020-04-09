@@ -19,13 +19,17 @@ object TestHailContext {
 }
 
 class HailIntegrationTest extends SparkTest {
- 
+
   val hc = TestHailContext.hc
-  
-  // This is textual version of the expression 
+
+  // This is textual version of the expression
   // that is normally prouduced by python call to the API
-  def loadDataToMatrixIr(vcfFilename:String, labelFilename:String, sampleName:String, 
-      labelName:String, refGenome:String = "GRCh37"):String = s"""
+  def loadDataToMatrixIr(
+      vcfFilename: String,
+      labelFilename: String,
+      sampleName: String,
+      labelName: String,
+      refGenome: String = "GRCh37"): String = s"""
 (MatrixRename () () ("__uid_4" "__uid_5") ("y" "z") () () ("__uid_6") ("e")     
   (MatrixMapEntries
     (MatrixMapCols None
@@ -95,34 +99,46 @@ class HailIntegrationTest extends SparkTest {
     (SelectFields (__uid_6)
       (SelectFields (GT __uid_6)
         (Ref g)))))
-  """    
-        
+  """
+
   @Test
   def testRunImportanceAnalysisForGRCh37() {
-    val strMatrixIR = loadDataToMatrixIr("data/chr22_1000.vcf", "data/chr22-labels-hail.csv", "sample", 
-        "x22_16051480", "GRCh37")
-    val matrixIR = IRParser.parse_matrix_ir(strMatrixIR)    
+    val strMatrixIR = loadDataToMatrixIr(
+      "data/chr22_1000.vcf",
+      "data/chr22-labels-hail.csv",
+      "sample",
+      "x22_16051480",
+      "GRCh37")
+    val matrixIR = IRParser.parse_matrix_ir(strMatrixIR)
     val rfModel = RFModel.pyApply(matrixIR, None, true, None, None, Some(13))
     rfModel.fitTrees(100, 50)
-    assertTrue("OOB Error is defined", !rfModel.oobError.isNaN) 
-    val importanceTableValue = rfModel.variableImportance    
-    val importanceTable = new Table(hc, importanceTableValue)    
-    assertEquals(List("locus", "alleles", "importance"), importanceTable.signature.fieldNames.toList)
+    assertTrue("OOB Error is defined", !rfModel.oobError.isNaN)
+    val importanceTableValue = rfModel.variableImportance
+    val importanceTable = new Table(hc, importanceTableValue)
+    assertEquals(
+      List("locus", "alleles", "importance"),
+      importanceTable.signature.fieldNames.toList)
     assertEquals("All variables have reported importance", 1988, importanceTable.count())
     rfModel.release()
-  } 
-  
+  }
+
   @Test
   def testRunImportanceAnalysisForGRCh38() {
-    val strMatrixIR = loadDataToMatrixIr("data/chr22_1000_GRCh38.vcf", "data/chr22-labels-hail.csv", "sample", 
-        "x22_16051480", "GRCh38")
-    val matrixIR = IRParser.parse_matrix_ir(strMatrixIR)    
+    val strMatrixIR = loadDataToMatrixIr(
+      "data/chr22_1000_GRCh38.vcf",
+      "data/chr22-labels-hail.csv",
+      "sample",
+      "x22_16051480",
+      "GRCh38")
+    val matrixIR = IRParser.parse_matrix_ir(strMatrixIR)
     val rfModel = RFModel.pyApply(matrixIR, None, true, None, None, Some(13))
     rfModel.fitTrees(100, 50)
-    assertTrue("OOB Error is defined", !rfModel.oobError.isNaN) 
-    val importanceTableValue = rfModel.variableImportance    
-    val importanceTable = new Table(hc, importanceTableValue)    
-    assertEquals(List("locus", "alleles", "importance"), importanceTable.signature.fieldNames.toList)
+    assertTrue("OOB Error is defined", !rfModel.oobError.isNaN)
+    val importanceTableValue = rfModel.variableImportance
+    val importanceTable = new Table(hc, importanceTableValue)
+    assertEquals(
+      List("locus", "alleles", "importance"),
+      importanceTable.signature.fieldNames.toList)
     assertEquals("All variables have reported importance", 1988, importanceTable.count())
     rfModel.release()
   }

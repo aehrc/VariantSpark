@@ -1,5 +1,5 @@
 package au.csiro.variantspark.input
 
 trait LabelSource {
-   def getLabels(labels:Seq[String]):Array[Int]
+  def getLabels(labels: Seq[String]): Array[Int]
 }

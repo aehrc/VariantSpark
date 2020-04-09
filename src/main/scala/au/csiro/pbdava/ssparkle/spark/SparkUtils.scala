@@ -8,7 +8,7 @@ import org.apache.spark.storage.StorageLevel
 
 object SparkUtils {
 
-  def withCached[T,R](rdd:RDD[T])(f:RDD[T] => R) = {
+  def withCached[T, R](rdd: RDD[T])(f: RDD[T] => R) = {
     val manageCaching = rdd.getStorageLevel == StorageLevel.NONE
     try {
       if (manageCaching) {
@@ -21,9 +21,9 @@ object SparkUtils {
       }
     }
   }
-  
-  
-  def withBroadcast[T, R](sc:SparkContext)(v:T)(f: Broadcast[T] => R)(implicit ev:ClassTag[T]) = {
+
+  def withBroadcast[T, R](sc: SparkContext)(v: T)(f: Broadcast[T] => R)(
+      implicit ev: ClassTag[T]) = {
     val br = sc.broadcast(v)(ev)
     try {
       f(br)
@@ -33,5 +33,5 @@ object SparkUtils {
   }
 
   // TODO (review RDD for update to DF/DS)
-  implicit def rdd2sc(rdd:RDD[_]) = rdd.sparkContext
+  implicit def rdd2sc(rdd: RDD[_]) = rdd.sparkContext
 }

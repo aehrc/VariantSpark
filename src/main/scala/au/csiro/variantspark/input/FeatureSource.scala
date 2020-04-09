@@ -8,10 +8,7 @@ import au.csiro.variantspark.data.ContinuousVariable
 import au.csiro.variantspark.data.OrdinalVariable
 import au.csiro.variantspark.data.Feature
 
-
 trait FeatureSource {
-  def sampleNames:List[String]
-  def features: RDD[Feature] 
+  def sampleNames: List[String]
+  def features: RDD[Feature]
 }
-
-

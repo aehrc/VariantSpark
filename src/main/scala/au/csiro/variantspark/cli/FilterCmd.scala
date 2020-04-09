@@ -14,34 +14,37 @@ import au.csiro.variantspark.input.VCFFeatureSource
 import au.csiro.variantspark.input.VCFSource
 import au.csiro.pbdava.ssparkle.common.utils.Timed
 
-
 class FilterCmd extends ArgsApp with TestArgs with SparkApp {
 
-  @Option(name="-if", required=true, usage="This is input files", aliases=Array("--input-files"))
-  val inputFile:String = null
+  @Option(
+    name = "-if",
+    required = true,
+    usage = "This is input files",
+    aliases = Array("--input-files"))
+  val inputFile: String = null
 
-  @Option(name="-l", required=false)
-  val limit:Int = 0
+  @Option(name = "-l", required = false)
+  val limit: Int = 0
 
   @Override
-  def testArgs = Array("-if", "data/small.vcf")  
+  def testArgs = Array("-if", "data/small.vcf")
 
   @Override
-  def run():Unit = {
-    implicit val fs = FileSystem.get(sc.hadoopConfiguration)  
+  def run(): Unit = {
+    implicit val fs = FileSystem.get(sc.hadoopConfiguration)
     logDebug(s"Running with filesystem: ${fs}, home: ${fs.getHomeDirectory}")
-    
+
     val vcfSource = VCFSource(sc.textFile(inputFile))
-    val source  = VCFFeatureSource(vcfSource)
+    val source = VCFFeatureSource(vcfSource)
     val features = source.features.zipWithIndex().cache()
     val featureCount = features.count()
     println(s"No features: ${featureCount}")
 
-   }     
+  }
 }
 
-object FilterCmd  {
-  def main(args:Array[String]) {
+object FilterCmd {
+  def main(args: Array[String]) {
     AppRunner.mains[FilterCmd](args)
   }
 }

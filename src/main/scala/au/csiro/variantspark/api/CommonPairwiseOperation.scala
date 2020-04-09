@@ -6,24 +6,22 @@ import au.csiro.variantspark.algo.PairwiseOperation
 import au.csiro.variantspark.algo.metrics.SharedAltAlleleCount
 import au.csiro.variantspark.algo.metrics.AtLeastOneSharedAltAlleleCount
 
-object CommonPairwiseOperation  {
-  
+object CommonPairwiseOperation {
+
   /**
-   * Mapping class for commong pairwise operations
-   */
-  
+    * Mapping class for commong pairwise operations
+    */
   val mapping = Map(
-    "manhattan" ->  ManhattanPairwiseMetric,
+    "manhattan" -> ManhattanPairwiseMetric,
     "euclidean" -> EuclideanPairwiseMetric,
     "sharedAltAlleleCount" -> SharedAltAlleleCount,
-    "anySharedAltAlleleCount" -> AtLeastOneSharedAltAlleleCount
-  )
-  
+    "anySharedAltAlleleCount" -> AtLeastOneSharedAltAlleleCount)
+
   /**
-   * Find a pairwise operation with give name.
-   * 
-   * @param name: the name of the operation to return.
-   * @return returns a [[au.csiro.variantspark.algo.PairwiseOperation]] with specified name.
-   */
-  def withName(name:String):PairwiseOperation  = mapping(name)
+    * Find a pairwise operation with give name.
+    *
+    * @param name: the name of the operation to return.
+    * @return returns a [[au.csiro.variantspark.algo.PairwiseOperation]] with specified name.
+    */
+  def withName(name: String): PairwiseOperation = mapping(name)
 }

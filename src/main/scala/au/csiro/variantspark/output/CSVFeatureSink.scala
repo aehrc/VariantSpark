@@ -6,15 +6,15 @@ import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
 import java.io.File
 
 /**
- * This only works for smallish datasets (used local files)
- */
-case class CSVFeatureSink(val fileName:String) extends FeatureSink {
-  
-  def save(fs:FeatureSource)  {
+  * This only works for smallish datasets (used local files)
+  */
+case class CSVFeatureSink(val fileName: String) extends FeatureSink {
+
+  def save(fs: FeatureSource) {
     CSVUtils.withFile(new File(fileName)) { csvWriter =>
       csvWriter.writeRow("" :: fs.sampleNames)
       csvWriter.writeAll(fs.features.collect().toSeq.map(f => f.label :: f.valueAsStrings))
     }
   }
-  
+
 }
