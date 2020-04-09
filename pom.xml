@@ -73,7 +73,11 @@
 		<scala.version>2.11.8</scala.version>
 		<spark.version>2.4.4</spark.version>
 		<spark.binary.version>2.4</spark.binary.version>
-    <sonata.autorelease>false</sonata.autorelease>
+        <scalafmt.parameters>--test</scalafmt.parameters>
+        <!-- for now, not running scalafmt as part of default verify pipeline -->
+        <scalafmt.skip>false</scalafmt.skip>
+        <scalafmt.validateOnly>true</scalafmt.validateOnly>
+        <sonata.autorelease>false</sonata.autorelease>
 	</properties>
 
     <repositories>
@@ -319,6 +323,28 @@
 					<autoReleaseAfterClose>${sonata.autorelease}</autoReleaseAfterClose>
 				</configuration>
 			</plugin>
+            <plugin>
+            <groupId>org.antipathy</groupId>
+            <artifactId>mvn-scalafmt_${scala.binary.version}</artifactId>
+            <version>1.0.3</version>
+            <configuration>
+                <parameters>${scalafmt.parameters}</parameters> <!-- (Optional) Additional command line arguments -->
+                <skip>${scalafmt.skip}</skip> <!-- (Optional) skip formatting -->
+                <skipSources>${scalafmt.skip}</skipSources>
+                <skipTestSources>${scalafmt.skip}</skipTestSources>
+                <configLocation>dev/.scalafmt.conf</configLocation> <!-- (Optional) config location -->
+                <onlyChangedFiles>false</onlyChangedFiles>
+                <validateOnly>${scalafmt.validateOnly}</validateOnly>
+            </configuration>
+            <executions>
+              <execution>
+                <phase>validate</phase>
+                <goals>
+                  <goal>format</goal>
+                </goals>
+              </execution>
+            </executions>
+            </plugin>
 		</plugins>
 		<pluginManagement>
 			<plugins>
