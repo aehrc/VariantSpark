@@ -66,11 +66,12 @@
 	</distributionManagement>
 
 	<properties>
+		<java.version>1.8</java.version>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<encoding>UTF-8</encoding>
 		<scala.binary.version>2.11</scala.binary.version>
-		<scala.version>2.11.8</scala.version>
+		<scala.version>2.11.12</scala.version>
 		<spark.version>2.4.4</spark.version>
 		<spark.binary.version>2.4</spark.binary.version>
         <scalafmt.parameters>--test</scalafmt.parameters>
@@ -79,6 +80,7 @@
         <scalafmt.validateOnly>true</scalafmt.validateOnly>
 		<scalafmt.onlyChangedFiles>false</scalafmt.onlyChangedFiles>
         <sonata.autorelease>false</sonata.autorelease>
+		<CodeCacheSize>1g</CodeCacheSize>
 	</properties>
 
     <repositories>
@@ -226,7 +228,7 @@
 			<plugin>
 				<groupId>net.alchim31.maven</groupId>
 				<artifactId>scala-maven-plugin</artifactId>
-				<version>3.2.2</version>
+				<version>4.3.0</version>
 				<executions>
 					<execution>
 						<id>add-scala-source</id>
@@ -258,6 +260,29 @@
 				</executions>
 				<configuration>
 					<scalaVersion>${scala.version}</scalaVersion>
+					<checkMultipleScalaVersions>true</checkMultipleScalaVersions>
+					<failOnMultipleScalaVersions>true</failOnMultipleScalaVersions>
+					<recompileMode>incremental</recompileMode>
+					<useZincServer>true</useZincServer>
+					<args>
+						<arg>-unchecked</arg>
+						<arg>-deprecation</arg>
+						<arg>-feature</arg>
+						<arg>-explaintypes</arg>
+						<arg>-target:jvm-1.8</arg>
+					</args>
+					<jvmArgs>
+						<jvmArg>-Xms1024m</jvmArg>
+						<jvmArg>-Xmx1024m</jvmArg>
+						<jvmArg>-XX:ReservedCodeCacheSize=${CodeCacheSize}</jvmArg>
+					</jvmArgs>
+					<javacArgs>
+						<javacArg>-source</javacArg>
+						<javacArg>${java.version}</javacArg>
+						<javacArg>-target</javacArg>
+						<javacArg>${java.version}</javacArg>
+						<javacArg>-Xlint:all,-serial,-path,-try</javacArg>
+					</javacArgs>
 				</configuration>
 			</plugin>
 			<plugin>
