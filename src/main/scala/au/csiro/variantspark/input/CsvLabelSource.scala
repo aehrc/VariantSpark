@@ -12,7 +12,7 @@ class CsvLabelSource(val fileName: String, val columnName: String)(
     implicit hadoopConf: Configuration)
     extends LabelSource {
 
-  lazy val labelMap = {
+  lazy val labelMap: Map[String, Int] = {
     LoanUtils.withCloseable(CSVReader.open(new InputStreamReader(HdfsPath(fileName).open()))) {
       reader =>
         // we expect this to be small

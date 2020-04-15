@@ -21,9 +21,9 @@ class EffectLabelGenerator(featureSource: FeatureSource)(zeroLevel: Int,
     val noiseVarFraction: Double = 0.0, seed: Long = 13L)
     extends LabelSource with Logging {
 
-  def logistic(d: Double) = 1.0 / (1.0 + Math.exp(-d))
+  def logistic(d: Double): Double = 1.0 / (1.0 + Math.exp(-d))
 
-  lazy val rng = new XorShift1024StarRandomGenerator(seed)
+  lazy val rng: XorShift1024StarRandomGenerator = new XorShift1024StarRandomGenerator(seed)
 
   lazy val noiseEffects: Map[String, Double] = {
     // select noise variables
@@ -47,10 +47,11 @@ class EffectLabelGenerator(featureSource: FeatureSource)(zeroLevel: Int,
       .toMap
   }
 
-  // ASSUMPTION: This is assuming independence and uniform distribution of the variables (with 0, 1, 2 and medium level 1)
+  // ASSUMPTION: This is assuming independence and uniform distribution of
+  // the variables (with 0, 1, 2 and medium level 1)
   // TODO: Generalise
-  val noiseMean = noiseEffectMean
-  lazy val noiseSigma = {
+  val noiseMean: Double = noiseEffectMean
+  lazy val noiseSigma: Double = {
     println(s"Noise effect size: ${noiseEffects.size}")
     val r = Math.sqrt(
         noiseEffects.size * (2.0 / 3.0) * (2.0 * noiseEffectSigma) * (2.0 * noiseEffectSigma))
@@ -97,9 +98,10 @@ class EffectLabelGenerator(featureSource: FeatureSource)(zeroLevel: Int,
     logDebug(s"Classes: ${classes}")
 
     // print out correlation of variables
-    //val output = classes.toArray.map(_.toDouble)
-    //val correlationCalc = new PearsonsCorrelation()
-    //effects.map { case (v,e) => (v, correlationCalc.correlation(output, influentialVariablesData(v).toArray)) }.foreach(println)
+    // val output = classes.toArray.map(_.toDouble)
+    // val correlationCalc = new PearsonsCorrelation()
+    // effects.map { case (v,e) => (v, correlationCalc.correlation(output,
+    // influentialVariablesData(v).toArray)) }.foreach(println)
     classes.toArray
   }
 }
@@ -107,7 +109,7 @@ class EffectLabelGenerator(featureSource: FeatureSource)(zeroLevel: Int,
 object EffectLabelGenerator {
   def apply(featureSource: FeatureSource)(zeroLevel: Int, effects: Map[String, Double],
       noiseEffectSigma: Double = 0.0, noiseEffectMean: Double = 0.0,
-      noiseVarFraction: Double = 0.0, seed: Long = 13L) =
+      noiseVarFraction: Double = 0.0, seed: Long = 13L): EffectLabelGenerator =
     new EffectLabelGenerator(featureSource)(zeroLevel, effects, noiseEffectSigma, noiseEffectMean,
       noiseVarFraction, seed)
 }

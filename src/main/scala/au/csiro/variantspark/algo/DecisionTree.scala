@@ -583,8 +583,8 @@ case class SplitNode(override val majorityLabel: Int, override val size: Int,
     right.printout(level + 1)
   }
   override def toString: String =
-    s"split[${splitVariableIndex}, ${splitPoint}, ${majorityLabel}, ${size},"
-  +s" ${impurityReduction}, ${nodeImpurity}]"
+    (s"split[${splitVariableIndex}, ${splitPoint}, ${majorityLabel}, ${size},"
+      + s" ${impurityReduction}, ${nodeImpurity}]")
 
   def childFor(value: Double): DecisionTreeNode = if (value <= splitPoint) left else right
 

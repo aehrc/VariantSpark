@@ -36,13 +36,14 @@ object TestWideDecisionTree extends SparkApp {
 
     val vectorData: RDD[Vector] = centers.zipWithIndex().map {
       case (v, i) =>
-        if (i < importantDims)
+        if (i < importantDims) {
           Vectors.dense(
               clusterAssignment
                 .map(c => ((v(c).toInt + (Math.random() * 1.3).toInt) % centersNo).toDouble)
                 .toArray)
-        else
+        } else {
           Vectors.dense(Array.fill(samples)((Math.random() * 3).toInt.toDouble))
+        }
     }
 
     val labels = clusterAssignment.toArray

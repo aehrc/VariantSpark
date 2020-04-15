@@ -17,7 +17,8 @@ object HailApp {
 //  def main(args:Array[String]) = {
 //    println("Hello")
 //    val hc = HailContext()
-//    val table = hc.importTable("data/chr22-labels-hail.csv", keyNames = Array("sample"), separator=",",
+//    val table = hc.importTable("data/chr22-labels-hail.csv",
+//    keyNames = Array("sample"), separator=",",
 //          types = Map("x22_16050408" -> TInt))
 //    println("Table signature: " + table.signature)
 //

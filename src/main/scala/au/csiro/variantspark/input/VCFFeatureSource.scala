@@ -59,7 +59,8 @@ class VCFFeatureSource(vcfSource: VCFSource, converter: VariantToFeatureConverte
 }
 
 object VCFFeatureSource {
-  def apply(vcfSource: VCFSource, biallelic: Boolean = false, separator: String = "_") = {
+  def apply(vcfSource: VCFSource, biallelic: Boolean = false,
+      separator: String = "_"): VCFFeatureSource = {
     new VCFFeatureSource(vcfSource, DefVariantToFeatureConverter(biallelic, separator))
   }
 }

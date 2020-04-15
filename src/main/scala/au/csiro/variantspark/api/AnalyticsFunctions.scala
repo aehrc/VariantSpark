@@ -37,9 +37,9 @@ class AnalyticsFunctions(val featureSource: FeatureSource) extends AnyVal {
     *
     * @param opeataion: a pairwise operation.
     *
-	  * @return [[au.csiro.variantspark.algo.LowerTriangMatrix]] lower triangular
+    * @return [[au.csiro.variantspark.algo.LowerTriangMatrix]] lower triangular
     *        matrix with the result of the
-	  * 			pairwise computation. The result includes the diagonal.
+    *       pairwise computation. The result includes the diagonal.
     */
   def pairwiseOperation(operation: PairwiseOperation): LowerTriangMatrix = {
     operation.compute(featureSource.features.map(_.valueAsByteArray))
@@ -55,10 +55,10 @@ class AnalyticsFunctions(val featureSource: FeatureSource) extends AnyVal {
     *
     * @param  operation_name: name of the operation. One of `manhattan`, `euclidean`,
     *     `sharedAltAlleleCount`, `anySharedAltAlleleCount`
-	  *
-	  *  @return [[au.csiro.variantspark.algo.LowerTriangMatrix]] lower triangular matrix
+    *
+    *  @return [[au.csiro.variantspark.algo.LowerTriangMatrix]] lower triangular matrix
     *        with the result of the
-	  * 			pairwise computation. The result includes the diagonal.
+    *        pairwise computation. The result includes the diagonal.
     */
   def pairwiseOperation(operationName: String): LowerTriangMatrix = {
     CommonPairwiseOperation

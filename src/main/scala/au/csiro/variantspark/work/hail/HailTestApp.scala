@@ -18,9 +18,10 @@ import is.hail.expr.types.virtual._
 import is.hail.expr.types.virtual.TStruct
 import is.hail.methods.LinearRegressionRowsSingle
 
+// scalastyle:off
 object HailTestApp {
 
-  def main(args: Array[String]) = {
+  def main(args: Array[String]): Unit = {
     println("Hello")
 
     val hc = HailContext()
@@ -158,11 +159,11 @@ object HailTestApp {
 
     println("#### KKey : " + lrResult.key)
 
-    //println("Result lr count: " + lrResult.count())
+    // println("Result lr count: " + lrResult.count())
     println(lrResult.signature)
     lrResult.collect().take(10).foreach(println _)
 
-    //System.exit(0)
+    // System.exit(0)
 
     val table: Table =
       hc.importTable("data/hipsterIndex/hipster_labels.txt", keyNames = Some(Array("samples")),
@@ -175,7 +176,7 @@ object HailTestApp {
 
     val reader = new VCFsReader(Array("data/hipsterIndex/hipster.vcf.bgz"), Set.empty, "Float64",
       None, Map.empty, true, true, true, false, TextInputFilterAndReplace(None, None, None),
-      "[]", //partitionsJSON,
+      "[]", // partitionsJSON,
       None, None)
 
     val irArray = reader.read()
@@ -209,7 +210,7 @@ object HailTestApp {
 //
 //  val colTable = new Table(table.hc, TableLiteral(tableValue))
 //  println(colTable.signature)  //
-////  val vcf = hc.
+// // val vcf = hc.
 //
 //  val count = table.count()
 //  println(s"Count: ${count}")
@@ -232,11 +233,11 @@ object HailTestApp {
 //         )
 //      )
 
-    val exptr = //TableCount(
+    val exptr = // TableCount(
       MatrixColsTable(matAnnot)
 
-    //val result = ir.Interpret[Long](exptr)
-    //println(result)
+    // val result = ir.Interpret[Long](exptr)
+    // println(result)
 
     val colTable = new Table(table.hc, exptr)
     println(colTable.signature) //
@@ -268,3 +269,4 @@ object HailTestApp {
 //
   }
 }
+// scalastyle:on

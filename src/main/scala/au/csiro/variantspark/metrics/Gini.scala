@@ -3,7 +3,7 @@ package au.csiro.variantspark.metrics
 import au.csiro.variantspark.utils.FactorVariable
 
 object Gini {
-  def sqr(x: Double) = x * x
+  def sqr(x: Double): Double = x * x
 
   def giniImpurityWithTotal(counts: Array[Int]): (Double, Int) = {
     if (counts.length == 2) {
@@ -22,7 +22,8 @@ object Gini {
 
   def giniImpurity(counts: Array[Int]): Double = giniImpurityWithTotal(counts)._1
 
-  def splitGiniInpurity(leftCounts: Array[Int], totalCounts: Array[Int]) = {
+  def splitGiniInpurity(leftCounts: Array[Int],
+      totalCounts: Array[Int]): (Double, Double, Double) = {
     val (leftGini, leftTotal) = giniImpurityWithTotal(leftCounts)
     val (rightGini, rightTotal) =
       giniImpurityWithTotal(totalCounts.zip(leftCounts).map(t => t._1 - t._2).toArray)

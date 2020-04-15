@@ -22,8 +22,11 @@ import au.csiro.variantspark.hail.methods.RFModel
 /**
   * INFO: Simulates calling from python
   */
+// scalastyle:off
+
 object HailApiApp {
 
+  //noinspection ScalaStyle
   def loadDataToMatrixIr(vcfFilename: String, labelFilename: String, sampleName: String,
       labelName: String): String = s"""
 (MatrixRename () () ("__uid_4" "__uid_5") ("y" "z") () () ("__uid_6") ("e")     
@@ -97,7 +100,7 @@ object HailApiApp {
         (Ref g)))))
   """
 
-  def main(args: Array[String]) = {
+  def main(args: Array[String]): Unit = {
     println("Hello")
     val hc = HailContext()
 
@@ -122,3 +125,4 @@ object HailApiApp {
     importanceTable.collect().take(10).foreach(println _)
   }
 }
+// scalastyle:on

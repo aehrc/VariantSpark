@@ -2,7 +2,7 @@ package au.csiro.variantspark.metrics
 
 object Metrics {
 
-  def over2(n: Int) = n * (n - 1) / 2
+  def over2(n: Int): Int = n * (n - 1) / 2
 
   def adjustedRandIndex(c1: List[Int], c2: List[Int]): Double = {
     require(c1.size == c2.size)
@@ -16,8 +16,8 @@ object Metrics {
     val index: Int = contingencyMatrix.flatMap(_.map(over2)).sum
     val sumAi = c1Bound.map(over2).sum
     val sumBi = c2Bound.map(over2).sum
-    (index.toDouble - sumAi * sumBi / over2(n).toDouble) / ((sumAi + sumBi) / 2.0 - sumAi * sumBi / over2(
-        n).toDouble)
+    (index.toDouble - sumAi * sumBi / over2(n).toDouble) /
+      ((sumAi + sumBi) / 2.0 - sumAi * sumBi / over2(n).toDouble)
   }
 
   def accuracy(expected: Array[Int], predicted: Array[Int]): Double = {

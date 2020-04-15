@@ -6,7 +6,7 @@ case class FactorVariable(val values: Array[Int], val nCategories: Int,
   def indices: Iterator[Int] =
     subset.map(_.toIterator).getOrElse((Range(0, values.length).toIterator))
 
-  def counts = {
+  def counts: Array[Int] = {
     val labelCounts = Array.fill(nCategories)(0)
     indices.foreach(i => labelCounts(values(i)) += 1)
     labelCounts

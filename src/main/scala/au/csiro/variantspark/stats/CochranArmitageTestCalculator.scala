@@ -4,7 +4,7 @@ import org.apache.spark.rdd.RDD
 import au.csiro.pbdava.ssparkle.spark.SparkUtils.withBroadcast
 
 class CochranArmitageTestCalculator(val labels: Array[Int], val weights: Array[Double]) {
-  val tester = CochranArmitageTest.get()
+  val tester: CochranArmitageTest = CochranArmitageTest.get()
 
   def pScore(values: Array[Byte]): Double = {
 

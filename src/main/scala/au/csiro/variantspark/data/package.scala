@@ -11,7 +11,7 @@ package object data {
     def from(v: Vector): Data = {
       VectorData(v)
     }
-    def defaultVariableType = ContinuousVariable
+    def defaultVariableType: VariableType = ContinuousVariable
   }
 
   implicit case object ByteArrayDataBuilder
@@ -24,7 +24,7 @@ package object data {
       ByteArrayData(v)
     }
 
-    def defaultVariableType = BoundedOrdinalVariable(3)
+    def defaultVariableType: VariableType = BoundedOrdinalVariable(3)
   }
 
   implicit case object IntArrayDataBuilder
@@ -37,7 +37,7 @@ package object data {
       IntArrayData(v)
     }
 
-    def defaultVariableType = OrdinalVariable
+    def defaultVariableType: VariableType = OrdinalVariable
   }
 
   implicit def toFeatueConverter[V](v: RDD[V]): ToFeature[V] = new ToFeature[V](v)

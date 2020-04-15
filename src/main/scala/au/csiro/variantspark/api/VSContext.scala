@@ -37,9 +37,9 @@ class VSContext(val spark: SparkSession) extends SqlContextHolder {
   implicit val hadoopConf: Configuration = sc.hadoopConfiguration
 
   /** Import features from a VCF file
-   	* @param inputFile path to file or directory with VCF files to load
-   	* @return FeatureSource loaded from the VCF file or files
-   	*/
+    * @param inputFile path to file or directory with VCF files to load
+    * @return FeatureSource loaded from the VCF file or files
+    */
   def importVCF(inputFile: String, sparkPar: Int = 0): FeatureSource = {
     val vcfSource =
       VCFSource(sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
@@ -47,20 +47,20 @@ class VSContext(val spark: SparkSession) extends SqlContextHolder {
   }
 
   /** Import features from a CSV file
-   	* @param inputFile: path to file or directory with VCF files to load
-   	* @param csvFormat: [[com.github.tototoshi.csv.CSVFormat]] row format
-   	* @return FeatureSource loaded from the VCF file or files
-   	*/
+    * @param inputFile: path to file or directory with VCF files to load
+    * @param csvFormat: [[com.github.tototoshi.csv.CSVFormat]] row format
+    * @return FeatureSource loaded from the VCF file or files
+    */
   def importCSV(inputFile: String, csvFormat: CSVFormat = DefaultCSVFormatSpec): FeatureSource = {
     CsvFeatureSource(sc.textFile(inputFile), csvFormat = csvFormat)
   }
 
   /** Loads a labels form a column in a CSV file
-   	* @param featuresFile path to CSV file with labels
-   	* @param featureColumn the name of the column to load as the label
-   	*
-   	* @return LabelSource loaded from the column of the CSV file
-   	*/
+    * @param featuresFile path to CSV file with labels
+    * @param featureColumn the name of the column to load as the label
+    *
+    * @return LabelSource loaded from the column of the CSV file
+    */
   def loadLabel(featuresFile: String, featureColumn: String): CsvLabelSource = {
     new CsvLabelSource(featuresFile, featureColumn)
   }

@@ -357,11 +357,11 @@
 					<testSourceDirectory>${basedir}/src/test/scala</testSourceDirectory>
 					<configLocation>scalastyle-config.xml</configLocation>
 					<outputFile>${basedir}/target/scalastyle-output.xml</outputFile>
-					<inputEncoding>${project.build.sourceEncoding}</inputEncoding>
-					<outputEncoding>${project.reporting.outputEncoding}</outputEncoding>
+					<outputEncoding>UTF-8</outputEncoding>
 				</configuration>
 				<executions>
 					<execution>
+						<phase>validate</phase>
 						<goals>
 							<goal>check</goal>
 						</goals>

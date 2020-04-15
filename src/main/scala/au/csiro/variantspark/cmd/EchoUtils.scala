@@ -2,18 +2,19 @@ package au.csiro.variantspark.cmd
 
 object EchoUtils {
 
-  val defaultPreviewSize = 7
-  val longPreviewSize = 20
-  val defaultElipses = "..."
+  val defaultPreviewSize: Int = 7
+  val longPreviewSize: Int = 20
+  val defaultElipses: String = "..."
 
   def dumpList(l: List[_], maxSize: Int = defaultPreviewSize): String = {
 
     val strList =
-      if (l.size <= maxSize) l.map(_.toString)
-      else
+      if (l.size <= maxSize) { l.map(_.toString) }
+      else {
         l.take(maxSize / 2).map(_.toString) ::: (defaultElipses :: l
           .takeRight(maxSize - maxSize / 2 - 1)
           .map(_.toString))
+      }
     strList.mkString("[", ",", "]") + s" total: ${l.size}"
   }
 

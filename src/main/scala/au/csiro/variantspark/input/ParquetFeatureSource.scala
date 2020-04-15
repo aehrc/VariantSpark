@@ -6,7 +6,8 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import au.csiro.variantspark.data._
 import au.csiro.variantspark.data.StdFeature
-@Deprecated
+
+@deprecated
 case class ParquetFeatureSource(inputPath: String)(implicit sc: SparkContext)
     extends FeatureSource {
 

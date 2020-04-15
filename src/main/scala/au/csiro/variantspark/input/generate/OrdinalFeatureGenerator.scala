@@ -18,13 +18,17 @@ case class OrdinalFeatureGenerator(val nLevels: Int, val nVariables: Long, val n
     val nLevels = this.nLevels
     val nSamples = this.nSamples
     val seed = this.seed
-    //TODO (Feature): Honor parallelism
+    // TODO (Feature): Honor parallelism
     sc.range(0L, nVariables, numSlices = if (sparkPar > 0) sparkPar else sc.defaultParallelism)
       .mapPartitionsWithIndex {
         case (pi, iter) =>
-          implicit val rf = new XorShift1024StarRandomGenerator(pi ^ seed)
+          implicit val rf: XorShift1024StarRandomGenerator =
+            new XorShift1024StarRandomGenerator(pi ^ seed)
+          // format: off
           iter
-            .map(i => StdFeature.from("v_" + i, BoundedOrdinalVariable(nLevels), Sampling.subsample(nLevels, nSamples, true).map(_.toByte)))
+            .map(i => StdFeature.from("v_" + i, BoundedOrdinalVariable(nLevels),
+              Sampling.subsample(nLevels, nSamples, true).map(_.toByte)))
+          // format: on
       }
   }
   def sampleNames: List[String] = Range(0, nSamples).map("s_" + _).toList

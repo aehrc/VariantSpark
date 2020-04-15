@@ -9,7 +9,7 @@ object JSONTest {
     import org.json4s._
     import org.json4s.jackson.JsonMethods._
     import org.json4s.JsonDSL._
-    implicit val formats = DefaultFormats
+    implicit val formats: DefaultFormats.type = DefaultFormats
 
     val rawJson = """{"hello": "world", "age": 42}"""
 
