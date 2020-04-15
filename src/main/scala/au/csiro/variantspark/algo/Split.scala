@@ -65,11 +65,9 @@ class ClassificationSplitAggregator private (val labels: Array[Int],
     right.subLabel(label)
   }
 
-  @Override
-  def init(index: Int) = initLabel(labels(index))
+  override def init(index: Int): Unit = initLabel(labels(index))
 
-  @Override
-  def update(index: Int) = updateLabel(labels(index))
+  override def update(index: Int): Unit = updateLabel(labels(index))
 }
 
 object ClassificationSplitAggregator {
@@ -101,7 +99,7 @@ class ConfusionAggregator private (val matrix: Array[ClassificationImpurityAggre
   /**
     * Add a response at index yIndex for ordinal level
     */
-  def updateAt(level: Int, yIndex: Int) = matrix(level).addLabel(labels(yIndex));
+  def updateAt(level: Int, yIndex: Int): Unit = matrix(level).addLabel(labels(yIndex));
 
   def apply(level: Int): ClassificationImpurityAggregator = matrix(level)
 }
@@ -186,8 +184,10 @@ class DefStatefullIndexedSpliterFactory(val impurity: ClassficationImpurity,
     val qThreshold: Double = ThresholdIndexesSplitter.DefaultQThredhold)
     extends IndexedSplitterFactory {
 
-  lazy val splitAggregator = ClassificationSplitAggregator(impurity, labels, nCategories)
-  lazy val confusionAgg = new ConfusionAggregator(impurity, maxConfusionSize, nCategories, labels)
+  lazy val splitAggregator: ClassificationSplitAggregator =
+    ClassificationSplitAggregator(impurity, labels, nCategories)
+  lazy val confusionAgg: ConfusionAggregator =
+    new ConfusionAggregator(impurity, maxConfusionSize, nCategories, labels)
 
   def create(sf: SplitterProvider): IndexedSplitter = {
     sf match {

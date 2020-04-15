@@ -23,10 +23,11 @@ class VcfToLabels extends ArgsApp with SparkApp {
 
   @Option(name = "-of", required = false, usage = "Output file", aliases = Array("--output-file"))
   val outputFile: String = "data/small-labels.csv"
+
   @Option(name = "-l", required = false)
   val limit: Int = 10
-  @Override
-  def run(): Unit = {
+
+  override def run(): Unit = {
     val vcfSource = VCFSource(sc.textFile(inputFile))
     val header = vcfSource.header
     val version = vcfSource.version

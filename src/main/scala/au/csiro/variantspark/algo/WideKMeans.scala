@@ -4,7 +4,7 @@ import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
 
 object WideKMeans {
-  def square(d: Double) = d * d
+  def square(d: Double): Double = d * d
 }
 
 /**

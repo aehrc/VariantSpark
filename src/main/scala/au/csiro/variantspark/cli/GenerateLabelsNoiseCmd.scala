@@ -105,21 +105,20 @@ class GenerateLabelsNoiseCmd
   // spark related
   @Option(name = "-sp", required = false, usage = "Spark parallelism (def=<default-spark-par>)",
     aliases = Array("--spark-par"))
-  val sparkPar = 0
+  val sparkPar: Int = 0
 
-  @Override
-  def testArgs =
+  override def testArgs: Array[String] =
     Array("-if", "target/getds.parquet", "-sp", "4", "-ff", "target/features.csv", "-fc", "resp",
       "-sr", "133", "-v", "-fcc", "resp_cont", "-fiv", "-ge", "v_0:1.0", "-ge", "v_1:1.0",
       "-gfve", "0.5", "-gct", "0.66")
 
-  @Override
-  def run(): Unit = {
+  override def run(): Unit = {
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
 
     val actualZeroLevel = if (zeroLevel > 0) zeroLevel else varOrdinalLevels / 2
     echo(
-        s"Generating a dichotomous response, zeroLevel: ${actualZeroLevel}, fracVarExplained: ${fracVarExplained}")
+        s"Generating a dichotomous response, zeroLevel: ${actualZeroLevel},"
+          + s" fracVarExplained: ${fracVarExplained}")
 
     val effects =
       effectsDef.asScala.map(_.split(":")).map { case Array(v, e) => (v, e.toDouble) }.toMap
@@ -140,7 +139,8 @@ class GenerateLabelsNoiseCmd
     val labels = generator.getLabels(featureSource.sampleNames)
 
     echo(
-        s"Continous response mean: ${generator.noisyContinuousStats.mean} , total variance: ${generator.noisyContinuousStats.variance}")
+        s"Continous response mean: ${generator.noisyContinuousStats.mean},"
+          + s" total variance: ${generator.noisyContinuousStats.variance}")
 
     val effectVarData = if (includeEffectVarData) {
       SparkUtils.withBroadcast(sc)(effects) { br_effects =>
@@ -152,24 +152,27 @@ class GenerateLabelsNoiseCmd
     } else Map.empty
 
     CSVUtils.withFile(new File(featuresFile)) { writer =>
-      writer.writeRow(List("", featureColumn) ::: (if (featureContinuousColumn != null)
-                                                     List(featureContinuousColumn)
-                                                   else Nil) ::: effectVarData.toList.map(_._1))
+      writer
+        .writeRow(List("", featureColumn) ::: (if (featureContinuousColumn != null) {
+                                               List(featureContinuousColumn)
+                                             } else { Nil }) ::: effectVarData.toList.map(_._1))
+      val noisyContinuouVarData = if (featureContinuousColumn != null) {
+        List(generator.noisyContinuousResponse.data.toList)
+      } else { Nil }
       val outputColumns =
         List(featureSource.sampleNames,
-          labels.toList) ::: (if (featureContinuousColumn != null)
-                                List(generator.noisyContinuousResponse.data.toList)
-                              else Nil) ::: effectVarData.toList
+          labels.toList) ::: noisyContinuouVarData ::: effectVarData.toList
           .map(_._2.toList)
       writer.writeAll(outputColumns.transpose)
     }
   }
 
-  def withFileOrStdout(fileName: String)(f: PrintStream => Unit) = {
-    LoanUtils.withCloseable(
-        if (fileName != null) new PrintStream(fileName)
-        else
-          ReusablePrintStream.stdout)(f)
+  def withFileOrStdout(fileName: String)(f: PrintStream => Unit): Unit = {
+    LoanUtils.withCloseable(if (fileName != null) {
+      new PrintStream(fileName)
+    } else {
+      ReusablePrintStream.stdout
+    })(f)
   }
 
 }

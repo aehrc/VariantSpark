@@ -35,8 +35,8 @@ class PairWiseDistanceCmd extends ArgsApp with FeatureSourceArgs with Logging wi
     usage = "Metric to use, one of: euclidean, manhattan, invBitAnd, invMul",
     aliases = Array("--metric"))
   val metricName: String = "euclidean"
-  @Override
-  def testArgs =
+
+  override def testArgs: Array[String] =
     Array("-if", "data/chr22_1000.vcf", "-of", "target/ch22-disc.csv", "-v", "-m", "manhattan")
 
   def buildMetricFromName(metricName: String): PairwiseOperation = {
@@ -51,8 +51,7 @@ class PairWiseDistanceCmd extends ArgsApp with FeatureSourceArgs with Logging wi
     }
   }
 
-  @Override
-  def run(): Unit = {
+  override def run(): Unit = {
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
     val metric = buildMetricFromName(metricName)
     echo(s"Calculating pair wise distance: ${metric}")

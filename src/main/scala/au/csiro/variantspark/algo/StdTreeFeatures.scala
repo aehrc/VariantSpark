@@ -1,14 +1,18 @@
 package au.csiro.variantspark.algo
 
-import au.csiro.variantspark.data.ContinuousVariable
-import au.csiro.variantspark.data.VectorData
+import au.csiro.variantspark.data.{
+  BoundedOrdinalVariable,
+  ByteArrayData,
+  ContinuousVariable,
+  Data,
+  Feature,
+  VariableType,
+  VectorData
+}
 import org.apache.spark.mllib.linalg.Vectors
 import au.csiro.variantspark.algo.split.JNaiveContinousIndexedSplitter
-import au.csiro.variantspark.data.BoundedOrdinalVariable
-import au.csiro.variantspark.data.ByteArrayData
 import au.csiro.variantspark.algo.split.JOrderedIndexedSplitter
 import au.csiro.variantspark.algo.split.JOrderedFastIndexedSplitter
-import au.csiro.variantspark.data.Feature
 
 /**
   * Verbatim tree representation for continuous variables.
@@ -16,11 +20,11 @@ import au.csiro.variantspark.data.Feature
   */
 class StdContinousTreeFeature(val label: String, val index: Long, continousData: Array[Double])
     extends TreeFeature {
-  def variableType = ContinuousVariable
-  def toData = new VectorData(Vectors.dense(continousData))
-  override def size = continousData.size
-  override def at(i: Int) = continousData(i)
-  override def createSplitter(impCalc: IndexedSplitAggregator) =
+  def variableType: VariableType = ContinuousVariable
+  def toData: Data = new VectorData(Vectors.dense(continousData))
+  override def size: Int = continousData.size
+  override def at(i: Int): Double = continousData(i)
+  override def createSplitter(impCalc: IndexedSplitAggregator): IndexedSplitter =
     new JNaiveContinousIndexedSplitter(impCalc, continousData)
 }
 
@@ -31,19 +35,20 @@ class StdContinousTreeFeature(val label: String, val index: Long, continousData:
 class SmallOrderedTreeFeature(val label: String, val index: Long, orderedData: Array[Byte],
     nLevels: Int)
     extends TreeFeature with FastSplitterProvider {
-  def variableType = BoundedOrdinalVariable(nLevels)
-  def toData = new ByteArrayData(orderedData)
-  override def size = orderedData.size
-  override def at(i: Int) = orderedData(i).toDouble
-  override def createSplitter(impCalc: IndexedSplitAggregator) =
+  def variableType: VariableType = BoundedOrdinalVariable(nLevels)
+  def toData: Data = new ByteArrayData(orderedData)
+  override def size: Int = orderedData.size
+  override def at(i: Int): Double = orderedData(i).toDouble
+  override def createSplitter(impCalc: IndexedSplitAggregator): IndexedSplitter =
     new JOrderedIndexedSplitter(impCalc, orderedData, nLevels)
-  override def confusionSize = nLevels
+  override def confusionSize: Int = nLevels
   override def createSplitter(impCalc: IndexedSplitAggregator,
-      confusionAgg: ConfusionAggregator) =
+      confusionAgg: ConfusionAggregator): IndexedSplitter =
     new JOrderedFastIndexedSplitter(confusionAgg, impCalc, orderedData, nLevels)
 }
 
-//TODO[ContVariables]: Add support for other variable types (e.g. Factors) as well as fast indexed representation for continuous variables.
+// TODO[ContVariables]: Add support for other variable types (e.g. Factors) as well as fast
+// indexed representation for continuous variables.
 
 /**
   * The default representation factory

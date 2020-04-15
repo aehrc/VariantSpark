@@ -8,6 +8,8 @@ import au.csiro.variantspark.input.CsvFeatureSource
 import au.csiro.variantspark.input.CsvFeatureSource._
 import com.github.tototoshi.csv.CSVFormat
 import au.csiro.variantspark.input.DefaultCSVFormatSpec
+import org.apache.hadoop.conf.Configuration
+import org.apache.spark.SparkContext
 
 /**
   * A class to represent an instance of the variant-spark context, or spark sql context
@@ -28,11 +30,11 @@ trait SqlContextHolder {
   */
 class VSContext(val spark: SparkSession) extends SqlContextHolder {
 
-  val sc = spark.sparkContext
-  val sqlContext = spark.sqlContext
+  val sc: SparkContext = spark.sparkContext
+  val sqlContext: SQLContext = spark.sqlContext
 
-  implicit val fs = FileSystem.get(sc.hadoopConfiguration)
-  implicit val hadoopConf = sc.hadoopConfiguration
+  implicit val fs: FileSystem = FileSystem.get(sc.hadoopConfiguration)
+  implicit val hadoopConf: Configuration = sc.hadoopConfiguration
 
   /** Import features from a VCF file
    	* @param inputFile path to file or directory with VCF files to load
@@ -59,7 +61,7 @@ class VSContext(val spark: SparkSession) extends SqlContextHolder {
    	*
    	* @return LabelSource loaded from the column of the CSV file
    	*/
-  def loadLabel(featuresFile: String, featureColumn: String) = {
+  def loadLabel(featuresFile: String, featureColumn: String): CsvLabelSource = {
     new CsvLabelSource(featuresFile, featureColumn)
   }
 
@@ -68,9 +70,9 @@ class VSContext(val spark: SparkSession) extends SqlContextHolder {
     importVCF(inputFile)
 
   @deprecated
-  def labelSource = loadLabel _
+  def labelSource: (String, String) => CsvLabelSource = loadLabel _
 }
 
 object VSContext {
-  def apply(spark: SparkSession) = new VSContext(spark)
+  def apply(spark: SparkSession): VSContext = new VSContext(spark)
 }

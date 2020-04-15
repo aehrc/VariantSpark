@@ -15,7 +15,7 @@ import breeze.stats.distributions.Bernoulli
 import org.apache.spark.util.random.BernoulliSampler
 import org.apache.spark.util.random.BernoulliSampler
 
-class TestCmd extends ArgsApp with TestArgs /*with SparkApp*/ {
+class TestCmd extends ArgsApp with TestArgs /* with SparkApp */ {
 
   @Option(name = "-if", required = false, usage = "This is input files",
     aliases = Array("--input-files"))
@@ -24,20 +24,18 @@ class TestCmd extends ArgsApp with TestArgs /*with SparkApp*/ {
   @Option(name = "-l", required = false)
   val limit: Int = 0
 
-  @Override
-  def testArgs = Array("-l", "10")
+  override def testArgs: Array[String] = Array("-l", "10")
 
-  def ec(x: Int*) = {
+  def ec(x: Int*): Unit = {
     println(x)
   }
 
-  @Override
-  def run(): Unit = {
-    //implicit val fs = FileSystem.get(sc.hadoopConfiguration)
-    //logDebug(s"Running with filesystem: ${fs}, home: ${fs.getHomeDirectory}")
+  override def run(): Unit = {
+    // implicit val fs = FileSystem.get(sc.hadoopConfiguration)
+    // logDebug(s"Running with filesystem: ${fs}, home: ${fs.getHomeDirectory}")
     println("Hello Word: " + inputFile + ", " + limit)
     println("Properties: ")
-    //System.getProperties().asScala.foreach(k => println(k))
+    // System.getProperties().asScala.foreach(k => println(k))
     val labels: DenseVector[Int] = DenseVector.zeros(10)
     println(labels(2, 3, 4).toArray.toList)
     labels(0 to 2)
@@ -56,7 +54,7 @@ class TestCmd extends ArgsApp with TestArgs /*with SparkApp*/ {
     val dist = binomialDist.draw()
     Range(0, 10).foreach(_ => println(binomialDist.draw()))
     val sm = new BernoulliSampler[Int](0.01)
-    //sm.sample(items)
+    // sm.sample(items)
   }
 }
 

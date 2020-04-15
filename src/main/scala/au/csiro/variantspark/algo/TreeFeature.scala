@@ -44,7 +44,7 @@ trait TreeRepresentationFactory {
   * Helper methods for {{RDD[TreeFeature]}}
   */
 class TreeFeatureRDDFunction[V](val rdd: RDD[TreeFeature]) extends AnyVal {
-  def size = rdd.first.size
+  def size: Int = rdd.first.size
   def collectAtIndexes(indexes: Set[Long]): Map[Long, Data] = withBroadcast(rdd)(indexes) {
     br_indexes =>
       rdd

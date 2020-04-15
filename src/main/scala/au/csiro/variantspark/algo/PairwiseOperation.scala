@@ -60,11 +60,11 @@ trait AggregablePairwiseOperation extends PairwiseOperation with Serializable {
 
 object PairwiseOperation {
 
-  def squareForm(upperTriang: Array[Double])(r: Int, c: Int) = {
+  def squareForm(upperTriang: Array[Double])(r: Int, c: Int): Double = {
     if (c >= r) upperTriang(c * (c + 1) / 2 + r) else upperTriang(r * (r + 1) / 2 + c)
   }
 
-  def sizeFromUpperDiagLenght(upperDiagSize: Int) = {
+  def sizeFromUpperDiagLenght(upperDiagSize: Int): Int = {
     val size = ((Math.sqrt(1.0 + 8 * upperDiagSize) - 1.0) / 2.0).toInt
     require(upperDiagSize == size * (size + 1) / 2)
     size

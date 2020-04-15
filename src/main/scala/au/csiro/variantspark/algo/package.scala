@@ -10,8 +10,9 @@ package object algo {
 
   implicit case object CanSizeFeature extends CanSize[Feature] {
     override def size(f: Feature): Int = f.size
-    override def runtimeClass = classOf[Feature]
+    override def runtimeClass: Class[_] = classOf[Feature]
   }
 
-  implicit def toTreeFeatueRDD(rdd: RDD[TreeFeature]) = new TreeFeatureRDDFunction(rdd)
+  implicit def toTreeFeatueRDD(rdd: RDD[TreeFeature]): TreeFeatureRDDFunction[Nothing] =
+    new TreeFeatureRDDFunction(rdd)
 }

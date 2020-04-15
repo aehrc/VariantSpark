@@ -67,28 +67,27 @@ class ImportanceCmd
   val outputFile: String = null
 
   @Option(name = "-on", required = false,
-    usage = "The number of top important variables to include in output. Use `0` for all variables. (def=20)",
+    usage = "The number of top important variables to include in output."
+      + " Use `0` for all variables. (def=20)",
     aliases = Array("--output-n-variables"))
   val nVariables: Int = 20
 
   @Option(name = "-od", required = false,
     usage = "Include important variables data in output file (def=no)",
     aliases = Array("--output-include-data"))
-  val includeData = false
+  val includeData: Boolean = false
 
   @Option(name = "-sr", required = false, usage = "Random seed to use (def=<random>)",
     aliases = Array("--seed"))
   val randomSeed: Long = defRng.nextLong
 
-  @Override
-  def testArgs =
+  override def testArgs: Array[String] =
     Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249",
       "-ovn", "raw", "-on", "1988", "-rn", "1000", "-rbs", "100", "-ic", "-om",
       "target/ch22-model.json", "-omf", "json", "-sr", "13", "-v", "-io", """{"separator":":"}""")
 
-  @Override
-  def run(): Unit = {
-    implicit val fs = FileSystem.get(sc.hadoopConfiguration)
+  override def run(): Unit = {
+    implicit val fs: FileSystem = FileSystem.get(sc.hadoopConfiguration)
     implicit val hadoopConf: Configuration = sc.hadoopConfiguration
     logDebug(s"Running with filesystem: ${fs}, home: ${fs.getHomeDirectory}")
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
@@ -104,13 +103,16 @@ class ImportanceCmd
     val totalVariables = inputData.count()
 
     val variablePreview = inputData.map(_.label).take(defaultPreviewSize).toList
-    echo(s"Loaded variables: ${dumpListHead(variablePreview, totalVariables)}, took: ${dataLoadingTimer.durationInSec}")
+    echo(s"Loaded variables: ${dumpListHead(variablePreview, totalVariables)},"
+        + s" took: ${dataLoadingTimer.durationInSec}")
     echoDataPreview()
 
-    //if (isVerbose) {
+    // if (isVerbose) {
     //  verbose("Representation preview:")
-    //  inputData.take(defaultPreviewSize).foreach(f=> verbose(s"${f.label}:${f.variableType}:${dumpList(f.valueAsStrings, longPreviewSize)}(${f.getClass.getName})"))
-    //}
+    //  inputData.take(defaultPreviewSize).foreach(f=> verbose(s"${f.label}:
+    //  ${f.variableType}:${dumpList(f.valueAsStrings,
+    //  longPreviewSize)}(${f.getClass.getName})"))
+    // }
 
     echo(s"Loading labels from: ${featuresFile}, column: ${featureColumn}")
     val labelSource = new CsvLabelSource(featuresFile, featureColumn)
@@ -128,9 +130,9 @@ class ImportanceCmd
     //
     val trainingData = inputData
 
-    implicit val rfCallback = new RandomForestCallback() {
-      var totalTime = 0L
-      var totalTrees = 0
+    implicit val rfCallback: RandomForestCallback = new RandomForestCallback() {
+      var totalTime: Long = 0L
+      var totalTrees: Int = 0
       override def onParamsResolved(actualParams: RandomForestParams) {
         echo(s"RF Params: ${actualParams}")
         echo(s"RF Params mTry: ${(actualParams.nTryFraction * totalVariables).toLong}")
@@ -139,9 +141,12 @@ class ImportanceCmd
         totalTime += elapsedTimeMs
         totalTrees += nTrees
         echo(
-            s"Finished trees: ${totalTrees}, current oobError: ${oobError}, totalTime: ${totalTime / 1000.0} s, avg timePerTree: ${totalTime / (1000.0 * totalTrees)} s")
+            s"Finished trees: ${totalTrees}, current oobError: ${oobError},"
+              + s" totalTime: ${totalTime / 1000.0} s, "
+              + s" avg timePerTree: ${totalTime / (1000.0 * totalTrees)} s")
         echo(
-            s"Last build trees: ${nTrees}, time: ${elapsedTimeMs} ms, timePerTree: ${elapsedTimeMs / nTrees} ms")
+            s"Last build trees: ${nTrees}, time: ${elapsedTimeMs} ms,"
+              + s" timePerTree: ${elapsedTimeMs / nTrees} ms")
 
       }
     }
@@ -149,7 +154,8 @@ class ImportanceCmd
     val result = rf.batchTrainTyped(trainingData, labels, nTrees, rfBatchSize)
 
     echo(
-        s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s")
+        s"Random forest oob accuracy: ${result.oobError},"
+          + s" took: ${treeBuildingTimer.durationInSec} s")
 
     // build index for names
     val allImportantVariables = result.normalizedVariableImportance(importanceNormalizer).toSeq
@@ -191,9 +197,9 @@ class ImportanceCmd
         writer.writeRow(header)
         writer.writeAll(topImportantVariables.map({
           case (i, importance) =>
-            List(index(i), importance) ::: (if (includeData)
+            List(index(i), importance) ::: (if (includeData) {
                                               (importantVariableData(i).valueAsStrings)
-                                            else Nil)
+                                            } else { Nil })
         }))
     }
     saveModel(result, index.toMap)

@@ -23,12 +23,10 @@ class FilterCmd extends ArgsApp with TestArgs with SparkApp {
   @Option(name = "-l", required = false)
   val limit: Int = 0
 
-  @Override
-  def testArgs = Array("-if", "data/small.vcf")
+  override def testArgs: Array[String] = Array("-if", "data/small.vcf")
 
-  @Override
-  def run(): Unit = {
-    implicit val fs = FileSystem.get(sc.hadoopConfiguration)
+  override def run(): Unit = {
+    implicit val fs: FileSystem = FileSystem.get(sc.hadoopConfiguration)
     logDebug(s"Running with filesystem: ${fs}, home: ${fs.getHomeDirectory}")
 
     val vcfSource = VCFSource(sc.textFile(inputFile))

@@ -8,7 +8,7 @@ trait SparkArgs extends SparkApp {
 
   @Option(name = "-sp", required = false, usage = "Spark parallelism (def=<default-spark-par>)",
     aliases = Array("--spark-par"))
-  val sparkPar = 0
+  val sparkPar: Int = 0
 
   def textFile(inputFile: String): RDD[String] =
     sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism)

@@ -1,16 +1,16 @@
 package au.csiro.variantspark.api
 
+import java.util
+
 import au.csiro.pbdava.ssparkle.spark.SparkUtils
-import au.csiro.variantspark.algo.{RandomForest, RandomForestParams}
+import au.csiro.variantspark.algo.{RandomForest, RandomForestModel, RandomForestParams}
 import au.csiro.variantspark.data.BoundedOrdinalVariable
 import au.csiro.variantspark.input.{FeatureSource, LabelSource}
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
-import org.apache.spark.sql.{Row, SQLContext}
+import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 import org.apache.spark.sql.types.{DoubleType, StringType, StructField, StructType}
 
-import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
-import au.csiro.variantspark.algo.RandomForest
 
 /**
   * A class to represent an instance of the Importance Analysis
@@ -34,10 +34,11 @@ class ImportanceAnalysis(val sqlContext: SQLContext, val featureSource: FeatureS
   private def sc = featureSource.features.sparkContext
   private lazy val inputData = featureSource.features.zipWithIndex().cache()
 
-  val variableImportanceSchema = StructType(Seq(StructField("variable", StringType, true),
-      StructField("importance", DoubleType, true)))
+  val variableImportanceSchema: StructType =
+    StructType(Seq(StructField("variable", StringType, true),
+        StructField("importance", DoubleType, true)))
 
-  lazy val rfModel = {
+  lazy val rfModel: RandomForestModel = {
     val labels = labelSource.getLabels(featureSource.sampleNames)
     val rf = new RandomForest(rfParams)
     rf.batchTrain(inputData, labels, nTrees, rfBatchSize)
@@ -49,10 +50,10 @@ class ImportanceAnalysis(val sqlContext: SQLContext, val featureSource: FeatureS
     val indexImportance = rfModel.normalizedVariableImportance()
     sc.broadcast(
         new Long2DoubleOpenHashMap(
-            indexImportance.asInstanceOf[Map[java.lang.Long, java.lang.Double]]))
+            indexImportance.asInstanceOf[Map[java.lang.Long, java.lang.Double]].asJava))
   }
 
-  def variableImportance = {
+  def variableImportance: DataFrame = {
     val local_br_normalizedVariableImportance = br_normalizedVariableImportance
     val importanceRDD = inputData.map({
       case (f, i) => Row(f.label, local_br_normalizedVariableImportance.value.get(i))
@@ -60,7 +61,7 @@ class ImportanceAnalysis(val sqlContext: SQLContext, val featureSource: FeatureS
     sqlContext.createDataFrame(importanceRDD, variableImportanceSchema)
   }
 
-  def importantVariables(nTopLimit: Int = 100) = {
+  def importantVariables(nTopLimit: Int = 100): Seq[(String, Double)] = {
     // build index for names
     val topImportantVariables =
       rfModel.normalizedVariableImportance().toSeq.sortBy(-_._2).take(nTopLimit)
@@ -78,7 +79,7 @@ class ImportanceAnalysis(val sqlContext: SQLContext, val featureSource: FeatureS
     topImportantVariables.map({ case (i, importance) => (index(i), importance) })
   }
 
-  def importantVariablesJavaMap(nTopLimit: Int = 100) = {
+  def importantVariablesJavaMap(nTopLimit: Int = 100): util.Map[String, Double] = {
     val impVarMap = collection.mutable.Map(importantVariables(nTopLimit).toMap.toSeq: _*)
     impVarMap.map { case (k, v) => k -> double2Double(v) }
     impVarMap.asJava
@@ -87,7 +88,7 @@ class ImportanceAnalysis(val sqlContext: SQLContext, val featureSource: FeatureS
 
 object ImportanceAnalysis {
 
-  val defaultRFParams = RandomForestParams()
+  val defaultRFParams: RandomForestParams = RandomForestParams()
 
   def apply(featureSource: FeatureSource, labelSource: LabelSource, nTrees: Int = 1000,
       mtryFraction: Option[Double] = None, oob: Boolean = true, seed: Option[Long] = None,
