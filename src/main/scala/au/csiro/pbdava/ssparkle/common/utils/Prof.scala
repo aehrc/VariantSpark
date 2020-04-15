@@ -6,11 +6,11 @@ trait Prof extends Logging {
 
   var prevStartTime = 0L
 
-  def profReset() = if (!profEnable) {} else {
+  def profReset(): Unit = if (!profEnable) {} else {
     prevStartTime = System.currentTimeMillis()
   }
 
-  def profPoint(msg: => String) = if (!profEnable) {} else {
+  def profPoint(msg: => String): Unit = if (!profEnable) {} else {
     val duration = System.currentTimeMillis() - prevStartTime
     logInfo(s"${msg}: ${duration}")
     profReset()

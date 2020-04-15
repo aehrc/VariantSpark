@@ -11,9 +11,9 @@ object AppRunner {
   def mains[T <: CmdApp](args: Array[String])(implicit m: Manifest[T]) {
     val app = m.runtimeClass.newInstance().asInstanceOf[CmdApp]
     val actualArgs =
-      if (args.length == 0 && app.isInstanceOf[TestArgs] && MiscUtils.isDeveloperMode)
+      if (args.length == 0 && app.isInstanceOf[TestArgs] && MiscUtils.isDeveloperMode) {
         app.asInstanceOf[TestArgs].testArgs
-      else args
+      } else { args }
     CmdApp.runApp(actualArgs, app)
   }
 

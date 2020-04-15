@@ -9,7 +9,7 @@ import java.io.File
 object CSVUtils {
 
   implicit object MyFormat extends DefaultCSVFormat {
-    override val lineTerminator = System.lineSeparator()
+    override val lineTerminator: String = System.lineSeparator()
   }
 
   def withStream(os: OutputStream)(func: CSVWriter => Unit) {

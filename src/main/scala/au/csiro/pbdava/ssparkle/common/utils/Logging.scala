@@ -9,7 +9,7 @@ trait Logging {
   // be serialized and used on another machine
   @transient private var log_ : Logger = _
 
-  protected def logName = {
+  protected def logName: String = {
     // Ignore trailing $'s in the class names for Scala objects
     this.getClass.getName.stripSuffix("$")
   }
