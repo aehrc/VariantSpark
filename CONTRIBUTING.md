@@ -41,4 +41,6 @@ In particular:
 * Scala code is formatted with `scalafmt` with the configuration file in .scalafmt.conf - maven build 
 checks the formatting but does not apply automatically. You can setup you IDE (e.g. IntelJ) to apply the 
 formatting or run `./dev/scalafmt` to apply formatting to all new files.
+* scalastyle is used to check validate the code, with the config in `./scalstyle-config.xml`
+* InteliJ profile for inspection configuration can be imported from: `./dev/InteliJ-inspections.xml`
 
