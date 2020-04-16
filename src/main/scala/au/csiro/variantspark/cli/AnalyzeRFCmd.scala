@@ -58,19 +58,17 @@ class AnalyzeRFCmd
     aliases = Array("--output-top-importance-number"))
   val outputTopImportanceNumber: Int = 100
 
-  @Override
-  def testArgs =
+  override def testArgs: Array[String] =
     Array("-ii", "target/ch22-idx.ser", "-im", "target/ch22-model.ser", "-if",
       "data/chr22_1000.vcf", "-ob", "target/ch22-oob.csv", "-obt", "target/ch22-oob-tree.csv",
       "-oi", "target/ch22-imp.csv", "-oti", "target/ch22-top-imp.csv")
 
-  lazy val variableIndex =
+  lazy val variableIndex: Long2ObjectOpenHashMap[String] =
     LoanUtils.withCloseable(new ObjectInputStream(new FileInputStream(inputIndex))) { objIn =>
       objIn.readObject().asInstanceOf[Long2ObjectOpenHashMap[String]]
     }
 
-  @Override
-  def run(): Unit = {
+  override def run(): Unit = {
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
     echo(s"Analyzing random forrest model")
 

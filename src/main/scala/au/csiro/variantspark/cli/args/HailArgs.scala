@@ -3,13 +3,14 @@ package au.csiro.variantspark.cli.args
 import org.kohsuke.args4j.Option
 import au.csiro.pbdava.ssparkle.spark.SparkApp
 import is.hail.HailContext
+import org.apache.spark.SparkConf
 
 /**
   * Common options and properties for applications using Hail.
   */
 trait HailArgs extends SparkApp {
 
-  override def createConf =
+  override def createConf: SparkConf =
     super.createConf
       .set("spark.sql.files.openCostInBytes", "53687091200") // 50GB : min for hail
       .set("spark.sql.files.maxPartitionBytes", "53687091200") // 50GB : min for hail
@@ -19,7 +20,7 @@ trait HailArgs extends SparkApp {
     aliases = Array("--min-partitions"))
   val minPartitions: Int = -1
 
-  lazy val hc = HailContext(sc)
-  lazy val actualMinPartitions = if (minPartitions > 0) minPartitions else sc.defaultParallelism
-
+  lazy val hc: HailContext = HailContext(sc)
+  lazy val actualMinPartitions: Int = if (minPartitions > 0) { minPartitions }
+  else { sc.defaultParallelism }
 }

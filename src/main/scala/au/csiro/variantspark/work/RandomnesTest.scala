@@ -8,7 +8,7 @@ object RandomnesTest {
   def main(argv: Array[String]) {
     println("Hello")
 
-    val seed = 13;
+    val seed = 13
     val rng = new XorShift1024StarRandomGenerator(seed)
 
     val splitNo = 100

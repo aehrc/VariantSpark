@@ -36,13 +36,14 @@ object TestWideDecisionTree extends SparkApp {
 
     val vectorData: RDD[Vector] = centers.zipWithIndex().map {
       case (v, i) =>
-        if (i < importantDims)
+        if (i < importantDims) {
           Vectors.dense(
               clusterAssignment
                 .map(c => ((v(c).toInt + (Math.random() * 1.3).toInt) % centersNo).toDouble)
                 .toArray)
-        else
+        } else {
           Vectors.dense(Array.fill(samples)((Math.random() * 3).toInt.toDouble))
+        }
     }
 
     val labels = clusterAssignment.toArray
@@ -51,14 +52,14 @@ object TestWideDecisionTree extends SparkApp {
     val (trainSetProj, testSetProj) = Projector.splitRDD(vectorData, 0.8)
     val trainSetWithIndex: RDD[(Feature, Long)] = vectorData
       .project(trainSetProj)
-      .map(v => StdFeature.from(null, dataType, v).asInstanceOf[Feature])
+      .map(v => StdFeature.from(null, dataType, v))
       .zipWithIndex()
       .cache()
     val trainLabels = trainSetProj.projectArray(labels)
 
     val testSet = vectorData
       .project(testSetProj)
-      .map(v => StdFeature.from(null, dataType, v).asInstanceOf[Feature])
+      .map(v => StdFeature.from(null, dataType, v))
       .zipWithIndex()
       .cache()
     val testLabels = testSetProj.projectArray(labels)
@@ -78,14 +79,14 @@ object TestWideDecisionTree extends SparkApp {
     val crossvalidateResult = CV.evaluateMean(Projector.rddFolds(vectorData, 3)) { fold =>
       val trainSetWithIndex = vectorData
         .project(fold.inverted)
-        .map(v => StdFeature.from(null, dataType, v).asInstanceOf[Feature])
+        .map(v => StdFeature.from(null, dataType, v))
         .zipWithIndex()
         .cache()
       val trainLabels = fold.inverted.projectArray(labels)
 
       val testSet = vectorData
         .project(fold)
-        .map(v => StdFeature.from(null, dataType, v).asInstanceOf[Feature])
+        .map(v => StdFeature.from(null, dataType, v))
         .zipWithIndex()
         .cache()
       val testLabels = fold.projectArray(labels)

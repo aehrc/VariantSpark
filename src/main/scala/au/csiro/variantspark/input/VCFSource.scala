@@ -2,6 +2,7 @@ package au.csiro.variantspark.input
 
 import htsjdk.samtools.util.AbstractIterator
 import htsjdk.tribble.readers.LineIterator
+import htsjdk.variant.variantcontext.VariantContext
 import htsjdk.variant.vcf.{VCFCodec, VCFHeader, VCFHeaderVersion}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
@@ -13,25 +14,25 @@ class DelegatingLineIterator(val it: Iterator[String])
 }
 
 class ExtendedVCFCodec extends VCFCodec {
-  def getVersion() = this.version
+  def getVersion: VCFHeaderVersion = this.version
 }
 
 case class HeaderAndVersion(header: VCFHeader, version: VCFHeaderVersion)
 
 class VCFSource(val lines: RDD[String], val headerLines: Int = 500) {
 
-  lazy val headerAndVersion = {
+  lazy val headerAndVersion: HeaderAndVersion = {
     val codec = new ExtendedVCFCodec()
     val header: VCFHeader = codec
       .readActualHeader(new DelegatingLineIterator(lines.take(headerLines).toIterator))
       .asInstanceOf[VCFHeader]
-    HeaderAndVersion(header, codec.getVersion())
+    HeaderAndVersion(header, codec.getVersion)
   }
 
-  def header = headerAndVersion.header
-  def version = headerAndVersion.version
+  def header: VCFHeader = headerAndVersion.header
+  def version: VCFHeaderVersion = headerAndVersion.version
 
-  def genotypes() = VCFSource.computeGenotypes(lines, headerAndVersion)
+  def genotypes(): RDD[VariantContext] = VCFSource.computeGenotypes(lines, headerAndVersion)
 
 }
 

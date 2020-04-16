@@ -58,19 +58,18 @@ class GenerateFeaturesCmd extends ArgsApp with SparkApp with Echoable with Loggi
 
   @Option(name = "-sp", required = false, usage = "Spark parallelism (def=<default-spark-par>)",
     aliases = Array("--spark-par"))
-  val sparkPar = 0
+  val sparkPar: Int = 0
 
-  @Override
-  def testArgs = Array("-of", "target/getds.parquet", "-sp", "4")
+  override def testArgs: Array[String] = Array("-of", "target/getds.parquet", "-sp", "4")
 
-  @Override
-  def run(): Unit = {
+  override def run(): Unit = {
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
     echo(
-        s"Generating a synthetic dataset, variables: ${nVariables}, samples: ${nSamples}, levels:${nLevels}")
+        s"Generating a synthetic dataset, variables: ${nVariables},"
+          + s" samples: ${nSamples}, levels:${nLevels}")
     verbose(s"Random seed is: ${randomSeed}")
 
-    val generator = new OrdinalFeatureGenerator(nLevels = nLevels, nSamples = nSamples,
+    val generator = OrdinalFeatureGenerator(nLevels = nLevels, nSamples = nSamples,
       nVariables = nVariables, seed = randomSeed, sparkPar = sparkPar)
 
     echo(s"Saving output to ${outputFile}")

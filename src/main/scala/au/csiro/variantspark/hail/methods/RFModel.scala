@@ -37,14 +37,15 @@ import org.apache.spark.broadcast.Broadcast
 
 /**
   * Initial implementation of RandomForst model for hail
-  * @param mv MatrixValue with extracted fields of interests, currently it's assumed that the per sample dependent variable is named `e`
-  * 					while the dependent variable is named `y`
-  * @rfParams random forest parameters to use
+  * @param mv MatrixValue with extracted fields of interests, currently it's assumed
+  *           that the per sample dependent variable is named `e`
+  *           while the dependent variable is named `y`
+  * @param rfParams random forest parameters to use
   */
 case class RFModel(mv: MatrixValue, rfParams: RandomForestParams) {
 
-  val responseVarName = "y"
-  val entryVarname = "e"
+  val responseVarName: String = "y"
+  val entryVarname: String = "e"
 
   // maintain the same key as in the original matrix
   private val key: IndexedSeq[String] = mv.typ.rowKey
@@ -63,21 +64,18 @@ case class RFModel(mv: MatrixValue, rfParams: RandomForestParams) {
   require(keySignature.fields(1).typ.isOfType(TArray.apply(TString())),
     s"The second field in key needs to be TArray[String] but is ${keySignature.fields(1).typ}")
 
-//  require(keySignature == TStruct(("locus", TLocus(ReferenceGenome.GRCh37)),	
-//      ("alleles", TArray.apply(TString()))), "The key needs to be (for now): (locus<GRCh37>, alleles: array<str>)")
-
   // the result should keep the key + add importance related field
-  lazy val sig = keySignature.insertFields(Array(("importance", TFloat64())))
+  lazy val sig: TStruct = keySignature.insertFields(Array(("importance", TFloat64())))
 
-  lazy val rf = new RandomForest(rfParams)
-  val featuresRDD = mv.rvd.toRows.map(RFModel.rowToFeature)
+  lazy val rf: RandomForest = new RandomForest(rfParams)
+  val featuresRDD: RDD[Feature] = mv.rvd.toRows.map(RFModel.rowToFeature)
   lazy val inputData: RDD[TreeFeature] =
     DefTreeRepresentationFactory.createRepresentation(featuresRDD.zipWithIndex())
 
   // the a stateful object
   // TODO: Maybe refactor to a helper object
-  var rfModel: RandomForestModel = null
-  var impVarBroadcast: Broadcast[Map[Long, Double]] = null
+  var rfModel: RandomForestModel = _
+  var impVarBroadcast: Broadcast[Map[Long, Double]] = _
 
   def fitTrees(nTrees: Int = 500, batchSize: Int = 100) {
 
@@ -90,16 +88,19 @@ case class RFModel(mv: MatrixValue, rfParams: RandomForestParams) {
     // This may be optimized in the future
     val (yMat, cov, completeColIdx) =
       RegressionUtils.getPhenosCovCompleteSamples(mv, Array(responseVarName), Array[String]())
-    // completeColIdx are indexes of the complete samples. These can be used to subsample the entry data
+    // completeColIdx are indexes of the complete samples.
+    // These can be used to subsample the entry data
     // but for now let's just assume that there are no NAs in the labels (and or covariates).
     // TODO: allow for NAs in the labels and/or covariates
     require(completeColIdx.length == mv.nCols,
       "NAs are not currenlty supported in response variable. Filter the data first.")
     val labelVector = yMat(::, 0)
     // TODO: allow for multi class classification
-    if (!labelVector.forall(yi => yi == 0d || yi == 1d))
+    if (!labelVector.forall(yi => yi == 0d || yi == 1d)) {
       fatal(
-          s"For classification random forestlabel must be bool or numeric with all present values equal to 0 or 1")
+          "For classification random forestlabel must be bool or numeric"
+            + " with all present values equal to 0 or 1")
+    }
     val labels = labelVector.map(_.toInt).toArray
 
     // now we somehow need to get to row data

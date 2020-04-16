@@ -12,5 +12,5 @@ class ReusablePrintStream(stream: OutputStream) extends PrintStream(stream) {
 }
 
 object ReusablePrintStream {
-  lazy val stdout = new ReusablePrintStream(System.out)
+  lazy val stdout: ReusablePrintStream = new ReusablePrintStream(System.out)
 }

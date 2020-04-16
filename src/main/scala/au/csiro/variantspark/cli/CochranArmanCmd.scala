@@ -5,6 +5,7 @@ import au.csiro.sparkle.cmd.CmdApp
 import org.kohsuke.args4j.Option
 import au.csiro.pbdava.ssparkle.common.arg4j.AppRunner
 import au.csiro.pbdava.ssparkle.spark.SparkApp
+
 import collection.JavaConverters._
 import au.csiro.variantspark.input.VCFSource
 import au.csiro.variantspark.input.VCFFeatureSource
@@ -35,6 +36,7 @@ import au.csiro.variantspark.stats.CochranArmitageTestScorer
 import au.csiro.variantspark.stats.CochranArmitageTestCalculator
 import au.csiro.variantspark.utils.HdfsPath
 import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
+import org.apache.hadoop.conf.Configuration
 
 class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging with TestArgs {
 
@@ -71,18 +73,17 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
   @Option(name = "-od", required = false,
     usage = "Include important variables data in output file (def=no)",
     aliases = Array("--output-include-data"))
-  val includeData = false
+  val includeData: Boolean = false
 
   @Option(name = "-sp", required = false, usage = "Spark parallelism (def=<default-spark-par>)",
     aliases = Array("--spark-par"))
-  val sparkPar = 0
+  val sparkPar: Int = 0
 
-  @Override
-  def testArgs =
+  override def testArgs: Array[String] =
     Array("-if", "target/getds.parquet", "-it", "parquet", "-ff", "target/features.csv", "-fc",
       "resp", "-od")
 
-  def loadVCF() = {
+  def loadVCF(): VCFFeatureSource = {
     echo(s"Loading header from VCF file: ${inputFile}")
     val vcfSource =
       VCFSource(sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
@@ -91,21 +92,20 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
     VCFFeatureSource(vcfSource)
   }
 
-  def loadCSV() = {
+  def loadCSV(): CsvFeatureSource = {
     echo(s"Loading csv file: ${inputFile}")
     CsvFeatureSource(sc.textFile(inputFile,
         if (sparkPar > 0) sparkPar else sc.defaultParallelism))
   }
 
-  def loadParquet() = {
+  def loadParquet(): ParquetFeatureSource = {
     echo(s"Loading parquet file: ${inputFile}")
     ParquetFeatureSource(inputFile)
   }
 
-  @Override
-  def run(): Unit = {
-    implicit val fs = FileSystem.get(sc.hadoopConfiguration)
-    implicit val hadoopConf = sc.hadoopConfiguration
+  override def run(): Unit = {
+    implicit val fs: FileSystem = FileSystem.get(sc.hadoopConfiguration)
+    implicit val hadoopConf: Configuration = sc.hadoopConfiguration
 
     logDebug(s"Running with filesystem: ${fs}, home: ${fs.getHomeDirectory}")
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
@@ -135,7 +135,8 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
     val variablePreview =
       inputData.map({ case (f, i) => f.label }).take(defaultPreviewSize).toList
 
-    echo(s"Loaded variables: ${dumpListHead(variablePreview, totalVariables)}, took: ${dataLoadingTimer.durationInSec}")
+    echo(s"Loaded variables: ${dumpListHead(variablePreview, totalVariables)}, "
+        + s"  took: ${dataLoadingTimer.durationInSec}")
 
     // discover variable type
     // for now assume it's ordered factor with provided number of levels
@@ -187,9 +188,9 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
         writer.writeRow(header)
         writer.writeAll(topImportantVariables.map({
           case (i, importance) =>
-            List(index(i), importance) ::: (if (includeData)
-                                              importantVariableData(i).toArray.toList
-                                            else Nil)
+            List(index(i), importance) ::: (if (includeData) {
+                                              importantVariableData(i).toList
+                                            } else { Nil })
         }))
     }
   }

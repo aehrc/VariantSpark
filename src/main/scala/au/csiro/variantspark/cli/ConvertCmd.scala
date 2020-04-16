@@ -47,12 +47,10 @@ class ConvertCmd extends ArgsApp with FeatureSourceArgs with Echoable with Loggi
     aliases = Array("--output-type"))
   val outputType: String = null
 
-  @Override
-  def testArgs =
+  override def testArgs: Array[String] =
     Array("-if", "data/chr22_1000.vcf", "-it", "vcf", "-sp", "4", "-of", "target/getds.csv")
 
-  @Override
-  def run(): Unit = {
+  override def run(): Unit = {
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
 
     echo(s"Converting from: ${inputType} to: ${outputType}")

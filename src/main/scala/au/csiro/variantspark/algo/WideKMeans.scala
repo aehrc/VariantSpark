@@ -4,7 +4,7 @@ import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
 
 object WideKMeans {
-  def square(d: Double) = d * d
+  def square(d: Double): Double = d * d
 }
 
 /**
@@ -21,8 +21,8 @@ object WideKMeans {
   *
   *
   *
-  * @run Computes values in each cluster
-  * @assignClusters Assigns the values found in the cluster to an output Array
+  * - run: Computes values in each cluster
+  * - assignClusters: Assigns the values found in the cluster to an output Array
   * @param k the number of desired clusters
   * @param iterations the number of iterations requested
   */

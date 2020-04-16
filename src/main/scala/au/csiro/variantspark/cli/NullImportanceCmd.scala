@@ -62,7 +62,8 @@ class NullImportanceCmd
   val nPermutations: Int = 30
 
   @Option(name = "-pnv", required = false,
-    usage = "Number of top important variables from each permutations to include. Use `0` for all variables (def = 0)",
+    usage = "Number of top important variables from each permutations to include."
+      + " Use `0` for all variables (def = 0)",
     aliases = Array("--permutations-n-variables"))
   val permutationsVarLimit: Int = 0
 
@@ -123,15 +124,13 @@ class NullImportanceCmd
     aliases = Array("--seed"))
   val randomSeed: Long = defRng.nextLong
 
-  @Override
-  def testArgs =
+  override def testArgs: Array[String] =
     Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249",
       "-ro", "-of", "target/null-importances.csv", "-sr", "13", "-pn", "5", "-v", "-ivb", "-ovn",
       "raw")
 
-  @Override
-  def run(): Unit = {
-    implicit val fs = FileSystem.get(sc.hadoopConfiguration)
+  override def run(): Unit = {
+    implicit val fs: FileSystem = FileSystem.get(sc.hadoopConfiguration)
     implicit val hadoopConf: Configuration = sc.hadoopConfiguration
 
     logDebug(s"Running with filesystem: ${fs}, home: ${fs.getHomeDirectory}")
@@ -144,7 +143,8 @@ class NullImportanceCmd
     val totalVariables = inputData.count()
     val variablePreview =
       inputData.map({ case (f, i) => f.label }).take(defaultPreviewSize).toList
-    echo(s"Loaded variables: ${dumpListHead(variablePreview, totalVariables)}, took: ${dataLoadingTimer.durationInSec}")
+    echo(s"Loaded variables: ${dumpListHead(variablePreview, totalVariables)},"
+        + s" took: ${dataLoadingTimer.durationInSec}")
     echoDataPreview()
 
     echo(s"Loading labels from: ${featuresFile}, column: ${featureColumn}")
@@ -162,7 +162,7 @@ class NullImportanceCmd
 
     // For now do it in a loop
     val iterationImportances = Range(0, nPermutations).map { pn =>
-      //TODO: need to actually permutate the labels
+      // TODO: need to actually permutate the labels
       // we can do it in place as a permutatino of a permutation is still a permutation
       // although it might be better to actually get the permutation as oder of indexes
       echo(s"Running permutation ${pn}")
@@ -176,9 +176,9 @@ class NullImportanceCmd
           nTryFraction = if (rfMTry > 0) rfMTry.toDouble / totalVariables else rfMTryFraction))
       val trainingData = inputData
 
-      implicit val rfCallback = new RandomForestCallback() {
-        var totalTime = 0L
-        var totalTrees = 0
+      implicit val rfCallback: RandomForestCallback = new RandomForestCallback() {
+        var totalTime: Long = 0L
+        var totalTrees: Int = 0
         override def onParamsResolved(actualParams: RandomForestParams) {
           echo(s"RF Params: ${actualParams}")
           echo(s"RF Params mTry: ${(actualParams.nTryFraction * totalVariables).toLong}")
@@ -187,9 +187,12 @@ class NullImportanceCmd
           totalTime += elapsedTimeMs
           totalTrees += nTrees
           echo(
-              s"Finished trees: ${totalTrees}, current oobError: ${oobError}, totalTime: ${totalTime / 1000.0} s, avg timePerTree: ${totalTime / (1000.0 * totalTrees)} s")
+              s"Finished trees: ${totalTrees}, current oobError: ${oobError},"
+                + s" totalTime: ${totalTime / 1000.0} s,"
+                + s" avg timePerTree: ${totalTime / (1000.0 * totalTrees)} s")
           echo(
-              s"Last build trees: ${nTrees}, time: ${elapsedTimeMs} ms, timePerTree: ${elapsedTimeMs / nTrees} ms")
+              s"Last build trees: ${nTrees}, time: ${elapsedTimeMs} ms,"
+                + s" timePerTree: ${elapsedTimeMs / nTrees} ms")
 
         }
       }
@@ -197,7 +200,8 @@ class NullImportanceCmd
       val result = rf.batchTrain(trainingData, labels, nTrees, rfBatchSize)
 
       echo(
-          s"Random forest oob accuracy: ${result.oobError}, took: ${treeBuildingTimer.durationInSec} s")
+          s"Random forest oob accuracy: ${result.oobError},"
+            + s" took: ${treeBuildingTimer.durationInSec} s")
 
       val topImportantVariables = limitVariables(
           result.normalizedVariableImportance(importanceNormalizer).toSeq, permutationsVarLimit)
@@ -207,13 +211,13 @@ class NullImportanceCmd
     // now I need to somehow join the output
     // essentially need to transpose a sparse matrix
     // this seem to be available on a SparkML coordinate matrix
-    // actually I do not need to to transpose just build it transposed and convert to indexed row matrix
+    // actually I do not need to to transpose just build it transposed and
+    // convert to indexed row matrix
 
     val importanceMatrix = new CoordinateMatrix(
         sc.parallelize(
             iterationImportances
-              .flatMap(ii => ii._2.map(vi => new MatrixEntry(vi._1, ii._1, vi._2)))
-              .toSeq))
+              .flatMap(ii => ii._2.map(vi => MatrixEntry(vi._1, ii._1, vi._2)))))
       .toIndexedRowMatrix()
 
     val mappedOutput = importanceMatrix.rows

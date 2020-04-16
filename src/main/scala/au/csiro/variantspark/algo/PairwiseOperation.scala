@@ -10,11 +10,11 @@ import org.apache.spark.mllib.linalg.distributed.IndexedRow
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.SparkContext
 
-case class PairWiseAggregator(val metric: AggregablePairwiseOperation) {
+case class PairWiseAggregator(metric: AggregablePairwiseOperation) {
 
   def seqOp(result: Array[Long], t: Array[Byte]): Array[Long] = {
     var index = 0
-    for (r <- Range(0, t.length); c <- Range(0, r + 1)) {
+    for (r <- t.indices; c <- Range(0, r + 1)) {
       result(index) += metric.unitOp(t(r), t(c))
       index += 1
     }
@@ -22,7 +22,7 @@ case class PairWiseAggregator(val metric: AggregablePairwiseOperation) {
   }
 
   def combOp(r1: Array[Long], r2: Array[Long]): Array[Long] = {
-    for (i <- Range(0, r1.length)) { r1(i) += r2(i) }
+    for (i <- r1.indices) { r1(i) += r2(i) }
     r1
   }
 }
@@ -60,11 +60,11 @@ trait AggregablePairwiseOperation extends PairwiseOperation with Serializable {
 
 object PairwiseOperation {
 
-  def squareForm(upperTriang: Array[Double])(r: Int, c: Int) = {
+  def squareForm(upperTriang: Array[Double])(r: Int, c: Int): Double = {
     if (c >= r) upperTriang(c * (c + 1) / 2 + r) else upperTriang(r * (r + 1) / 2 + c)
   }
 
-  def sizeFromUpperDiagLenght(upperDiagSize: Int) = {
+  def sizeFromUpperDiagLenght(upperDiagSize: Int): Int = {
     val size = ((Math.sqrt(1.0 + 8 * upperDiagSize) - 1.0) / 2.0).toInt
     require(upperDiagSize == size * (size + 1) / 2)
     size

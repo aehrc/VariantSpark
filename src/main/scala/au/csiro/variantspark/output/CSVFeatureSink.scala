@@ -8,7 +8,7 @@ import java.io.File
 /**
   * This only works for smallish datasets (used local files)
   */
-case class CSVFeatureSink(val fileName: String) extends FeatureSink {
+case class CSVFeatureSink(fileName: String) extends FeatureSink {
 
   def save(fs: FeatureSource) {
     CSVUtils.withFile(new File(fileName)) { csvWriter =>

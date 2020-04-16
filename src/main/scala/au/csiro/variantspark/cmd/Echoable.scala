@@ -9,9 +9,9 @@ trait Echoable {
   @Option(name = "-s", required = false, usage = "Be silent", aliases = Array("--silent"))
   val beSilent: Boolean = false
 
-  def isSilent = beSilent
-  def isEcho = !isSilent
-  def isVerbose = !beSilent && beVerbose
+  def isSilent: Boolean = beSilent
+  def isEcho: Boolean = !isSilent
+  def isVerbose: Boolean = !beSilent && beVerbose
 
   def warn(msg: => String) {
     echo(s"Warning: ${msg}")

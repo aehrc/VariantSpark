@@ -10,7 +10,8 @@ object HailHipsterApp {
 //  def main(args:Array[String]) = {
 //    println("Hello")
 //    val hc = HailContext()
-//    val table = hc.importTable("data/hipsterIndex/hipster_labels.txt", keyNames = Array("samples"), separator=",",
+//    val table = hc.importTable("data/hipsterIndex/hipster_labels.txt",
+//    keyNames = Array("samples"), separator=",",
 //          types = Map("label" -> TInt, "score" -> TDouble))
 //    println("Table signature: " + table.signature)
 //

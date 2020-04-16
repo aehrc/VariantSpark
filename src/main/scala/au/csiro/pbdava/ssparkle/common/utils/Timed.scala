@@ -1,12 +1,12 @@
 package au.csiro.pbdava.ssparkle.common.utils
 
 case class Timer() {
-  val startTime = System.currentTimeMillis()
-  lazy val duration = System.currentTimeMillis() - startTime
-  def durationInSec = duration / 1000.0
+  val startTime: Long = System.currentTimeMillis()
+  lazy val duration: Long = System.currentTimeMillis() - startTime
+  def durationInSec: Double = duration / 1000.0
 }
 
-case class TimedResult[T](val result: T, val elapsedTime: Long) {
+case class TimedResult[T](result: T, elapsedTime: Long) {
   def withResult(f: T => Unit): TimedResult[T] = {
     f(result)
     this
@@ -16,7 +16,7 @@ case class TimedResult[T](val result: T, val elapsedTime: Long) {
     this
   }
 
-  def report(msg: => String) = {
+  def report(msg: => String): TimedResult[T] = {
     println(s"${msg} time: ${elapsedTime}")
     this
   }

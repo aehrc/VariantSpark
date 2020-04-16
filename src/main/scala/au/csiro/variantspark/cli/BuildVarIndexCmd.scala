@@ -55,11 +55,10 @@ class BuildVarIndexCmd extends ArgsApp with FeatureSourceArgs with Logging with 
     aliases = Array("--output-index"))
   val outputIndex: String = null
 
-  @Override
-  def testArgs = Array("-if", "data/chr22_1000.vcf", "-oi", "target/ch22-idx.ser")
+  override def testArgs: Array[String] =
+    Array("-if", "data/chr22_1000.vcf", "-oi", "target/ch22-idx.ser")
 
-  @Override
-  def run(): Unit = {
+  override def run(): Unit = {
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
     echo(s"Building full variable index")
 
@@ -67,7 +66,7 @@ class BuildVarIndexCmd extends ArgsApp with FeatureSourceArgs with Logging with 
     featureSource.features
       .zipWithIndex()
       .map(t => (t._2, t._1.label))
-      .foreach(indexAccumulator.add(_))
+      .foreach(indexAccumulator.add)
 
     val index = indexAccumulator.value
 

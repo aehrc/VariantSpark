@@ -14,16 +14,17 @@ class Projector(indexSet: Set[Int], include: Boolean = true) extends Serializabl
     (for (i <- a.indices if indexSet.contains(i) == include) yield a(i)).toArray
   }
 
-  def inverted = new Projector(indexSet, !include)
+  def inverted: Projector = new Projector(indexSet, !include)
 
-  def toPair = (this, this.inverted)
+  def toPair: (Projector, Projector) = (this, this.inverted)
 
-  def indexes = indexSet
+  def indexes: Set[Int] = indexSet
 }
 
 object Projector {
 
-  def apply(indexes: Array[Int], include: Boolean = true) = new Projector(indexes.toSet, include)
+  def apply(indexes: Array[Int], include: Boolean = true): Projector =
+    new Projector(indexes.toSet, include)
 
   def subsample(v: Vector, fraction: Double): Projector =
     Projector(Sampling.subsampleFraction(v.size, fraction)(defRng))
@@ -51,6 +52,8 @@ object Projector {
 }
 
 object RDDProjections {
-  implicit def toVectorRDD(rdd: RDD[Vector]) = new VectorRDDFunction(rdd)
-  implicit def toIndexedVectorRDD(rdd: RDD[(Vector, Long)]) = new IndexedVectorRDDFunction(rdd)
+  implicit def toVectorRDD(rdd: RDD[Vector]): VectorRDDFunction =
+    new VectorRDDFunction(rdd)
+  implicit def toIndexedVectorRDD(rdd: RDD[(Vector, Long)]): IndexedVectorRDDFunction =
+    new IndexedVectorRDDFunction(rdd)
 }

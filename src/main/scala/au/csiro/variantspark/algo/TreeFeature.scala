@@ -44,11 +44,11 @@ trait TreeRepresentationFactory {
   * Helper methods for {{RDD[TreeFeature]}}
   */
 class TreeFeatureRDDFunction[V](val rdd: RDD[TreeFeature]) extends AnyVal {
-  def size = rdd.first.size
+  def size: Int = rdd.first.size
   def collectAtIndexes(indexes: Set[Long]): Map[Long, Data] = withBroadcast(rdd)(indexes) {
     br_indexes =>
       rdd
-        .filter({ case tf => br_indexes.value.contains(tf.index) })
+        .filter(tf => br_indexes.value.contains(tf.index))
         .map(tf => (tf.index, tf.toData))
         .collectAsMap()
         .toMap

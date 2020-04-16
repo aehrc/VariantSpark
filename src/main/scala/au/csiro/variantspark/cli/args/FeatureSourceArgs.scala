@@ -22,8 +22,8 @@ trait FeatureSourceFactory {
 }
 
 object VCFFeatureSourceFactory {
-  val DEF_IS_BIALLELIC = false
-  val DEF_SEPARATOR = "_"
+  val DEF_IS_BIALLELIC: Boolean = false
+  val DEF_SEPARATOR: String = "_"
 }
 
 case class VCFFeatureSourceFactory(inputFile: String, isBiallelic: Option[Boolean],
@@ -42,7 +42,7 @@ case class VCFFeatureSourceFactory(inputFile: String, isBiallelic: Option[Boolea
 }
 
 object CSVFeatureSourceFactory {
-  val DEF_VARIABLE_TYPE = ContinuousVariable
+  val DEF_VARIABLE_TYPE: ContinuousVariable.type = ContinuousVariable
 }
 
 case class CSVFeatureSourceFactory(inputFile: String, defVariableType: Option[String],
@@ -54,7 +54,8 @@ case class CSVFeatureSourceFactory(inputFile: String, defVariableType: Option[St
     val inputVariableType =
       defVariableType.map(VariableType.fromString).getOrElse(DEF_VARIABLE_TYPE)
     echo(
-        s"Default input variable type is ${inputVariableType}, variable type file is ${variableTypeFile}")
+        s"Default input variable type is ${inputVariableType},"
+          + s" variable type file is ${variableTypeFile}")
     val typeRDD = variableTypeFile.map(fileName => sparkArgs.sc.textFile(fileName))
     val dataRDD = sparkArgs.textFile(inputFile)
     CsvFeatureSource(dataRDD, inputVariableType, typeRDD)
@@ -80,8 +81,8 @@ case class StdCSVFeatureSourceFactory(inputFile: String)
 }
 
 class CompositeFeatueSource(featureSources: Seq[FeatureSource]) extends FeatureSource {
-  require(!featureSources.isEmpty)
-  override lazy val sampleNames = {
+  require(featureSources.nonEmpty)
+  override lazy val sampleNames: List[String] = {
     val headSampleNames = featureSources.head.sampleNames
     require(featureSources.tail.forall(_.sampleNames == headSampleNames))
     headSampleNames
@@ -106,7 +107,7 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable {
   import org.json4s._
   import org.json4s.jackson.JsonMethods._
   import org.json4s.JsonDSL._
-  implicit val formats = DefaultFormats
+  implicit val formats: DefaultFormats.type = DefaultFormats
 
   @ArgsOption(name = "-if", required = false, usage = "Path to input file or directory",
     aliases = Array("--input-file"))
@@ -118,7 +119,8 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable {
   val inputType: String = "vcf"
 
   @ArgsOption(name = "-io", required = false,
-    usage = "a JSON object with the additional options for the input file type (depends on input file type)",
+    usage = "a JSON object with the additional options for the input file type "
+      + "(depends on input file type)",
     aliases = Array("--input-options"))
   val inputOptions: String = null
 
@@ -139,12 +141,12 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable {
   def featureSourceFactory(inputJSON: JArray): FeatureSourceFactory = {
     val sourceFactories = inputJSON.children.map(featureSourceFactory)
     CompositeFeatureSourceFactory(
-        sourceFactories.foldLeft(ArrayBuffer[FeatureSourceFactory]())(_ += _).toSeq)
+        sourceFactories.foldLeft(ArrayBuffer[FeatureSourceFactory]())(_ += _))
   }
 
   def featureSourceFactory(inputJSON: JObject): FeatureSourceFactory = {
     verbose(s"Input Spec is : ${inputJSON}")
-    val inputType = (inputJSON \ "type")
+    val inputType = inputJSON \ "type"
     inputType match {
       case JString("csv") => inputJSON.extract[CSVFeatureSourceFactory]
       case JString("stdcsv") => inputJSON.extract[StdCSVFeatureSourceFactory]
@@ -165,13 +167,18 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable {
     featureSourceFactory(inputSpec)
   }
 
-  lazy val featureSource = featureSourceFactory.createSource(this)
+  lazy val featureSource: FeatureSource = featureSourceFactory.createSource(this)
   def echoDataPreview() {
     if (isVerbose) {
       verbose("Data preview:")
       featureSource.features
         .take(defaultPreviewSize)
-        .foreach(f => verbose(s"${f.label}:${f.variableType}:${dumpList(f.valueAsStrings, longPreviewSize)} (${f.getClass.getName})"))
+        .foreach(
+            f =>
+              verbose(
+                  s"${f.label}:${f.variableType}:"
+                    + s"${dumpList(f.valueAsStrings, longPreviewSize)}"
+                    + s"(${f.getClass.getName})"))
     }
   }
 

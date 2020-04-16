@@ -13,9 +13,9 @@ object Test {
     def canSplit: Boolean = false
   }
 
-  def inner[V](v: V)(implicit s: Splitable[V]) = s.canSplit
+  def inner[V](v: V)(implicit s: Splitable[V]): Boolean = s.canSplit
 
-  def test[V](v: V)(implicit s: Splitable[V]) = inner(v)
+  def test[V](v: V)(implicit s: Splitable[V]): Boolean = inner(v)
 
   def main(argv: Array[String]) {
     println(test(1))

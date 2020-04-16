@@ -31,11 +31,11 @@ trait ModelOutputArgs extends SparkArgs with Echoable {
     aliases = Array("--model-file-format"))
   val modelFileFormat: String = "java"
 
-  def requiresFullIndex = modelFile != null
+  def requiresFullIndex: Boolean = modelFile != null
 
   def saveModelJson(rfModel: RandomForestModel, variableIndex: Map[Long, String]) {
     implicit val hadoopConf: Configuration = sc.hadoopConfiguration
-    implicit val formats = Serialization.formats(NoTypeHints)
+    implicit val formats: AnyRef with Formats = Serialization.formats(NoTypeHints)
     LoanUtils.withCloseable(new OutputStreamWriter(HdfsPath(modelFile).create())) { objectOut =>
       writePretty(new ModelConverter(variableIndex).toExternal(rfModel), objectOut)
     }

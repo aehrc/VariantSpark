@@ -3,9 +3,11 @@ package au.csiro.variantspark.input
 import com.github.tototoshi.csv.{CSVFormat, CSVParser, DefaultCSVFormat}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
+
 import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.Accumulable
 import org.apache.spark.util.AccumulatorV2
+
 import scala.collection.mutable.{Map => MutableMap}
 import au.csiro.variantspark.data.VariableType
 import au.csiro.variantspark.data.ContinuousVariable
@@ -13,11 +15,12 @@ import au.csiro.variantspark.data.Feature
 import au.csiro.variantspark.data.FeatureBuilder
 import au.csiro.variantspark.data.DataBuilder
 import au.csiro.variantspark.data.StdFeature
+import org.apache.spark.broadcast.Broadcast
 
 class MapAccumulator
     extends AccumulatorV2[(Int, Array[String]), Array[String]] {
 
-  val buffer = ArrayBuffer[Array[String]]()
+  val buffer: ArrayBuffer[Array[String]] = ArrayBuffer[Array[String]]()
 
   def add(v: (Int, Array[String])): Unit = {
     println("Add: " + v._1 + "," + v._2.toList)
@@ -29,7 +32,7 @@ class MapAccumulator
   }
 
   def isZero: Boolean = {
-    return buffer.isEmpty
+    buffer.isEmpty
   }
 
   def reset(): Unit = {
@@ -39,14 +42,14 @@ class MapAccumulator
   def copy(): AccumulatorV2[(Int, Array[String]), Array[String]] = {
     val copy = new MapAccumulator()
     buffer.copyToBuffer(copy.buffer)
-    return copy
+    copy
   }
 
   def merge(other: AccumulatorV2[(Int, Array[String]), Array[String]]): Unit = {
     other match {
       case otherMap: MapAccumulator =>
         println("Merge: " + buffer + ", " + otherMap.buffer)
-        for (i <- 0 until otherMap.buffer.size) {
+        for (i <- otherMap.buffer.indices) {
           if (i < buffer.size) {
             if (otherMap.buffer(i) != null) {
               buffer(i) = otherMap.buffer(i)
@@ -81,10 +84,10 @@ case class CsvStdFeatureSource[V](data: RDD[String],
     defaultType: VariableType = ContinuousVariable, csvFormat: CSVFormat = DefaultCSVFormatSpec)
     extends FeatureSource {
 
-  val variableNames = new CSVParser(csvFormat).parseLine(data.first).get.tail
-  val br_variableNames = data.context.broadcast(variableNames)
+  val variableNames: List[String] = new CSVParser(csvFormat).parseLine(data.first).get.tail
+  val br_variableNames: Broadcast[List[String]] = data.context.broadcast(variableNames)
 
-  lazy val transposedData = {
+  lazy val transposedData: RDD[(String, Array[String])] = {
     // expects data in coma separated format of
     // <SampleId>  , VarName1, VarName2,....
     // SampleName1, v_1_1,   v_1_2, ...
@@ -108,7 +111,8 @@ case class CsvStdFeatureSource[V](data: RDD[String],
                   case sampleId :: sampleValues =>
                     sampleNames.append(sampleId)
                     sampleValues.zipWithIndex.foreach({
-                      case (v, i) => // transpose: assign the values of a sample to corresponding variables
+                      case (v, i) => // transpose: assign the values of a sample to
+                        // corresponding variables
                         variableValues(i).append(v)
                     })
                 })
@@ -124,11 +128,12 @@ case class CsvStdFeatureSource[V](data: RDD[String],
       .mapValues(variableValues =>
           variableValues
             .foldLeft(ArrayBuffer[String]())(_ ++= _)
-            .toArray) // combine values from this variable coming from different partitions (samples)
+            .toArray) // combine values from this variable coming
+      // from different partitions (samples)
       .sortBy(_._1) // sort by variable name
   }
 
-  //TODO: [Peformance] It would be better (especiall for larger files)
+  // TODO: [Peformance] It would be better (especiall for larger files)
   // to collect sample names in the transposition calculation above
   // for smaller files (which is how we intend to use initially this should not
   // be an issue though
@@ -146,10 +151,10 @@ case class CsvStdFeatureSource[V](data: RDD[String],
 
   def features: RDD[Feature] = featuresAs[Vector]
 
-  def featuresAs[V](implicit cr: DataBuilder[V]): RDD[Feature] = {
+  def featuresAs[T](implicit cr: DataBuilder[T]): RDD[Feature] = {
     transposedData.map({
       case (varId, values) =>
-        StdFeature.from[V](varId, defaultType, values.toList)
+        StdFeature.from[T](varId, defaultType, values.toList)
     })
   }
 }

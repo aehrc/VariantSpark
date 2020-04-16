@@ -24,9 +24,9 @@ class NoisyEffectLabelGenerator(featureSource: FeatureSource)(zeroLevel: Int,
     seed: Long = 13L)
     extends LabelSource with Logging {
 
-  def logistic(d: Double) = 1.0 / (1.0 + Math.exp(-d))
+  def logistic(d: Double): Double = 1.0 / (1.0 + Math.exp(-d))
 
-  lazy val rng = new XorShift1024StarRandomGenerator(seed)
+  lazy val rng: XorShift1024StarRandomGenerator = new XorShift1024StarRandomGenerator(seed)
 
   // TODO: (Refactoring) make it a lazy vals
   var baseContinuousResponse: DenseVector[Double] = _
@@ -34,9 +34,9 @@ class NoisyEffectLabelGenerator(featureSource: FeatureSource)(zeroLevel: Int,
   var noisyContinuousResponse: DenseVector[Double] = _
   var noisyContinuousStats: MeanAndVariance = _
 
-  def foldAdditive(nSamples: Int, rdd: RDD[DenseVector[Double]]) =
+  def foldAdditive(nSamples: Int, rdd: RDD[DenseVector[Double]]): DenseVector[Double] =
     rdd.fold(DenseVector.zeros[Double](nSamples))(_ += _)
-  def foldMulitiplicative(nSamples: Int, rdd: RDD[DenseVector[Double]]) = {
+  def foldMulitiplicative(nSamples: Int, rdd: RDD[DenseVector[Double]]): DenseVector[Double] = {
     rdd
       .map(v => v.map(d => if (d == 0.0) 1.0 else d))
       .fold(DenseVector.ones[Double](nSamples))(_ *= _)
@@ -55,8 +55,8 @@ class NoisyEffectLabelGenerator(featureSource: FeatureSource)(zeroLevel: Int,
               val normalizer = DenseVector.fill(nSamples)(zeroLevelValue)
               it.map(
                   f =>
-                    (DenseVector(f.valueAsVector.toArray) -= normalizer) *= (
-                        br_effects.value(f.label)))
+                    (DenseVector(f.valueAsVector.toArray) -= normalizer)
+                      *= br_effects.value(f.label))
           }
         if (multiplicative) foldMulitiplicative(nSamples, rdd) else foldAdditive(nSamples, rdd)
     }
@@ -67,11 +67,13 @@ class NoisyEffectLabelGenerator(featureSource: FeatureSource)(zeroLevel: Int,
 
     logDebug(s"Continuous mav: ${baseContinuousStats}")
 
-    // based on the variability of the base response we can calculate the sigma of the desired noise level
+    // based on the variability of the base response we can calculate the sigma
+    // of the desired noise level
     val actualNoiseVar =
       baseContinuousStats.variance * (1 - fractionVarianceExplained) / fractionVarianceExplained
     logDebug(
-        s"Signal varinace: ${baseContinuousStats.variance}, fractio to explain: ${fractionVarianceExplained}")
+        s"Signal varinace: ${baseContinuousStats.variance}, "
+          + s"fractio to explain: ${fractionVarianceExplained}")
     logDebug(s"Actual noise variance: ${actualNoiseVar}")
 
     val actualNoiseSigma = Math.sqrt(actualNoiseVar)
@@ -102,7 +104,7 @@ class NoisyEffectLabelGenerator(featureSource: FeatureSource)(zeroLevel: Int,
 object NoisyEffectLabelGenerator {
   def apply(featureSource: FeatureSource)(zeroLevel: Int, effects: Map[String, Double],
       fractionVarianceExplained: Double, classThresholdPercentile: Double = 0.75,
-      multiplicative: Boolean = false, seed: Long = 13L) =
+      multiplicative: Boolean = false, seed: Long = 13L): NoisyEffectLabelGenerator =
     new NoisyEffectLabelGenerator(featureSource)(zeroLevel, effects, fractionVarianceExplained,
       classThresholdPercentile, multiplicative, seed)
 }

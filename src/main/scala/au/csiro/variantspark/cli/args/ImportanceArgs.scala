@@ -1,15 +1,19 @@
 package au.csiro.variantspark.cli.args
 
 import org.kohsuke.args4j.Option
-import au.csiro.variantspark.algo.To100ImportanceNormalizer
-import au.csiro.variantspark.algo.RawVarImportanceNormalizer
+import au.csiro.variantspark.algo.{
+  RawVarImportanceNormalizer,
+  To100ImportanceNormalizer,
+  VarImportanceNormalizer
+}
 
 trait ImportanceArgs {
 
   // output options
-//  @Option(name="-of", required=false, usage="Path to output file (def = stdout)", aliases=Array("--output-file") )
-//  val outputFile:String = null
-//
+  //  @Option(name="-of", required=false, usage="Path to output file
+  //  (def = stdout)", aliases=Array("--output-file") )
+  //  val outputFile:String = null
+  //
 
   @Option(name = "-ic", required = false,
     usage = "If the impurity importance should be corrected (see AIR) (def=false)",
@@ -17,7 +21,8 @@ trait ImportanceArgs {
   val correctImportance: Boolean = false
 
   @Option(name = "-isr", required = false,
-    usage = "The radom seed used to permutate samples for AIR. Use 0 to use the global random seed (def=0)",
+    usage = "The radom seed used to permutate samples for AIR."
+      + " Use 0 to use the global random seed (def=0)",
     aliases = Array("--importance-random-seed"))
   val airRandomSeed: Long = 0L
 
@@ -30,12 +35,13 @@ trait ImportanceArgs {
     aliases = Array("--output-normalization"))
   val outputNormalization: String = "raw"
 
-  def importanceNormalizer = outputNormalization match {
+  def importanceNormalizer: VarImportanceNormalizer = outputNormalization match {
     case "to100" => To100ImportanceNormalizer
     case "raw" => RawVarImportanceNormalizer
     case _ =>
       throw new IllegalArgumentException(
-          s"Unrecognized normalization type: `${outputNormalization}`. Valid options are `to100`, `raw`")
+          s"Unrecognized normalization type: `${outputNormalization}`."
+            + s" Valid options are `to100`, `raw`")
   }
 
   def limitVariables(importances: Seq[(Long, Double)], limit: Int): Seq[(Long, Double)] = {
