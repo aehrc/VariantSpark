@@ -26,7 +26,7 @@ object Gini {
       totalCounts: Array[Int]): (Double, Double, Double) = {
     val (leftGini, leftTotal) = giniImpurityWithTotal(leftCounts)
     val (rightGini, rightTotal) =
-      giniImpurityWithTotal(totalCounts.zip(leftCounts).map(t => t._1 - t._2).toArray)
+      giniImpurityWithTotal(totalCounts.zip(leftCounts).map(t => t._1 - t._2))
     (leftGini, rightGini,
       (leftGini * leftTotal + rightGini * rightTotal) / (leftTotal + rightTotal))
   }

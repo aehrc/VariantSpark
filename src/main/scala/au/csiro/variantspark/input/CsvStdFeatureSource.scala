@@ -32,7 +32,7 @@ class MapAccumulator
   }
 
   def isZero: Boolean = {
-    return buffer.isEmpty
+    buffer.isEmpty
   }
 
   def reset(): Unit = {
@@ -42,14 +42,14 @@ class MapAccumulator
   def copy(): AccumulatorV2[(Int, Array[String]), Array[String]] = {
     val copy = new MapAccumulator()
     buffer.copyToBuffer(copy.buffer)
-    return copy
+    copy
   }
 
   def merge(other: AccumulatorV2[(Int, Array[String]), Array[String]]): Unit = {
     other match {
       case otherMap: MapAccumulator =>
         println("Merge: " + buffer + ", " + otherMap.buffer)
-        for (i <- 0 until otherMap.buffer.size) {
+        for (i <- otherMap.buffer.indices) {
           if (i < buffer.size) {
             if (otherMap.buffer(i) != null) {
               buffer(i) = otherMap.buffer(i)
@@ -151,10 +151,10 @@ case class CsvStdFeatureSource[V](data: RDD[String],
 
   def features: RDD[Feature] = featuresAs[Vector]
 
-  def featuresAs[V](implicit cr: DataBuilder[V]): RDD[Feature] = {
+  def featuresAs[T](implicit cr: DataBuilder[T]): RDD[Feature] = {
     transposedData.map({
       case (varId, values) =>
-        StdFeature.from[V](varId, defaultType, values.toList)
+        StdFeature.from[T](varId, defaultType, values.toList)
     })
   }
 }

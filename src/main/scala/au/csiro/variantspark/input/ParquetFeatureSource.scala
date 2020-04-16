@@ -13,7 +13,7 @@ case class ParquetFeatureSource(inputPath: String)(implicit sc: SparkContext)
 
   override lazy val sampleNames: List[String] = {
     val pathToColumns = new Path(inputPath, "_columns")
-    val fs = FileSystem.get(pathToColumns.toUri(), sc.hadoopConfiguration)
+    val fs = FileSystem.get(pathToColumns.toUri, sc.hadoopConfiguration)
     SerialUtils.read(fs.open(pathToColumns))
   }
 

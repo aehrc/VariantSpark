@@ -35,8 +35,8 @@ class ModelConverter(varIndex: Map[Long, String]) {
 
   def toExternal(rfModel: RandomForestModel): Forest = {
     val oobErrors =
-      if (rfModel.oobErrors != null && !rfModel.oobErrors.isEmpty && !rfModel.oobErrors.head
-            .isNaN()) {
+      if (rfModel.oobErrors != null && rfModel.oobErrors.nonEmpty
+          && !rfModel.oobErrors.head.isNaN) {
         Some(rfModel.oobErrors)
       } else {
         None

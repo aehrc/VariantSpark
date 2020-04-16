@@ -21,7 +21,7 @@ class CochranArmitageTestCalculator(val labels: Array[Int], val weights: Array[D
 }
 
 object CochranArmitageTestCalculator {
-  val WEIGHT_TREND = CochranArmitageTest.WEIGHT_TREND
+  val WEIGHT_TREND: Array[Double] = CochranArmitageTest.WEIGHT_TREND
 }
 
 class CochranArmitageTestScorer(val labels: Array[Int], val weights: Array[Double],

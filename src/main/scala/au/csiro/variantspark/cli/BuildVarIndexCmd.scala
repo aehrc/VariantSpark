@@ -66,7 +66,7 @@ class BuildVarIndexCmd extends ArgsApp with FeatureSourceArgs with Logging with 
     featureSource.features
       .zipWithIndex()
       .map(t => (t._2, t._1.label))
-      .foreach(indexAccumulator.add(_))
+      .foreach(indexAccumulator.add)
 
     val index = indexAccumulator.value
 

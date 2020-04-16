@@ -19,11 +19,11 @@ class SplitImpurity(var left: Double, var right: Double) {
   */
 trait ImpurityAggregator {
   def reset()
-  def isEmpty(): Boolean
+  def isEmpty: Boolean
   def add(other: ImpurityAggregator)
   def sub(other: ImpurityAggregator)
-  def getValue(): Double
-  def getCount(): Int
+  def getValue: Double
+  def getCount: Int
   def splitValue(other: ImpurityAggregator, out: SplitImpurity): Double
 }
 

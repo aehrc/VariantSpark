@@ -189,7 +189,7 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
         writer.writeAll(topImportantVariables.map({
           case (i, importance) =>
             List(index(i), importance) ::: (if (includeData) {
-                                              importantVariableData(i).toArray.toList
+                                              importantVariableData(i).toList
                                             } else { Nil })
         }))
     }

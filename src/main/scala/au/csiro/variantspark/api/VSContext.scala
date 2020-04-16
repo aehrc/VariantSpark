@@ -11,16 +11,6 @@ import au.csiro.variantspark.input.DefaultCSVFormatSpec
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.SparkContext
 
-/**
-  * A class to represent an instance of the variant-spark context, or spark sql context
-  *
-  * @constructor Create a new `VSContext` by specifying the `SparkSession` and `sparkPar`
-  *
-  * @param spark The spark session.
-  * @param sparkPar The number of partitions in the the spark session.
-  *
-  * @example class VSContext(val spark:SparkSession, val sparkPar:Int=0)
-  */
 trait SqlContextHolder {
   def sqlContext: SQLContext
 }
@@ -70,7 +60,7 @@ class VSContext(val spark: SparkSession) extends SqlContextHolder {
     importVCF(inputFile)
 
   @deprecated
-  def labelSource: (String, String) => CsvLabelSource = loadLabel _
+  def labelSource: (String, String) => CsvLabelSource = loadLabel
 }
 
 object VSContext {

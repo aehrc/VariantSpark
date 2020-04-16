@@ -57,7 +57,7 @@ class PairWiseDistanceCmd extends ArgsApp with FeatureSourceArgs with Logging wi
     echo(s"Calculating pair wise distance: ${metric}")
     val data = featureSource.features.map(_.valueAsByteArray)
     echoDataPreview()
-    val noOfSamples = data.first.size
+    val noOfSamples = data.first.length
     val resultAsMatrix = metric.compute(data).toMatrix
     val sampleNames = featureSource.sampleNames
     CSVUtils.withFile(new File(outputFile)) { writer =>

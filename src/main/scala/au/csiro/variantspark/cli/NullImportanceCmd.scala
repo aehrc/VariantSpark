@@ -217,8 +217,7 @@ class NullImportanceCmd
     val importanceMatrix = new CoordinateMatrix(
         sc.parallelize(
             iterationImportances
-              .flatMap(ii => ii._2.map(vi => new MatrixEntry(vi._1, ii._1, vi._2)))
-              .toSeq))
+              .flatMap(ii => ii._2.map(vi => MatrixEntry(vi._1, ii._1, vi._2)))))
       .toIndexedRowMatrix()
 
     val mappedOutput = importanceMatrix.rows

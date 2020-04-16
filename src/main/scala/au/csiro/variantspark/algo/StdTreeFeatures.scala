@@ -21,8 +21,8 @@ import au.csiro.variantspark.algo.split.JOrderedFastIndexedSplitter
 class StdContinousTreeFeature(val label: String, val index: Long, continousData: Array[Double])
     extends TreeFeature {
   def variableType: VariableType = ContinuousVariable
-  def toData: Data = new VectorData(Vectors.dense(continousData))
-  override def size: Int = continousData.size
+  def toData: Data = VectorData(Vectors.dense(continousData))
+  override def size: Int = continousData.length
   override def at(i: Int): Double = continousData(i)
   override def createSplitter(impCalc: IndexedSplitAggregator): IndexedSplitter =
     new JNaiveContinousIndexedSplitter(impCalc, continousData)
@@ -36,8 +36,8 @@ class SmallOrderedTreeFeature(val label: String, val index: Long, orderedData: A
     nLevels: Int)
     extends TreeFeature with FastSplitterProvider {
   def variableType: VariableType = BoundedOrdinalVariable(nLevels)
-  def toData: Data = new ByteArrayData(orderedData)
-  override def size: Int = orderedData.size
+  def toData: Data = ByteArrayData(orderedData)
+  override def size: Int = orderedData.length
   override def at(i: Int): Double = orderedData(i).toDouble
   override def createSplitter(impCalc: IndexedSplitAggregator): IndexedSplitter =
     new JOrderedIndexedSplitter(impCalc, orderedData, nLevels)
@@ -56,7 +56,7 @@ class SmallOrderedTreeFeature(val label: String, val index: Long, orderedData: A
 case object DefTreeRepresentationFactory extends TreeRepresentationFactory {
   def createRepresentation(f: Feature, index: Long): TreeFeature = {
     f.variableType match {
-      case BoundedOrdinalVariable(nLevels) if (nLevels < 127) =>
+      case BoundedOrdinalVariable(nLevels) if nLevels < 127 =>
         new SmallOrderedTreeFeature(f.label, index, f.data.valueAsByteArray, nLevels)
       case ContinuousVariable =>
         new StdContinousTreeFeature(f.label, index, f.data.valueAsVector.toArray)

@@ -32,7 +32,7 @@ object Sampling {
       throw new RuntimeException("Sample size greater then sample len")
     }
     val rdg = new RandomDataGenerator(rg)
-    return if (withReplacement) {
+    if (withReplacement) {
       Array.fill[Int](sampleSize)(rdg.nextInt(0, size - 1))
     } else { rdg.nextPermutation(size, sampleSize) }
   }

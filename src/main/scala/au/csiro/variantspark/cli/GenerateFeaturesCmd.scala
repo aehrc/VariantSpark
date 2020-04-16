@@ -69,7 +69,7 @@ class GenerateFeaturesCmd extends ArgsApp with SparkApp with Echoable with Loggi
           + s" samples: ${nSamples}, levels:${nLevels}")
     verbose(s"Random seed is: ${randomSeed}")
 
-    val generator = new OrdinalFeatureGenerator(nLevels = nLevels, nSamples = nSamples,
+    val generator = OrdinalFeatureGenerator(nLevels = nLevels, nSamples = nSamples,
       nVariables = nVariables, seed = randomSeed, sparkPar = sparkPar)
 
     echo(s"Saving output to ${outputFile}")

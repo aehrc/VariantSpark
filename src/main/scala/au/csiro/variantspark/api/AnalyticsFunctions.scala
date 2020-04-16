@@ -35,7 +35,7 @@ class AnalyticsFunctions(val featureSource: FeatureSource) extends AnyVal {
   /**
     * Computes a pairwise operation on samples.
     *
-    * @param opeataion: a pairwise operation.
+    * @param operation: a pairwise operation.
     *
     * @return [[au.csiro.variantspark.algo.LowerTriangMatrix]] lower triangular
     *        matrix with the result of the
@@ -53,7 +53,7 @@ class AnalyticsFunctions(val featureSource: FeatureSource) extends AnyVal {
     * - `sharedAltAlleleCount`: count of shared alternative alleles
     * - `anySharedAltAlleleCount`: count of variants that share at least one alternative allele
     *
-    * @param  operation_name: name of the operation. One of `manhattan`, `euclidean`,
+    * @param  operationName: name of the operation. One of `manhattan`, `euclidean`,
     *     `sharedAltAlleleCount`, `anySharedAltAlleleCount`
     *
     *  @return [[au.csiro.variantspark.algo.LowerTriangMatrix]] lower triangular matrix

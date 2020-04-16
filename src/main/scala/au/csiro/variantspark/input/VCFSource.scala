@@ -14,7 +14,7 @@ class DelegatingLineIterator(val it: Iterator[String])
 }
 
 class ExtendedVCFCodec extends VCFCodec {
-  def getVersion(): VCFHeaderVersion = this.version
+  def getVersion: VCFHeaderVersion = this.version
 }
 
 case class HeaderAndVersion(header: VCFHeader, version: VCFHeaderVersion)
@@ -26,7 +26,7 @@ class VCFSource(val lines: RDD[String], val headerLines: Int = 500) {
     val header: VCFHeader = codec
       .readActualHeader(new DelegatingLineIterator(lines.take(headerLines).toIterator))
       .asInstanceOf[VCFHeader]
-    HeaderAndVersion(header, codec.getVersion())
+    HeaderAndVersion(header, codec.getVersion)
   }
 
   def header: VCFHeader = headerAndVersion.header

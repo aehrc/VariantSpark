@@ -81,7 +81,7 @@ case class StdCSVFeatureSourceFactory(inputFile: String)
 }
 
 class CompositeFeatueSource(featureSources: Seq[FeatureSource]) extends FeatureSource {
-  require(!featureSources.isEmpty)
+  require(featureSources.nonEmpty)
   override lazy val sampleNames: List[String] = {
     val headSampleNames = featureSources.head.sampleNames
     require(featureSources.tail.forall(_.sampleNames == headSampleNames))
@@ -141,12 +141,12 @@ trait FeatureSourceArgs extends Object with SparkArgs with Echoable {
   def featureSourceFactory(inputJSON: JArray): FeatureSourceFactory = {
     val sourceFactories = inputJSON.children.map(featureSourceFactory)
     CompositeFeatureSourceFactory(
-        sourceFactories.foldLeft(ArrayBuffer[FeatureSourceFactory]())(_ += _).toSeq)
+        sourceFactories.foldLeft(ArrayBuffer[FeatureSourceFactory]())(_ += _))
   }
 
   def featureSourceFactory(inputJSON: JObject): FeatureSourceFactory = {
     verbose(s"Input Spec is : ${inputJSON}")
-    val inputType = (inputJSON \ "type")
+    val inputType = inputJSON \ "type"
     inputType match {
       case JString("csv") => inputJSON.extract[CSVFeatureSourceFactory]
       case JString("stdcsv") => inputJSON.extract[StdCSVFeatureSourceFactory]

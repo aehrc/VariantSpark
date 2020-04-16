@@ -20,7 +20,7 @@ object BitwiseAndPairwiseRevMetric extends AggregablePairwiseOperation {
 
 @deprecated
 object MultiPairwiseRevMetric extends AggregablePairwiseOperation {
-  def unitOp(b1: Byte, b2: Byte): Long = b1.toLong * b2.toLong;
+  def unitOp(b1: Byte, b2: Byte): Long = b1.toLong * b2.toLong
 }
 
 object SharedAltAlleleCount extends AggregablePairwiseOperation {

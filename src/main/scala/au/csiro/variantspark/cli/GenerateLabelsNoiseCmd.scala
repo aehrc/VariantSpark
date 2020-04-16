@@ -5,6 +5,7 @@ import au.csiro.sparkle.cmd.CmdApp
 import org.kohsuke.args4j.Option
 import au.csiro.pbdava.ssparkle.common.arg4j.AppRunner
 import au.csiro.pbdava.ssparkle.spark.SparkApp
+
 import collection.JavaConverters._
 import au.csiro.variantspark.input.VCFSource
 import au.csiro.variantspark.input.VCFFeatureSource
@@ -35,6 +36,8 @@ import au.csiro.variantspark.input.generate.NoisyEffectLabelGenerator
 import java.io.File
 import java.util.ArrayList
 import java.io.PrintStream
+import java.util
+
 import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
 
 class GenerateLabelsNoiseCmd
@@ -94,7 +97,7 @@ class GenerateLabelsNoiseCmd
   @Option(name = "-ge", required = false,
     usage = "Generator effects <var-name>:<effect-size> (can be used may times)",
     aliases = Array("--gen-effect"))
-  val effectsDef: ArrayList[String] = new ArrayList()
+  val effectsDef: util.ArrayList[String] = new util.ArrayList()
 
   // common options
 
@@ -127,7 +130,7 @@ class GenerateLabelsNoiseCmd
     verbose(s"Random seed is: ${randomSeed}, sparkPar is: ${sparkPar}")
 
     echo(s"Loading parquet file: ${inputFile}")
-    val featureSource = new ParquetFeatureSource(inputFile)
+    val featureSource = ParquetFeatureSource(inputFile)
     echo(s"Loaded rows: ${dumpList(featureSource.sampleNames)}")
 
     val generator = NoisyEffectLabelGenerator(featureSource)(zeroLevel = actualZeroLevel,

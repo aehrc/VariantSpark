@@ -10,8 +10,7 @@ package au.csiro.variantspark.algo
   * @param leftGini: the gini impurity of the left split of the dataset
   * @param rightGini: the gini impurity of the right split of the dataset
   */
-case class SplitInfo(val splitPoint: Double, val gini: Double, val leftGini: Double,
-    val rightGini: Double)
+case class SplitInfo(splitPoint: Double, gini: Double, leftGini: Double, rightGini: Double)
 
 /**
   * An aggregator for calculating split impurity for two sets of labels or values
@@ -21,8 +20,8 @@ trait IndexedSplitAggregator {
   def left: ImpurityAggregator
   def right: ImpurityAggregator
   def reset() {
-    left.reset();
-    right.reset();
+    left.reset()
+    right.reset()
   }
   def update(agg: ImpurityAggregator) {
     left.add(agg)
@@ -33,7 +32,7 @@ trait IndexedSplitAggregator {
     *  Is this a valid split that is one that does not put
     *  all elements to one side
     */
-  def hasProperSplit: Boolean = !left.isEmpty() && !right.isEmpty()
+  def hasProperSplit: Boolean = !left.isEmpty && !right.isEmpty
 
   /**
     * Get split impurity value
@@ -57,7 +56,7 @@ class ClassificationSplitAggregator private (val labels: Array[Int],
     extends IndexedSplitAggregator {
 
   def initLabel(label: Int) {
-    right.addLabel(label);
+    right.addLabel(label)
   }
 
   def updateLabel(label: Int) {
@@ -93,13 +92,13 @@ class ConfusionAggregator private (val matrix: Array[ClassificationImpurityAggre
     */
   def reset(nLevels: Int) {
     assert(nLevels <= matrix.length)
-    matrix.iterator.take(nLevels).foreach(_.reset());
+    matrix.iterator.take(nLevels).foreach(_.reset())
   }
 
   /**
     * Add a response at index yIndex for ordinal level
     */
-  def updateAt(level: Int, yIndex: Int): Unit = matrix(level).addLabel(labels(yIndex));
+  def updateAt(level: Int, yIndex: Int): Unit = matrix(level).addLabel(labels(yIndex))
 
   def apply(level: Int): ClassificationImpurityAggregator = matrix(level)
 }
@@ -191,7 +190,7 @@ class DefStatefullIndexedSpliterFactory(val impurity: ClassficationImpurity,
 
   def create(sf: SplitterProvider): IndexedSplitter = {
     sf match {
-      case fsf: FastSplitterProvider if (fsf.confusionSize <= maxConfusionSize) =>
+      case fsf: FastSplitterProvider if fsf.confusionSize <= maxConfusionSize =>
         ThresholdIndexedSplitter(fsf.createSplitter(splitAggregator, confusionAgg),
           fsf.confusionSize, sf.createSplitter(splitAggregator), qThreshold)
       case _ => sf.createSplitter(splitAggregator)

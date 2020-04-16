@@ -40,12 +40,12 @@ import org.apache.spark.broadcast.Broadcast
   * @param mv MatrixValue with extracted fields of interests, currently it's assumed
   *           that the per sample dependent variable is named `e`
   *           while the dependent variable is named `y`
-  * @rfParams random forest parameters to use
+  * @param rfParams random forest parameters to use
   */
 case class RFModel(mv: MatrixValue, rfParams: RandomForestParams) {
 
-  val responseVarName = "y"
-  val entryVarname = "e"
+  val responseVarName: String = "y"
+  val entryVarname: String = "e"
 
   // maintain the same key as in the original matrix
   private val key: IndexedSeq[String] = mv.typ.rowKey
@@ -65,17 +65,17 @@ case class RFModel(mv: MatrixValue, rfParams: RandomForestParams) {
     s"The second field in key needs to be TArray[String] but is ${keySignature.fields(1).typ}")
 
   // the result should keep the key + add importance related field
-  lazy val sig = keySignature.insertFields(Array(("importance", TFloat64())))
+  lazy val sig: TStruct = keySignature.insertFields(Array(("importance", TFloat64())))
 
-  lazy val rf = new RandomForest(rfParams)
-  val featuresRDD = mv.rvd.toRows.map(RFModel.rowToFeature)
+  lazy val rf: RandomForest = new RandomForest(rfParams)
+  val featuresRDD: RDD[Feature] = mv.rvd.toRows.map(RFModel.rowToFeature)
   lazy val inputData: RDD[TreeFeature] =
     DefTreeRepresentationFactory.createRepresentation(featuresRDD.zipWithIndex())
 
   // the a stateful object
   // TODO: Maybe refactor to a helper object
-  var rfModel: RandomForestModel = null
-  var impVarBroadcast: Broadcast[Map[Long, Double]] = null
+  var rfModel: RandomForestModel = _
+  var impVarBroadcast: Broadcast[Map[Long, Double]] = _
 
   def fitTrees(nTrees: Int = 500, batchSize: Int = 100) {
 

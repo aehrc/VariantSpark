@@ -5,7 +5,7 @@ import au.csiro.variantspark.input.FeatureSource
 /**
   * This only works for smallish datasets (used local files)
   */
-case class CSVFeatureSink2(val fileName: String) extends FeatureSink {
+case class CSVFeatureSink2(fileName: String) extends FeatureSink {
 
   def save(fs: FeatureSource) {
     val header = ("" :: fs.sampleNames).mkString(",")

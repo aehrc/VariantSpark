@@ -55,8 +55,8 @@ class NoisyEffectLabelGenerator(featureSource: FeatureSource)(zeroLevel: Int,
               val normalizer = DenseVector.fill(nSamples)(zeroLevelValue)
               it.map(
                   f =>
-                    (DenseVector(f.valueAsVector.toArray) -= normalizer) *= (
-                        br_effects.value(f.label)))
+                    (DenseVector(f.valueAsVector.toArray) -= normalizer)
+                      *= br_effects.value(f.label))
           }
         if (multiplicative) foldMulitiplicative(nSamples, rdd) else foldAdditive(nSamples, rdd)
     }

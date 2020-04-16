@@ -6,7 +6,7 @@ case class Timer() {
   def durationInSec: Double = duration / 1000.0
 }
 
-case class TimedResult[T](val result: T, val elapsedTime: Long) {
+case class TimedResult[T](result: T, elapsedTime: Long) {
   def withResult(f: T => Unit): TimedResult[T] = {
     f(result)
     this

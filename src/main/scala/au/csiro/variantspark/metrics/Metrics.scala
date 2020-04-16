@@ -10,7 +10,7 @@ object Metrics {
     val c2PartitionNo = c2.max + 1
     val n = c1.size
     val contingencyMatrix = Array.fill(c1PartitionNo)(Array.fill(c2PartitionNo)(0))
-    Range(0, c1.size).foreach { i => contingencyMatrix(c1(i))(c2(i)) += 1 }
+    c1.indices.foreach { i => contingencyMatrix(c1(i))(c2(i)) += 1 }
     val c1Bound = contingencyMatrix.map(_.sum)
     val c2Bound = Range(0, c2PartitionNo).map(j => contingencyMatrix.map(_(j)).sum)
     val index: Int = contingencyMatrix.flatMap(_.map(over2)).sum
@@ -21,7 +21,7 @@ object Metrics {
   }
 
   def accuracy(expected: Array[Int], predicted: Array[Int]): Double = {
-    expected.toSeq.zip(predicted).filter(i => i._1 != i._2).size.toDouble / expected.length
+    expected.toSeq.zip(predicted).count(i => i._1 != i._2).toDouble / expected.length
   }
 
   def classificationError(expected: Array[Int], predicted: Array[Int]): Double =

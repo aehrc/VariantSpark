@@ -198,7 +198,7 @@ class ImportanceCmd
         writer.writeAll(topImportantVariables.map({
           case (i, importance) =>
             List(index(i), importance) ::: (if (includeData) {
-                                              (importantVariableData(i).valueAsStrings)
+                                              importantVariableData(i).valueAsStrings
                                             } else { Nil })
         }))
     }

@@ -122,7 +122,7 @@ object HailApiApp {
 
     val importanceTable = new Table(hc, importanceTableValue)
     println(importanceTable.signature)
-    importanceTable.collect().take(10).foreach(println _)
+    importanceTable.collect().take(10).foreach(println)
   }
 }
 // scalastyle:on

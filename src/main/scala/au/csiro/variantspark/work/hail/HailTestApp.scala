@@ -161,7 +161,7 @@ object HailTestApp {
 
     // println("Result lr count: " + lrResult.count())
     println(lrResult.signature)
-    lrResult.collect().take(10).foreach(println _)
+    lrResult.collect().take(10).foreach(println)
 
     // System.exit(0)
 
@@ -241,7 +241,7 @@ object HailTestApp {
 
     val colTable = new Table(table.hc, exptr)
     println(colTable.signature) //
-    colTable.collect().take(10).foreach(println _)
+    colTable.collect().take(10).foreach(println)
 
     val lr = LinearRegressionRowsSingle(Seq("label.score"), "GT.n_alt_alleles()", Seq.empty, 1,
       Seq.empty)

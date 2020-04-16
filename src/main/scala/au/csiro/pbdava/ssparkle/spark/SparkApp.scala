@@ -12,7 +12,7 @@ trait SparkApp extends Logging {
 
   def createConf: SparkConf = {
     val conf = new SparkConf(!System.getProperty("sparkle.local", "false").toBoolean)
-      .setAppName(getClass().getSimpleName)
+      .setAppName(getClass.getSimpleName)
     if (conf.contains("spark.master")) conf else conf.setMaster(defaultMasterUrl)
   }
 
@@ -23,7 +23,6 @@ trait SparkApp extends Logging {
     SparkSession.builder.config(conf).getOrCreate()
   }
 
-  @deprecated
   implicit lazy val sc: SparkContext = spark.sparkContext
 
   @deprecated

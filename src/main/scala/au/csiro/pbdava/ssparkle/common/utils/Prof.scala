@@ -4,7 +4,7 @@ trait Prof extends Logging {
 
   lazy val profEnable: Boolean = System.getProperty("sparkle.prof", "false").toBoolean
 
-  var prevStartTime = 0L
+  var prevStartTime: Long = 0L
 
   def profReset(): Unit = if (!profEnable) {} else {
     prevStartTime = System.currentTimeMillis()

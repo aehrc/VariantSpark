@@ -17,7 +17,7 @@ object Sampler {
 
 object Appl {
 
-  type IntFunc = (Int, Int) => (Double) => Int
+  type IntFunc = (Int, Int) => Double => Int
 
   def func(x: Int, y: Int)(implicit k: Double): Int = 10
 
