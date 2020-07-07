@@ -144,4 +144,10 @@ To use an example:
 5. **Attach** the notebook to the cluster
 6. **Run** the sample notebook
 
+### Contributions
+
+#### JsonRfAnalyser
+
+[JsonRfAnalyser](contributions/JsonRfAnalyser) is a python program that looks into the JSON RandomForest model and list variables on each tree and branch. Please read [README](contributions/JsonRfAnalyser/README.md) to see the complete list of functionalities.
+
 
