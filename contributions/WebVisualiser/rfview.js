@@ -54,8 +54,9 @@ function draw() {
   nodes = [];
   edges = [];
 
+  var treeIdToPlot = document.getElementById("treeId").value;
   nodeId = 0;
-  DSF(RF.trees[1].rootNode, nodeId, 0, nodes, edges);
+  DSF(RF.trees[treeIdToPlot].rootNode, nodeId, 0, nodes, edges);
 
   var data = {
     nodes: nodes,
