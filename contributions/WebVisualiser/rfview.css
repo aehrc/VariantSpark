@@ -1,0 +1,9 @@
+body {
+  font: 10pt sans;
+}
+
+#mynetwork {
+  width: 1600px;
+  height: 1200px;
+  border: 1px solid lightgray;
+}
