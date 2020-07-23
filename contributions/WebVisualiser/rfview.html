@@ -4,8 +4,14 @@
 
     <script type="text/javascript" src="vis-network.js"></script>
 
-    <script type="text/javascript" src="rf.js"></script>
+    <script type="text/javascript" src="jquery-1.7.1.min.js"></script>
   </head>
+
+  <form onsubmit="LoadJSON(); return false;">
+    <label for="jsonFile">Path to JSON model file (click load and):</label>
+    <input id="jsonFile" type="text" value="rf.json" style="width: 200px;" />
+    <input type="submit" value="Load" />
+  </form>
 
   <form onsubmit="draw(); return false;">
     <label for="treeId">Tree id to show:</label>

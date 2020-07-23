@@ -1,6 +1,8 @@
 var nodes = null;
 var edges = null;
 var network = null;
+var RF = null;
+var nodeId = 0;
 
 function destroy() {
   if (network !== null) {
@@ -9,7 +11,6 @@ function destroy() {
   }
 }
 
-var nodeId = 0;
 function DSF(node, parent, level, nodes, edges, limits) {
   // Assign new node id (integer)
   // nodeId is a global variable used in a recursive function
@@ -107,6 +108,8 @@ function draw() {
     impurityReduction: { min: 1, max: 0 },
   };
   var treeIdToPlot = document.getElementById("treeId").value;
+  treeIdToPlot = treeIdToPlot % RF.trees.length;
+  document.getElementById("treeId").value = String(treeIdToPlot);
   nodeId = 0;
   DSF(RF.trees[treeIdToPlot].rootNode, nodeId, 0, nodes, edges, limits);
 
@@ -143,6 +146,14 @@ function draw() {
   });
 }
 
+function LoadJSON() {
+  var jsonFile = document.getElementById("jsonFile").value;
+  $.getJSON(jsonFile, function (model) {
+    RF = model;
+    draw();
+  });
+}
+
 window.addEventListener("load", () => {
-  draw();
+  LoadJSON();
 });
