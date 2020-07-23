@@ -10,6 +10,24 @@
   <form onsubmit="draw(); return false;">
     <label for="treeId">Tree id to show:</label>
     <input id="treeId" type="text" value="0" style="width: 50px;" />
+
+    <label for="colorBy">Choose Node Color Source:</label>
+    <select id="colorBy" name="colorBy">
+      <option value="samples">samples</option>
+      <option value="impurity">impurity</option>
+      <option value="impurityReduction">impurityReduction</option>
+      <option value="NA">NA</option>
+    </select>
+
+    <label for="labelBy">Choose Node Color Source:</label>
+    <select id="labelBy" name="labelBy">
+      <option value="splitVar">splitVar</option>
+      <option value="samples">samples</option>
+      <option value="impurity">impurity</option>
+      <option value="impurityReduction">impurityReduction</option>
+      <option value="NA">NA</option>
+    </select>
+
     <input type="submit" value="Plot" />
   </form>
 
