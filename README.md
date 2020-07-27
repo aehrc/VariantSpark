@@ -148,3 +148,7 @@ To use an example:
 #### VariantSpark on AWS Marketplace
 
 VariantSpark is now available on [AWS Marketplace](https://aws.amazon.com/marketplace/pp/AEHRC-VariantSpark-Notebook/B07YVND4TD). Please read the [Guidlines](contributions/AwsMarketplace/README.md) for specification and step-by-step instructions.
+
+#### WebVisualiser
+
+[rfview.html](contributions/WebVisualiser/rfview.html) is a web program (run locally on your machine) where you can upload the json model produced by variantspark and it visualises trees in the model. You can identify which tree to be visualised. Node color and node labels could be set to different parameters such as number of samples in the node or the node impurity. It uses [vis.js](https://visjs.org/) for tree Visualisation.
