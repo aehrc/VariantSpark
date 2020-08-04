@@ -155,4 +155,4 @@ VariantSpark is now available on [AWS Marketplace](https://aws.amazon.com/market
 
 #### Predictor
 
-To be implemented
+To be implemented in Python
