@@ -20,9 +20,13 @@ case class FactorVariable(values: Array[Int], nCategories: Int,
 object FactorVariable {
   def apply(values: Array[Int]): FactorVariable = apply(values, values.max + 1)
 
-  def labelMode(currentSet: Array[Int], labels: Array[Int], labelCount: Int): Int = {
+  def classCounts(currentSet: Array[Int], labels: Array[Int], labelCount: Int): Array[Int] = {
     val labelCounts = Array.fill(labelCount)(0)
     currentSet.foreach(i => labelCounts(labels(i)) += 1)
-    labelCounts.zipWithIndex.maxBy(_._1)._2
+    labelCounts
+  }
+  def labelMode(currentSet: Array[Int], labels: Array[Int], labelCount: Int): Int = {
+    val labelCounts = classCounts(currentSet, labels, labelCount)
+    ArraysUtils.maxIndex(labelCounts)
   }
 }

@@ -92,23 +92,4 @@ class WideDecisionTreeIntegratedTest extends SparkTest {
   def testCNAE_9_DatasetWithMaxDepth30_onContinous() {
     checkCNAE_9_Dataset(30, ContinuousVariable)
   }
-
-  @Test
-  def testSplitsCorrectlyForFullData() {
-
-    val data = sc.parallelize(List.fill(4)(Vectors.dense(0.0, 1.0, 2.0)))
-
-    val decisionTreeModel = new DecisionTreeModel(SplitNode(majorityLabel = 0, size = 10,
-        nodeImpurity = 1.0, splitVariableIndex = 1L, splitPoint = 1.0, impurityReduction = 0.0,
-        left = SplitNode(majorityLabel = 0, size = 4, nodeImpurity = 0.4, splitVariableIndex = 2L, splitPoint = 0.0, impurityReduction = 0.0, left = LeafNode(0, 3, 0.2), right = LeafNode(1, 1, 0.1)),
-        right = SplitNode(majorityLabel = 0, size = 6, nodeImpurity = 0.6, splitVariableIndex = 2L, splitPoint = 0.0, impurityReduction = 0.0, left = LeafNode(2, 2, 0.1), right = LeafNode(3, 4, 0.2))))
-
-    val labels = decisionTreeModel.predict(data.asFeature(BoundedOrdinalVariable(3)))
-    println(labels.toList)
-
-    val model = new DecisionTree().train(data.asFeature(BoundedOrdinalVariable(3)), labels)
-    model.printout()
-
-  }
-
 }
