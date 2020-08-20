@@ -1,4 +1,17 @@
 
+## Snapshot Release of python package
+
+in `python`
+
+    python setup.py sdist
+    
+to deploy:
+
+    export PYPI_URL=https://upload.pypi.org/legacy/
+    export PYPI_USER=piotrszul
+    export PYPI_PASSWORD='m..old'
+    twine upload --repository-url ${PYPI_URL} --username ${PYPI_USER} --password ${PYPI_PASSWORD} dist/* 
+
 ## Release to Maven Central
 
     export GPG_TTY=$(tty)
