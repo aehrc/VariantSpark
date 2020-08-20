@@ -11,12 +11,13 @@ import au.csiro.variantspark.algo.RandomForestParams
 trait Node
 
 @SerialVersionUID(1L)
-case class Leaf(majorityLabel: Int, size: Int, impurity: Double) extends Node with Serializable
+case class Leaf(majorityLabel: Int, classCounts: Array[Int], size: Int, impurity: Double)
+    extends Node with Serializable
 
 @SerialVersionUID(1L)
-case class Split(majorityLabel: Int, size: Int, impurity: Double, splitVar: String,
-    splitVarIndex: Long, permutated: Boolean, splitPoint: Double, impurityReduction: Double,
-    left: Node, right: Node)
+case class Split(majorityLabel: Int, classCounts: Array[Int], size: Int, impurity: Double,
+    splitVar: String, splitVarIndex: Long, permutated: Boolean, splitPoint: Double,
+    impurityReduction: Double, left: Node, right: Node)
     extends Node with Serializable
 
 @SerialVersionUID(1L)

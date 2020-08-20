@@ -1,6 +1,6 @@
 package au.csiro.variantspark.metrics
 
-import au.csiro.variantspark.utils.FactorVariable
+import au.csiro.variantspark.utils.{ArraysUtils, FactorVariable}
 
 object Gini {
   def sqr(x: Double): Double = x * x
@@ -31,14 +31,15 @@ object Gini {
       (leftGini * leftTotal + rightGini * rightTotal) / (leftTotal + rightTotal))
   }
 
-  def giniImpurity(currentSet: Array[Int], labels: Array[Int], labelCount: Int): (Double, Int) = {
+  def giniImpurity(currentSet: Array[Int], labels: Array[Int],
+      labelCount: Int): (Double, Array[Int]) = {
     val labelCounts = Array.fill(labelCount)(0)
     currentSet.foreach(i => labelCounts(labels(i)) += 1)
-    (giniImpurity(labelCounts), labelCounts.zipWithIndex.max._2)
+    (giniImpurity(labelCounts), labelCounts)
   }
 
   def giniImpurity(factor: FactorVariable): (Double, Int) = {
     val labelCounts = factor.counts
-    (giniImpurity(labelCounts), labelCounts.zipWithIndex.max._2)
+    (giniImpurity(labelCounts), ArraysUtils.maxIndex(labelCounts))
   }
 }

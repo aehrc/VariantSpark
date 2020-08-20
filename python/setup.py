@@ -82,7 +82,7 @@ try:
                 'pyspark==2.4.1', 
             ],
             'hail': [
-                'hail==0.2.26',
+                'hail==0.2.16',
             ]
         },
         include_package_data=True,

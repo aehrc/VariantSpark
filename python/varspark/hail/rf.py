@@ -51,5 +51,18 @@ class RandomForestModel(object):
     def variable_importance(self):
         return Table._from_java(self._jrf_model.variableImportance())
 
+    @typecheck_method(
+        filename=str,
+        resolve_names=bool
+    )
+    def to_json(self, filename, resolve_names = True):
+        """ Save the model JSON representation to a file. If `resolve_names` is set
+        includes the variable names as well as indexes in the output. This does however
+        incur performance penalty for creation of in-memory variable index.
+        :param str filename: The file to save the model to.
+        :param bool resolve_names: Resolve variable names in the saved JSON.
+        """
+        self._jrf_model.toJson(filename, resolve_names)
+
     def release(self):
         self._jrf_model.release()
