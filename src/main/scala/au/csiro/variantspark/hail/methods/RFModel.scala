@@ -1,6 +1,6 @@
 package au.csiro.variantspark.hail.methods
 
-import java.io.{FileOutputStream, OutputStreamWriter}
+import java.io.OutputStreamWriter
 
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 import au.csiro.variantspark.algo.{
@@ -118,13 +118,27 @@ case class RFModel(mv: MatrixValue, rfParams: RandomForestParams) {
     TableLiteral(TableValue(sig, key, mapRDD))
   }
 
-  def toJson(jsonFilename: String) {
+  def toJson(jsonFilename: String, resolveVarNames: Boolean) {
     println(s"Saving model to: ${jsonFilename}")
     implicit val hadoopConf: Configuration = inputData.sparkContext.hadoopConfiguration
     implicit val formats: AnyRef with Formats = Serialization.formats(NoTypeHints)
+
+    val variableIndex = if (resolveVarNames) {
+      val brVarImp = importanceMapBroadcast
+      inputData
+        .mapPartitions({ it =>
+          val impVariableSet = brVarImp.value.keySet
+          it.filter(t => impVariableSet.contains(t.index))
+            .map(f => (f.index, f.label))
+        })
+        .collectAsMap()
+        .toMap
+    } else {
+      Map.empty[Long, String]
+    }
     LoanUtils
       .withCloseable(new OutputStreamWriter(HdfsPath(jsonFilename).create())) { objectOut =>
-        writePretty(new ModelConverter(Map.empty).toExternal(rfModel), objectOut)
+        writePretty(new ModelConverter(variableIndex).toExternal(rfModel), objectOut)
       }
   }
 
