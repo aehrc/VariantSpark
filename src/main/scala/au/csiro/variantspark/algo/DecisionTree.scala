@@ -41,9 +41,11 @@ import au.csiro.variantspark.utils.ArraysUtils
   * @constructor creates value based on the indices, impurity, and majorityLabel
   * @param indices: input an array of integers representing the indices of the values
   * @param impurity: input the value of impurity of the data construct
-  * @param majorityLabel: input the specific label related to the majority of the values
+  * @param classCounts: input the counts for each class
   */
-case class SubsetInfo(indices: Array[Int], impurity: Double, majorityLabel: Int) {
+case class SubsetInfo(indices: Array[Int], impurity: Double, classCounts: Array[Int]) {
+
+  val majorityLabel: Int = ArraysUtils.maxIndex(classCounts)
 
   /** An alternative constructor for the SubsetInfo class, use this if the majorityLabel has not
     * already been defined
@@ -61,7 +63,7 @@ case class SubsetInfo(indices: Array[Int], impurity: Double, majorityLabel: Int)
     *
     */
   def this(indices: Array[Int], impurity: Double, labels: Array[Int], nLabels: Int) {
-    this(indices, impurity, FactorVariable.labelMode(indices, labels, nLabels))
+    this(indices, impurity, FactorVariable.classCounts(indices, labels, nLabels))
   }
 
   def length: Int = indices.length
@@ -255,8 +257,8 @@ case class StdVariableSplitter(labels: Array[Int], mTryFraction: Double = 1.0,
 
   def initialSubset(sample: Sample): SubsetInfo = {
     val currentSet = sample.indexes
-    val (totalGini, totalLabel) = Gini.giniImpurity(currentSet, labels, nCategories)
-    SubsetInfo(currentSet, totalGini, totalLabel)
+    val (totalGini, classCounts) = Gini.giniImpurity(currentSet, labels, nCategories)
+    SubsetInfo(currentSet, totalGini, classCounts)
   }
 
   /** Find the splits in the data based on the gini value
@@ -353,8 +355,8 @@ case class AirVariableSplitter(labels: Array[Int], permutationOrder: Array[Int],
 
   def initialSubset(sample: Sample): SubsetInfo = {
     val currentSet = sample.indexes
-    val (totalGini, totalLabel) = Gini.giniImpurity(currentSet, labels, nCategories)
-    SubsetInfo(currentSet, totalGini, totalLabel)
+    val (totalGini, classCounts) = Gini.giniImpurity(currentSet, labels, nCategories)
+    SubsetInfo(currentSet, totalGini, classCounts)
   }
 
   /** Find the splits in the data based on the gini value
@@ -525,6 +527,8 @@ abstract class DecisionTreeNode(val majorityLabel: Int, val size: Int, val nodeI
     extends Serializable {
   def isLeaf: Boolean
 
+  def classCounts: Array[Int]
+
   def printout(level: Int)
   def impurityContribution: Double = nodeImpurity * size
   def traverse(f: SplitNode => Boolean): LeafNode = this match {
@@ -538,8 +542,8 @@ abstract class DecisionTreeNode(val majorityLabel: Int, val size: Int, val nodeI
 }
 
 @SerialVersionUID(1L)
-case class LeafNode(override val majorityLabel: Int, override val size: Int,
-    override val nodeImpurity: Double)
+case class LeafNode(override val majorityLabel: Int, classCounts: Array[Int],
+    override val size: Int, override val nodeImpurity: Double)
     extends DecisionTreeNode(majorityLabel, size, nodeImpurity) {
   val isLeaf: Boolean = true
 
@@ -556,14 +560,26 @@ case class LeafNode(override val majorityLabel: Int, override val size: Int,
 
 object LeafNode {
   def apply(subset: SubsetInfo): LeafNode =
-    apply(subset.majorityLabel, subset.length, subset.impurity)
+    apply(subset.majorityLabel, subset.classCounts, subset.length, subset.impurity)
+
+  /**
+    * Create a tree leaf for a standard classifier tree with voting information onlu
+    * @param majorityLabel
+    * @param size
+    * @param nodeImpurity
+    * @return
+    */
+  def voting(majorityLabel: Int, size: Int, nodeImpurity: Double): LeafNode = {
+    LeafNode(majorityLabel, null, size, nodeImpurity)
+  }
+
 }
 
 @SerialVersionUID(1L)
-case class SplitNode(override val majorityLabel: Int, override val size: Int,
-    override val nodeImpurity: Double, splitVariableIndex: Long, splitPoint: Double,
-    impurityReduction: Double, left: DecisionTreeNode, right: DecisionTreeNode,
-    isPermutated: Boolean = false)
+case class SplitNode(override val majorityLabel: Int, classCounts: Array[Int],
+    override val size: Int, override val nodeImpurity: Double, splitVariableIndex: Long,
+    splitPoint: Double, impurityReduction: Double, left: DecisionTreeNode,
+    right: DecisionTreeNode, isPermutated: Boolean = false)
     extends DecisionTreeNode(majorityLabel, size, nodeImpurity) {
 
   val isLeaf: Boolean = false
@@ -593,8 +609,17 @@ case class SplitNode(override val majorityLabel: Int, override val size: Int,
 object SplitNode {
   def apply(subset: SubsetInfo, split: VarSplitInfo, left: DecisionTreeNode,
       right: DecisionTreeNode): SplitNode =
-    apply(subset.majorityLabel, subset.length, subset.impurity, split.variableIndex,
-      split.splitPoint, subset.impurity - split.gini, left, right, split.isPermutated)
+    apply(subset.majorityLabel, subset.classCounts, subset.length, subset.impurity,
+      split.variableIndex, split.splitPoint, subset.impurity - split.gini, left, right,
+      split.isPermutated)
+
+  def voting(majorityLabel: Int, size: Int, nodeImpurity: Double, splitVariableIndex: Long,
+      splitPoint: Double, impurityReduction: Double, left: DecisionTreeNode,
+      right: DecisionTreeNode, isPermutated: Boolean = false): SplitNode = {
+    SplitNode(majorityLabel, null, size, nodeImpurity, splitVariableIndex, splitPoint,
+      impurityReduction, left, right, isPermutated)
+  }
+
 }
 
 @SerialVersionUID(1L)

@@ -30,6 +30,9 @@ def main():
     print("OOB error: %s" % rf_model.oob_error())
     impTable = rf_model.variable_importance()
     impTable.show(3)
+
+    rf_model.to_json(os.path.join(PROJECT_DIR, "target/chr22_1000_GRCh38-model.json"), True)
+
     rf_model.release()
 
 if __name__ == '__main__':
