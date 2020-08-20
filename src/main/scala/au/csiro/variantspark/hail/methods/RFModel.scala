@@ -1,39 +1,34 @@
 package au.csiro.variantspark.hail.methods
 
-import is.hail.expr.Parser
+import java.io.{FileOutputStream, OutputStreamWriter}
+
+import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
+import au.csiro.variantspark.algo.{
+  DefTreeRepresentationFactory,
+  RandomForest,
+  RandomForestModel,
+  RandomForestParams,
+  TreeFeature
+}
+import au.csiro.variantspark.data.{BoundedOrdinalVariable, Feature, StdFeature}
+import au.csiro.variantspark.external.ModelConverter
+import au.csiro.variantspark.utils.HdfsPath
 import is.hail.annotations.Annotation
-import is.hail.variant._
-import is.hail.utils._
-import is.hail.HailContext
-import org.apache.spark.sql.Row
-import au.csiro.variantspark.algo.RandomForestParams
-import is.hail.expr.ir.MatrixIR
+import is.hail.expr.ir.{Interpret, MatrixIR, MatrixValue, TableIR, TableLiteral, TableValue}
+import is.hail.expr.types.virtual._
 import is.hail.stats.RegressionUtils
-import is.hail.expr.ir.Interpret
-import is.hail.expr.ir.Pretty
-import is.hail.expr.ir.MatrixValue
-import au.csiro.variantspark.data.Feature
-import au.csiro.variantspark.data.StdFeature
-import au.csiro.variantspark.algo.DefTreeRepresentationFactory
-import au.csiro.variantspark.data.BoundedOrdinalVariable
-import au.csiro.variantspark.algo.RandomForest
-import au.csiro.variantspark.algo.RandomForestModel
-import is.hail.expr.ir.TableValue
-import is.hail.expr.types.virtual.TStruct
-import is.hail.expr.types.virtual.TInt64
-import is.hail.expr.types.virtual.TFloat64
-import is.hail.expr.ir.TableIR
-import is.hail.expr.ir.TableLiteral
-import au.csiro.variantspark.algo.TreeFeature
-import org.apache.spark.rdd.RDD
-import is.hail.expr.types.virtual.TString
-import scala.collection.mutable.WrappedArray
-import is.hail.expr.types.virtual.TLocus
-import is.hail.expr.types.virtual.TArray
-import scala.collection.IndexedSeq
-import org.apache.spark.storage.StorageLevel
-import is.hail.expr.types.virtual.Field
+import is.hail.utils._
+import is.hail.variant._
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.Row
+import org.apache.spark.storage.StorageLevel
+import org.json4s.jackson.Serialization
+import org.json4s.jackson.Serialization.writePretty
+import org.json4s.{Formats, NoTypeHints}
+
+import scala.collection.IndexedSeq
 
 /**
   * Initial implementation of RandomForst model for hail
@@ -121,6 +116,16 @@ case class RFModel(mv: MatrixValue, rfParams: RandomForestParams) {
       it.map(tf => RFModel.tfFeatureToImpRow(tf.label, varImp.getOrElse(tf.index, 0.0)))
     }
     TableLiteral(TableValue(sig, key, mapRDD))
+  }
+
+  def toJson(jsonFilename: String) {
+    println(s"Saving model to: ${jsonFilename}")
+    implicit val hadoopConf: Configuration = inputData.sparkContext.hadoopConfiguration
+    implicit val formats: AnyRef with Formats = Serialization.formats(NoTypeHints)
+    LoanUtils
+      .withCloseable(new OutputStreamWriter(HdfsPath(jsonFilename).create())) { objectOut =>
+        writePretty(new ModelConverter(Map.empty).toExternal(rfModel), objectOut)
+      }
   }
 
   def release() {

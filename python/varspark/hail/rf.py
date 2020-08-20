@@ -51,5 +51,11 @@ class RandomForestModel(object):
     def variable_importance(self):
         return Table._from_java(self._jrf_model.variableImportance())
 
+    @typecheck_method(
+        fileName=str
+    )
+    def to_json(self, fileName):
+        self._jrf_model.toJson(fileName)
+
     def release(self):
         self._jrf_model.release()
