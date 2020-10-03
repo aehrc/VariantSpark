@@ -19,10 +19,10 @@ class VcfToLabels extends ArgsApp with SparkApp {
 
   @Option(name = "-if", required = false, usage = "This is input files",
     aliases = Array("--input-file"))
-  val inputFile: String = "data/small.vcf"
+  val inputFile: String = null
 
   @Option(name = "-of", required = false, usage = "Output file", aliases = Array("--output-file"))
-  val outputFile: String = "data/small-labels.csv"
+  val outputFile: String = null
 
   @Option(name = "-l", required = false)
   val limit: Int = 10

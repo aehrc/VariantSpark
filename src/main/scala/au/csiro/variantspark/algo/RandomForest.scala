@@ -3,7 +3,7 @@ package au.csiro.variantspark.algo
 import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
 import au.csiro.pbdava.ssparkle.common.utils.Logging
 import au.csiro.pbdava.ssparkle.common.utils.Timed._
-import au.csiro.variantspark.data.VariableType
+import au.csiro.variantspark.data.Feature
 import au.csiro.variantspark.metrics.Metrics
 import au.csiro.variantspark.utils.IndexedRDDFunction._
 import au.csiro.variantspark.utils.{Sample, defRng}
@@ -11,10 +11,6 @@ import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 import org.apache.commons.lang3.builder.ToStringBuilder
 import org.apache.spark.rdd.RDD
-
-import scala.reflect.ClassTag
-import au.csiro.variantspark.data.Feature
-import au.csiro.variantspark.data.FeatureBuilder
 
 /** Allows for normalization(scaling)of the input map values
   */
@@ -90,9 +86,6 @@ case class RandomForestMember(predictor: PredictiveModelWithImportance,
 case class RandomForestModel(members: List[RandomForestMember], labelCount: Int,
     oobErrors: List[Double] = List.empty, params: RandomForestParams = null) {
 
-  def size: Int = members.size
-  def trees: List[PredictiveModelWithImportance] = members.map(_.predictor)
-
   def oobError: Double = oobErrors.last
 
   def printout() {
@@ -102,6 +95,8 @@ case class RandomForestModel(members: List[RandomForestMember], labelCount: Int,
         tree.printout()
     }
   }
+
+  def trees: List[PredictiveModelWithImportance] = members.map(_.predictor)
 
   def normalizedVariableImportance(
       norm: VarImportanceNormalizer = To100ImportanceNormalizer): Map[Long, Double] =
@@ -119,6 +114,8 @@ case class RandomForestModel(members: List[RandomForestMember], labelCount: Int,
       .mapValues(_ / size)
   }
 
+  def size: Int = members.size
+
   def predict(indexedData: RDD[(Feature, Long)]): Array[Int] =
     predict(indexedData, indexedData.size)
 
@@ -127,6 +124,24 @@ case class RandomForestModel(members: List[RandomForestMember], labelCount: Int,
       .map(_.predict(indexedData))
       .foldLeft(VotingAggregator(labelCount, nSamples))(_.addVote(_))
       .predictions
+  }
+
+  def predictProb(indexedData: RDD[(Feature, Long)]): Array[Int] =
+    predictProb(indexedData, indexedData.size)
+
+  def predictProb(indexedData: RDD[(Feature, Long)], nSamples: Int): Array[Int] = {
+    println(s"labelCount: ${labelCount}")
+    println(s"nSamples: ${nSamples}")
+    val treeVotes = trees
+      .map(_.predict(indexedData))
+      .foldLeft(VotingAggregator(labelCount, nSamples))(_.addVote(_))
+    println("treeVotes aggregator:")
+    println(treeVotes)
+    val treeVotesPercs = treeVotes.votes.map(row => (row._1/row.sum, row._2/row.sum, row._3/row.sum))
+    // val predClass = treeVotesPercs.indexOf(treeVotesPercs.max)
+    val predClass = treeVotesPercs.zipWithIndex.maxBy(_._1)._2
+    treeVotes.votes.map(row => println(row.toArray.mkString(" ")))
+    treeVotes.predictions
   }
 }
 
@@ -186,6 +201,7 @@ trait BatchTreeModel {
 
 object RandomForest {
   type ModelBuilderFactory = DecisionTreeParams => BatchTreeModel
+  val defaultBatchSize: Int = 10
 
   def wideDecisionTreeBuilder(params: DecisionTreeParams): BatchTreeModel = {
     val decisionTree = new DecisionTree(params)
@@ -199,8 +215,6 @@ object RandomForest {
           models.asInstanceOf[Seq[DecisionTreeModel]], indexes)
     }
   }
-
-  val defaultBatchSize: Int = 10
 }
 
 /** Implements random forest
