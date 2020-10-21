@@ -16,7 +16,7 @@ import au.csiro.variantspark.cli.args.{
 import au.csiro.variantspark.cmd.EchoUtils._
 import au.csiro.variantspark.cmd.Echoable
 import au.csiro.variantspark.input.CsvLabelSource
-import au.csiro.variantspark.utils.defRng
+import au.csiro.variantspark.utils.{HdfsPath, defRng}
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap
 import org.apache.commons.lang3.builder.ToStringBuilder
 import org.apache.hadoop.conf.Configuration
@@ -108,21 +108,22 @@ class PredictCmd
     echo(s"Loading labels from: ${featuresFile}, column: ${featureColumn}")
     val labelSource = new CsvLabelSource(featuresFile, featureColumn)
     val labels = labelSource.getLabels(featureSource.sampleNames)
-    echo(s"Loaded labels: ${dumpList(labels.toList)}")
+    echo(s"Loaded labels: ${dumpList(labels.distinct.toList.sorted)}")
     echo(s"Random seed is: ${randomSeed}")
     echo(s"Loaded model of size: ${rfModel.size}")
     echo("Running prediction analysis")
-    val preds = rfModel.predictProb(featureSource.features.zipWithIndex())
-    echo(s"Unique predictions: ${dumpList(preds.distinct.toList)}")
-    echo(s"Predictions: ${dumpList(preds.toList)}")
+    val preds: Array[Array[AnyVal]] = rfModel.predictProb(featureSource.features.zipWithIndex())
+    echo("sample, predClass, " + Range(0, rfModel.labelCount).mkString(" "))
+    val predOutput = (featureSource.sampleNames zip preds).toList
+    val pom = predOutput.map(po => (po._1 +: po._2).toSeq).toSeq
 
-    CSVUtils.withStream(
-        if (outputFile != null) HdfsPath(outputFile).create() else ReusablePrintStream.stdout) {
-      writer =>
-        val header =
-          labels ::: (if (includeData) featureSource.sampleNames else Nil)
-        writer.writeRow(header)
-        writer.writeAll(preds.map(_=>_))
+    CSVUtils.withStream(if (outputFile != null) {
+      HdfsPath(outputFile).create()
+    } else ReusablePrintStream.stdout) { writer =>
+      val header =
+        List("sample", "predClass") ::: Range(0, rfModel.labelCount).map(_.toString).toList
+      writer.writeRow(header)
+      writer.writeAll(pom)
     }
 
   }
