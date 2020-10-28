@@ -53,4 +53,20 @@ class WideRandomForrestModelTest extends SparkTest {
     assertArrayEquals(Array(1, 0), prediction)
   }
 
+  @Test
+  def predictProbabilities() {
+    val assumedPredictions = List(Array(1, 0), Array(1, 2), Array(1, 1))
+    val model =
+      new RandomForestModel(assumedPredictions.map(TestPredictorWithImportance(_, null).toMember).toList,
+        nLabels)
+    val prediction = model.predictProb(testData)
+    prediction.foreach(
+        p =>
+          println {
+          p.mkString("Array(", ", ", ")")
+        })
+    assertArrayEquals(Array(1, 0.0, 1.0, 0.0, 0.0).map(_.toLong), prediction(0).map(_.toLong))
+    assertArrayEquals(Array(0, 0.33, 0.33, 0.33, 0.0).map(_.toLong), prediction(1).map(_.toLong))
+  }
+
 }

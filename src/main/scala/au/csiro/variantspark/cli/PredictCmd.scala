@@ -112,7 +112,7 @@ class PredictCmd
     echo(s"Random seed is: ${randomSeed}")
     echo(s"Loaded model of size: ${rfModel.size}")
     echo("Running prediction analysis")
-    val preds: Array[Array[AnyVal]] = rfModel.predictProb(featureSource.features.zipWithIndex())
+    val preds: Array[Array[Double]] = rfModel.predictProb(featureSource.features.zipWithIndex())
     echo("sample, predClass, " + Range(0, rfModel.labelCount).mkString(" "))
     val predOutput = (featureSource.sampleNames zip preds).toList
     val pom = predOutput.map(po => (po._1 +: po._2).toSeq).toSeq

@@ -126,10 +126,10 @@ case class RandomForestModel(members: List[RandomForestMember], labelCount: Int,
       .predictions
   }
 
-  def predictProb(indexedData: RDD[(Feature, Long)]): Array[Array[AnyVal]] =
+  def predictProb(indexedData: RDD[(Feature, Long)]): Array[Array[Double]] =
     predictProb(indexedData, indexedData.size)
 
-  def predictProb(indexedData: RDD[(Feature, Long)], nSamples: Int): Array[Array[AnyVal]] = {
+  def predictProb(indexedData: RDD[(Feature, Long)], nSamples: Int): Array[Array[Double]] = {
     println(s"labelCount: ${labelCount}")
     println(s"nSamples: ${nSamples}")
     val treeVotes = trees
@@ -140,10 +140,10 @@ case class RandomForestModel(members: List[RandomForestMember], labelCount: Int,
         row.map((elem: Int) => (elem.toDouble / row.sum))
       })
     }
+    /*
     val predClass = {
       treeVotesPercs.map(_.zipWithIndex.maxBy(_._1)._2)
     }
-    /*
     println("treeVotes predictions:")
     println(treeVotes.predictions.toList)
     println("treeVotesPercs")
@@ -152,9 +152,12 @@ case class RandomForestModel(members: List[RandomForestMember], labelCount: Int,
     println(treeVotes.votes.toList.map(_.toList.mkString(" ")))
     println("predClass")
     println(predClass.toList)
+    treeVotes.predictions.map(_.toString) zip treeVotesPercs.map(_.mkString(" "))
      */
-    (treeVotes.predictions zip treeVotesPercs).map(tv => tv._1 +: tv._2)
-    // treeVotes.predictions.map(_.toString) zip treeVotesPercs.map(_.mkString(" "))
+    val tvpreds: Array[Array[Double]] =
+      (treeVotes.predictions zip treeVotesPercs)
+        .map((tv: (Int, Array[Double])) => tv._1.toDouble +: tv._2)
+    tvpreds
   }
 }
 
