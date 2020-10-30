@@ -1,32 +1,35 @@
 package au.csiro.variantspark.cli
-
 import au.csiro.pbdava.ssparkle.common.arg4j.{AppRunner, TestArgs}
-import au.csiro.pbdava.ssparkle.common.utils.Logging
+import au.csiro.pbdava.ssparkle.common.utils.{Logging, Timer}
+import au.csiro.pbdava.ssparkle.spark.SparkUtils
 import au.csiro.sparkle.common.args4j.ArgsApp
-import au.csiro.variantspark.utils.defRng
-import au.csiro.variantspark.cli.args.{
-  FeatureSourceArgs,
-  LabelSourceArgs,
-  ModelOutputArgs,
-  RandomForestArgs
+import au.csiro.variantspark.algo.{
+  DefTreeRepresentationFactory,
+  RandomForest,
+  RandomForestCallback,
+  RandomForestParams
 }
+import au.csiro.variantspark.cli.args._
 import au.csiro.variantspark.cmd.EchoUtils._
 import au.csiro.variantspark.cmd.Echoable
+import au.csiro.variantspark.input.CsvLabelSource
+import au.csiro.variantspark.utils.defRng
 import org.apache.commons.lang3.builder.ToStringBuilder
 import org.apache.hadoop.conf.Configuration
-import org.apache.spark.mllib.regression.LabeledPoint
-import org.apache.spark.mllib.tree.{RandomForest => SparkForest}
-import org.apache.spark.mllib.tree.model.{RandomForestModel => SparkForestModel}
-import org.apache.spark.rdd.RDD
 import org.apache.spark.serializer.{JavaSerializer, SerializerInstance}
 import org.kohsuke.args4j.Option
 
-import scala.collection._
-import scala.util.Random
-
 class TrainRFCmd
-    extends ArgsApp with LabelSourceArgs with RandomForestArgs with FeatureSourceArgs
-    with ModelOutputArgs with Echoable with Logging with TestArgs {
+    extends ArgsApp with LabelSourceArgs with RandomForestArgs with ImportanceArgs
+    with FeatureSourceArgs with ModelOutputArgs with Echoable with Logging with TestArgs {
+
+  @Option(name = "-im", required = false, usage = "Path to input model",
+    aliases = Array("--input-model"))
+  val inputModel: String = null
+
+  @Option(name = "-ii", required = false, usage = "Path to input variable index file",
+    aliases = Array("--input-index"))
+  val inputIndex: String = null
 
   @Option(name = "-lf", required = false, usage = "Path to label file",
     aliases = Array("--label-file"))
@@ -35,6 +38,21 @@ class TrainRFCmd
   @Option(name = "-lc", required = false, usage = "Label file column name",
     aliases = Array("--label-column"))
   val labelColumn: String = null
+
+  @Option(name = "-sr", required = false, usage = "Random seed to use (def=<random>)",
+    aliases = Array("--seed"))
+  val randomSeed: Long = defRng.nextLong
+
+  @Option(name = "-on", required = false,
+    usage = "The number of top important variables to include in output."
+      + " Use `0` for all variables. (def=20)",
+    aliases = Array("--output-n-variables"))
+  val nVariables: Int = 20
+
+  @Option(name = "-od", required = false,
+    usage = "Include important variables data in output file (def=no)",
+    aliases = Array("--output-include-data"))
+  val includeData: Boolean = false
 
   val javaSerializer = new JavaSerializer(conf)
   val si: SerializerInstance = javaSerializer.newInstance()
@@ -45,58 +63,89 @@ class TrainRFCmd
   override def run(): Unit = {
     implicit val hadoopConf: Configuration = sc.hadoopConfiguration
 
-    // echo(s"Loading labels from: ${featuresFile}, column: ${featureColumn}")
-    val labels: List[String] =
-      if (featuresFile != null) {
-        val labFile =
-          spark.read.format("csv").option("header", "true").load(featuresFile)
-        val labCol = labFile.select(featureColumn).rdd.map(_(0)).collect.toList
-        labCol.map(_.toString)
-      } else {
-        // val labelSource = new CsvLabelSource(featuresFile, featureColumn)
-        // val labels = labelSource.getLabels(featureSource.sampleNames)
-        val dummyLabels =
-          List("blue", "brown", "black", "green", "yellow", "grey")
-        // val featureCount = 2000
-        val featureCount = featureSource.features.count.toInt
-        val phenoLabelIndex = Range(0, featureCount).toList
-          .map(_ => dummyLabels(Random.nextInt.abs % dummyLabels.length))
-        phenoLabelIndex
-      }
-    /* write map of labels to file for lookup after prediction
-      allows human readable labels in results
-     */
-    val label2pt = labels.toSet.zipWithIndex.toMap
-    val pt2label = label2pt.map(l => l.swap)
-    sc.parallelize(pt2label.toSeq).saveAsTextFile(modelFile + ".labelMap")
-    echo(s"Loaded labels from file: ${labels.toSet}")
-    echo(s"Loaded labels: ${dumpList(labels)}")
+    val dataLoadingTimer = Timer()
+    echo(s"Loaded rows: ${dumpList(featureSource.sampleNames)}")
 
-    val labPts = labels zip featureSource.features.collect map {
-      case (label, feat) =>
-        LabeledPoint(label2pt(label).toDouble, feat.valueAsVector)
+    val inputData = DefTreeRepresentationFactory
+      .createRepresentation(featureSource.features.zipWithIndex())
+      .cache()
+    val totalVariables = inputData.count()
+
+    val variablePreview = inputData.map(_.label).take(defaultPreviewSize).toList
+    echo(s"Loaded variables: ${dumpListHead(variablePreview, totalVariables)},"
+        + s" took: ${dataLoadingTimer.durationInSec}")
+    echoDataPreview()
+
+    echo(s"Loading labels from: ${featuresFile}, column: ${featureColumn}")
+    val labelSource = new CsvLabelSource(featuresFile, featureColumn)
+    val labels = labelSource.getLabels(featureSource.sampleNames)
+    echo(s"Loaded labels: ${dumpList(labels.toList)}")
+    echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")
+    echo(s"Random seed is: ${randomSeed}")
+    val treeBuildingTimer = Timer()
+    val rf: RandomForest = new RandomForest(RandomForestParams(oob = rfEstimateOob,
+        seed = randomSeed, maxDepth = rfMaxDepth, minNodeSize = rfMinNodeSize,
+        bootstrap = !rfSampleNoReplacement, subsample = rfSubsampleFraction,
+        nTryFraction = if (rfMTry > 0) rfMTry.toDouble / totalVariables else rfMTryFraction,
+        correctImpurity = correctImportance, airRandomSeed = airRandomSeed))
+    val trainingData = inputData
+
+    implicit val rfCallback: RandomForestCallback = new RandomForestCallback() {
+      var totalTime: Long = 0L
+      var totalTrees: Int = 0
+      override def onParamsResolved(actualParams: RandomForestParams) {
+        echo(s"RF Params: ${actualParams}")
+        echo(s"RF Params mTry: ${(actualParams.nTryFraction * totalVariables).toLong}")
+      }
+      override def onTreeComplete(nTrees: Int, oobError: Double, elapsedTimeMs: Long) {
+        totalTime += elapsedTimeMs
+        totalTrees += nTrees
+        echo(
+            s"Finished trees: ${totalTrees}, current oobError: ${oobError},"
+              + s" totalTime: ${totalTime / 1000.0} s, "
+              + s" avg timePerTree: ${totalTime / (1000.0 * totalTrees)} s")
+        echo(
+            s"Last build trees: ${nTrees}, time: ${elapsedTimeMs} ms,"
+              + s" timePerTree: ${elapsedTimeMs / nTrees} ms")
+      }
     }
-    val labPtsRDD = sc.parallelize(labPts)
-    val catInfo = immutable.Map[Int, Int]()
-    val numClasses = labels.toSet.size
-    val numTrees = scala.Option(nTrees).getOrElse(5)
-    val subsetStrat = "auto"
-    val impurity = "gini"
-    val maxDepth: Int = scala.Option(rfMaxDepth).getOrElse(30)
-    val maxBins = 32
-    val intSeed = defRng.nextLong.toInt
-    val sparkRFModel: SparkForestModel = SparkForest.trainClassifier(labPtsRDD, numClasses,
-      catInfo, numTrees, subsetStrat, impurity, scala.math.min(maxDepth, 30), maxBins, intSeed)
+
+    val result = rf.batchTrainTyped(trainingData, labels, nTrees, rfBatchSize)
+
+    echo(
+        s"Random forest oob accuracy: ${result.oobError},"
+          + s" took: ${treeBuildingTimer.durationInSec} s")
+
+    // build index for names
+    val allImportantVariables = result.normalizedVariableImportance(importanceNormalizer).toSeq
+    val topImportantVariables = limitVariables(allImportantVariables, nVariables)
+    val topImportantVariableIndexes = topImportantVariables.map(_._1).toSet
+
+    val variablesToIndex = if (requiresFullIndex) {
+      allImportantVariables.map(_._1).toSet
+    } else {
+      topImportantVariableIndexes
+    }
+
+    val index = SparkUtils.withBroadcast(sc)(variablesToIndex) { br_indexes =>
+      inputData
+        .filter(t => br_indexes.value.contains(t.index))
+        .map(f => (f.index, f.label))
+        .collectAsMap()
+    }
+
+    val varImportance = topImportantVariables.map({
+      case (i, importance) => (index(i), importance)
+    })
+
     println("running train cmd")
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
     echo(s"Analyzing random forest model")
-    echo(s"Using spark RF Model: ${sparkRFModel.toString}")
+    echo(s"Using spark RF Model: ${result.toString}")
     echo(s"Using labels: ${labels}")
     echo(s"Loaded rows: ${dumpList(featureSource.sampleNames)}")
 
-    if (modelFile != null) {
-      sparkRFModel.save(sc, modelFile)
-    }
+    saveModel(result, index.toMap)
   }
 }
 

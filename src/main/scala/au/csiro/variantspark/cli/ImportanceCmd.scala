@@ -1,53 +1,24 @@
 package au.csiro.variantspark.cli
 
+import au.csiro.pbdava.ssparkle.common.arg4j.{AppRunner, TestArgs}
+import au.csiro.pbdava.ssparkle.common.utils.{CSVUtils, Logging, ReusablePrintStream, Timer}
+import au.csiro.pbdava.ssparkle.spark.{SparkApp, SparkUtils}
 import au.csiro.sparkle.common.args4j.ArgsApp
-import au.csiro.sparkle.cmd.CmdApp
-import org.kohsuke.args4j.Option
-import au.csiro.pbdava.ssparkle.common.arg4j.AppRunner
-import au.csiro.pbdava.ssparkle.spark.SparkApp
-import collection.JavaConverters._
-import au.csiro.variantspark.input.VCFSource
-import au.csiro.variantspark.input.VCFFeatureSource
-import au.csiro.variantspark.input.HashingLabelSource
-import org.apache.spark.mllib.linalg.{Vector, Vectors}
-import au.csiro.variantspark.input.CsvLabelSource
-import au.csiro.variantspark.cmd.Echoable
-import au.csiro.pbdava.ssparkle.common.utils.Logging
-import org.apache.commons.lang3.builder.ToStringBuilder
+import au.csiro.variantspark.algo.{RandomForest, RandomForestCallback, RandomForestParams, _}
+import au.csiro.variantspark.cli.args.{
+  FeatureSourceArgs,
+  ImportanceArgs,
+  ModelOutputArgs,
+  RandomForestArgs
+}
 import au.csiro.variantspark.cmd.EchoUtils._
-import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
-import com.github.tototoshi.csv.CSVWriter
-import au.csiro.pbdava.ssparkle.common.arg4j.TestArgs
-import org.apache.hadoop.fs.FileSystem
-import org.apache.commons.math3.stat.correlation.PearsonsCorrelation
-import au.csiro.pbdava.ssparkle.spark.SparkUtils
-import au.csiro.pbdava.ssparkle.common.utils.ReusablePrintStream
-import au.csiro.variantspark.algo.RandomForestCallback
-import au.csiro.variantspark.utils.VectorRDDFunction._
-import au.csiro.variantspark.input.CsvFeatureSource
-import au.csiro.variantspark.algo.RandomForestParams
-import au.csiro.variantspark.data.BoundedOrdinalVariable
-import au.csiro.pbdava.ssparkle.common.utils.Timer
-import au.csiro.variantspark.utils.defRng
-import au.csiro.variantspark.input.ParquetFeatureSource
-import au.csiro.variantspark.utils.IndexedRDDFunction._
-import java.io.ObjectOutputStream
-import java.io.FileOutputStream
+import au.csiro.variantspark.cmd.Echoable
+import au.csiro.variantspark.input.CsvLabelSource
+import au.csiro.variantspark.utils.{HdfsPath, defRng}
+import org.apache.commons.lang3.builder.ToStringBuilder
 import org.apache.hadoop.conf.Configuration
-import au.csiro.variantspark.utils.HdfsPath
-import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
-import au.csiro.variantspark.cli.args.ImportanceArgs
-import au.csiro.variantspark.cli.args.RandomForestArgs
-import au.csiro.variantspark.cli.args.FeatureSourceArgs
-import au.csiro.variantspark.data.ContinuousVariable
-import au.csiro.variantspark.algo.RandomForest
-import au.csiro.variantspark.data.FeatureBuilder
-import scala.reflect.ClassTag
-import au.csiro.variantspark.input._
-import au.csiro.variantspark.algo._
-import au.csiro.variantspark.data.VariableType
-import org.apache.spark.rdd.RDD
-import au.csiro.variantspark.cli.args.ModelOutputArgs
+import org.apache.hadoop.fs.FileSystem
+import org.kohsuke.args4j.Option
 
 class ImportanceCmd
     extends ArgsApp with SparkApp with FeatureSourceArgs with ImportanceArgs with RandomForestArgs
