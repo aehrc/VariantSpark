@@ -1,7 +1,7 @@
 package au.csiro.variantspark.cli
 import au.csiro.pbdava.ssparkle.common.arg4j.{AppRunner, TestArgs}
 import au.csiro.pbdava.ssparkle.common.utils.{Logging, Timer}
-import au.csiro.pbdava.ssparkle.spark.SparkUtils
+import au.csiro.pbdava.ssparkle.spark.{SparkApp, SparkUtils}
 import au.csiro.sparkle.common.args4j.ArgsApp
 import au.csiro.variantspark.algo.{
   DefTreeRepresentationFactory,
@@ -20,8 +20,12 @@ import org.apache.spark.serializer.{JavaSerializer, SerializerInstance}
 import org.kohsuke.args4j.Option
 
 class TrainRFCmd
-    extends ArgsApp with LabelSourceArgs with RandomForestArgs with ImportanceArgs
+    extends ArgsApp with SparkApp with LabelSourceArgs with RandomForestArgs with ImportanceArgs
     with FeatureSourceArgs with ModelOutputArgs with Echoable with Logging with TestArgs {
+
+  @Option(name = "-of", required = false, usage = "Path to output file (def = stdout)",
+    aliases = Array("--output-file"))
+  val outputFile: String = null
 
   @Option(name = "-im", required = false, usage = "Path to input model",
     aliases = Array("--input-model"))
@@ -146,6 +150,7 @@ class TrainRFCmd
     echo(s"Loaded rows: ${dumpList(featureSource.sampleNames)}")
 
     saveModel(result, index.toMap)
+    echo(s"inputFile: ${inputFile}")
   }
 }
 
