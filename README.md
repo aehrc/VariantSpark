@@ -39,7 +39,7 @@ In order to build the binaries use:
 
     mvn clean install
 
-For python _variant-spark_ requires python 2.7 with pip.
+For python _variant-spark_ requires python 3.6+ with pip.
 The other packages required for development are listed in `dev/dev-requirements.txt` and can be installed with:
 
     pip install -r dev/dev-requirements.txt
