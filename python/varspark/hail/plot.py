@@ -66,7 +66,7 @@ def manhattan_imp(pvals, locus=None, title=None, size=4, hover_fields=None, coll
         fields=hover_fields,
         n_divisions=None if collect_all else n_divisions
     )
-    source_pd['p_value'] = [p for p in source_pd['_pval']]
+    source_pd['p_value'] = list(source_pd['_pval'])
     source_pd['_contig'] = [locus.split(":")[0] for locus in source_pd['locus']]
 
     observed_contigs = set(source_pd['_contig'])

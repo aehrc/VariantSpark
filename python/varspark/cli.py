@@ -13,4 +13,4 @@ def varspark_jar():
 
 def varspark_submit():
     args = ['spark-submit', '--jars', find_jar()] + sys.argv[1:]
-    exit(subprocess.call(" ".join(["'%s'"%arg for arg in args]), shell=True))
+    sys.exit(subprocess.call(" ".join(["'%s'"%arg for arg in args]), shell=True))
