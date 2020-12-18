@@ -9,8 +9,8 @@ Getting Started
 You’ll need:
 
 - The `Java 8 JDK <http://www.oracle.com/technetwork/java/javase/downloads/index.html>`_.
-- `Apache Spark 2.2.1 <http://spark.apache.org/downloads.html>`_. **VariantSpark** is compatible with Spark 2.1+
-- Python 2.7 and Jupyter Notebooks. We recommend the free `Anaconda distribution <https://www.continuum.io/downloads>`_.
+- `Apache Spark 2.4 <http://spark.apache.org/downloads.html>`_. **VariantSpark** is compatible with Spark 2.4+
+- Python 3.6+ and Jupyter Notebooks. We recommend the free `Anaconda distribution <https://www.continuum.io/downloads>`_.
 
 It’s easy to run locally on one machine - you need to have Apache Spark installed correctly  with:
 
@@ -24,7 +24,7 @@ Get **VariantSpark** distribution from the downloads page of project web site.
 Un-tar the distribution after you download it (you may need to change the name of the file to match the current version). 
 ::
 
-    tar -xzf variant-spark_2.11-0.2.0.tar.gz
+    tar -xzf variant-spark_2.11-0.3.0.tar.gz
 
 
 Next, edit and copy the below bash commands to set up the **VariantSpark** environment variables. 
