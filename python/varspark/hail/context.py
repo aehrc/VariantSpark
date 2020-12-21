@@ -6,6 +6,10 @@ import hail as hl
 import varspark as vs
 
 def init(**kwargs):
+    """ Initialises hail context with variant-spark support.
+
+        :param kwargs: same as for hail.init()
+    """
 
     jars = []
     vs_jar_path=vs.find_jar()
