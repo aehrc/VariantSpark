@@ -1,18 +1,12 @@
 package au.csiro.variantspark.hail
 
-import au.csiro.variantspark.test.SparkTest
-import org.junit.Test
-import org.junit.Assert._
-
-import is.hail.HailContext
-import is.hail.expr._
-import au.csiro.variantspark.hail._
-import au.csiro.variantspark.algo.metrics.ManhattanPairwiseMetric
-import is.hail.expr.ir.IRParser
 import au.csiro.variantspark.hail.methods.RFModel
+import au.csiro.variantspark.test.{SparkTest, TestSparkContext}
+import is.hail.HailContext
+import is.hail.expr.ir.IRParser
 import is.hail.table.Table
-import is.hail.expr.ir.MatrixIR
-import au.csiro.variantspark.test.TestSparkContext
+import org.junit.Assert._
+import org.junit.Test
 
 object TestHailContext {
   lazy val hc = HailContext(TestSparkContext.spark.sparkContext)
@@ -103,6 +97,21 @@ class HailIntegrationTest extends SparkTest {
       "sample", "x22_16051480", "GRCh37")
     val matrixIR = IRParser.parse_matrix_ir(strMatrixIR)
     val rfModel = RFModel.pyApply(matrixIR, None, true, None, None, Some(13))
+    rfModel.fitTrees(100, 50)
+    assertTrue("OOB Error is defined", !rfModel.oobError.isNaN)
+    val importanceTableValue = rfModel.variableImportance
+    val importanceTable = new Table(hc, importanceTableValue)
+    assertEquals(List("locus", "alleles", "importance"),
+      importanceTable.signature.fieldNames.toList)
+    assertEquals("All variables have reported importance", 1988, importanceTable.count())
+    rfModel.release()
+  }
+  @Test
+  def testRunImportanceAnalysisWithMissingCalls() {
+    val strMatrixIR = loadDataToMatrixIr("data/chr22_1000_missing.vcf",
+      "data/chr22-labels-hail.csv", "sample", "x22_16051480", "GRCh37")
+    val matrixIR = IRParser.parse_matrix_ir(strMatrixIR)
+    val rfModel = RFModel.pyApply(matrixIR, None, true, None, None, Some(13), Some("mode"))
     rfModel.fitTrees(100, 50)
     assertTrue("OOB Error is defined", !rfModel.oobError.isNaN)
     val importanceTableValue = rfModel.variableImportance
