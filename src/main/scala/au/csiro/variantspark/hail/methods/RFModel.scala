@@ -12,6 +12,12 @@ import au.csiro.variantspark.algo.{
 }
 import au.csiro.variantspark.data.{BoundedOrdinalVariable, Feature, StdFeature}
 import au.csiro.variantspark.external.ModelConverter
+import au.csiro.variantspark.input.{
+  DisabledImputationStrategy,
+  ImputationStrategy,
+  Missing,
+  ModeImputationStrategy
+}
 import au.csiro.variantspark.utils.HdfsPath
 import is.hail.annotations.Annotation
 import is.hail.expr.ir.{Interpret, MatrixIR, MatrixValue, TableIR, TableLiteral, TableValue}
@@ -37,7 +43,8 @@ import scala.collection.IndexedSeq
   *           while the dependent variable is named `y`
   * @param rfParams random forest parameters to use
   */
-case class RFModel(mv: MatrixValue, rfParams: RandomForestParams) {
+case class RFModel(mv: MatrixValue, rfParams: RandomForestParams,
+    imputationStrategy: Option[ImputationStrategy]) {
 
   val responseVarName: String = "y"
   val entryVarname: String = "e"
@@ -63,7 +70,9 @@ case class RFModel(mv: MatrixValue, rfParams: RandomForestParams) {
   lazy val sig: TStruct = keySignature.insertFields(Array(("importance", TFloat64())))
 
   lazy val rf: RandomForest = new RandomForest(rfParams)
-  val featuresRDD: RDD[Feature] = mv.rvd.toRows.map(RFModel.rowToFeature)
+
+  val featuresRDD: RDD[Feature] =
+    RFModel.mvToFeatureRDD(mv, imputationStrategy.getOrElse(DisabledImputationStrategy))
   lazy val inputData: RDD[TreeFeature] =
     DefTreeRepresentationFactory.createRepresentation(featuresRDD.zipWithIndex())
 
@@ -148,7 +157,7 @@ case class RFModel(mv: MatrixValue, rfParams: RandomForestParams) {
   }
 
   private def importanceMapBroadcast: Broadcast[Map[Long, Double]] = {
-    require(rfModel != null, "Traind the model first")
+    require(rfModel != null, "Train the model first")
     if (impVarBroadcast != null) {
       impVarBroadcast
     } else {
@@ -175,19 +184,37 @@ object RFModel {
     Row(Locus(elements(0), elements(1).toInt), alleles, impValue) // , elements.drop(2))
   }
 
-  def rowToFeature(r: Row): Feature = {
+  def mvToFeatureRDD(mv: MatrixValue, imputationStrategy: ImputationStrategy): RDD[Feature] =
+    mv.rvd.toRows.map(rowToFeature(_, imputationStrategy))
+
+  def rowToFeature(r: Row, is: ImputationStrategy): Feature = {
     val locus = r.getAs[Locus](0)
     val varName =
       (Seq(locus.contig, locus.position.toString) ++ r.getSeq[String](1)).mkString("_")
-    val data = r.getSeq[Row](2).map(_.getInt(0)).toArray
-    StdFeature.from(varName, BoundedOrdinalVariable(3), data)
+    // perform a rudimentary imputation but replacing missing values with 0
+    val data = r
+      .getSeq[Row](2)
+      .map(g => if (!g.isNullAt(0)) g.getInt(0).toByte else Missing.BYTE_NA_VALUE)
+      .toArray
+    StdFeature.from(varName, BoundedOrdinalVariable(3), is.impute(data))
+  }
+
+  def imputationFromString(imputationType: String): ImputationStrategy = {
+    imputationType match {
+      case "mode" => ModeImputationStrategy(3)
+      case _ =>
+        throw new IllegalArgumentException(
+            "Unknown imputation type: '" + imputationType + "'. Valid types are: 'mode'")
+    }
+
   }
 
   def pyApply(inputIR: MatrixIR, mTryFraction: Option[Double], oob: Boolean,
-      minNodeSize: Option[Int], maxDepth: Option[Int], seed: Option[Int]): RFModel = {
+      minNodeSize: Option[Int], maxDepth: Option[Int], seed: Option[Int],
+      imputationType: Option[String] = None): RFModel = {
+    var rfParams = RandomForestParams.fromOptions(mTryFraction = mTryFraction, oob = Some(oob),
+      minNodeSize = minNodeSize, maxDepth = maxDepth, seed = seed.map(_.longValue))
     val mv = Interpret(inputIR)
-    RFModel(mv,
-      RandomForestParams.fromOptions(mTryFraction = mTryFraction, oob = Some(oob),
-        minNodeSize = minNodeSize, maxDepth = maxDepth, seed = seed.map(_.longValue)))
+    RFModel(mv, rfParams, imputationType.map(imputationFromString))
   }
 }

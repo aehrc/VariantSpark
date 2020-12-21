@@ -27,11 +27,12 @@ from . import rf
         mtry_fraction=nullable(float),
         min_node_size=nullable(int),
         max_depth=nullable(int),
-        seed=nullable(int)
+        seed=nullable(int),
+        imputation_type=nullable(str)
         )
 
 def random_forest_model(y, x, covariates=(), oob=True, mtry_fraction=None,
-    min_node_size = None, max_depth=None, seed=None):
+    min_node_size = None, max_depth=None, seed=None, imputation_type=None):
 
     mt = matrix_table_source('random_forest_model/x', x)
     check_entry_indexed('random_forest_model/x', x)
@@ -44,4 +45,5 @@ def random_forest_model(y, x, covariates=(), oob=True, mtry_fraction=None,
                         mtry_fraction=mtry_fraction,
                         min_node_size = min_node_size,
                         max_depth = max_depth,
-                        seed = seed)
+                        seed = seed,
+                        imputation_type = imputation_type)

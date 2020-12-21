@@ -28,15 +28,16 @@ class RandomForestModel(object):
         mtry_fraction=nullable(float),
         min_node_size=nullable(int),
         max_depth=nullable(int),
-        seed=nullable(int)
+        seed=nullable(int),
+        imputation_type=nullable(str)
     )
     def __init__(self,_mir, oob=True, mtry_fraction=None, min_node_size=None,
-            max_depth=None, seed=None):
+            max_depth=None, seed=None, imputation_type = None):
         self._mir = _mir
         self._jrf_model = Env.jvm().au.csiro.variantspark.hail.methods.RFModel.pyApply(
             Env.spark_backend('rf')._to_java_ir(self._mir),
             java.joption(mtry_fraction), oob, java.joption(min_node_size),
-            java.joption(max_depth), java.joption(seed))
+            java.joption(max_depth), java.joption(seed), java.joption(imputation_type))
 
     @typecheck_method(
         n_trees=int,
