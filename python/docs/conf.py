@@ -15,16 +15,12 @@
 import sys
 import os
 
-
 # add python sources and dependecies to the list
 # This is need for read the docs to pickup the sources without instaalling the package.
 # The installation is not possible becasue jar file is missing ...
 # TODO: Consider a JAR less setup ???
-import glob
 PYTHON_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))
 sys.path.append(PYTHON_ROOT)
-sys.path+=glob.glob(os.path.join(PYTHON_ROOT, 'lib', '*.zip'))
-sys.path+=glob.glob(os.path.join(PYTHON_ROOT, 'dev-lib', '*.zip'))
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
