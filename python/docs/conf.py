@@ -58,7 +58,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'variant-spark'
-copyright = u'2017-2020,CSIRO Australia'
+copyright = u'2017-2021,CSIRO Australia'
 author = u'Piotr Szul'
 
 # The version info for the project you're documenting, acts as replacement for
