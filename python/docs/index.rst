@@ -37,9 +37,6 @@ Contents:
    :maxdepth: 2
    
    getting_started
-   overview
-   installation
-   tutorials
    cmd_ref
    pyapi
    development
