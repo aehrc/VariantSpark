@@ -1,6 +1,5 @@
 #these are needed by variant spark
 typedecorator>=0.0.5
 pandas>=0.22.0
-#this is need by hail (the version needs to be less than 4.3) 
-decorator==4.1.2
+hail==0.2.16
 nbsphinx
