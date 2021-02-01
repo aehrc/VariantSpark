@@ -3,10 +3,10 @@ import sys
 
 import hail as hl
 import pkg_resources
-import varspark as vs
 from hail.utils.java import Env
 from pyspark import SparkConf, SparkContext
 
+import varspark as vs
 
 def init(**kwargs):
     """ Initialises hail context with variant-spark support.
