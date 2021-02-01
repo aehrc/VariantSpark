@@ -6,13 +6,14 @@ import scala.collection.JavaConverters._
 
 object VersionInfo {
   lazy val gitProperties: Map[String, String] =
-    LoanUtils.withCloseable(getClass.getClassLoader.getResourceAsStream("git.properties")) { in =>
+    LoanUtils.withCloseable(
+        getClass.getClassLoader.getResourceAsStream("variant-spark.git.properties")) { in =>
       if (in != null) {
         val gitProperties = new Properties()
         gitProperties.load(in)
         gitProperties.asScala.toMap
       } else {
-        throw new IllegalStateException("Cannot find 'git.properties'")
+        throw new IllegalStateException("Cannot find 'variant-spark.git.properties'")
       }
     }
 

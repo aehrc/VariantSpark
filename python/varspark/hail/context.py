@@ -1,9 +1,12 @@
 import os
 import sys
-import pkg_resources
-from pyspark import SparkConf, SparkContext
+
 import hail as hl
+import pkg_resources
 import varspark as vs
+from hail.utils.java import Env
+from pyspark import SparkConf, SparkContext
+
 
 def init(**kwargs):
     """ Initialises hail context with variant-spark support.
@@ -12,7 +15,7 @@ def init(**kwargs):
     """
 
     jars = []
-    vs_jar_path=vs.find_jar()
+    vs_jar_path = vs.find_jar()
     assert os.path.exists(vs_jar_path), "%s does not exist" % vs_jar_path
     sys.stderr.write("using variant-spark jar at '%s'\n" % vs_jar_path)
     jars.append(vs_jar_path)
@@ -30,3 +33,11 @@ def init(**kwargs):
     SparkContext._ensure_initialized(conf=conf)
 
     hl.init(**kwargs)
+
+
+def version():
+    return Env.jvm().au.csiro.variantspark.python.Metadata.version()
+
+
+def version_info():
+    return Env.jvm().au.csiro.variantspark.python.Metadata.gitProperties()
