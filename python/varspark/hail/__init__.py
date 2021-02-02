@@ -9,7 +9,10 @@ from __future__ import (
     division,
     print_function)
 
-from .context import init
-from . methods import *
+from .context import init, version_info, version
+from .methods import *
 
-__all__ = ['init', 'random_forest_model']
+__all__ = ['init',
+           'version',
+           'version_info',
+           'random_forest_model']

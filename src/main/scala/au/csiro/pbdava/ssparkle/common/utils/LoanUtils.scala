@@ -1,6 +1,7 @@
 package au.csiro.pbdava.ssparkle.common.utils
 
 import java.io.Closeable
+
 import scala.io.Source
 
 object LoanUtils {
@@ -17,7 +18,9 @@ object LoanUtils {
     try {
       func(cl)
     } finally {
-      cl.close()
+      if (cl != null) {
+        cl.close()
+      }
     }
   }
 }
