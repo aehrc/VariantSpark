@@ -20,23 +20,23 @@ install:
   - dev/py-setup.sh
 script:
   - dev/travis-build.sh
-before_deploy:
-  - dev/travis-py-dist.sh
-  - dev/travis-prepare-s3-release.sh
-deploy:
-  - provider: script
-    script: dev/travis-py-pypi.sh
-    skip_cleanup: true
-    on:
-      tags: true
-  - provider: s3
-    access_key_id: AKIAIHFG2B4BAI47BJ6Q
-    secret_access_key:
-      secure: DbCG2DdCICREbqvb43fU/OdLinujW2mnvOk2lNLY9xKuN94VF4mrBuHfBvBLEP76btY98XEQklL+5z6I939K7Zf3AQz6UIpedPTRXfduqkNjyfdShxX2lC73k7DxLLOi1CGgUDblzhWVeBmJzJ2dqfih/Jw5+XiEETyiYH92qhZj2raDZfvdNVBOY7pannta7yV/ooBET8HMx99Q8w7Um7YHMtmWX9RjnL3wKJnsJVUJq7X0f305VZ0kimpJXx9VtM052I3WgS9hfIPWxrvRpOtud3Upp7OQkT21z1DuIFMd5pNMDcnpvZPlHcNMG8sBPuiY4O6JAvRQmzKLvjkvN8WXfl/KwCeKljHgG3utiqytJWKkWZf4zJNEEIS8SM8qVbFKmoqcbXRpjzxijyt0qtVcQkjTw6DV6aQqpAsxTRsV7oFWKvUK5vAzmHd3rc6KSWLuV9TtKF1Z1zcFHAl9bcT24IHH/XKnHR4U/DLe/EdciGvSZUP5hBcLu/bEE4j//2UZJd/d5NYaAf11HMkdvjJFnIPfoHOmhuM4dwXOf9oq4xoKYFgF3Ud0mYGjWU0sM4ikK+9JNqiIlty4m6Y9yBwRZGcOLU/VSgR7+Iq+ZQLPLJIjeRbOdpzX9Nnr/7rguIZa9wCT8FQIdaaLOMlWmioa3AsKvIJVQzZTLCdsgQI=
-    bucket: variant-spark
-    local-dir: target/s3-release
-    skip_cleanup: true
-    acl: public_read
-    region: ap-southeast-2
-    on:
-      tags: true
+#before_deploy:
+#  - dev/travis-py-dist.sh
+#  - dev/travis-prepare-s3-release.sh
+#deploy:
+#  - provider: script
+#    script: dev/travis-py-pypi.sh
+#    skip_cleanup: true
+#    on:
+#      tags: true
+#  - provider: s3
+#    access_key_id: AKIAIHFG2B4BAI47BJ6Q
+#    secret_access_key:
+#      secure: DbCG2DdCICREbqvb43fU/OdLinujW2mnvOk2lNLY9xKuN94VF4mrBuHfBvBLEP76btY98XEQklL+5z6I939K7Zf3AQz6UIpedPTRXfduqkNjyfdShxX2lC73k7DxLLOi1CGgUDblzhWVeBmJzJ2dqfih/Jw5+XiEETyiYH92qhZj2raDZfvdNVBOY7pannta7yV/ooBET8HMx99Q8w7Um7YHMtmWX9RjnL3wKJnsJVUJq7X0f305VZ0kimpJXx9VtM052I3WgS9hfIPWxrvRpOtud3Upp7OQkT21z1DuIFMd5pNMDcnpvZPlHcNMG8sBPuiY4O6JAvRQmzKLvjkvN8WXfl/KwCeKljHgG3utiqytJWKkWZf4zJNEEIS8SM8qVbFKmoqcbXRpjzxijyt0qtVcQkjTw6DV6aQqpAsxTRsV7oFWKvUK5vAzmHd3rc6KSWLuV9TtKF1Z1zcFHAl9bcT24IHH/XKnHR4U/DLe/EdciGvSZUP5hBcLu/bEE4j//2UZJd/d5NYaAf11HMkdvjJFnIPfoHOmhuM4dwXOf9oq4xoKYFgF3Ud0mYGjWU0sM4ikK+9JNqiIlty4m6Y9yBwRZGcOLU/VSgR7+Iq+ZQLPLJIjeRbOdpzX9Nnr/7rguIZa9wCT8FQIdaaLOMlWmioa3AsKvIJVQzZTLCdsgQI=
+#    bucket: variant-spark
+#    local-dir: target/s3-release
+#    skip_cleanup: true
+#    acl: public_read
+#    region: ap-southeast-2
+#    on:
+#      tags: true
