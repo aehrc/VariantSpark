@@ -1,6 +1,6 @@
 # Variant Spark
 
-[![Build](https://github.com/aehrc/VariantSpark/workflows/CI/badge.svg)](https://github.com/aehrc/VariantSpark/actions?query=workflow%3CI)
+[![Build](https://github.com/aehrc/VariantSpark/workflows/Java%20and%20Python%20CI%20with%20Maven/badge.svg)](https://github.com/aehrc/VariantSpark/actions?query=workflow%3CI)
 [![Documentation Status](https://readthedocs.org/projects/variantspark/badge/?version=latest)](http://variantspark.readthedocs.io/en/latest/?badge=latest)
 
 _variant-spark_ is a scalable toolkit for genome-wide association studies optimized for GWAS like datasets.
