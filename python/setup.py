@@ -67,19 +67,15 @@ try:
         install_requires=[
             'typedecorator==0.0.5'
         ],
-#        test_suite = 'varspark.test',
-#        test_requires = [
-#            'pyspark>=2.1.0'
-#        ],
-        extras_require = {                          
+        extras_require = {
             'deps': [ 
                 'pandas>=0.22.0', 
             ],
             'spark': [ 
-                'pyspark==2.4.1', 
+                'pyspark>=2.4.1',
             ],
             'test': [ 
-                'pyspark==2.4.1', 
+                'pyspark>=2.4.1',
             ],
             'hail': [
                 'hail==0.2.16',

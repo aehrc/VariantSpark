@@ -1,0 +1,53 @@
+# This workflow will build a Java project with Maven
+# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
+
+
+#
+# Notes:
+# - we need to install pypandoc first as it is needed by pyspark setup
+# - using python 3.7 because platform specific wheel for pandas 0.23.x required
+#   by hail is not available for python 3.8
+#
+
+name: Java and Python CI with Maven
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install pandoc
+        run: sudo apt-get install pandoc
+      - uses: actions/checkout@v2
+      - name: Set up JDK 1.8
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pypandoc==1.5
+          if [ -f dev/dev-requirements.txt ]; then pip install -r dev/dev-requirements.txt; fi
+      - name: Validate Python code
+        run: pylint --max-line-length=140 python/varspark --rcfile python/pylintrc
+      - name: Build with Maven
+        run: mvn -B package --file pom.xml
+      - name: Test with pytest
+        run: pytest -s ./python
