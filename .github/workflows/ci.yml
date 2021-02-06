@@ -58,4 +58,6 @@ jobs:
       - name: Build with Maven
         run: mvn -B package --file pom.xml
       - name: Test with pytest
-        run: pytest -s ./python
+        run: |
+          pytest -s -m spark ./python
+          pytest -s -m hail ./python
