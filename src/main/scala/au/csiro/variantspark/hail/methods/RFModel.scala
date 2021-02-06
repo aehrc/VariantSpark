@@ -2,7 +2,7 @@ package au.csiro.variantspark.hail.methods
 
 import java.io.OutputStreamWriter
 
-import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
+import au.csiro.pbdava.ssparkle.common.utils.{LoanUtils, Logging}
 import au.csiro.variantspark.algo.{
   DefTreeRepresentationFactory,
   RandomForest,
@@ -20,11 +20,13 @@ import au.csiro.variantspark.input.{
 }
 import au.csiro.variantspark.utils.HdfsPath
 import is.hail.annotations.Annotation
+import is.hail.backend.spark.SparkBackend
 import is.hail.expr.ir.{Interpret, MatrixIR, MatrixValue, TableIR, TableLiteral, TableValue}
-import is.hail.expr.types.virtual._
 import is.hail.stats.RegressionUtils
-import is.hail.utils._
+import is.hail.types.virtual._
+import is.hail.utils.{ExecutionTimer, fatal}
 import is.hail.variant._
+import javax.annotation.Nullable
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
@@ -38,48 +40,27 @@ import scala.collection.IndexedSeq
 
 /**
   * Initial implementation of RandomForst model for hail
-  * @param mv MatrixValue with extracted fields of interests, currently it's assumed
+  * @param inputIR MatrixIR with extracted fields of interests, currently it's assumed
   *           that the per sample dependent variable is named `e`
   *           while the dependent variable is named `y`
   * @param rfParams random forest parameters to use
   */
-case class RFModel(mv: MatrixValue, rfParams: RandomForestParams,
-    imputationStrategy: Option[ImputationStrategy]) {
+case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomForestParams,
+    imputationStrategy: Option[ImputationStrategy])
+    extends Logging with AutoCloseable {
 
   val responseVarName: String = "y"
   val entryVarname: String = "e"
 
-  // maintain the same key as in the original matrix
-  private val key: IndexedSeq[String] = mv.typ.rowKey
-  private val keySignature = mv.typ.rowKeyStruct
-
-  // for now we need to assert that the MatrixValue
-  // is actually indexed by the locus
-  // TODO: otherwise I need some way to serialize and deserialize the keys
-  // which may be possible in the future
-  // one more reason to make this API work for genotypes only ...
-
-  require(keySignature.fields.size == 2,
-    "The key needs to be (for now): (locus<*>, alleles: array<str>)")
-  require(keySignature.fields(0).typ.isInstanceOf[TLocus],
-    s"The first field in key needs to be TLocus[*] but is ${keySignature.fields(0).typ}")
-  require(keySignature.fields(1).typ.isOfType(TArray.apply(TString())),
-    s"The second field in key needs to be TArray[String] but is ${keySignature.fields(1).typ}")
-
-  // the result should keep the key + add importance related field
-  lazy val sig: TStruct = keySignature.insertFields(Array(("importance", TFloat64())))
-
-  lazy val rf: RandomForest = new RandomForest(rfParams)
-
-  val featuresRDD: RDD[Feature] =
-    RFModel.mvToFeatureRDD(mv, imputationStrategy.getOrElse(DisabledImputationStrategy))
-  lazy val inputData: RDD[TreeFeature] =
-    DefTreeRepresentationFactory.createRepresentation(featuresRDD.zipWithIndex())
-
   // the a stateful object
   // TODO: Maybe refactor to a helper object
+  // maintain the same key as in the original matrix
+  var key: IndexedSeq[String] = _
+  var keySignature: TStruct = _
+
   var rfModel: RandomForestModel = _
   var impVarBroadcast: Broadcast[Map[Long, Double]] = _
+  var inputData: RDD[TreeFeature] = _
 
   def fitTrees(nTrees: Int = 500, batchSize: Int = 100) {
 
@@ -87,44 +68,80 @@ case class RFModel(mv: MatrixValue, rfParams: RandomForestParams,
     // We may want to be abel to the trees.
 
     releaseModelState()
-    // These are currently obrained as doubles and converted to Int's needed by RandomForest
-    // This is because getPhenosCovCompleteSamples only works on Double64 columns
-    // This may be optimized in the future
-    val (yMat, cov, completeColIdx) =
-      RegressionUtils.getPhenosCovCompleteSamples(mv, Array(responseVarName), Array[String]())
-    // completeColIdx are indexes of the complete samples.
-    // These can be used to subsample the entry data
-    // but for now let's just assume that there are no NAs in the labels (and or covariates).
-    // TODO: allow for NAs in the labels and/or covariates
-    require(completeColIdx.length == mv.nCols,
-      "NAs are not currenlty supported in response variable. Filter the data first.")
-    val labelVector = yMat(::, 0)
-    // TODO: allow for multi class classification
-    if (!labelVector.forall(yi => yi == 0d || yi == 1d)) {
-      fatal(
-          "For classification random forestlabel must be bool or numeric"
-            + " with all present values equal to 0 or 1")
-    }
-    val labels = labelVector.map(_.toInt).toArray
+    rfModel = ExecutionTimer.logTime("RFModel.fitTrees") { timer =>
+      backend.withExecuteContext(timer) { implicit ctx =>
+        val tv = Interpret.apply(inputIR, ctx, true)
+        val mv = tv.toMatrixValue(inputIR.typ.colKey)
 
-    // now we somehow need to get to row data
-    if (inputData.getStorageLevel == StorageLevel.NONE) {
-      inputData.cache()
-      val totalVariables = inputData.count()
-      info(s"Loaded ${totalVariables} variables")
+        // maintain the same key as in the original matrix
+        key = mv.typ.rowKey
+        keySignature = mv.typ.rowKeyStruct
+
+        // for now we need to assert that the MatrixValue
+        // is actually indexed by the locus
+        // TODO: otherwise I need some way to serialize and deserialize the keys
+        // which may be possible in the future
+        // one more reason to make this API work for genotypes only ...
+
+        require(keySignature.fields.size == 2,
+          "The key needs to be (for now): (locus<*>, alleles: array<str>)")
+        require(keySignature.fields(0).typ.isInstanceOf[TLocus],
+          s"The first field in key must be TLocus[*] but is ${keySignature.fields(0).typ}")
+        require(keySignature.fields(1).typ == TArray(TString),
+          s"The second field in key must be TArray[String] but is ${keySignature.fields(1).typ}")
+
+        lazy val rf: RandomForest = new RandomForest(rfParams)
+
+        val featuresRDD: RDD[Feature] =
+          RFModel.mvToFeatureRDD(mv, imputationStrategy.getOrElse(DisabledImputationStrategy))
+        inputData = DefTreeRepresentationFactory.createRepresentation(featuresRDD.zipWithIndex())
+
+        // These are currently obrained as doubles and converted to Int's needed by RandomForest
+        // This is because getPhenosCovCompleteSamples only works on Double64 columns
+        // This may be optimized in the future
+        val (yMat, cov, completeColIdx) =
+          RegressionUtils.getPhenosCovCompleteSamples(mv, Array(responseVarName), Array[String]())
+        // completeColIdx are indexes of the complete samples.
+        // These can be used to subsample the entry data
+        // but for now let's just assume that there are no NAs in the labels (and or covariates).
+        // TODO: allow for NAs in the labels and/or covariates
+        require(completeColIdx.length == mv.nCols,
+          "NAs are not currenlty supported in response variable. Filter the data first.")
+        val labelVector = yMat(::, 0)
+        // TODO: allow for multi class classification
+        if (!labelVector.forall(yi => yi == 0d || yi == 1d)) {
+          fatal(
+              "For classification random forestlabel must be bool or numeric"
+                + " with all present values equal to 0 or 1")
+        }
+        val labels = labelVector.map(_.toInt).toArray
+
+        // now we somehow need to get to row data
+        if (inputData.getStorageLevel == StorageLevel.NONE) {
+          inputData.cache()
+          val totalVariables = inputData.count()
+          logInfo(s"Loaded ${totalVariables} variables")
+        }
+        rf.batchTrainTyped(inputData, labels, nTrees, batchSize)
+      }
     }
-    rfModel = rf.batchTrainTyped(inputData, labels, nTrees, batchSize)
   }
 
   def oobError: Double = rfModel.oobError
 
   def variableImportance: TableIR = {
-    val brVarImp = importanceMapBroadcast
-    val mapRDD = inputData.mapPartitions { it =>
-      val varImp = brVarImp.value
-      it.map(tf => RFModel.tfFeatureToImpRow(tf.label, varImp.getOrElse(tf.index, 0.0)))
+    ExecutionTimer.logTime("RFModel.fitTrees") { timer =>
+      backend.withExecuteContext(timer) { ctx =>
+        // the result should keep the key + add importance related field
+        val sig: TStruct = keySignature.insertFields(Array(("importance", TFloat64)))
+        val brVarImp = importanceMapBroadcast
+        val mapRDD = inputData.mapPartitions { it =>
+          val varImp = brVarImp.value
+          it.map(tf => RFModel.tfFeatureToImpRow(tf.label, varImp.getOrElse(tf.index, 0.0)))
+        }
+        TableLiteral(TableValue(ctx, sig, key, mapRDD))
+      }
     }
-    TableLiteral(TableValue(sig, key, mapRDD))
   }
 
   def toJson(jsonFilename: String, resolveVarNames: Boolean) {
@@ -152,7 +169,6 @@ case class RFModel(mv: MatrixValue, rfParams: RandomForestParams,
   }
 
   def release() {
-    inputData.unpersist()
     releaseModelState()
   }
 
@@ -161,7 +177,7 @@ case class RFModel(mv: MatrixValue, rfParams: RandomForestParams,
     if (impVarBroadcast != null) {
       impVarBroadcast
     } else {
-      impVarBroadcast = inputData.sparkContext.broadcast(rfModel.variableImportance)
+      impVarBroadcast = backend.sparkSession.sparkContext.broadcast(rfModel.variableImportance)
       impVarBroadcast
     }
   }
@@ -170,10 +186,19 @@ case class RFModel(mv: MatrixValue, rfParams: RandomForestParams,
     if (impVarBroadcast != null) {
       impVarBroadcast.destroy()
     }
+    if (inputData != null) {
+      inputData.unpersist()
+    }
+    inputData = null
     impVarBroadcast = null
     rfModel = null
+    key = null
+    keySignature = null
   }
 
+  override def close(): Unit = {
+    release()
+  }
 }
 
 object RFModel {
@@ -184,14 +209,17 @@ object RFModel {
     Row(Locus(elements(0), elements(1).toInt), alleles, impValue) // , elements.drop(2))
   }
 
-  def mvToFeatureRDD(mv: MatrixValue, imputationStrategy: ImputationStrategy): RDD[Feature] =
+  def mvToFeatureRDD(mv: MatrixValue, imputationStrategy: ImputationStrategy): RDD[Feature] = {
+    // toRows <==> to external rows as far as I understand
+    // which will allow the RDD to be used outside of the
+    // execution context (which is what we want here)
     mv.rvd.toRows.map(rowToFeature(_, imputationStrategy))
+  }
 
   def rowToFeature(r: Row, is: ImputationStrategy): Feature = {
     val locus = r.getAs[Locus](0)
     val varName =
       (Seq(locus.contig, locus.position.toString) ++ r.getSeq[String](1)).mkString("_")
-    // perform a rudimentary imputation but replacing missing values with 0
     val data = r
       .getSeq[Row](2)
       .map(g => if (!g.isNullAt(0)) g.getInt(0).toByte else Missing.BYTE_NA_VALUE)
@@ -209,12 +237,16 @@ object RFModel {
 
   }
 
-  def pyApply(inputIR: MatrixIR, mTryFraction: Option[Double], oob: Boolean,
-      minNodeSize: Option[Int], maxDepth: Option[Int], seed: Option[Int],
-      imputationType: Option[String] = None): RFModel = {
-    var rfParams = RandomForestParams.fromOptions(mTryFraction = mTryFraction, oob = Some(oob),
-      minNodeSize = minNodeSize, maxDepth = maxDepth, seed = seed.map(_.longValue))
-    val mv = Interpret(inputIR)
-    RFModel(mv, rfParams, imputationType.map(imputationFromString))
+  def optionFromNullable[J, S](jValue: J)(implicit conversion: J => S): Option[S] =
+    if (jValue == null) None else Some(conversion(jValue))
+
+  def pyApply(backend: SparkBackend, inputIR: MatrixIR, @Nullable mTryFraction: java.lang.Double,
+      oob: Boolean, @Nullable minNodeSize: java.lang.Integer,
+      @Nullable maxDepth: java.lang.Integer, @Nullable seed: java.lang.Integer,
+      @Nullable imputationType: String = null): RFModel = {
+    var rfParams = RandomForestParams.fromOptions(mTryFraction = optionFromNullable(mTryFraction),
+      oob = Some(oob), minNodeSize = optionFromNullable(minNodeSize),
+      maxDepth = optionFromNullable(maxDepth), seed = optionFromNullable(seed).map(_.longValue))
+    RFModel(backend, inputIR, rfParams, Option(imputationType).map(imputationFromString))
   }
 }

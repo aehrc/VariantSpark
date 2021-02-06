@@ -1,23 +1,10 @@
 package au.csiro.variantspark.work.hail
 
-import is.hail.HailContext
-import is.hail.expr._
-import org.apache.spark.sql.Row
-import is.hail.table.Table
-import is.hail.expr.types.virtual.TInt64Required
-import is.hail.io.vcf.VCFsReader
-import is.hail.utils.TextInputFilterAndReplace
-import is.hail.expr.ir.MatrixIR
-import is.hail.expr.ir.MatrixLiteral
-import is.hail.expr.ir.TableValue
-import is.hail.expr.ir.TableLiteral
-import is.hail.expr.{ir, _}
-import is.hail.expr.ir._
-import is.hail.expr.types.virtual.TFloat64
-import is.hail.expr.types.virtual._
-import is.hail.expr.types.virtual.TStruct
-import is.hail.methods.LinearRegressionRowsSingle
 import au.csiro.variantspark.hail.methods.RFModel
+import is.hail.HailContext
+import is.hail.backend.spark.SparkBackend
+import is.hail.expr.ir.{Interpret, MatrixIR, TableIR}
+import is.hail.utils.ExecutionTimer
 
 /**
   * INFO: Simulates calling from python
@@ -41,7 +28,7 @@ object HailApiApp {
                   (MatrixAnnotateColsTable "__uid_3"
                     (MatrixRead None False False "{\\"name\\":\\"MatrixVCFReader\\",\\"files\\":[\\"${vcfFilename}\\"],\\"callFields\\":[\\"PGT\\"],\\"entryFloatTypeName\\":\\"Float64\\",\\"rg\\":\\"GRCh37\\",\\"contigRecoding\\":{},\\"arrayElementsRequired\\":true,\\"skipInvalidLoci\\":false,\\"gzAsBGZ\\":false,\\"forceGZ\\":false,\\"filterAndReplace\\":{\\"name\\":\\"TextInputFilterAndReplace\\"},\\"partitionsJSON\\":null}")
                     (TableKeyBy (${sampleName}) False
-                      (TableRead None False "{\\"name\\":\\"TextTableReader\\",\\"options\\":{\\"files\\":[\\"${labelFilename}\\"],\\"typeMapStr\\":{\\"${labelName}\\":\\"Float64\\"},\\"comment\\":[],\\"separator\\":\\",\\",\\"missing\\":[\\"NA\\"],\\"noHeader\\":false,\\"impute\\":false,\\"quoteStr\\":null,\\"skipBlankLines\\":false,\\"forceBGZ\\":false,\\"filterAndReplace\\":{\\"name\\":\\"TextInputFilterAndReplace\\"},\\"forceGZ\\":false}}")))
+                      (TableRead None False "{\\"name\\":\\"TextTableReader\\",\\"files\\":[\\"${labelFilename}\\"],\\"typeMapStr\\":{\\"${labelName}\\":\\"Float64\\"},\\"comment\\":[],\\"separator\\":\\",\\",\\"missing\\":[\\"NA\\"],\\"hasHeader\\":true,\\"impute\\":false,\\"quoteStr\\":null,\\"skipBlankLines\\":false,\\"forceBGZ\\":false,\\"filterAndReplace\\":{\\"name\\":\\"TextInputFilterAndReplace\\"},\\"forceGZ\\":false}")))
                   (InsertFields
                     (SelectFields (s)
                       (Ref sa))
@@ -64,7 +51,7 @@ object HailApiApp {
                   (Ref g))
                 None
                 (__uid_6
-                  (Apply nNonRefAlleles
+                  (Apply nNonRefAlleles () Int32
                     (GetField GT
                       (Ref g))))))
             (SelectFields (s ${labelName} __uid_4 __uid_5)
@@ -102,27 +89,40 @@ object HailApiApp {
 
   def main(args: Array[String]): Unit = {
     println("Hello")
-    val hc = HailContext()
+
+    val sparkBackend = SparkBackend.getOrCreate();
+    val hc = HailContext.getOrCreate(sparkBackend)
 
     val matrixExpr = loadDataToMatrixIr("data/hipsterIndex/hipster.vcf.bgz",
       "data/hipsterIndex/hipster_labels.txt", "samples", "label")
     println(matrixExpr)
 
-    val matrixIR = IRParser.parse_matrix_ir(matrixExpr)
+//    val matrixIR =
+//      sparkBackend.parse_matrix_ir(matrixExpr, Collections.emptyMap(), Collections.emptyMap())
+    val matrixIR = MatrixIR.read(sparkBackend.fs, "tmp/chr22_1000_selected.vds")
     println(matrixIR)
 
     println(matrixIR.typ)
     println(matrixIR.typ.rowKeyStruct)
     println(matrixIR.typ.rowKey)
+    println(matrixIR.typ.colKey)
 
-    val rfModel = RFModel.pyApply(matrixIR, None, true, None, None, None)
+    val rfModel =
+      RFModel.pyApply(sparkBackend, matrixIR, null, true, null, null, null, "mode")
     rfModel.fitTrees(100, 50)
     println(s"OOB Error  = ${rfModel.oobError}")
-    val importanceTableValue = rfModel.variableImportance
+    val importanceTableValue: TableIR = rfModel.variableImportance
 
-    val importanceTable = new Table(hc, importanceTableValue)
-    println(importanceTable.signature)
-    importanceTable.collect().take(10).foreach(println)
+    val r = ExecutionTimer.logTime("HailApiApp.collectValues") { timer =>
+      sparkBackend.withExecuteContext(timer) { ctx =>
+        val tv = Interpret.apply(importanceTableValue, ctx, true)
+        tv.rdd.collect().take(10).foreach(println)
+      }
+    }
+
+    val rangeIR = MatrixIR.range(10, 20, None)
+    println(rangeIR.typ)
+
   }
 }
 // scalastyle:on

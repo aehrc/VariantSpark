@@ -9,5 +9,6 @@ cd "$FWDIR"
 # check code with pylint
 
 pushd python
-python -m unittest varspark.test.test_core
+pytest -s -m spark
+pytest -s -m hail
 popd

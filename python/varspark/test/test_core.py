@@ -7,6 +7,7 @@ from __future__ import (
 import os
 import sys
 import unittest
+import pytest
 
 from pyspark import SparkConf
 from pyspark.sql import SparkSession
@@ -19,6 +20,7 @@ if sys.version_info > (3,):
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
+@pytest.mark.spark
 class VariantSparkPySparkTestCase(unittest.TestCase):
 
     @classmethod
@@ -31,8 +33,7 @@ class VariantSparkPySparkTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(self):
-        self.sc.stop()
-
+        pass
 
 class VariantSparkAPITestCase(VariantSparkPySparkTestCase):
 

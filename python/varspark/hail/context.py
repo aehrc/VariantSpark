@@ -17,8 +17,8 @@ def init(**kwargs):
     sys.stderr.write("using variant-spark jar at '%s'\n" % vs_jar_path)
     jars.append(vs_jar_path)
 
-    if pkg_resources.resource_exists(hl.__name__, "hail-all-spark.jar"):
-        hail_jar_path = pkg_resources.resource_filename(hl.__name__, "hail-all-spark.jar")
+    if pkg_resources.resource_exists(hl.backend.__name__, "hail-all-spark.jar"):
+        hail_jar_path = pkg_resources.resource_filename(hl.backend.__name__, "hail-all-spark.jar")
         assert os.path.exists(hail_jar_path), "%s does not exist" % hail_jar_path
         sys.stderr.write("using hail jar at '%s'\n" % hail_jar_path)
         jars.append(hail_jar_path)
