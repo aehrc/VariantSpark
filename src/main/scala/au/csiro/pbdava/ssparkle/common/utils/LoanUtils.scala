@@ -18,7 +18,9 @@ object LoanUtils {
     try {
       func(cl)
     } finally {
-      cl.close()
+      if (cl != null) {
+        cl.close()
+      }
     }
   }
 

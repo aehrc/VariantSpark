@@ -1,7 +1,7 @@
 package au.csiro.variantspark.cli
 
-import au.csiro.sparkle.cmd.MultiCmdApp
 import au.csiro.pbdava.ssparkle.common.arg4j.AppRunner
+import au.csiro.sparkle.cmd.MultiCmdApp
 
 class VariantSparkApp extends MultiCmdApp {
   registerClass("test", classOf[TestCmd])
@@ -16,6 +16,7 @@ class VariantSparkApp extends MultiCmdApp {
   registerClass("analyze-rf", classOf[AnalyzeRFCmd])
   registerClass("build-index", classOf[BuildVarIndexCmd])
   registerClass("pdist", classOf[PairWiseDistanceCmd])
+  registerClass("version", classOf[VersionCmd])
 }
 
 object VariantSparkApp {

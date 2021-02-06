@@ -15,7 +15,10 @@ PROJECT_DIR=os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, o
 
 def main():
     vshl.init()
-    
+    print("Version info:") 
+    for (k,v) in vshl.version_info().items():
+       print("%s=%s" % (k,v))
+
     data = hl.import_vcf(os.path.join(PROJECT_DIR, 'data/chr22_1000_GRCh38.vcf'), reference_genome='GRCh38')
     labels = hl.import_table(os.path.join(PROJECT_DIR, 'data/chr22-labels-hail.csv'), delimiter=',', 
             types={'x22_16050408':'float64'}).key_by('sample')
