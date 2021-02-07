@@ -69,7 +69,7 @@ try:
         ],
         extras_require = {
             'deps': [ 
-                'pandas>=0.22.0', 
+                'pandas>=0.25.0',
             ],
             'spark': [ 
                 'pyspark>=2.4.1',
@@ -78,7 +78,7 @@ try:
                 'pyspark>=2.4.1',
             ],
             'hail': [
-                'hail==0.2.16',
+                'hail==0.2.61',
             ]
         },
         include_package_data=True,

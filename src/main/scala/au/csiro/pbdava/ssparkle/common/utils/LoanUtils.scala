@@ -23,4 +23,13 @@ object LoanUtils {
       }
     }
   }
+
+  def withResource[C <: AutoCloseable, R](cl: C)(func: C => R): R = {
+    try {
+      func(cl)
+    } finally {
+      cl.close()
+    }
+  }
+
 }

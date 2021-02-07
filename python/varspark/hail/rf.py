@@ -9,7 +9,6 @@ from __future__ import (
     division,
     print_function)
 
-
 from typing import *
 from hail.expr.expressions import *
 from hail.expr.types import *
@@ -18,12 +17,14 @@ from hail.ir import *
 from hail.table import Table
 
 from hail.utils import java
+from hail.utils.java import Env
 
 
 class RandomForestModel(object):
     """ Represents a random forest model object. Do not construct it directly but rather
             use `varspark.hail.methods.random_forest_model`  function.
     """
+
     @typecheck_method(
         _mir=MatrixIR,
         oob=bool,
@@ -33,20 +34,26 @@ class RandomForestModel(object):
         seed=nullable(int),
         imputation_type=nullable(str)
     )
-    def __init__(self,_mir, oob=True, mtry_fraction=None, min_node_size=None,
-            max_depth=None, seed=None, imputation_type = None):
-
+    def __init__(self, _mir, oob=True, mtry_fraction=None, min_node_size=None,
+                 max_depth=None, seed=None, imputation_type=None):
         self._mir = _mir
-        self._jrf_model = Env.jvm().au.csiro.variantspark.hail.methods.RFModel.pyApply(
-            Env.spark_backend('rf')._to_java_ir(self._mir),
-            java.joption(mtry_fraction), oob, java.joption(min_node_size),
-            java.joption(max_depth), java.joption(seed), java.joption(imputation_type))
+        self._jrf_model = Env.backend().jvm().au.csiro.variantspark.hail.methods.RFModel.pyApply(
+            Env.backend()._jbackend,
+            Env.spark_backend('rf')._to_java_matrix_ir(self._mir),
+            mtry_fraction, oob, min_node_size,
+            max_depth, seed, imputation_type)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_details):
+        self.release()
 
     @typecheck_method(
         n_trees=int,
         batch_size=int
     )
-    def fit_trees(self, n_trees = 500, batch_size = 100):
+    def fit_trees(self, n_trees=500, batch_size=100):
         """ Fits the random forest model.
 
             :param int n_trees: The number of trees to build in the forest.
@@ -82,7 +89,7 @@ class RandomForestModel(object):
         filename=str,
         resolve_names=bool
     )
-    def to_json(self, filename, resolve_names = True):
+    def to_json(self, filename, resolve_names=True):
         """ Saves the model JSON representation to a file. If `resolve_names` is set
             includes the variable names as well as indexes in the output. This does however
             incur performance penalty for creation of in-memory variable index.
