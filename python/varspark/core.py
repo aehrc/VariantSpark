@@ -1,19 +1,12 @@
-# Ensure backwards compatibility with Python 2
-from __future__ import (
-    absolute_import,
-    division,
-    print_function)
-
 import sys
 from random import randint
-from typedecorator import params, Nullable, Union, setup_typecheck
+
 from pyspark import SparkConf
 from pyspark.sql import SQLContext
-from varspark.etc import find_jar
-from varspark import java
+from typedecorator import params, Nullable, setup_typecheck
 
-if sys.version_info > (3,):
-    long = int
+from varspark import java
+from varspark.etc import find_jar
 
 
 class VarsparkContext(object):
@@ -21,13 +14,13 @@ class VarsparkContext(object):
     """
 
     @classmethod
-    def spark_conf(cls, conf  = SparkConf()):
+    def spark_conf(cls, conf=SparkConf()):
         """ Adds the necessary option to the spark configuration.
         Note: In client mode these need to be setup up using --jars or --driver-class-path
         """
         return conf.set("spark.jars", find_jar())
 
-    def __init__(self, ss, silent = False):
+    def __init__(self, ss, silent=False):
         """The main entry point for VariantSpark functionality.
         :param ss: SparkSession
         :type ss: :class:`.pyspark.SparkSession`
@@ -48,7 +41,7 @@ class VarsparkContext(object):
             sys.stderr.write('Running on Apache Spark version {}\n'.format(self.sc.version))
             if self.sc._jsc.sc().uiWebUrl().isDefined():
                 sys.stderr.write('SparkUI available at {}\n'.format(
-                        self.sc._jsc.sc().uiWebUrl().get()))
+                    self.sc._jsc.sc().uiWebUrl().get()))
             sys.stderr.write(
                 'Welcome to\n'
                 ' _    __           _             __  _____                  __    \n'
@@ -63,8 +56,8 @@ class VarsparkContext(object):
         """ Import features from a VCF file.
         """
         return FeatureSource(self._jvm, self._vs_api,
-                            self._jsql, self.sql, self._jvsc.importVCF(vcf_file_path,
-                            min_partitions))
+                             self._jsql, self.sql, self._jvsc.importVCF(vcf_file_path,
+                                                                        min_partitions))
 
     @params(self=object, label_file_path=str, col_name=str)
     def load_label(self, label_file_path, col_name):
@@ -82,6 +75,7 @@ class VarsparkContext(object):
         self.sc.stop()
         self.sc = None
 
+
 # Deprecated
 VariantsContext = VarsparkContext
 
@@ -96,7 +90,7 @@ class FeatureSource(object):
         self.sql = sql
 
     @params(self=object, label_source=object, n_trees=Nullable(int), mtry_fraction=Nullable(float),
-            oob=Nullable(bool), seed=Nullable(Union(int, long)), batch_size=Nullable(int),
+            oob=Nullable(bool), seed=Nullable(int), batch_size=Nullable(int),
             var_ordinal_levels=Nullable(int), max_depth=int, min_node_size=int)
     def importance_analysis(self, label_source, n_trees=1000, mtry_fraction=None,
                             oob=True, seed=None, batch_size=100, var_ordinal_levels=3,
@@ -107,17 +101,25 @@ class FeatureSource(object):
         :param int n_trees: The number of trees to build in the forest.
         :param float mtry_fraction: The fraction of variables to try at each split.
         :param bool oob: Should OOB error be calculated.
-        :param long seed: Random seed to use.
+        :param int seed: Random seed to use.
         :param int batch_size: The number of trees to build in one batch.
         :param int var_ordinal_levels:
 
         :return: Importance analysis model.
         :rtype: :py:class:`ImportanceAnalysis`
         """
-        jrf_params = self._jvm.au.csiro.variantspark.algo.RandomForestParams(bool(oob),
-                                java.jfloat_or(mtry_fraction), True, java.NAN, True,
-                                java.jlong_or(seed, randint(java.MIN_LONG, java.MAX_LONG)),
-                                max_depth, min_node_size, False, 0)
+        vs_algo = self._jvm.au.csiro.variantspark.algo
+        jrf_params = vs_algo.RandomForestParams(bool(oob),
+                                                java.jfloat_or(
+                                                    mtry_fraction),
+                                                True, java.NAN, True,
+                                                java.jlong_or(seed,
+                                                              randint(
+                                                                  java.MIN_LONG,
+                                                                  java.MAX_LONG)),
+                                                max_depth,
+                                                min_node_size, False,
+                                                0)
         jia = self._vs_api.ImportanceAnalysis(self._jsql, self._jfs, label_source,
                                               jrf_params, n_trees, batch_size, var_ordinal_levels)
         return ImportanceAnalysis(jia, self.sql)
