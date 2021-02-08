@@ -1,10 +1,5 @@
-import sys
-
-if sys.version_info > (3,):
-    long = int
-
-MAX_LONG = long(9223372036854775807)
-MIN_LONG = long(-9223372036854775808)
+MAX_LONG = 9223372036854775807
+MIN_LONG = -9223372036854775808
 
 MAX_INT = 2147483647
 MIN_INT = -2147483648
@@ -21,4 +16,4 @@ def jfloat_or(v, def_v=NAN):
 
 
 def jlong_or(v, def_v):
-    return jtype_or(long, v, def_v)
+    return jtype_or(int, v, def_v)

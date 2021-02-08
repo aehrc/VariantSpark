@@ -26,7 +26,7 @@ def random_forest_model(y, x, covariates=(), oob=True, mtry_fraction=None,
     :param float mtry_fraction: The fraction of variables to try at each split.
     :param int min_node_size: The minimum number of samples in a node to be consider for splitting.
     :param int max_depth: The maximum depth of the trees to build.
-    :param long seed: Random seed to use.
+    :param int seed: Random seed to use.
     :param string imputation_type: Imputation type to use. Currently only "mode" is supported which performs
         basic replacement of missing values with the mode of non missing values. If not provided and input containts
         missing data an error is reported.
