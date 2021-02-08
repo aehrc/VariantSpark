@@ -7,8 +7,8 @@ from __future__ import (
 import os
 import sys
 import unittest
-import pytest
 
+import pytest
 from pyspark import SparkConf
 from pyspark.sql import SparkSession
 
@@ -20,20 +20,22 @@ if sys.version_info > (3,):
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
+
 @pytest.mark.spark
 class VariantSparkPySparkTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        sconf = SparkConf(loadDefaults=False)\
+        sconf = SparkConf(loadDefaults=False) \
             .set("spark.driver.extraClassPath", find_variants_jar())
-        spark = SparkSession.builder.config(conf=sconf)\
+        spark = SparkSession.builder.config(conf=sconf) \
             .appName("test").master("local").getOrCreate()
         self.sc = spark.sparkContext
 
     @classmethod
     def tearDownClass(self):
         pass
+
 
 class VariantSparkAPITestCase(VariantSparkPySparkTestCase):
 

@@ -9,14 +9,9 @@ from __future__ import (
     division,
     print_function)
 
-from typing import *
-from hail.expr.expressions import *
-from hail.expr.types import *
-from hail.typecheck import *
 from hail.ir import *
 from hail.table import Table
-
-from hail.utils import java
+from hail.typecheck import *
 from hail.utils.java import Env
 
 

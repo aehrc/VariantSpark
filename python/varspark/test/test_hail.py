@@ -1,17 +1,18 @@
 import filecmp
 import os
 import unittest
-import yaml
-import pytest
 
 import hail as hl
 import numpy.testing as npt
 import pandas as pd
 import pandas.testing as pdt
+import pytest
+import yaml
 from pyspark.sql.functions import *
 
 import varspark.hail as vshl
 from varspark.test import PROJECT_DIR
+
 
 #
 # TODO: Add test cases for GRCh38 and missing data imputation

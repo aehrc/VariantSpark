@@ -6,11 +6,13 @@ from __future__ import (
 
 import sys
 from random import randint
-from typedecorator import params, Nullable, Union, setup_typecheck
+
 from pyspark import SparkConf
 from pyspark.sql import SQLContext
-from varspark.etc import find_jar
+from typedecorator import params, Nullable, Union, setup_typecheck
+
 from varspark import java
+from varspark.etc import find_jar
 
 if sys.version_info > (3,):
     long = int
@@ -21,13 +23,13 @@ class VarsparkContext(object):
     """
 
     @classmethod
-    def spark_conf(cls, conf  = SparkConf()):
+    def spark_conf(cls, conf=SparkConf()):
         """ Adds the necessary option to the spark configuration.
         Note: In client mode these need to be setup up using --jars or --driver-class-path
         """
         return conf.set("spark.jars", find_jar())
 
-    def __init__(self, ss, silent = False):
+    def __init__(self, ss, silent=False):
         """The main entry point for VariantSpark functionality.
         :param ss: SparkSession
         :type ss: :class:`.pyspark.SparkSession`
@@ -48,7 +50,7 @@ class VarsparkContext(object):
             sys.stderr.write('Running on Apache Spark version {}\n'.format(self.sc.version))
             if self.sc._jsc.sc().uiWebUrl().isDefined():
                 sys.stderr.write('SparkUI available at {}\n'.format(
-                        self.sc._jsc.sc().uiWebUrl().get()))
+                    self.sc._jsc.sc().uiWebUrl().get()))
             sys.stderr.write(
                 'Welcome to\n'
                 ' _    __           _             __  _____                  __    \n'
@@ -63,8 +65,8 @@ class VarsparkContext(object):
         """ Import features from a VCF file.
         """
         return FeatureSource(self._jvm, self._vs_api,
-                            self._jsql, self.sql, self._jvsc.importVCF(vcf_file_path,
-                            min_partitions))
+                             self._jsql, self.sql, self._jvsc.importVCF(vcf_file_path,
+                                                                        min_partitions))
 
     @params(self=object, label_file_path=str, col_name=str)
     def load_label(self, label_file_path, col_name):
@@ -81,6 +83,7 @@ class VarsparkContext(object):
 
         self.sc.stop()
         self.sc = None
+
 
 # Deprecated
 VariantsContext = VarsparkContext
@@ -115,9 +118,16 @@ class FeatureSource(object):
         :rtype: :py:class:`ImportanceAnalysis`
         """
         jrf_params = self._jvm.au.csiro.variantspark.algo.RandomForestParams(bool(oob),
-                                java.jfloat_or(mtry_fraction), True, java.NAN, True,
-                                java.jlong_or(seed, randint(java.MIN_LONG, java.MAX_LONG)),
-                                max_depth, min_node_size, False, 0)
+                                                                             java.jfloat_or(
+                                                                                 mtry_fraction),
+                                                                             True, java.NAN, True,
+                                                                             java.jlong_or(seed,
+                                                                                           randint(
+                                                                                               java.MIN_LONG,
+                                                                                               java.MAX_LONG)),
+                                                                             max_depth,
+                                                                             min_node_size, False,
+                                                                             0)
         jia = self._vs_api.ImportanceAnalysis(self._jsql, self._jfs, label_source,
                                               jrf_params, n_trees, batch_size, var_ordinal_levels)
         return ImportanceAnalysis(jia, self.sql)

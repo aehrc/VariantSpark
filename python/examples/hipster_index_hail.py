@@ -7,6 +7,7 @@ Created on 24 Jan 2018
 import os
 
 import hail as hl
+
 import varspark.hail as vshl
 
 PROJECT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))

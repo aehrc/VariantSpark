@@ -1,18 +1,18 @@
 import os
 import sys
 
+import pkg_resources
+import pyspark
 from hail.backend.spark_backend import install_exception_handler, connect_logger, \
     __name__ as __hail_name__
 from hail.utils.java import scala_package_object
-import pkg_resources
-import pyspark
 
 
 #
 # This is a customised version of the constructor honoring spark.jars passed in
 # spark_config
 #
-#pylint: disable=C0415
+# pylint: disable=C0415
 
 def SparkBackend__init__(self, idempotent, sc, spark_conf, app_name, master,
                          local, log, quiet, append, min_block_size,
