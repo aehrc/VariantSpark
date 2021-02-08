@@ -6,10 +6,6 @@ import sys
 
 from setuptools import setup, find_packages
 
-if sys.version_info < (2, 7):
-    print("Python versions prior to 2.7 are not supported.", file=sys.stderr)
-    exit(-1)
-
 HERE = os.path.dirname(__file__)
 ROOT_DIR = os.path.abspath(os.path.join(HERE, os.pardir))
 TEMP_PATH = "target"
@@ -66,6 +62,7 @@ try:
         name='variant-spark',
         version=VERSION,
         packages=find_packages(exclude=["*.test"]) + ['varspark.jars'],
+        python_requires=">=3.6",
         install_requires=[
             'typedecorator==0.0.5'
         ],
@@ -119,7 +116,7 @@ try:
             'Intended Audience :: Science/Research',
             'Topic :: Scientific/Engineering :: Bio-Informatics',
 
-            "Programming Language :: Python :: 2.7"
+            "Programming Language :: Python :: 3.6"
         ],
         url='https://bioinformatics.csiro.au/variantspark',  # project home page, if any
         project_urls={

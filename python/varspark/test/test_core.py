@@ -1,9 +1,3 @@
-# Ensure backwards compatibility with Python 2
-from __future__ import (
-    absolute_import,
-    division,
-    print_function)
-
 import os
 import sys
 import unittest

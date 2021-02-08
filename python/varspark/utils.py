@@ -1,14 +1,3 @@
-'''
-Created on 6 Dec 2017
-
-@author: szu004
-'''
-# Ensure backwards compatibility with Python 2
-from __future__ import (
-    absolute_import,
-    division,
-    print_function)
-
 import numpy as np
 import pandas as pd
 from pyspark.mllib.linalg.distributed import IndexedRowMatrix, RowMatrix
