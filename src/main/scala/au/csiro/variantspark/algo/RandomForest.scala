@@ -66,7 +66,20 @@ case class VotingAggregator(nLabels: Int, nSamples: Int) {
   /** Maps votes to predictions
     *
     */
-  def predictions: Array[Int] = votes.map(_.zipWithIndex.maxBy(_._1)._2)
+  def predictions: Array[Int] = votes.map(v => v.indices.maxBy(v))
+
+  /**
+    * Computes class probabilities.
+    * The result is an array with one item per sample, where
+    * each item is a vector with class probabilities for this sample.
+    * @return predicted class probabilities for each sample.
+    */
+  def classProbabilities: Array[Array[Double]] = {
+    votes.map { row =>
+      val sampleTotal = row.sum.toDouble
+      row.map(classCount => classCount / sampleTotal)
+    }
+  }
 }
 
 /** Implements random forest members conditionally
@@ -130,34 +143,10 @@ case class RandomForestModel(members: List[RandomForestMember], labelCount: Int,
     predictProb(indexedData, indexedData.size)
 
   def predictProb(indexedData: RDD[(Feature, Long)], nSamples: Int): Array[Array[Double]] = {
-    println(s"labelCount: ${labelCount}")
-    println(s"nSamples: ${nSamples}")
     val treeVotes = trees
       .map(_.predict(indexedData))
       .foldLeft(VotingAggregator(labelCount, nSamples))(_.addVote(_))
-    val treeVotesPercs = {
-      treeVotes.votes.map({ row: Array[Int] =>
-        row.map((elem: Int) => (elem.toDouble / row.sum))
-      })
-    }
-    /*
-    val predClass = {
-      treeVotesPercs.map(_.zipWithIndex.maxBy(_._1)._2)
-    }
-    println("treeVotes predictions:")
-    println(treeVotes.predictions.toList)
-    println("treeVotesPercs")
-    println(treeVotesPercs.toList.map(_.toList.mkString(" ")))
-    println("treevotes")
-    println(treeVotes.votes.toList.map(_.toList.mkString(" ")))
-    println("predClass")
-    println(predClass.toList)
-    treeVotes.predictions.map(_.toString) zip treeVotesPercs.map(_.mkString(" "))
-     */
-    val tvpreds: Array[Array[Double]] =
-      (treeVotes.predictions zip treeVotesPercs)
-        .map((tv: (Int, Array[Double])) => tv._1.toDouble +: tv._2)
-    tvpreds
+    treeVotes.classProbabilities
   }
 }
 
