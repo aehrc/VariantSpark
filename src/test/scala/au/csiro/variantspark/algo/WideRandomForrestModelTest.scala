@@ -1,12 +1,11 @@
 package au.csiro.variantspark.algo
 
+import au.csiro.variantspark.data._
 import au.csiro.variantspark.test.SparkTest
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
 import org.apache.spark.mllib.linalg.Vectors
 import org.junit.Assert._
 import org.junit.Test
-import au.csiro.variantspark.data._
-import au.csiro.variantspark.input._
 
 class WideRandomForrestModelTest extends SparkTest {
   val nLabels = 4
@@ -47,10 +46,28 @@ class WideRandomForrestModelTest extends SparkTest {
   def whenManyPredictorsThenPredictsByVoting() {
     val assumedPredictions = List(Array(1, 0), Array(1, 2), Array(1, 0))
     val model =
-      new RandomForestModel(assumedPredictions.map(TestPredictorWithImportance(_, null).toMember).toList,
+      new RandomForestModel(assumedPredictions
+        .map(TestPredictorWithImportance(_, null).toMember).toList,
         nLabels)
     val prediction = model.predict(testData)
     assertArrayEquals(Array(1, 0), prediction)
+  }
+
+  @Test
+  def predictProbabilities() {
+    val assumedPredictions = List(Array(1, 0), Array(1, 2), Array(1, 1))
+    val model =
+      new RandomForestModel(assumedPredictions
+        .map(TestPredictorWithImportance(_, null).toMember).toList,
+        nLabels)
+    val prediction = model.predictProb(testData)
+    prediction.foreach(
+        p =>
+          println {
+          p.mkString("Array(", ", ", ")")
+        })
+    assertArrayEquals(Array(1, 0.0, 1.0, 0.0, 0.0).map(_.toLong), prediction(0).map(_.toLong))
+    assertArrayEquals(Array(0, 0.33, 0.33, 0.33, 0.0).map(_.toLong), prediction(1).map(_.toLong))
   }
 
 }
