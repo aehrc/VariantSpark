@@ -1,17 +1,18 @@
 package au.csiro.variantspark.algo
 
+import au.csiro.variantspark.data._
 import au.csiro.variantspark.test.SparkTest
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
 import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.rdd.RDD
 import org.junit.Assert._
 import org.junit.Test
-import au.csiro.variantspark.data._
-import au.csiro.variantspark.input._
 
 class WideRandomForrestModelTest extends SparkTest {
+  val doubleComparisonDelta = 1e-6
   val nLabels = 4
   val nSamples = 2
-  val testData =
+  val testData: RDD[(Feature, Long)] =
     sc.parallelize(List(Vectors.zeros(nSamples))).asFeature(BoundedOrdinalVariable(3))
 
   @Test
@@ -47,10 +48,23 @@ class WideRandomForrestModelTest extends SparkTest {
   def whenManyPredictorsThenPredictsByVoting() {
     val assumedPredictions = List(Array(1, 0), Array(1, 2), Array(1, 0))
     val model =
-      new RandomForestModel(assumedPredictions.map(TestPredictorWithImportance(_, null).toMember).toList,
-        nLabels)
+      new RandomForestModel(
+          assumedPredictions
+            .map(TestPredictorWithImportance(_, null).toMember), nLabels)
     val prediction = model.predict(testData)
     assertArrayEquals(Array(1, 0), prediction)
+  }
+
+  @Test
+  def predictProbabilities() {
+    val assumedPredictions = List(Array(1, 1), Array(1, 2), Array(1, 1), Array(1, 1))
+    val model =
+      new RandomForestModel(
+          assumedPredictions
+            .map(TestPredictorWithImportance(_, null).toMember), nLabels)
+    val classProbabilities = model.predictProb(testData)
+    assertArrayEquals(Array(0.0, 1.0, 0.0, 0.0), classProbabilities(0), doubleComparisonDelta)
+    assertArrayEquals(Array(0.0, 0.75, 0.25, 0.0), classProbabilities(1), doubleComparisonDelta)
   }
 
 }

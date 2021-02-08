@@ -1,28 +1,22 @@
 package au.csiro.variantspark.cli
 
-import au.csiro.sparkle.common.args4j.ArgsApp
-import au.csiro.sparkle.cmd.CmdApp
-import org.kohsuke.args4j.Option
-import au.csiro.pbdava.ssparkle.common.arg4j.AppRunner
-import au.csiro.pbdava.ssparkle.spark.SparkApp
-import collection.JavaConverters._
-import au.csiro.variantspark.input.VCFSource
-import au.csiro.variantspark.input.VCFFeatureSource
-import au.csiro.variantspark.input.HashingLabelSource
-import org.apache.spark.mllib.linalg.Vectors
 import java.io.File
-import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
+
+import au.csiro.pbdava.ssparkle.common.arg4j.AppRunner
 import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
-import au.csiro.variantspark.input._
+import au.csiro.pbdava.ssparkle.spark.SparkApp
+import au.csiro.sparkle.common.args4j.ArgsApp
+import au.csiro.variantspark.input.{VCFFeatureSource, VCFSource}
+import org.kohsuke.args4j.Option
 
 class VcfToLabels extends ArgsApp with SparkApp {
 
   @Option(name = "-if", required = false, usage = "This is input files",
     aliases = Array("--input-file"))
-  val inputFile: String = "data/small.vcf"
+  val inputFile: String = null
 
   @Option(name = "-of", required = false, usage = "Output file", aliases = Array("--output-file"))
-  val outputFile: String = "data/small-labels.csv"
+  val outputFile: String = null
 
   @Option(name = "-l", required = false)
   val limit: Int = 10
