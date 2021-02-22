@@ -84,6 +84,7 @@
     <CodeCacheSize>1g</CodeCacheSize>
     <hail.version>0.2.61</hail.version>
     <skipTests>false</skipTests>
+    <build.type>devel</build.type>
   </properties>
 
   <repositories>
@@ -654,6 +655,10 @@
       <id>regression-test</id>
       <activation>
         <activeByDefault>false</activeByDefault>
+        <property>
+          <name>build.type</name>
+          <value>release</value>
+        </property>
       </activation>
       <build>
         <plugins>
