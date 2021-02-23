@@ -1,4 +1,11 @@
 
+
+## Gihub actions
+
+
+This is some helpful info: https://blog.eizinger.io/12274/using-github-actions-and-gitflow-to-automate-your-release-process
+And here is the doco for github actions: https://docs.github.com/en/actions/guides/building-and-testing-java-with-maven
+
 ## Snapshot Release of python package
 
 in `python`

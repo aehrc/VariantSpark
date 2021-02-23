@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>au.csiro.aehrc.variant-spark</groupId>
   <artifactId>variant-spark_2.11</artifactId>
-  <version>0.4.0-SNAPSHOT</version>
+  <version>0.4.0-a0-dev1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>variant-spark</name>
@@ -84,6 +84,7 @@
     <CodeCacheSize>1g</CodeCacheSize>
     <hail.version>0.2.61</hail.version>
     <skipTests>false</skipTests>
+    <build.type>devel</build.type>
   </properties>
 
   <repositories>
@@ -654,6 +655,10 @@
       <id>regression-test</id>
       <activation>
         <activeByDefault>false</activeByDefault>
+        <property>
+          <name>build.type</name>
+          <value>release</value>
+        </property>
       </activation>
       <build>
         <plugins>
