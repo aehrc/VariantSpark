@@ -9,6 +9,6 @@ pylint==2.6.0
 pytest==6.2.2
 twine==3.2.0
 # varspark dependencies
-pandas==0.25.3
+pandas==1.1.4
 typedecorator==0.0.5
-hail==0.2.61
+hail==0.2.74

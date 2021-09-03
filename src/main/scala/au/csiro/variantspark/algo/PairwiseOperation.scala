@@ -3,7 +3,6 @@ package au.csiro.variantspark.algo
 import breeze.linalg.DenseMatrix
 import breeze.linalg._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.AccumulableParam
 import org.apache.spark.mllib.linalg.distributed.IndexedRowMatrix
 import org.apache.spark.mllib.linalg.distributed.IndexedRowMatrix
 import org.apache.spark.mllib.linalg.distributed.IndexedRow

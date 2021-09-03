@@ -189,13 +189,6 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/io.github.pityka/saddle-core -->
-    <dependency>
-      <groupId>io.github.pityka</groupId>
-      <artifactId>saddle-core_2.12</artifactId>
-      <version>2.2.8</version>
-      <scope>test</scope>
-    </dependency>
     <dependency>
       <groupId>org.easymock</groupId>
       <artifactId>easymock</artifactId>
@@ -232,6 +225,12 @@
       <artifactId>hail_${scala.binary.version}_${spark.binary.version}</artifactId>
       <version>${hail.version}-SNAPSHOT</version>
       <classifier>all</classifier>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-csv</artifactId>
+      <version>1.9.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
