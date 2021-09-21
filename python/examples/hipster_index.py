@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 '''
 Created on 24 Jan 2018
 
@@ -29,3 +30,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

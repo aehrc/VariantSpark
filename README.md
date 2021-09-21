@@ -54,7 +54,7 @@ The complete built including all check can be run with:
 
 ### Running
 
-variant-spark requires an existing spark 2.1+ installation (either a local one or a cluster one).
+variant-spark requires an existing spark 3.1+ installation (either a local one or a cluster one).
 
 To run variant-spark use:
 
