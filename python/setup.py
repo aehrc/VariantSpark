@@ -100,16 +100,16 @@ try:
         ],
         extras_require={
             'deps': [
-                'pandas>=0.25.0',
+                'pandas>=1.1.4',
             ],
             'spark': [
-                'pyspark>=2.4.1',
+                'pyspark>=3.1.0',
             ],
             'test': [
-                'pyspark>=2.4.1',
+                'pyspark>=3.1.0',
             ],
             'hail': [
-                'hail==0.2.61',
+                'hail>=0.2.74',
             ]
         },
         include_package_data=True,
