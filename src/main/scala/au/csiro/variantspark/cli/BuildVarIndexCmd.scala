@@ -1,51 +1,38 @@
 package au.csiro.variantspark.cli
 
-import java.io.FileInputStream
-import java.io.ObjectInputStream
+import java.io.{FileOutputStream, ObjectOutputStream}
 
-import scala.collection.JavaConverters._
-
+import au.csiro.pbdava.ssparkle.common.arg4j.{AppRunner, TestArgs}
+import au.csiro.pbdava.ssparkle.common.utils.{LoanUtils, Logging}
+import au.csiro.sparkle.common.args4j.ArgsApp
+import au.csiro.variantspark.cli.args.FeatureSourceArgs
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap
 import org.apache.commons.lang3.builder.ToStringBuilder
-import au.csiro.pbdava.ssparkle.common.utils.Logging
+import org.apache.spark.util.AccumulatorV2
 import org.kohsuke.args4j.Option
 
-import au.csiro.pbdava.ssparkle.common.arg4j.AppRunner
-import au.csiro.pbdava.ssparkle.common.arg4j.TestArgs
-import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
-import au.csiro.sparkle.common.args4j.ArgsApp
-import au.csiro.variantspark.cmd.EchoUtils._
-import au.csiro.variantspark.cmd.Echoable
-import au.csiro.variantspark.utils.IndexedRDDFunction._
-import au.csiro.variantspark.utils.VectorRDDFunction._
-import au.csiro.variantspark.utils.defRng
-import au.csiro.variantspark.algo.RandomForestModel
-import au.csiro.variantspark.cli.args.FeatureSourceArgs
-import au.csiro.pbdava.ssparkle.spark.SparkUtils
-import org.apache.spark.serializer.JavaSerializer
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap
-import org.apache.spark.Accumulator
-import org.apache.spark.Accumulable
-import org.apache.spark.AccumulableParam
-import java.io.FileOutputStream
-import java.io.ObjectOutputStream
-import au.csiro.variantspark.input._
+// TODO: Documentation says the access to the collection should be synchronized
+class IndexAccumulatorV2
+    extends AccumulatorV2[(Long, String), Long2ObjectOpenHashMap[String]] {
 
-object IndexAccumulator
-    extends AccumulableParam[Long2ObjectOpenHashMap[String], (Long, String)] {
-  def addAccumulator(r: Long2ObjectOpenHashMap[String],
-      t: (Long, String)): Long2ObjectOpenHashMap[String] = {
-    r.put(t._1, t._2)
-    r
+  override val value: Long2ObjectOpenHashMap[String] = new Long2ObjectOpenHashMap[String]()
+
+  override def isZero: Boolean = value.isEmpty
+
+  override def copy(): AccumulatorV2[(Long, String), Long2ObjectOpenHashMap[String]] = {
+    val clone = new IndexAccumulatorV2()
+    clone.merge(this)
+    clone
   }
 
-  def addInPlace(r1: Long2ObjectOpenHashMap[String],
-      r2: Long2ObjectOpenHashMap[String]): Long2ObjectOpenHashMap[String] = {
-    r1.putAll(r2)
-    r1
+  override def reset(): Unit = {
+    value.clear()
   }
+  override def add(v: (Long, String)): Unit = value.put(v._1, v._2)
 
-  def zero(initialValue: Long2ObjectOpenHashMap[String]): Long2ObjectOpenHashMap[String] = {
-    initialValue
+  override def merge(
+      other: AccumulatorV2[(Long, String), Long2ObjectOpenHashMap[String]]): Unit = {
+    value.putAll(other.value)
   }
 }
 
@@ -61,8 +48,8 @@ class BuildVarIndexCmd extends ArgsApp with FeatureSourceArgs with Logging with 
   override def run(): Unit = {
     logInfo("Running with params: " + ToStringBuilder.reflectionToString(this))
     echo(s"Building full variable index")
-
-    val indexAccumulator = sc.accumulable(new Long2ObjectOpenHashMap[String]())(IndexAccumulator)
+    val indexAccumulator = new IndexAccumulatorV2()
+    sc.register(indexAccumulator, "IndexAccumulator")
     featureSource.features
       .zipWithIndex()
       .map(t => (t._2, t._1.label))

@@ -9,8 +9,8 @@ Getting Started
 You’ll need:
 
 - The `Java 8 JDK <http://www.oracle.com/technetwork/java/javase/downloads/index.html>`_.
-- `Apache Spark 2.4 <http://spark.apache.org/downloads.html>`_. **VariantSpark** is compatible with Spark 2.4+
-- Python 3.6+ and Jupyter Notebooks. We recommend the free `Anaconda distribution <https://www.continuum.io/downloads>`_.
+- `Apache Spark 3.1 <http://spark.apache.org/downloads.html>`_. **VariantSpark** is compatible with Spark 3.1+
+- Python 3.7+ and Jupyter Notebooks. We recommend the free `Anaconda distribution <https://www.continuum.io/downloads>`_.
 
 It’s easy to run locally on one machine - you need to have Apache Spark installed correctly  with:
 

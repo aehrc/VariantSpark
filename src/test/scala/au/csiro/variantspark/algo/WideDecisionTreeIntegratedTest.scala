@@ -1,28 +1,19 @@
 package au.csiro.variantspark.algo
 
 import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
-import au.csiro.variantspark.data.BoundedOrdinalVariable
+import au.csiro.variantspark.data.{BoundedOrdinalVariable, ContinuousVariable, VariableType}
 import au.csiro.variantspark.input.{CsvFeatureSource, CsvLabelSource}
-import au.csiro.variantspark.test.SparkTest
+import au.csiro.variantspark.test.{SparkTest, TestCsvUtils}
 import org.apache.hadoop.fs.FileSystem
-import org.apache.spark.mllib.linalg.Vectors
 import org.junit.Assert._
 import org.junit.Test
-import org.saddle.io._
-import au.csiro.variantspark.data.VariableType
-import au.csiro.variantspark.data.ContinuousVariable
-import org.apache.spark.rdd.RDD
-import au.csiro.variantspark.data.Feature
-import au.csiro.variantspark.data.FeatureBuilder
-import au.csiro.variantspark.data._
-import au.csiro.variantspark.input._
 
 class WideDecisionTreeIntegratedTest extends SparkTest {
 
   implicit val fss = FileSystem.get(sc.hadoopConfiguration)
   implicit val hadoopConf = sc.hadoopConfiguration
 
-  //TODO (Should be moved to the test - but for some reason was null then ...)
+  // TODO (Should be moved to the test - but for some reason was null then ...)
 
   /**
     * This will try to classify CNAE-9 dataset (https://archive.ics.uci.edu/ml/datasets/CNAE-9)
@@ -41,28 +32,13 @@ class WideDecisionTreeIntegratedTest extends SparkTest {
     val prediction = model.predict(inputData)
 
     // check predictions
-    val expected = CsvParser
-      .parse(CsvFile("src/test/data/CNAE-9_R_predictions.csv"))
-      .withRowIndex(0)
-      .withColIndex(0)
-      .firstCol(s"maxdepth_${maxDepth}")
-      .mapValues(CsvParser.parseInt)
-      .values
-      .toSeq
-      .toArray
+    val expected = TestCsvUtils.readColumnToIntArray("src/test/data/CNAE-9_R_predictions.csv",
+      s"maxdepth_${maxDepth}")
     assertArrayEquals(expected, prediction)
 
     // check variable importances
-    val expectedImportances = CsvParser
-      .parse(CsvFile("src/test/data/CNAE-9_R_importance.csv"))
-      .withRowIndex(0)
-      .withColIndex(0)
-      .firstCol(s"maxdepth_${maxDepth}")
-      .mapValues(CsvParser.parseDouble)
-      .values
-      .toSeq
-      .toArray
-
+    val expectedImportances = TestCsvUtils.readColumnToDoubleArray(
+        "src/test/data/CNAE-9_R_importance.csv", s"maxdepth_${maxDepth}")
     val computedImportances = Array.fill(nVars.toInt)(0.0)
     model.variableImportanceAsFastMap.asScala.foreach {
       case (i, v) => computedImportances(i.toInt) = v

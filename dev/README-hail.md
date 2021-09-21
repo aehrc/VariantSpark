@@ -12,7 +12,7 @@ Checkout a specific tag
 
 Build with:
 
-	./gradlew -Dspark.version=2.2.0 clean jar shadowJar
+	./gradlew -Dscala.version=2.12.14 -Dspark.version=3.1.1 -Delasticsearch.major-version=7 clean jar shadowJar
 	
 (`spark.version` needs to be the one variant-spark is currently compiled with)
 

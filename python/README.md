@@ -6,8 +6,8 @@ VariantSpark is built on top of Apache Spark core. It implements a supervised, w
 ### 1. Install VariantSpark
 
 Prerequisites: 
-- Python 3.6+ with pip 
-- PySpark installed in the system either as a python package or from the distribution package. VariantSpark has been tested with Spark 2.4.x
+- Python 3.7+ with pip 
+- PySpark installed in the system either as a python package or from the distribution package. VariantSpark has been tested with Spark 3.1.2
  
 Installation:
  

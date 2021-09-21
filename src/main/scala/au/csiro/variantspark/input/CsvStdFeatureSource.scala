@@ -5,7 +5,6 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 
 import scala.collection.mutable.ArrayBuffer
-import org.apache.spark.Accumulable
 import org.apache.spark.util.AccumulatorV2
 
 import scala.collection.mutable.{Map => MutableMap}

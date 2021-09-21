@@ -71,10 +71,10 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <encoding>UTF-8</encoding>
-    <scala.binary.version>2.11</scala.binary.version>
-    <scala.version>2.11.12</scala.version>
-    <spark.version>2.4.4</spark.version>
-    <spark.binary.version>2.4</spark.binary.version>
+    <scala.binary.version>2.12</scala.binary.version>
+    <scala.version>2.12.14</scala.version>
+    <spark.version>3.1.2</spark.version>
+    <spark.binary.version>3.1</spark.binary.version>
     <scalafmt.parameters>--test</scalafmt.parameters>
     <!-- for now, not running scalafmt as part of default verify pipeline -->
     <scalafmt.skip>false</scalafmt.skip>
@@ -82,7 +82,7 @@
     <scalafmt.onlyChangedFiles>false</scalafmt.onlyChangedFiles>
     <sonata.autorelease>false</sonata.autorelease>
     <CodeCacheSize>1g</CodeCacheSize>
-    <hail.version>0.2.61</hail.version>
+    <hail.version>0.2.74</hail.version>
     <skipTests>false</skipTests>
     <build.type>devel</build.type>
   </properties>
@@ -142,7 +142,7 @@
     <dependency>
       <groupId>com.github.tototoshi</groupId>
       <artifactId>scala-csv_${scala.binary.version}</artifactId>
-      <version>1.2.2</version>
+      <version>1.3.8</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/com.github.samtools/htsjdk -->
     <dependency>
@@ -190,13 +190,6 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.scala-saddle</groupId>
-      <artifactId>saddle-core_${scala.binary.version}</artifactId>
-      <version>1.3.4</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
       <groupId>org.easymock</groupId>
       <artifactId>easymock</artifactId>
       <version>3.5.1</version>
@@ -222,16 +215,22 @@
     </dependency>
     <dependency>
       <groupId>au.csiro.aehrc.third.hail-is</groupId>
-      <artifactId>hail_2.11_${spark.binary.version}</artifactId>
+      <artifactId>hail_${scala.binary.version}_${spark.binary.version}</artifactId>
       <version>${hail.version}-SNAPSHOT</version>
       <!--classifier>all</classifier-->
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>au.csiro.aehrc.third.hail-is</groupId>
-      <artifactId>hail_2.11_${spark.binary.version}</artifactId>
+      <artifactId>hail_${scala.binary.version}_${spark.binary.version}</artifactId>
       <version>${hail.version}-SNAPSHOT</version>
       <classifier>all</classifier>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-csv</artifactId>
+      <version>1.9.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
