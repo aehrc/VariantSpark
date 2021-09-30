@@ -57,7 +57,7 @@ class RFModelHailTest(unittest.TestCase):
                 concat(col('locus.contig'), lit('_'),
                        col('locus.position'), lit('_'),
                        array_join(col('alleles'), '_')).alias('variable'),
-                col('importance')) \
+                col('importance'), col('splitCount')) \
                 .orderBy(desc('importance')) \
                 .limit(100) \
                 .toPandas()

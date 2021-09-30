@@ -32,7 +32,7 @@ class RFModelHailTest {
         assertTrue("OOB Error is defined", !rfModel.oobError.isNaN)
         val importanceTableIR: TableIR = rfModel.variableImportance
 
-        assertEquals(List("locus", "alleles", "importance"),
+        assertEquals(List("locus", "alleles", "importance", "splitCount"),
           importanceTableIR.typ.rowType.fieldNames.toList)
 
         // collect the valued form the TableIR
