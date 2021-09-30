@@ -60,6 +60,7 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
 
   var rfModel: RandomForestModel = _
   var impVarBroadcast: Broadcast[Map[Long, Double]] = _
+  var splitCountBroadcast: Broadcast[Map[Long, Long]] = _
   var inputData: RDD[TreeFeature] = _
 
   def fitTrees(nTrees: Int = 500, batchSize: Int = 100) {
@@ -133,11 +134,17 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
     ExecutionTimer.logTime("RFModel.fitTrees") { timer =>
       backend.withExecuteContext(timer) { ctx =>
         // the result should keep the key + add importance related field
-        val sig: TStruct = keySignature.insertFields(Array(("importance", TFloat64)))
+        val sig: TStruct =
+          keySignature.insertFields(Array(("importance", TFloat64), ("splitCount", TInt64)))
         val brVarImp = importanceMapBroadcast
+        val brSplitCount = splitCountMapBroadcast
         val mapRDD = inputData.mapPartitions { it =>
           val varImp = brVarImp.value
-          it.map(tf => RFModel.tfFeatureToImpRow(tf.label, varImp.getOrElse(tf.index, 0.0)))
+          val splitCount = brSplitCount.value
+          it.map { tf =>
+            RFModel.tfFeatureToImpRow(tf.label, varImp.getOrElse(tf.index, 0.0),
+              splitCount.getOrElse(tf.index, 0L))
+          }
         }
         TableLiteral(TableValue(ctx, sig, key, mapRDD))
       }
@@ -182,9 +189,23 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
     }
   }
 
+  private def splitCountMapBroadcast: Broadcast[Map[Long, Long]] = {
+    require(rfModel != null, "Train the model first")
+    if (splitCountBroadcast != null) {
+      splitCountBroadcast
+    } else {
+      splitCountBroadcast = backend.sparkSession.sparkContext.broadcast(
+          rfModel.variableSplitCount)
+      splitCountBroadcast
+    }
+  }
+
   private def releaseModelState() {
     if (impVarBroadcast != null) {
       impVarBroadcast.destroy()
+    }
+    if (splitCountBroadcast != null) {
+      splitCountBroadcast.destroy()
     }
     if (inputData != null) {
       inputData.unpersist()
@@ -203,10 +224,10 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
 
 object RFModel {
 
-  def tfFeatureToImpRow(label: String, impValue: Double): Row = {
+  def tfFeatureToImpRow(label: String, impValue: Double, splitCount: Long): Row = {
     val elements = label.split("_")
     val alleles = elements.drop(2).map(_.asInstanceOf[Annotation]).toIndexedSeq
-    Row(Locus(elements(0), elements(1).toInt), alleles, impValue) // , elements.drop(2))
+    Row(Locus(elements(0), elements(1).toInt), alleles, impValue, splitCount)
   }
 
   def mvToFeatureRDD(mv: MatrixValue, imputationStrategy: ImputationStrategy): RDD[Feature] = {

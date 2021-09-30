@@ -1,32 +1,20 @@
 package au.csiro.variantspark.algo
 
+import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
+import au.csiro.pbdava.ssparkle.common.utils.{Logging, Prof}
+import au.csiro.pbdava.ssparkle.spark.SparkUtils._
+import au.csiro.variantspark.data.{DataBuilder, DataLike, Feature, StdFeature, VariableType}
+import au.csiro.variantspark.metrics.Gini
+import au.csiro.variantspark.utils.IndexedRDDFunction._
+import au.csiro.variantspark.utils._
+import it.unimi.dsi.fastutil.longs.{Long2DoubleOpenHashMap, Long2LongOpenHashMap}
+import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 import org.apache.commons.lang3.builder.ToStringBuilder
 import org.apache.commons.math3.random.RandomGenerator
+import org.apache.commons.math3.util.MathArrays
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.RDD.rddToPairRDDFunctions
-
-import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
-import au.csiro.pbdava.ssparkle.common.utils.Logging
-import au.csiro.pbdava.ssparkle.common.utils.Prof
-import au.csiro.pbdava.ssparkle.spark.SparkUtils._
-import au.csiro.variantspark.data.DataBuilder
-import au.csiro.variantspark.data.DataLike
-import au.csiro.variantspark.data.Feature
-import au.csiro.variantspark.data.StdFeature
-import au.csiro.variantspark.data.VariableType
-import au.csiro.variantspark.metrics.Gini
-import au.csiro.variantspark.utils.FactorVariable
-import au.csiro.variantspark.utils.IndexedRDDFunction._
-import au.csiro.variantspark.utils.Sample
-import au.csiro.variantspark.utils.defRng
-import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
-import it.unimi.dsi.util.XorShift1024StarRandomGenerator
-import au.csiro.variantspark.utils.MurMur3Hash
-import org.apache.commons.math3.util.MathArrays
-import scala.collection.mutable.{Map => MutableMap}
-import scala.collection.mutable.HashMap
-import au.csiro.variantspark.utils.ArraysUtils
 
 /** Allows for a general description of the construct
   *
@@ -661,15 +649,24 @@ case class DecisionTreeModel(rootNode: DecisionTreeNode)
     printLevel(Seq(rootNode))
   }
 
-  def variableImportanceAsFastMap: Long2DoubleOpenHashMap =
+  override def variableImportanceAsFastMap: Long2DoubleOpenHashMap = {
     rootNode.splitsToStream.foldLeft(new Long2DoubleOpenHashMap()) {
       case (m, splitNode) =>
         m.increment(splitNode.splitVariableIndex, splitNode.impurityDelta)
     }
+  }
+
+  override def variableSplitCountAsFastMap: Long2LongOpenHashMap = {
+    rootNode.splitsToStream.foldLeft(new Long2LongOpenHashMap()) {
+      case (m, splitNode) =>
+        m.increment(splitNode.splitVariableIndex, 1L)
+    }
+  }
 
   def impurity: List[Double] = rootNode.toStream.map(_.nodeImpurity).toList
   def variables: List[Long] = rootNode.splitsToStream.map(_.splitVariableIndex).toList
   def thresholds: List[Double] = rootNode.splitsToStream.map(_.splitPoint).toList
+
 }
 
 /** Contains the object for the [[au.csiro.variantspark.algo.DecisionTreeModel]] class
