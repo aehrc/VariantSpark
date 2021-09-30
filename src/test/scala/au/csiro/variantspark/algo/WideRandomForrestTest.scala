@@ -1,12 +1,10 @@
 package au.csiro.variantspark.algo
 
-import au.csiro.variantspark.data.OrdinalVariable
+import au.csiro.variantspark.data._
 import au.csiro.variantspark.test.SparkTest
 import org.apache.spark.mllib.linalg.Vectors
 import org.junit.Assert._
 import org.junit.Test
-import au.csiro.variantspark.data._
-import au.csiro.variantspark.input._
 
 class WideRandomForrestTest extends SparkTest {
 
@@ -25,8 +23,9 @@ class WideRandomForrestTest extends SparkTest {
     val model = rf.batchTrain(testData, labels, 10)
     assertEquals("All trees in the model", collector.allTreest, model.trees)
 
-    //TODO: Fix
-    //    assertTrue("All trees trained on the same data", collector.allData.forall(_.collect().toList == testData.collect().toList))
+    // TODO: Fix
+    // assertTrue("All trees trained on the same data",
+    // collector.allData.forall(_.collect().toList == testData.collect().toList))
     assertTrue("All trees trained with expected nTryFactor",
       collector.allTryFration.forall(_ == nTryFraction))
     assertTrue("All trees trained same labels", collector.allLabels.forall(_ sameElements labels))
@@ -41,14 +40,14 @@ class WideRandomForrestTest extends SparkTest {
     val collector = new TreeDataCollector(
         Stream
           .continually(1)
-          .map(pl => TestPredictorWithImportance(Array.fill(nLabels)(pl), null)))
+          .map(pl => TestPredictorWithImportance(Array.fill(nLabels)(pl), null, null)))
     val rf = new RandomForest(RandomForestParams(oob = true, nTryFraction = nTryFraction,
         bootstrap = false, subsample = 0.5), modelBuilderFactory = collector.factory)
     val model = rf.batchTrain(testData, labels, nTrees)
     assertEquals("All trees in the model", collector.allTreest, model.trees)
     // TODO: Fix.
     //
-    //assertTrue("All trees trained on the same data", collector.allData.forall(_ == testData))
+    // assertTrue("All trees trained on the same data", collector.allData.forall(_ == testData))
     assertTrue("All trees trained with expected nTryFactor",
       collector.allTryFration.forall(_ == nTryFraction))
     assertTrue("All trees trained same labels", collector.allLabels.forall(_ sameElements labels))
