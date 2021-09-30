@@ -7,7 +7,7 @@ import au.csiro.variantspark.data.Feature
 import au.csiro.variantspark.metrics.Metrics
 import au.csiro.variantspark.utils.IndexedRDDFunction._
 import au.csiro.variantspark.utils.{Sample, defRng}
-import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
+import it.unimi.dsi.fastutil.longs.{Long2DoubleOpenHashMap, Long2LongOpenHashMap}
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 import org.apache.commons.lang3.builder.ToStringBuilder
 import org.apache.spark.rdd.RDD
@@ -39,6 +39,7 @@ case object To100ImportanceNormalizer extends StandardImportanceNormalizer(100.0
 case object ToOneImportanceNormalizer extends StandardImportanceNormalizer(1.0)
 
 /** Implements voting aggregator conditionally
+  *
   * @param nLabels the number of labels
   * @param nSamples the number of samples
   */
@@ -125,6 +126,18 @@ case class RandomForestModel(members: List[RandomForestMember], labelCount: Int,
       .foldLeft(new Long2DoubleOpenHashMap())(_.addAll(_))
       .asScala
       .mapValues(_ / size)
+  }
+
+  /**
+    * Computes the number of time each of the variables appears as the splitting variable
+    * in the forest.
+    * @return map variableIndex -> variableSplitCount
+    */
+  def variableSplitCount: Map[Long, Long] = {
+    trees
+      .map(_.variableSplitCountAsFastMap)
+      .foldLeft(new Long2LongOpenHashMap())(_.addAll(_))
+      .asScala
   }
 
   def size: Int = members.size
