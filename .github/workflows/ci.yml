@@ -13,10 +13,13 @@ name: Java and Python CI with Maven
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
+      - branch-*
   pull_request:
-    branches: [ master ]
-
+    branches:
+      - master
+      - branch-*
 jobs:
   build:
 
