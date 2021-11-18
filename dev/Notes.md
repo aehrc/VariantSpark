@@ -16,7 +16,7 @@ to deploy:
 
     export PYPI_URL=https://upload.pypi.org/legacy/
     export PYPI_USER=piotrszul
-    export PYPI_PASSWORD='m..old'
+    export PYPI_PASSWORD='M..new0'
     twine upload --repository-url ${PYPI_URL} --username ${PYPI_USER} --password ${PYPI_PASSWORD} dist/* 
 
 ## Release to Maven Central
