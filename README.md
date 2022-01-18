@@ -84,11 +84,11 @@ The difference between running in `--local` mode and in `--spark` with `local` m
 Also the output will be written to the location determined by the hadoop filesystem settings. In particular paths without schema e.g. 'output.csv' will be resolved with the hadoop default filesystem (usually HDFS)
 To change this behavior you can set the default filesystem in the command line using `spark.hadoop.fs.default.name` option. For example to use local filesystem as the default use:
 
-    veriant-spaek --spark ... --conf "spark.hadoop.fs.default.name=file:///" ... -- importance  ... -of output.csv
+    ./variant-spark --spark ... --conf "spark.hadoop.fs.default.name=file:///" ... -- importance  ... -of output.csv
 
 You can also use the full URI with the schema to address any filesystem for both input and output files e.g.:
 
-    veriant-spaek --spark ... --conf "spark.hadoop.fs.default.name=file:///" ... -- importance  -if hdfs:///user/data/input.csv ... -of output.csv
+    ./variant-spark --spark ... --conf "spark.hadoop.fs.default.name=file:///" ... -- importance  -if hdfs:///user/data/input.csv ... -of output.csv
 
 ### Running examples
 
