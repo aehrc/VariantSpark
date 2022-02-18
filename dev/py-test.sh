@@ -11,4 +11,5 @@ cd "$FWDIR"
 pushd python
 pytest -s -m spark
 pytest -s -m hail
+pytest -s -m pvalues
 popd
