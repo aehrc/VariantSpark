@@ -1,7 +1,12 @@
 import sys
 import unittest
 
-from varspark.pvalues_calculation import *
+from varspark.pvalues_calculation import ff_fit
+from varspark.pvalues_calculation import my_dsn
+from varspark.pvalues_calculation import propTrueNullByLocalFDR
+from varspark.pvalues_calculation import determine_C
+from varspark.pvalues_calculation import local_fdr
+from varspark.pvalues_calculation import local_fdr
 import hail as hl
 import varspark.hail as vshl
 
@@ -223,7 +228,6 @@ class PValuesCalculationTest(unittest.TestCase):
              0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0037362413000649607])
         estimates = [-0.06723984, 0.63391814, 3.58526281]
         df = pd.DataFrame({'x': x, 'y': y})
-        determine_C(f_fit, df, estimates)
 
         expected = np.array(
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
