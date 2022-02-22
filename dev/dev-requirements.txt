@@ -15,4 +15,4 @@ hail==0.2.74
 scipy==1.7.3
 numpy==1.21.2
 patsy==0.5.2
-statsmodels=0.13.2
+statsmodels==0.13.2
