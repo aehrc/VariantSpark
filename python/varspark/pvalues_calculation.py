@@ -123,7 +123,8 @@ def _fit_to_data_set(df, imp, debug_flag=0, plot_string="", temp_dir=''):
 
     if mm1_df_error:
         try:
-            mm1_df = scipy.optimize.least_squares(my_dsn_cost, x0=[1, 2, 1], args=[df], method='lm', max_nfev = 400)
+            mm1_df = scipy.optimize.least_squares(_my_dsn_cost, x0=[1, 2, 1], args=[df],
+                                                  method='lm', max_nfev = 400)
             mm1_df_error = False
         except:
             pass
@@ -134,7 +135,8 @@ def _fit_to_data_set(df, imp, debug_flag=0, plot_string="", temp_dir=''):
 
     if mm1_df_error:
         try:
-            mm1_df = scipy.optimize.least_squares(my_dsn_cost, x0=[np.mean(df.x), 2, 1], args=[df], method='lm', max_nfev = 400)
+            mm1_df = scipy.optimize.least_squares(_my_dsn_cost, x0=[np.mean(df.x), 2, 1],
+                                                  args=[df], method='lm', max_nfev = 400)
             mm1_df_error = False
         except:
             pass
@@ -147,7 +149,8 @@ def _fit_to_data_set(df, imp, debug_flag=0, plot_string="", temp_dir=''):
         # Estimate the initial parameters so that the optimizing function works best
         vip_sn_mle = scipy.stats.skewnorm.fit(df.x)
         try:
-            mm1_df = scipy.optimize.least_squares(my_dsn_cost, x0=vip_sn_mle, args=[df], method='lm', max_nfev = 400)
+            mm1_df = scipy.optimize.least_squares(_my_dsn_cost, x0=vip_sn_mle, args=[df],
+                                                  method='lm', max_nfev = 400)
             mm1_df_error = False
         except:
             pass
@@ -264,7 +267,7 @@ def _determine_C(f_fit, df, t1, start_at=29, debug_flag=0):
         if debug_flag > 0:
             print("dim(df2)", df2.shape, "\n")
 
-        mm1_df2 = scipy.optimize.leastsq(my_dsn_cost, x0=t1, args=df2)
+        mm1_df2 = scipy.optimize.leastsq(_my_dsn_cost, x0=t1, args=df2)
         mm1_df2 = mm1_df2[0]
 
         xi = mm1_df2[0]
@@ -309,7 +312,7 @@ def run_it_importances(imp1, debug_flag=0, temp_dir=''):
         sns.kdeplot(imp1)
         plt.savefig(temp_dir + "/density_importances.png")
 
-    f_fit = ff_fit(imp1, debug_flag=debug_flag)
+    f_fit = _ff_fit(imp1, debug_flag=debug_flag)
     y = f_fit['zh'][2]
     x = f_fit['x']
 

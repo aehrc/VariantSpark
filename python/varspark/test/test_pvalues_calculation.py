@@ -6,6 +6,10 @@ from varspark.pvalues_calculation import _my_dsn
 from varspark.pvalues_calculation import _propTrueNullByLocalFDR
 from varspark.pvalues_calculation import _determine_C
 from varspark.pvalues_calculation import _local_fdr
+from varspark.pvalues_calculation import run_it_importances
+
+import pandas as pd
+import numpy as np
 import hail as hl
 import varspark.hail as vshl
 
@@ -63,7 +67,7 @@ class PValuesCalculationTest(unittest.TestCase):
         :return:
         """
         imp1 = self.df - min(self.df) + sys.float_info.epsilon
-        rfit = ff_fit(imp1)
+        rfit = _ff_fit(imp1)
         x = np.array(
             [0.05588077, 0.1676423, 0.2794038, 0.3911654, 0.5029269, 0.6146884, 0.72645, 0.8382115,
              0.9499731, 1.061735, 1.173496, 1.285258, 1.397019, 1.508781, 1.620542, 1.732304,
@@ -115,7 +119,7 @@ class PValuesCalculationTest(unittest.TestCase):
         Testing the density skewed normal function.
         :return:
         """
-        produced = my_dsn([0, 1, 1], np.arange(1, 7))
+        produced = _my_dsn([0, 1, 1], np.arange(1, 7))
         expected = np.array([4.03284541e-01, 1.05732309e-01, 8.86369682e-03, 2.67660452e-04,
                              2.97343903e-06, 1.21517657e-08])
         assert np.allclose(produced, expected, rtol=1e-05, atol=1e-08)
@@ -125,7 +129,7 @@ class PValuesCalculationTest(unittest.TestCase):
         Testing the function propTrueNullByLocalFDR
         :return:
         """
-        produced = propTrueNullByLocalFDR(np.array([0.1, 0.2, 0.3, 0.4, 0.56, 0.6, 0.7, 0.8]))
+        produced = _propTrueNullByLocalFDR(np.array([0.1, 0.2, 0.3, 0.4, 0.56, 0.6, 0.7, 0.8]))
         expected = 0.81333333
         assert np.allclose(produced, expected, rtol=1e-05, atol=1e-08)
 
@@ -242,7 +246,7 @@ class PValuesCalculationTest(unittest.TestCase):
              1159.136, 1159.153, 1159.17, 1186.987, 1187.004, 1187.021, 1187.038, 1187.055,
              1187.073, 1187.09, 1187.107, 1187.124, 1187.142, 1187.159, 1216.287])
 
-        produced = determine_C(f_fit, df, estimates)
+        produced = _determine_C(f_fit, df, estimates)
         produced[np.isnan(produced)] = 0
         assert np.allclose(produced, expected, rtol=1e-05, atol=1e-08)
 
@@ -332,7 +336,7 @@ class PValuesCalculationTest(unittest.TestCase):
              3.066785e-37, 5.527025e-38, 9.759907e-39))
 
 
-        produced = local_fdr(f,x,estimates, my_dsn)
+        produced = _local_fdr(f,x,estimates, _my_dsn)
         print(produced)
         assert np.allclose(produced, expected, rtol=1e-05, atol=1e-08)
 
