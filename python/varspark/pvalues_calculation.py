@@ -2,17 +2,14 @@
 
 import sys
 
-from matplotlib import patches
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import patsy
 import scipy
-import seaborn as sns
 import statsmodels.api as sm
 
 
-def ff_fit(zz, df=10, debug_flag=0, temp_dir=''):
+def _ff_fit(zz, df=10, debug_flag=0, temp_dir=''):
     """
     Fits the spline
 
@@ -63,7 +60,7 @@ def ff_fit(zz, df=10, debug_flag=0, temp_dir=''):
     return temp
 
 
-def my_dsn(a, x):
+def _my_dsn(a, x):
     """
     Density of a skew-normal distribution
     :param a: Array length==3 containing location, scale and skewness (xi, omega, and lambda)
@@ -92,7 +89,7 @@ def my_dsn(a, x):
     return (1 / omega) * hx
 
 
-def my_dsn_cost(a, df):
+def _my_dsn_cost(a, df):
     """
     The cost function between the data and the result of estimated parameters
     :param a: Array length==3 containing location, scale and skewness (xi, omega, and lambda)
@@ -100,12 +97,12 @@ def my_dsn_cost(a, df):
     :param df: Pandas DataFrame with two columns x,y representing the input and output respectively
     :return: The difference between the real data and the estimated value at each point
     """
-    return my_dsn(a, df.x) - df.y
+    return _my_dsn(a, df.x) - df.y
 
 
 
 
-def fit_to_data_set(df, imp, debug_flag=0, plot_string="", temp_dir=''):
+def _fit_to_data_set(df, imp, debug_flag=0, plot_string="", temp_dir=''):
     """
     Based on the input data (df), fit_to_data_set finds the local minimum of the my_dsn_cost
     function using the Levenberg-Marquardt algorithm.
@@ -201,7 +198,7 @@ def fit_to_data_set(df, imp, debug_flag=0, plot_string="", temp_dir=''):
     return mm1_df
 
 
-def local_fdr(f, x, estimates, FUN=scipy.stats.burr.pdf, p0=1, debug_flag=0, plot_string="",
+def _local_fdr(f, x, estimates, FUN=scipy.stats.burr.pdf, p0=1, debug_flag=0, plot_string="",
               temp_dir=''):
     """
     Computes the fdr values.
@@ -230,7 +227,7 @@ def local_fdr(f, x, estimates, FUN=scipy.stats.burr.pdf, p0=1, debug_flag=0, plo
     return fdr
 
 
-def propTrueNullByLocalFDR(p):
+def _propTrueNullByLocalFDR(p):
     """
     Proportion of true null hypothesis
     :param p: Probabilities of the importances
@@ -244,7 +241,7 @@ def propTrueNullByLocalFDR(p):
     return np.sum(i * q) / n / n1 * 2
 
 
-def determine_C(f_fit, df, t1, start_at=29, debug_flag=0):
+def _determine_C(f_fit, df, t1, start_at=29, debug_flag=0):
     """
     Determines the cutoff
     :param f_fit: The fitted spline return from the ff_fit function
@@ -273,10 +270,10 @@ def determine_C(f_fit, df, t1, start_at=29, debug_flag=0):
         xi = mm1_df2[0]
         omega = mm1_df2[1]
         lamb = mm1_df2[2]
-        f0_1 = my_dsn(mm1_df2, df.x)
+        f0_1 = _my_dsn(mm1_df2, df.x)
         f0_1 = f0_1 + sys.float_info.epsilon
         ppp = np.cumsum(f0_1) * (x[1] - x[0])
-        p0 = propTrueNullByLocalFDR(ppp)
+        p0 = _propTrueNullByLocalFDR(ppp)
         f0 = (np.sum(f) * f0_1) / np.sum(f0_1)
         if debug_flag > 0:
             print("p0 = ", p0, "\n")
@@ -295,6 +292,11 @@ def run_it_importances(imp1, debug_flag=0, temp_dir=''):
     :return: The corrected p-values for the features
     """
     if debug_flag > 0:
+        #Importing the plotting libraries only if used
+        from matplotlib import patches
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+
         temp_dir = './'
         fileConn = open(temp_dir + "/output.txt", 'w')
         fileConn.write("Hello World\n")
@@ -316,14 +318,14 @@ def run_it_importances(imp1, debug_flag=0, temp_dir=''):
         plt.savefig(temp_dir + "/density_importances2.png")
 
     df = pd.DataFrame({'x': x, 'y': y})
-    initial_estimates = fit_to_data_set(df, imp1, debug_flag=debug_flag, plot_string="initial")
+    initial_estimates = _fit_to_data_set(df, imp1, debug_flag=debug_flag, plot_string="initial")
 
     if debug_flag > 0:
         fileConn.write(
             f"initial estimates {initial_estimates[0]}  {initial_estimates[1]} {initial_estimates[2]}\n")
 
         fileConn.write("we calcualte the fdr using the initial estimates\n")
-        aa = local_fdr(f_fit, df.x, initial_estimates, FUN=my_dsn, debug_flag=debug_flag,
+        aa = _local_fdr(f_fit, df.x, initial_estimates, FUN=_my_dsn, debug_flag=debug_flag,
                        plot_string="initial", temp_dir=temp_dir)
         plt.scatter(x, aa)
         plt.title("fdr using initial estiamtes")
@@ -344,7 +346,7 @@ def run_it_importances(imp1, debug_flag=0, temp_dir=''):
             fileConn.write(f"calculating C {C}\n")
 
     try:
-        qq = determine_C(f_fit, df, initial_estimates, start_at=36, debug_flag=debug_flag)
+        qq = _determine_C(f_fit, df, initial_estimates, start_at=36, debug_flag=debug_flag)
     except:
         qq = None
 
@@ -379,12 +381,12 @@ def run_it_importances(imp1, debug_flag=0, temp_dir=''):
         plt.legend(bbox_to_anchor=(1, 1), handles=patchs)
         plt.savefig(temp_dir + "/compare_C_and_cc_and_the_resulting_fits.png")
 
-        mm1_df2 = fit_to_data_set(df2, imp1, debug_flag=debug_flag, plot_string="C",
+        mm1_df2 = _fit_to_data_set(df2, imp1, debug_flag=debug_flag, plot_string="C",
                                   temp_dir=temp_dir)
 
         if cc is not None:
             df3 = pd.DataFrame({'x': x[x < cc], 'y': y[x < cc]})
-            mm1_df3 = fit_to_data_set(df3, imp1, debug_flag=debug_flag, plot_string="cc",
+            mm1_df3 = _fit_to_data_set(df3, imp1, debug_flag=debug_flag, plot_string="cc",
                                       temp_dir=temp_dir)
 
         # compare the plots
@@ -402,23 +404,23 @@ def run_it_importances(imp1, debug_flag=0, temp_dir=''):
 
         plt.savefig(temp_dir + "/compare_C_and_cc_and_the_resulting_fits_2.png")
 
-    final_estimates = fit_to_data_set(df2, imp1, debug_flag=debug_flag, plot_string="final")
+    final_estimates = _fit_to_data_set(df2, imp1, debug_flag=debug_flag, plot_string="final")
     # should we use the cc option and C as a fallback? Usersettable option?
 
     if debug_flag > 0:
         plt.plot(x, y, color="grey")
         plt.plot(df2.x, df2.y, color="green")
-        plt.plot(x, my_dsn(final_estimates, x))
+        plt.plot(x, _my_dsn(final_estimates, x))
         plt.savefig(temp_dir + "/fit.to.data.set_df2.png")
 
     # determine p0
     ppp = scipy.stats.skewnorm.cdf(imp1, loc=final_estimates[0], scale=final_estimates[1],
                                    a=final_estimates[2])
-    p0 = propTrueNullByLocalFDR(ppp)
+    p0 = _propTrueNullByLocalFDR(ppp)
     if debug_flag == 1:
         fileConn.write(f"{p0} p0")
 
-    aa = local_fdr(f_fit, df.x, final_estimates, FUN=my_dsn, p0=p0, debug_flag=debug_flag,
+    aa = _local_fdr(f_fit, df.x, final_estimates, FUN=_my_dsn, p0=p0, debug_flag=debug_flag,
                    plot_string="final")
 
     mean_aa = np.argmin(np.abs(aa - np.mean(imp1)))

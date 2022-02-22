@@ -1,12 +1,11 @@
 import sys
 import unittest
 
-from varspark.pvalues_calculation import ff_fit
-from varspark.pvalues_calculation import my_dsn
-from varspark.pvalues_calculation import propTrueNullByLocalFDR
-from varspark.pvalues_calculation import determine_C
-from varspark.pvalues_calculation import local_fdr
-from varspark.pvalues_calculation import local_fdr
+from varspark.pvalues_calculation import _ff_fit
+from varspark.pvalues_calculation import _my_dsn
+from varspark.pvalues_calculation import _propTrueNullByLocalFDR
+from varspark.pvalues_calculation import _determine_C
+from varspark.pvalues_calculation import _local_fdr
 import hail as hl
 import varspark.hail as vshl
 
