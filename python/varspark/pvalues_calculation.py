@@ -8,6 +8,14 @@ import patsy
 import scipy
 import statsmodels.api as sm
 
+# All libraries should be imported in top level (PEP8 says so)
+# Commented out to prevent errors of styling
+# Consider how to implement it in the future
+# Not needed for functionality but needed to debugging
+#from matplotlib import patches
+#import matplotlib.pyplot as plt
+#import seaborn as sns
+
 
 def _ff_fit(zz, df=10, debug_flag=0, temp_dir=''):
     """
@@ -295,11 +303,6 @@ def run_it_importances(imp1, debug_flag=0, temp_dir=''):
     :return: The corrected p-values for the features
     """
     if debug_flag > 0:
-        #Importing the plotting libraries only if used
-        from matplotlib import patches
-        import matplotlib.pyplot as plt
-        import seaborn as sns
-
         temp_dir = './'
         fileConn = open(temp_dir + "/output.txt", 'w')
         fileConn.write("Hello World\n")
