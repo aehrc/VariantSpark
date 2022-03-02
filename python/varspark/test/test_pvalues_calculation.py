@@ -55,10 +55,7 @@ class PValuesCalculationTest(unittest.TestCase):
         :return:
         """
         temp = run_it_importances(self.df)
-
-        # The 14 is computed using the R script using same data
-        #TODO: Update when the initial parameters algorithm is decided
-        #self.assertEqual(len(temp['ppp']), 14)
+        self.assertEqual(len(temp['ppp']), 16)
 
     def test_spline_fit(self):
         """
@@ -337,7 +334,6 @@ class PValuesCalculationTest(unittest.TestCase):
 
 
         produced = _local_fdr(f,x,estimates, _my_dsn)
-        print(produced)
         assert np.allclose(produced, expected, rtol=1e-05, atol=1e-08)
 
 if __name__ == '__main__':
