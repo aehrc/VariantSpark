@@ -122,8 +122,10 @@ def _fit_to_data_set(df):
     except:
         try_counter += 1
 
-    if a.cost > b.cost and b.cost !=0: a = b
-    if a.cost > c.cost and c.cost !=0: a = c
+    if a.cost > b.cost and b.cost !=0:
+        a = b
+    if a.cost > c.cost and c.cost !=0:
+        a= c
     return a.x
 
 
