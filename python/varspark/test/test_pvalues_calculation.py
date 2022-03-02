@@ -46,7 +46,6 @@ class PValuesCalculationTest(unittest.TestCase):
                                                     + str(row['locus'][1]) + '_'
                                                     + str('_'.join(row['alleles'])), axis=1)
         self.df = df[['composed_index', 'log_importance']].set_index('composed_index').squeeze()
-        self.df.to_csv('~/workspace/tor.tsv', sep='\t')
 
     def test_number_of_significant_variants(self):
         """
