@@ -15,6 +15,10 @@ from varspark.test import PROJECT_DIR
 class RFModelHailTest(unittest.TestCase):
 
     def test_covariates(self):
+        """
+        Checks that the top 5 features are the same as the expected ones.
+        :return:
+        """
         vshl.init()
 
         data = hl.import_vcf(os.path.join(PROJECT_DIR, 'data/chr22_1000.vcf'))
@@ -39,8 +43,9 @@ class RFModelHailTest(unittest.TestCase):
             impTable = rf_model.variable_importance()
             predicted_df = impTable.to_pandas()
 
-        predicted_df['variable'] =  predicted_df['locus.contig'] + '_' + predicted_df['locus.position'] + \
-                                    '_' + predicted_df['alleles'].apply(lambda x: x[0]) + '_'+ \
+        predicted_df['variable'] =  predicted_df['locus.contig'].astype(str) + '_' + \
+                                    predicted_df['locus.position'].astype(str) + '_' + \
+                                    predicted_df['alleles'].apply(lambda x: x[0]) + '_' + \
                                     predicted_df['alleles'].apply(lambda x: x[1])
 
         expected_df = pd.read_csv(StringIO("""variable,importance
@@ -66,12 +71,14 @@ class RFModelHailTest(unittest.TestCase):
         22_16052080_G_A,0.5453104311825786"""))
 
         top_five_ranking = True
-        for a,b, in zip(predicted_df['variable'].head(5).tolist(), expected_df['variable'].head(5).tolist()):
+        for a, b in zip(predicted_df['variable'].head(5).tolist(), expected_df['variable'].head(5).tolist()):
             top_five_ranking = top_five_ranking and a == b
 
         hl.stop()
+
+        # Asserting
         self.assertTrue(top_five_ranking)
 
 
 if __name__ == '__main__':
-    main()
+    unittest.main(verbosity=2)
