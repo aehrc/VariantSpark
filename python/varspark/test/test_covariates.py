@@ -34,8 +34,8 @@ class RFModelHailTest(unittest.TestCase):
         covariates = hl.Table.from_pandas(covariates).key_by('samples')
         mt = data.annotate_cols(covariates=covariates[data.s], labels=labels.select('22_16050408')[data.s])
 
-        with vshl.random_forest_model(y=mt.cov.label, x=mt.GT.n_alt_alleles(),
-                                      covariates=mt.covariates, #TODO: Age and BMI
+        with vshl.random_forest_model(y=mt.labels['22_16050408'], x=mt.GT.n_alt_alleles(),
+                                      covariates=[mt.covariates.age, mt.covariates.bmi],
                                       seed=13, mtry_fraction=0.05,
                                       min_node_size=5, max_depth=10) as rf_model:
             rf_model.fit_trees(100, 50)
