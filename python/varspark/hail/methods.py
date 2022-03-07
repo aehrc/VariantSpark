@@ -77,12 +77,6 @@ def random_forest_model(y, x, covariates=(), oob=True, mtry_fraction=None,
     """
     mt = matrix_table_source('random_forest_model/x', x)
     check_entry_indexed('random_forest_model/x', x)
-    """
-    #ORiginal
-    mts = mt._select_all(col_exprs=dict(y=y),
-                         row_exprs=dict(),
-                         col_key=[],
-                         entry_exprs=dict(e=x))"""
 
     for e in covariates:
         analyze('random_forest_model/covariates', e, mt._col_indices)
@@ -90,20 +84,16 @@ def random_forest_model(y, x, covariates=(), oob=True, mtry_fraction=None,
     pass_through=()
     row_fields = _get_regression_row_fields(mt, pass_through, 'random_forest_model')
 
-
+    #x_field_name = Env.get_uid()
     y = wrap_to_list(y)
-
-    x_field_name = Env.get_uid()
     y_field = ['y']
-
     y_dict = dict(zip(y_field, y))
-
 
     mts = mt._select_all(col_exprs=dict(**y_dict,
                                         **dict(zip(cov_field_names, covariates))),
                          row_exprs=row_fields,
                          col_key=[],
-                         entry_exprs={x_field_name: x})
+                         entry_exprs=dict(e=x))
 
 
     return rf.RandomForestModel(mts._mir,
