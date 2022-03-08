@@ -101,32 +101,44 @@ def _fit_to_data_set(df):
     a = None
     b = None
     c = None
+    best_fit = {'cost':np.inf, 'initial_params':[1,2,1]}
 
     try:
         a = scipy.optimize.least_squares(_my_dsn_cost, x0=[1, 2, 1], args=[df],
                                               method='lm', max_nfev = 400)
+        if best_fit['cost'] > a.cost and a.cost !=0:
+            best_fit['cost'] = a.cost
+            best_fit['initial_params'] = a.x
     except:
         try_counter += 1
 
     try:
         b = scipy.optimize.least_squares(_my_dsn_cost, x0=[np.mean(df.x), 2, 1],
                                               args=[df], method='lm', max_nfev = 400)
+        if best_fit['cost'] > b.cost and b.cost !=0:
+            best_fit['cost'] = b.cost
+            best_fit['initial_params'] = b.x
     except:
         try_counter += 1
+        if a is not None:
+            b = a
 
     try:
         # Estimate the initial parameters so that the optimizing function works best
         vip_sn_mle = scipy.stats.skewnorm.fit(df.x)
         c = scipy.optimize.least_squares(_my_dsn_cost, x0=vip_sn_mle, args=[df],
                                               method='lm', max_nfev = 400)
+
+        if best_fit['cost'] > c.cost and c.cost !=0:
+            best_fit['cost'] = c.cost
+            best_fit['initial_params'] = c.x
     except:
         try_counter += 1
 
-    if a.cost > b.cost and b.cost !=0:
-        a = b
-    if a.cost > c.cost and c.cost !=0:
-        a= c
-    return a.x
+    if (a is None and b is None and c is None) or (a.cost==0 and b.cost==0 and c.cost==0):
+        raise ValueError('No fitting has been possible')
+
+    return best_fit['initial_params']
 
 
 def _local_fdr(f, x, estimates, FUN=scipy.stats.burr.pdf, p0=1):
