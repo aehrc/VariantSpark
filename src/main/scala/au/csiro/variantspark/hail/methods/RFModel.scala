@@ -120,16 +120,21 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
         }
         val labels = labelVector.map(_.toInt).toArray
 
-        val covFeatures = mv.typ.colType.fieldNames.tail.toSeq.zipWithIndex
-          .map {
-            case (name, i) =>
-              StdFeature.from(name, Vectors.dense(cov(::, i).data))
-          }
-        val covariateRDD = backend.sc.makeRDD(covFeatures)
         val genotypeRDD: RDD[Feature] =
           RFModel.mvToFeatureRDD(mv, imputationStrategy.getOrElse(DisabledImputationStrategy))
 
-        val featuresRDD = genotypeRDD.union(covariateRDD)
+        val covFeatures = mv.typ.colType.fieldNames.tail.toSeq.zipWithIndex
+          .map {
+            case (name, i) =>
+              StdFeature.from(name, Vectors.dense(cov(::, i).toArray))
+          }
+
+        val featuresRDD = if (covFeatures.nonEmpty) {
+          val covariateRDD = backend.sc.makeRDD(covFeatures)
+          genotypeRDD.union(covariateRDD)
+        } else {
+          genotypeRDD
+        }
 
         inputData = DefTreeRepresentationFactory.createRepresentation(featuresRDD.zipWithIndex())
 

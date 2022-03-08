@@ -2,6 +2,7 @@ package au.csiro.variantspark.hail.methods
 
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils.withResource
 import au.csiro.variantspark.test.TestSparkContext
+import breeze.linalg.DenseMatrix
 import is.hail.HailContext
 import is.hail.backend.spark.SparkBackend
 import is.hail.expr.ir.{Interpret, MatrixIR, TableIR}
@@ -51,11 +52,11 @@ class RFModelHailTest {
   }
 
   /**
-   * The purpose of this test is basic valdation of the hail interface
-   * More substantial testing of the results is done from python
-   * The input vds for this test is created by:
-   *  `src/test/python/extract_rf_pheno_vds.py` called from `dev/test-gen-hail-cases.sh`
-   */
+    * The purpose of this test is basic valdation of the hail interface
+    * More substantial testing of the results is done from python
+    * The input vds for this test is created by:
+    *  `src/test/python/extract_rf_pheno_vds.py` called from `dev/test-gen-hail-cases.sh`
+    */
   @Test
   def testRunImportanceAnalysisWithCovriates() {
 
@@ -85,6 +86,4 @@ class RFModelHailTest {
         assertEquals("All variables have reported importance", 1988, collectedRows.size)
     }
   }
-
-
 }
