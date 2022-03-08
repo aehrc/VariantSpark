@@ -100,8 +100,11 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
         // These are currently obrained as doubles and converted to Int's needed by RandomForest
         // This is because getPhenosCovCompleteSamples only works on Double64 columns
         // This may be optimized in the future
+
+
         val (yMat, cov, completeColIdx) =
-          RegressionUtils.getPhenosCovCompleteSamples(mv, Array(responseVarName), Array[String]())
+          RegressionUtils.getPhenosCovCompleteSamples(mv, Array(mv.typ.colType.fieldNames.head),
+            mv.typ.colType.fieldNames.tail)
         // completeColIdx are indexes of the complete samples.
         // These can be used to subsample the entry data
         // but for now let's just assume that there are no NAs in the labels (and or covariates).
