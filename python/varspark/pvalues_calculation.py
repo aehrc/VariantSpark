@@ -135,8 +135,10 @@ def _fit_to_data_set(df):
     except:
         try_counter += 1
 
-    if (a is None and b is None and c is None) or (a.cost==0 and b.cost==0 and c.cost==0):
-        raise ValueError('No fitting has been possible')
+    if (a is None and b is None and c is None):
+        raise ValueError('All fittings failed')
+    if (a.cost==0 and b.cost==0 and c.cost==0):
+        raise ValueError('No correct fitting has been possible')
 
     return best_fit['initial_params']
 
