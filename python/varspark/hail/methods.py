@@ -12,7 +12,7 @@ from . import rf
 
 
 
-
+# in (is hail) hail/python/hail/methods/statgen.py
 def _get_regression_row_fields(mt, pass_through, method) -> Dict[str, str]:
 
     row_fields = dict(zip(mt.row_key.keys(), mt.row_key.keys()))
