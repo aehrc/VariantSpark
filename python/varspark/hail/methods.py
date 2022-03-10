@@ -5,50 +5,15 @@ from hail.utils.java import Env
 
 from hail.expr.expressions import *
 from hail.typecheck import *
-
+from hail.methods.statgen import _get_regression_row_fields
 
 from . import rf
-
-
-
-
-# in (is hail) hail/python/hail/methods/statgen.py
-def _get_regression_row_fields(mt, pass_through, method) -> Dict[str, str]:
-
-    row_fields = dict(zip(mt.row_key.keys(), mt.row_key.keys()))
-    for f in pass_through:
-        if isinstance(f, str):
-            if f not in mt.row:
-                raise ValueError(f"'{method}/pass_through': MatrixTable has no row field {repr(f)}")
-            if f in row_fields:
-                # allow silent pass through of key fields
-                if f in mt.row_key:
-                    pass
-                else:
-                    raise ValueError(f"'{method}/pass_through': found duplicated field {repr(f)}")
-            row_fields[f] = mt[f]
-        else:
-            assert isinstance(f, Expression)
-            if not f._ir.is_nested_field:
-                raise ValueError(f"'{method}/pass_through': expect fields or nested fields, not complex expressions")
-            if not f._indices == mt._row_indices:
-                raise ExpressionException(f"'{method}/pass_through': require row-indexed fields, found indices {f._indices.axes}")
-            name = f._ir.name
-            if name in row_fields:
-                # allow silent pass through of key fields
-                if not (name in mt.row_key and f._ir == mt[name]._ir):
-                    raise ValueError(f"'{method}/pass_through': found duplicated field {repr(name)}")
-            row_fields[name] = f
-    for k in mt.row_key:
-        del row_fields[k]
-    return row_fields
-
 
 
 @typecheck(
     y=expr_float64,
     x=expr_int32,
-    covariates=sequenceof(expr_float64),
+    covariates=dictof(str, expr_float64),
     oob=bool,
     mtry_fraction=nullable(float),
     min_node_size=nullable(int),
@@ -56,18 +21,18 @@ def _get_regression_row_fields(mt, pass_through, method) -> Dict[str, str]:
     seed=nullable(int),
     imputation_type=nullable(str)
 )
-def random_forest_model(y, x, covariates=(), oob=True, mtry_fraction=None,
+def random_forest_model(y, x, covariates={}, oob=True, mtry_fraction=None,
                         min_node_size=None, max_depth=None, seed=None, imputation_type=None):
     mt = matrix_table_source('random_forest_model/x', x)
     check_entry_indexed('random_forest_model/x', x)
 
-    for e in covariates:
+    for key, e in covariates.items():
         analyze('random_forest_model/covariates', e, mt._col_indices)
-    cov_field_names = [f'__cov{i}' for i in range(len(covariates))]
+    cov_field_names = [f'cov__{i}' for i in covariates]
+
     pass_through=()
     row_fields = _get_regression_row_fields(mt, pass_through, 'random_forest_model')
 
-    #x_field_name = Env.get_uid()
     y = wrap_to_list(y)
     y_field = ['y']
     y_dict = dict(zip(y_field, y))
