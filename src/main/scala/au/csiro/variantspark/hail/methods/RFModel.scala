@@ -155,16 +155,34 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
           val varImp = brVarImp.value
           val splitCount = brSplitCount.value
 
+          it.filter(tf => !tf.label.contains("cov__"))
+            .map { tf =>
+              RFModel.tfFeatureToImpRow(tf.label, varImp.getOrElse(tf.index, 0.0),
+                splitCount.getOrElse(tf.index, 0L))
+            }
+        }
+        TableLiteral(TableValue(ctx, sig, key, mapRDD))
+      }
+    }
+  }
+
+  def covariatesImportance: TableIR = {
+    ExecutionTimer.logTime("RFModel.fitTrees") { timer =>
+      backend.withExecuteContext(timer) { ctx =>
+        // the result should keep the key + add importance related field
+        val sig: TStruct =
+          keySignature.insertFields(Array(("importance", TFloat64), ("splitCount", TInt64)))
+        val brVarImp = importanceMapBroadcast
+        val brSplitCount = splitCountMapBroadcast
+        val mapRDD = inputData.mapPartitions { it =>
+          val varImp = brVarImp.value
+          val splitCount = brSplitCount.value
+
           it.filter(tf => tf.label.contains("cov__"))
             .map { tf =>
               RFModel.tfFeatureToImpRow(tf.label, varImp.getOrElse(tf.index, 0.0),
                 splitCount.getOrElse(tf.index, 0L))
             }
-
-          it.map { tf =>
-            RFModel.tfFeatureToImpRow(tf.label, varImp.getOrElse(tf.index, 0.0),
-              splitCount.getOrElse(tf.index, 0L))
-          }
         }
         TableLiteral(TableValue(ctx, sig, key, mapRDD))
       }
