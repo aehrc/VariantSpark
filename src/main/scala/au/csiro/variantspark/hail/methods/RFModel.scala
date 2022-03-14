@@ -29,6 +29,7 @@ import is.hail.variant._
 import javax.annotation.Nullable
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 import org.apache.spark.storage.StorageLevel
@@ -93,20 +94,18 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
 
         lazy val rf: RandomForest = new RandomForest(rfParams)
 
-        val featuresRDD: RDD[Feature] =
-          RFModel.mvToFeatureRDD(mv, imputationStrategy.getOrElse(DisabledImputationStrategy))
-        inputData = DefTreeRepresentationFactory.createRepresentation(featuresRDD.zipWithIndex())
 
         // These are currently obrained as doubles and converted to Int's needed by RandomForest
         // This is because getPhenosCovCompleteSamples only works on Double64 columns
         // This may be optimized in the future
         val (yMat, cov, completeColIdx) =
-          RegressionUtils.getPhenosCovCompleteSamples(mv, Array(responseVarName), Array[String]())
+          RegressionUtils.getPhenosCovCompleteSamples(mv, Array(mv.typ.colType.fieldNames.head),
+            mv.typ.colType.fieldNames.tail)
         // completeColIdx are indexes of the complete samples.
         // These can be used to subsample the entry data
         // but for now let's just assume that there are no NAs in the labels (and or covariates).
         // TODO: allow for NAs in the labels and/or covariates
-        require(completeColIdx.length == mv.nCols,
+         require(completeColIdx.length == mv.nCols,
           "NAs are not currenlty supported in response variable. Filter the data first.")
         val labelVector = yMat(::, 0)
         // TODO: allow for multi class classification
@@ -116,6 +115,20 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
                 + " with all present values equal to 0 or 1")
         }
         val labels = labelVector.map(_.toInt).toArray
+
+        val covFeatures = mv.typ.colType.fieldNames.tail.toSeq.zipWithIndex
+          .map {
+            case (name, i) =>
+              StdFeature.from(name, Vectors.dense(cov(::, i).toArray))
+          }
+
+        val covariateRDD = backend.sc.makeRDD(covFeatures)
+        val genotypeRDD: RDD[Feature] =
+          RFModel.mvToFeatureRDD(mv, imputationStrategy.getOrElse(DisabledImputationStrategy))
+
+        val featuresRDD = genotypeRDD.union(covariateRDD)
+
+        inputData = DefTreeRepresentationFactory.createRepresentation(featuresRDD.zipWithIndex())
 
         // now we somehow need to get to row data
         if (inputData.getStorageLevel == StorageLevel.NONE) {
@@ -141,6 +154,13 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
         val mapRDD = inputData.mapPartitions { it =>
           val varImp = brVarImp.value
           val splitCount = brSplitCount.value
+
+          it.filter(tf => tf.label.contains("cov__"))
+            .map { tf =>
+              RFModel.tfFeatureToImpRow(tf.label, varImp.getOrElse(tf.index, 0.0),
+                splitCount.getOrElse(tf.index, 0L))
+            }
+
           it.map { tf =>
             RFModel.tfFeatureToImpRow(tf.label, varImp.getOrElse(tf.index, 0.0),
               splitCount.getOrElse(tf.index, 0L))
@@ -150,6 +170,7 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
       }
     }
   }
+
 
   def toJson(jsonFilename: String, resolveVarNames: Boolean) {
     println(s"Saving model to: ${jsonFilename}")
