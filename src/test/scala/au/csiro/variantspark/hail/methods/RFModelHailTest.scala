@@ -86,7 +86,7 @@ class RFModelHailTest {
         // Each row is [Locus, GenericArray, Double]
         assertEquals("All variables have reported importance", 1988, collectedRows.size)
 
-        //Assessing covariates
+        // Assessing covariates
         val covImportanceTableIR: TableIR = rfModel.covariatesImportance
 
         assertEquals(List("covariate", "importance", "splitCount"),

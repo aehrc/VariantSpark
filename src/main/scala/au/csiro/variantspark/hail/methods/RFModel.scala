@@ -159,8 +159,6 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
     ExecutionTimer.logTime("RFModel.fitTrees") { timer =>
       backend.withExecuteContext(timer) { ctx =>
         // the result should keep the key + add importance related field
-        //val sig: TStruct =
-        //  keySignature.insertFields(Array(("importance", TFloat64), ("splitCount", TInt64)))
         val sig: TStruct = TStruct("covariate"-> TString, "importance"-> TFloat64, "splitCount"->
         TInt64)
         val brVarImp = importanceMapBroadcast
