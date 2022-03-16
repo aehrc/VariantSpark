@@ -66,6 +66,8 @@ class RFModelHailTest {
       rfModel =>
         rfModel.fitTrees(100, 50)
         assertTrue("OOB Error is defined", !rfModel.oobError.isNaN)
+
+        // Assessing gene features
         val importanceTableIR: TableIR = rfModel.variableImportance
 
         assertEquals(List("locus", "alleles", "importance", "splitCount"),
@@ -83,6 +85,22 @@ class RFModelHailTest {
         }
         // Each row is [Locus, GenericArray, Double]
         assertEquals("All variables have reported importance", 1988, collectedRows.size)
+
+        //Assessing covariates
+        val covImportanceTableIR: TableIR = rfModel.covariatesImportance
+
+        assertEquals(List("covariate", "importance", "splitCount"),
+          covImportanceTableIR.typ.rowType.fieldNames.toList)
+
+        val collectedCovRows = ExecutionTimer.logTime("HailApiApp.collectValues") { timer =>
+          sparkBackend.withExecuteContext(timer) { ctx =>
+            val tv = Interpret(covImportanceTableIR, ctx, true)
+            tv.rvd.collect(ctx)
+          }
+        }
+        assertEquals("All covariates have reported importance", 5, collectedCovRows.size)
+
+
     }
   }
 

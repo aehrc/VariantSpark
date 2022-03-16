@@ -26,11 +26,11 @@ def main():
     mt = data.annotate_cols(pheno=labels[data.s])
     col_expressions = dict(
         y=mt.pheno['22_16050408'],
-        age=mt.pheno['age'],
-        bmi=mt.pheno['bmi'],
-        PC1=mt.pheno['PC1'],
-        PC2=mt.pheno['PC2'],
-        PC3=mt.pheno['PC3']
+        cov__age=mt.pheno['age'],
+        cov__bmi=mt.pheno['bmi'],
+        cov__PC1=mt.pheno['PC1'],
+        cov__PC2=mt.pheno['PC2'],
+        cov__PC3=mt.pheno['PC3']
     )
 
     x = mt.GT.n_alt_alleles()

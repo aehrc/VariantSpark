@@ -1,23 +1,11 @@
 package au.csiro.variantspark.hail.methods
 
 import java.io.OutputStreamWriter
-
 import au.csiro.pbdava.ssparkle.common.utils.{LoanUtils, Logging}
-import au.csiro.variantspark.algo.{
-  DefTreeRepresentationFactory,
-  RandomForest,
-  RandomForestModel,
-  RandomForestParams,
-  TreeFeature
-}
+import au.csiro.variantspark.algo.{DefTreeRepresentationFactory, RandomForest, RandomForestModel, RandomForestParams, TreeFeature}
 import au.csiro.variantspark.data.{BoundedOrdinalVariable, Feature, StdFeature}
 import au.csiro.variantspark.external.ModelConverter
-import au.csiro.variantspark.input.{
-  DisabledImputationStrategy,
-  ImputationStrategy,
-  Missing,
-  ModeImputationStrategy
-}
+import au.csiro.variantspark.input.{DisabledImputationStrategy, ImputationStrategy, Missing, ModeImputationStrategy}
 import au.csiro.variantspark.utils.HdfsPath
 import is.hail.annotations.Annotation
 import is.hail.backend.spark.SparkBackend
@@ -26,6 +14,7 @@ import is.hail.stats.RegressionUtils
 import is.hail.types.virtual._
 import is.hail.utils.{ExecutionTimer, fatal}
 import is.hail.variant._
+
 import javax.annotation.Nullable
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.broadcast.Broadcast
@@ -155,7 +144,7 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
           val varImp = brVarImp.value
           val splitCount = brSplitCount.value
 
-          it.filter(tf => !tf.label.contains("cov__"))
+          it.filter { tf => ! tf.label.contains("cov__")}
             .map { tf =>
               RFModel.tfFeatureToImpRow(tf.label, varImp.getOrElse(tf.index, 0.0),
                 splitCount.getOrElse(tf.index, 0L))
@@ -170,21 +159,23 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
     ExecutionTimer.logTime("RFModel.fitTrees") { timer =>
       backend.withExecuteContext(timer) { ctx =>
         // the result should keep the key + add importance related field
-        val sig: TStruct =
-          keySignature.insertFields(Array(("importance", TFloat64), ("splitCount", TInt64)))
+        //val sig: TStruct =
+        //  keySignature.insertFields(Array(("importance", TFloat64), ("splitCount", TInt64)))
+        val sig: TStruct = TStruct("covariate"-> TString, "importance"-> TFloat64, "splitCount"->
+        TInt64)
         val brVarImp = importanceMapBroadcast
         val brSplitCount = splitCountMapBroadcast
         val mapRDD = inputData.mapPartitions { it =>
           val varImp = brVarImp.value
           val splitCount = brSplitCount.value
 
-          it.filter(tf => tf.label.contains("cov__"))
+          it.filter{tf => tf.label.contains("cov__")}
             .map { tf =>
-              RFModel.tfFeatureToImpRow(tf.label, varImp.getOrElse(tf.index, 0.0),
+              Row(tf.label.split("cov__")(1), varImp.getOrElse(tf.index, 0.0),
                 splitCount.getOrElse(tf.index, 0L))
             }
         }
-        TableLiteral(TableValue(ctx, sig, key, mapRDD))
+        TableLiteral(TableValue(ctx, sig, Array("covariate"), mapRDD))
       }
     }
   }
