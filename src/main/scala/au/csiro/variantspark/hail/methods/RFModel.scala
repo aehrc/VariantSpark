@@ -2,10 +2,21 @@ package au.csiro.variantspark.hail.methods
 
 import java.io.OutputStreamWriter
 import au.csiro.pbdava.ssparkle.common.utils.{LoanUtils, Logging}
-import au.csiro.variantspark.algo.{DefTreeRepresentationFactory, RandomForest, RandomForestModel, RandomForestParams, TreeFeature}
+import au.csiro.variantspark.algo.{
+  DefTreeRepresentationFactory,
+  RandomForest,
+  RandomForestModel,
+  RandomForestParams,
+  TreeFeature
+}
 import au.csiro.variantspark.data.{BoundedOrdinalVariable, Feature, StdFeature}
 import au.csiro.variantspark.external.ModelConverter
-import au.csiro.variantspark.input.{DisabledImputationStrategy, ImputationStrategy, Missing, ModeImputationStrategy}
+import au.csiro.variantspark.input.{
+  DisabledImputationStrategy,
+  ImputationStrategy,
+  Missing,
+  ModeImputationStrategy
+}
 import au.csiro.variantspark.utils.HdfsPath
 import is.hail.annotations.Annotation
 import is.hail.backend.spark.SparkBackend
@@ -83,7 +94,6 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
 
         lazy val rf: RandomForest = new RandomForest(rfParams)
 
-
         // These are currently obrained as doubles and converted to Int's needed by RandomForest
         // This is because getPhenosCovCompleteSamples only works on Double64 columns
         // This may be optimized in the future
@@ -94,7 +104,7 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
         // These can be used to subsample the entry data
         // but for now let's just assume that there are no NAs in the labels (and or covariates).
         // TODO: allow for NAs in the labels and/or covariates
-         require(completeColIdx.length == mv.nCols,
+        require(completeColIdx.length == mv.nCols,
           "NAs are not currenlty supported in response variable. Filter the data first.")
         val labelVector = yMat(::, 0)
         // TODO: allow for multi class classification
@@ -144,7 +154,7 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
           val varImp = brVarImp.value
           val splitCount = brSplitCount.value
 
-          it.filter { tf => ! tf.label.contains("cov__")}
+          it.filter { tf => !tf.label.contains("cov__") }
             .map { tf =>
               RFModel.tfFeatureToImpRow(tf.label, varImp.getOrElse(tf.index, 0.0),
                 splitCount.getOrElse(tf.index, 0L))
@@ -159,15 +169,16 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
     ExecutionTimer.logTime("RFModel.fitTrees") { timer =>
       backend.withExecuteContext(timer) { ctx =>
         // the result should keep the key + add importance related field
-        val sig: TStruct = TStruct("covariate"-> TString, "importance"-> TFloat64, "splitCount"->
-        TInt64)
+        val sig: TStruct = TStruct("covariate" -> TString, "importance" -> TFloat64,
+          "splitCount" ->
+            TInt64)
         val brVarImp = importanceMapBroadcast
         val brSplitCount = splitCountMapBroadcast
         val mapRDD = inputData.mapPartitions { it =>
           val varImp = brVarImp.value
           val splitCount = brSplitCount.value
 
-          it.filter{tf => tf.label.contains("cov__")}
+          it.filter { tf => tf.label.contains("cov__") }
             .map { tf =>
               Row(tf.label.split("cov__")(1), varImp.getOrElse(tf.index, 0.0),
                 splitCount.getOrElse(tf.index, 0L))
@@ -177,7 +188,6 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
       }
     }
   }
-
 
   def toJson(jsonFilename: String, resolveVarNames: Boolean) {
     println(s"Saving model to: ${jsonFilename}")
