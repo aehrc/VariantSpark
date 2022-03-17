@@ -73,6 +73,20 @@ class RFModelHailTest(unittest.TestCase):
         self.rf_model2.fit_trees(100, 50)
 
 
+        # Trying with covariates empty
+        rf_model3 = vshl.random_forest_model(y=mt.pheno['22_16050408'],
+                                                  x=mt.GT.n_alt_alleles(),
+                                                  covariates = {},
+                                                  seed=13, mtry_fraction=0.05,
+                                                  min_node_size=5, max_depth=10)
+        rf_model3.fit_trees(100, 50)
+        rf_model3 = vshl.random_forest_model(y=mt.pheno['22_16050408'],
+                                             x=mt.GT.n_alt_alleles(),
+                                             seed=13, mtry_fraction=0.05,
+                                             min_node_size=5, max_depth=10)
+        rf_model3.fit_trees(100, 50)
+
+
     def test_covariates(self):
         """
         Checks that the top 5 features are the same as the expected ones.
