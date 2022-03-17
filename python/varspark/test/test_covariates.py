@@ -17,8 +17,7 @@ class RFModelHailTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         """
-        This constructor creates the initial dataframe with the variance importances to assess
-        the different functions of the p-value calculation.
+        This constructor creates the initial forests to evaluate the python interface
         """
         vshl.init()
 
