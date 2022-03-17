@@ -28,7 +28,6 @@ def random_forest_model(y, x, covariates={}, oob=True, mtry_fraction=None,
 
     for key, e in covariates.items():
         analyze('random_forest_model/covariates', e, mt._col_indices)
-    cov_field_names = [f'cov__{i}' for i in covariates]
 
     pass_through=()
     row_fields = _get_regression_row_fields(mt, pass_through, 'random_forest_model')
@@ -38,7 +37,7 @@ def random_forest_model(y, x, covariates={}, oob=True, mtry_fraction=None,
     y_dict = dict(zip(y_field, y))
 
     mts = mt._select_all(col_exprs=dict(**y_dict,
-                                        **dict(zip(cov_field_names, covariates))),
+                                        **{'cov__'+k:v for k,v in covariates.items()}),
                          row_exprs=row_fields,
                          col_key=[],
                          entry_exprs=dict(e=x))

@@ -1,4 +1,3 @@
-
 import os
 from io import StringIO
 import unittest
@@ -11,13 +10,15 @@ import varspark.hail as vshl
 from pyspark.sql.functions import desc
 from varspark.test import PROJECT_DIR
 
+
 @pytest.mark.covariates
 class RFModelHailTest(unittest.TestCase):
 
-    def test_covariates(self):
+    @classmethod
+    def setUpClass(self):
         """
-        Checks that the top 5 features are the same as the expected ones.
-        :return:
+        This constructor creates the initial dataframe with the variance importances to assess
+        the different functions of the p-value calculation.
         """
         vshl.init()
 
@@ -26,27 +27,69 @@ class RFModelHailTest(unittest.TestCase):
                                  delimiter=',',
                                  types={'22_16050408': 'float64'}).key_by('sample')
 
-        #loading the covariates and transposing them
-        covariates = pd.read_csv(os.path.join(PROJECT_DIR, 'data/chr22_1000_pheno-wide.csv')).T.reset_index()
-        covariates.at[0,'index'] = 'samples'
+        # loading the covariates and transposing them
+        covariates = pd.read_csv(
+            os.path.join(PROJECT_DIR, 'data/chr22_1000_pheno-wide.csv')).T.reset_index()
+        covariates.at[0, 'index'] = 'samples'
         covariates.columns = covariates.iloc[0]
-        covariates = covariates.iloc[1: , :]
+        covariates = covariates.iloc[1:, :]
         covariates = hl.Table.from_pandas(covariates).key_by('samples')
-        mt = data.annotate_cols(covariates=covariates[data.s], labels=labels.select('22_16050408')[data.s])
+        mt = data.annotate_cols(covariates=covariates[data.s],
+                                labels=labels.select('22_16050408')[data.s])
 
-        with vshl.random_forest_model(y=mt.labels['22_16050408'], x=mt.GT.n_alt_alleles(),
-                                      covariates={'age':mt.covariates.age, 'bmi':mt.covariates.bmi},
+        self.rf_model1 = vshl.random_forest_model(y=mt.labels['22_16050408'],
+                                               x=mt.GT.n_alt_alleles(),
+                                      covariates={'age': mt.covariates.age,
+                                                  'bmi': mt.covariates.bmi},
                                       seed=13, mtry_fraction=0.05,
-                                      min_node_size=5, max_depth=10) as rf_model:
-            rf_model.fit_trees(100, 50)
+                                      min_node_size=5, max_depth=10)
 
-            impTable = rf_model.variable_importance()
-            predicted_df = impTable.to_pandas()
+        self.rf_model1.fit_trees(100, 50)
 
-        predicted_df['variable'] =  predicted_df['locus.contig'].astype(str) + '_' + \
-                                    predicted_df['locus.position'].astype(str) + '_' + \
-                                    predicted_df['alleles'].apply(lambda x: x[0]) + '_' + \
-                                    predicted_df['alleles'].apply(lambda x: x[1])
+
+        # Second test!
+        data = hl.import_vcf(os.path.join(PROJECT_DIR, 'data/chr22_1000.vcf'))
+        labels = hl.import_table(os.path.join(PROJECT_DIR, 'data/chr22_1000_full_pheno.csv'),
+                                 delimiter=',',
+                                 types={
+                                     '22_16050408': 'float64',
+                                     'age': 'float64',
+                                     'bmi': 'float64',
+                                     'PC1': 'float64',
+                                     'PC2': 'float64',
+                                     'PC3': 'float64'
+                                 }).key_by('sample')
+
+
+        mt = data.annotate_cols(pheno=labels[data.s])
+        self.rf_model2 = vshl.random_forest_model(y=mt.pheno['22_16050408'],
+                                      x=mt.GT.n_alt_alleles(),
+                                      covariates = {'age':mt.pheno['age'],
+                                                    'bmi': mt.pheno['bmi'],
+                                                    'PC1':mt.pheno['PC1'],
+                                                    'PC2': mt.pheno['PC2'],
+                                                    'PC3': mt.pheno['PC3']},
+                                      seed=13, mtry_fraction=0.05,
+                                      min_node_size=5, max_depth=10)
+        self.rf_model2.fit_trees(100, 50)
+
+
+    def test_covariates(self):
+        """
+        Checks that the top 5 features are the same as the expected ones.
+        :return:
+        """
+
+
+
+
+        impTable = self.rf_model1.variable_importance()
+        predicted_df = impTable.to_pandas()
+
+        predicted_df['variable'] = predicted_df['locus.contig'].astype(str) + '_' + \
+                                   predicted_df['locus.position'].astype(str) + '_' + \
+                                   predicted_df['alleles'].apply(lambda x: x[0]) + '_' + \
+                                   predicted_df['alleles'].apply(lambda x: x[1])
 
         expected_df = pd.read_csv(StringIO("""variable,importance
         22_16050408_T_C,18.693030423906
@@ -71,14 +114,35 @@ class RFModelHailTest(unittest.TestCase):
         22_16052080_G_A,0.5453104311825786"""))
 
         top_five_ranking = True
-        for a, b in zip(predicted_df['variable'].head(5).tolist(), expected_df['variable'].head(5).tolist()):
+        for a, b in zip(predicted_df['variable'].head(5).tolist(),
+                        expected_df['variable'].head(5).tolist()):
             top_five_ranking = top_five_ranking and a == b
 
-        hl.stop()
+        covImpTable = self.rf_model1.covariate_importance()
+        self.assertEqual(len(covImpTable.to_pandas()), 2)
+
 
         # Asserting
-        #self.assertTrue(top_five_ranking)
+        # self.assertTrue(top_five_ranking)
 
+
+    def test_covariates2(self):
+        """
+        Checks that the top 5 features are the same as the expected ones.
+        :return:
+        """
+
+
+
+        impTable = self.rf_model2.variable_importance()
+        covImpTable = self.rf_model2.covariate_importance()
+
+        self.assertEqual(len(impTable.to_pandas()), 1988)
+        self.assertEqual(len(covImpTable.to_pandas()), 5)
+
+
+    # Asserting
+    # self.assertTrue(top_five_ranking)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
