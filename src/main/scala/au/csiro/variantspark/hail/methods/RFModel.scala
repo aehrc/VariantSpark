@@ -154,7 +154,7 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
           val varImp = brVarImp.value
           val splitCount = brSplitCount.value
 
-          it.filter { tf => !tf.label.contains("cov__") }
+          it.filter ( tf => !tf.label.contains("cov__") )
             .map { tf =>
               RFModel.tfFeatureToImpRow(tf.label, varImp.getOrElse(tf.index, 0.0),
                 splitCount.getOrElse(tf.index, 0L))
