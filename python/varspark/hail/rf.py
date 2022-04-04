@@ -3,6 +3,9 @@ from hail.table import Table
 from hail.typecheck import *
 from hail.utils.java import Env
 
+from varspark.pvalues_calculation import *
+import hail as hl
+
 
 class RandomForestModel(object):
     """ Represents a random forest model object. Do not construct it directly but rather
@@ -68,6 +71,29 @@ class RandomForestModel(object):
             :rtype: :py:class:`hail.is.Table`
         """
         return Table._from_java(self._jrf_model.variableImportance())
+
+    @typecheck_method(
+        split_count_threshold=int,
+        pvalue=float
+    )
+    def get_significant_variances(self, split_count_threshold=1, pvalue=0.05):
+        """ Returns a dataframe with the significant variants and their p-value
+
+        :param split_count_threshold: Determine the cutoff (of how many times a variable was used to split a tree) to get a unimodal density
+        :param pvalue: Threshold value for the p-value (typically 0.05)
+        :return: dataframe with variants and their significance
+        """
+
+        impTable = self.variable_importance()
+        df = impTable.order_by(hl.desc(impTable.importance)).to_spark(flatten=False).toPandas()
+        df['log_importance'] = df.importance.apply(np.log)
+        df = df[(df.importance > 0) & (df['splitCount'] > split_count_threshold)]
+        df['composed_index'] = df.apply(lambda row: str(row['locus'][0])+'_'+str(row['locus'][1])+'_'+str('_'.join(row['alleles'])), axis=1)#.tolist()
+        df = df[['composed_index','log_importance']].set_index('composed_index').squeeze()
+        temp = run_it_importances(df, pvalue=pvalue)
+        dfr = df.head(len(temp['ppp'])).reset_index()
+        dfr['pvals'] = temp['ppp']
+        return dfr
 
     @typecheck_method(
         filename=str,

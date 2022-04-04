@@ -209,7 +209,7 @@ def _determine_C(f_fit, df, t1, start_at=29):
     return qq
 
 
-def run_it_importances(imp1):
+def run_it_importances(imp1, pvalue=0.05):
     """
     Compute the p-values based on the feature importances from the Random Forest
     :param imp1: Random Forest feature importances
@@ -225,7 +225,7 @@ def run_it_importances(imp1):
     df = pd.DataFrame({'x': x, 'y': y})
     initial_estimates = _fit_to_data_set(df)
 
-    C = scipy.stats.skewnorm.ppf(0.95, loc=initial_estimates[0], scale=initial_estimates[1],
+    C = scipy.stats.skewnorm.ppf(1-pvalue, loc=initial_estimates[0], scale=initial_estimates[1],
                                  a=initial_estimates[2])
     df2 = pd.DataFrame({'x': x[x < C], 'y': y[x < C]})
 
@@ -252,7 +252,7 @@ def run_it_importances(imp1):
     aa = _local_fdr(f_fit, df.x, final_estimates, FUN=_my_dsn, p0=p0)
 
     mean_aa = np.argmin(np.abs(aa - np.mean(imp1)))
-    ww = np.argmin(np.abs(aa[mean_aa:119] - 0.05))
+    ww = np.argmin(np.abs(aa[mean_aa:119] - pvalue))
     a1 = imp1[imp1 > df.x[ww + mean_aa]]
     ppp = 1 - scipy.stats.skewnorm.cdf(a1, loc=final_estimates[0], scale=final_estimates[1],
                                        a=final_estimates[2])

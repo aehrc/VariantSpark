@@ -15,6 +15,8 @@ import varspark.hail as vshl
 
 import pytest
 
+import os
+PROJECT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
 
 @pytest.mark.pvalues
 class PValuesCalculationTest(unittest.TestCase):
@@ -28,15 +30,16 @@ class PValuesCalculationTest(unittest.TestCase):
 
         vshl.init()
 
-        vds = hl.import_vcf('../data/chr22_1000.vcf')
-        labels = hl.import_table('../data/chr22-labels-hail.csv', impute=True,
-                                 delimiter=",").key_by('sample')
+        vds = hl.import_vcf(os.path.join(PROJECT_DIR, '../data/chr22_1000.vcf'))
+        labels = hl.import_table(os.path.join(PROJECT_DIR,'../data/chr22-labels-hail.csv'),
+                                 impute=True, delimiter=",").key_by('sample')
 
         vds = vds.annotate_cols(label=labels[vds.s])
         rf_model = vshl.random_forest_model(y=vds.label['x22_16050408'], x=vds.GT.n_alt_alleles(),
                                             seed=13, mtry_fraction=0.05, min_node_size=5,
                                             max_depth=10)
         rf_model.fit_trees(100, 50)
+
         impTable = rf_model.variable_importance()
         df = impTable.order_by(hl.desc(impTable.importance)).to_spark(flatten=False).toPandas()
         df['log_importance'] = df.importance.apply(np.log)
@@ -47,6 +50,10 @@ class PValuesCalculationTest(unittest.TestCase):
                                                     + str('_'.join(row['alleles'])), axis=1)
         self.df = df[['composed_index', 'log_importance']].set_index('composed_index').squeeze()
 
+
+        #testing that the model itself
+        self.significant_variants = rf_model.get_significant_variances()
+
     def test_number_of_significant_variants(self):
         """
         Assess weather the p-values calculation returns the same number of significant variants
@@ -54,7 +61,11 @@ class PValuesCalculationTest(unittest.TestCase):
         :return:
         """
         temp = run_it_importances(self.df)
+
+        #manually computed should be the same as the one returned by the model
+        self.assertEqual(len(temp['ppp']), len(self.significant_variants))
         self.assertEqual(len(temp['ppp']), 16)
+
 
     def test_spline_fit(self):
         """
