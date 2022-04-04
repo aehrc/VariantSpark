@@ -1,3 +1,4 @@
+import os
 import sys
 import unittest
 
@@ -14,8 +15,6 @@ import hail as hl
 import varspark.hail as vshl
 
 import pytest
-
-import os
 
 PROJECT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
 
