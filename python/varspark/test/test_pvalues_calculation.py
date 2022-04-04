@@ -31,8 +31,8 @@ class PValuesCalculationTest(unittest.TestCase):
 
         vshl.init()
 
-        vds = hl.import_vcf(os.path.join(PROJECT_DIR, '../data/chr22_1000.vcf'))
-        labels = hl.import_table(os.path.join(PROJECT_DIR, '../data/chr22-labels-hail.csv'),
+        vds = hl.import_vcf(os.path.join(PROJECT_DIR, 'data/chr22_1000.vcf'))
+        labels = hl.import_table(os.path.join(PROJECT_DIR, 'data/chr22-labels-hail.csv'),
                                  impute=True, delimiter=",").key_by('sample')
 
         vds = vds.annotate_cols(label=labels[vds.s])
