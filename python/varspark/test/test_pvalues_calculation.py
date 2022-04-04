@@ -16,7 +16,9 @@ import varspark.hail as vshl
 import pytest
 
 import os
+
 PROJECT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
+
 
 @pytest.mark.pvalues
 class PValuesCalculationTest(unittest.TestCase):
@@ -31,7 +33,7 @@ class PValuesCalculationTest(unittest.TestCase):
         vshl.init()
 
         vds = hl.import_vcf(os.path.join(PROJECT_DIR, '../data/chr22_1000.vcf'))
-        labels = hl.import_table(os.path.join(PROJECT_DIR,'../data/chr22-labels-hail.csv'),
+        labels = hl.import_table(os.path.join(PROJECT_DIR, '../data/chr22-labels-hail.csv'),
                                  impute=True, delimiter=",").key_by('sample')
 
         vds = vds.annotate_cols(label=labels[vds.s])
@@ -50,8 +52,7 @@ class PValuesCalculationTest(unittest.TestCase):
                                                     + str('_'.join(row['alleles'])), axis=1)
         self.df = df[['composed_index', 'log_importance']].set_index('composed_index').squeeze()
 
-
-        #testing that the model itself
+        # testing that the model itself
         self.significant_variants = rf_model.get_significant_variances()
 
     def test_number_of_significant_variants(self):
@@ -62,10 +63,9 @@ class PValuesCalculationTest(unittest.TestCase):
         """
         temp = run_it_importances(self.df)
 
-        #manually computed should be the same as the one returned by the model
+        # manually computed should be the same as the one returned by the model
         self.assertEqual(len(temp['ppp']), len(self.significant_variants))
         self.assertEqual(len(temp['ppp']), 16)
-
 
     def test_spline_fit(self):
         """
@@ -114,12 +114,10 @@ class PValuesCalculationTest(unittest.TestCase):
              1.061858, 1.066656, 1.028537, 0.9555717, 0.8585574, 0.7487786, 0.6362544, 0.528709,
              0.4312473, 0.3465573, 0.275409, 0.2172454, 0.1707292])
 
-
-
         assert np.allclose(rfit['counts'], counts, rtol=1e-05, atol=1e-08)  # Assert counts
         assert np.allclose(rfit['x'], x, rtol=1e-05, atol=1e-08)  # Assert x
-        #f.spline is not the same but close. The difference does not affect the final outcome
-        #assert np.allclose(rfit["f.spline"], spline, rtol=1e-05, atol=1e-08)  # assert spline
+        # f.spline is not the same but close. The difference does not affect the final outcome
+        # assert np.allclose(rfit["f.spline"], spline, rtol=1e-05, atol=1e-08)  # assert spline
 
     def test_my_dsn(self):
         """
@@ -257,9 +255,8 @@ class PValuesCalculationTest(unittest.TestCase):
         produced[np.isnan(produced)] = 0
         assert np.allclose(produced, expected, rtol=1e-05, atol=1e-08)
 
-
     def test_local_fdr(self):
-        estimates = [-0.06723984,  0.63391814,  3.58526281]
+        estimates = [-0.06723984, 0.63391814, 3.58526281]
         f = {"f.spline": np.array(
             [278.8820320721202, 277.70362414066557, 273.1253056786664, 265.31494421280627,
              254.55455049227248, 241.2233790724736, 225.7757575775756, 208.7154503248807,
@@ -342,9 +339,9 @@ class PValuesCalculationTest(unittest.TestCase):
              5.833138e-33, 1.188048e-33, 2.370891e-34, 4.635914e-35, 8.881887e-36, 1.667329e-36,
              3.066785e-37, 5.527025e-38, 9.759907e-39))
 
-
-        produced = _local_fdr(f,x,estimates, _my_dsn)
+        produced = _local_fdr(f, x, estimates, _my_dsn)
         assert np.allclose(produced, expected, rtol=1e-05, atol=1e-08)
+
 
 if __name__ == '__main__':
     unittest.main()

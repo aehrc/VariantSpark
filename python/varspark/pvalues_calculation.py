@@ -87,8 +87,6 @@ def _my_dsn_cost(a, df):
     return _my_dsn(a, df.x) - df.y
 
 
-
-
 def _fit_to_data_set(df):
     """
     Based on the input data (df), fit_to_data_set finds the local minimum of the my_dsn_cost
@@ -101,12 +99,12 @@ def _fit_to_data_set(df):
     a = None
     b = None
     c = None
-    best_fit = {'cost':np.inf, 'initial_params':[1,2,1]}
+    best_fit = {'cost': np.inf, 'initial_params': [1, 2, 1]}
 
     try:
         a = scipy.optimize.least_squares(_my_dsn_cost, x0=[1, 2, 1], args=[df],
-                                              method='lm', max_nfev = 400)
-        if best_fit['cost'] > a.cost and a.cost !=0:
+                                         method='lm', max_nfev=400)
+        if best_fit['cost'] > a.cost and a.cost != 0:
             best_fit['cost'] = a.cost
             best_fit['initial_params'] = a.x
     except:
@@ -114,8 +112,8 @@ def _fit_to_data_set(df):
 
     try:
         b = scipy.optimize.least_squares(_my_dsn_cost, x0=[np.mean(df.x), 2, 1],
-                                              args=[df], method='lm', max_nfev = 400)
-        if best_fit['cost'] > b.cost and b.cost !=0:
+                                         args=[df], method='lm', max_nfev=400)
+        if best_fit['cost'] > b.cost and b.cost != 0:
             best_fit['cost'] = b.cost
             best_fit['initial_params'] = b.x
     except:
@@ -127,9 +125,9 @@ def _fit_to_data_set(df):
         # Estimate the initial parameters so that the optimizing function works best
         vip_sn_mle = scipy.stats.skewnorm.fit(df.x)
         c = scipy.optimize.least_squares(_my_dsn_cost, x0=vip_sn_mle, args=[df],
-                                              method='lm', max_nfev = 400)
+                                         method='lm', max_nfev=400)
 
-        if best_fit['cost'] > c.cost and c.cost !=0:
+        if best_fit['cost'] > c.cost and c.cost != 0:
             best_fit['cost'] = c.cost
             best_fit['initial_params'] = c.x
     except:
@@ -137,7 +135,7 @@ def _fit_to_data_set(df):
 
     if (a is None and b is None and c is None):
         raise ValueError('All fittings failed')
-    if (a.cost==0 and b.cost==0 and c.cost==0):
+    if (a.cost == 0 and b.cost == 0 and c.cost == 0):
         raise ValueError('No correct fitting has been possible')
 
     return best_fit['initial_params']
@@ -190,7 +188,7 @@ def _determine_C(f_fit, df, t1, start_at=29):
     f = f_fit['f.spline']
     x = df.x
     y = df.y
-    qq = np.zeros(end_at)*np.inf
+    qq = np.zeros(end_at) * np.inf
 
     for ii in range(start_at, end_at):
         df2 = df.loc[:ii]
@@ -225,7 +223,7 @@ def run_it_importances(imp1, pvalue=0.05):
     df = pd.DataFrame({'x': x, 'y': y})
     initial_estimates = _fit_to_data_set(df)
 
-    C = scipy.stats.skewnorm.ppf(1-pvalue, loc=initial_estimates[0], scale=initial_estimates[1],
+    C = scipy.stats.skewnorm.ppf(1 - pvalue, loc=initial_estimates[0], scale=initial_estimates[1],
                                  a=initial_estimates[2])
     df2 = pd.DataFrame({'x': x[x < C], 'y': y[x < C]})
 
@@ -237,9 +235,8 @@ def run_it_importances(imp1, pvalue=0.05):
     cc = None
     if qq is not None:
         # in R the 0 were NA and therefore not factored into the equation
-        #qq = np.where(qq == 0, np.repeat(np.inf, len(qq)),qq)
+        # qq = np.where(qq == 0, np.repeat(np.inf, len(qq)),qq)
         cc = x[np.argmin(qq)]
-
 
     final_estimates = _fit_to_data_set(df2)
     # should we use the cc option and C as a fallback? Usersettable option?

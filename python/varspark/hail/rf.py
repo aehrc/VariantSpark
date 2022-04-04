@@ -88,8 +88,10 @@ class RandomForestModel(object):
         df = impTable.order_by(hl.desc(impTable.importance)).to_spark(flatten=False).toPandas()
         df['log_importance'] = df.importance.apply(np.log)
         df = df[(df.importance > 0) & (df['splitCount'] > split_count_threshold)]
-        df['composed_index'] = df.apply(lambda row: str(row['locus'][0])+'_'+str(row['locus'][1])+'_'+str('_'.join(row['alleles'])), axis=1)#.tolist()
-        df = df[['composed_index','log_importance']].set_index('composed_index').squeeze()
+        df['composed_index'] = df.apply(
+            lambda row: str(row['locus'][0]) + '_' + str(row['locus'][1]) + '_' + str(
+                '_'.join(row['alleles'])), axis=1)  # .tolist()
+        df = df[['composed_index', 'log_importance']].set_index('composed_index').squeeze()
         temp = run_it_importances(df, pvalue=pvalue)
         dfr = df.head(len(temp['ppp'])).reset_index()
         dfr['pvals'] = temp['ppp']
