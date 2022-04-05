@@ -5,6 +5,8 @@ and robust to overfitting while modelling non-linearities. Using an empirical ba
 were able to quantify the importance of the variants in our models; thus, improving the 
 interpretability of such algorithms.
 
+A more detailed explanation can be found at the [manuscript](https://www.biorxiv.org/)
+
 ## Requirements
 
 python==3.8.12\
