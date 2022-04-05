@@ -7,11 +7,11 @@ interpretability of such algorithms.
 
 ## Requirements
 
-python==3.8.12
-numpy==1.21.2 
-pandas==1.4.1 
-patsy==0.5.2 
-scipy==1.7.3
+python==3.8.12\
+numpy==1.21.2 \
+pandas==1.4.1 \
+patsy==0.5.2 \
+scipy==1.7.3\
 statsmodels==0.13.2
 
 ## Usage
@@ -52,6 +52,6 @@ tool [here](https://github.com/aehrc/VariantSpark/blob/master/README.md) and [he
 
 If you use this method please consider citing us:
 
-Dunne, R. ... (2022). Threshold Values for the Gini Variable Importance: A Empirical Bayes 
-Approach. arXiv preprint arXiv:XXXX.XXXXX.
+    Dunne, R. ... (2022). Threshold Values for the Gini Variable Importance: A Empirical Bayes 
+    Approach. arXiv preprint arXiv:XXXX.XXXXX.
 
