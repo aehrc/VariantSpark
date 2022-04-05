@@ -174,7 +174,7 @@ def _propTrueNullByLocalFDR(p):
     return np.sum(i * q) / n / n1 * 2
 
 
-def _determine_C(f_fit, df, t1, start_at=29):
+'''def _determine_C(f_fit, df, t1, start_at=29):
     """
     Determines the cutoff
     :param f_fit: The fitted spline return from the ff_fit function
@@ -204,7 +204,7 @@ def _determine_C(f_fit, df, t1, start_at=29):
 
         qq[ii] = np.cumsum((-f_fit['counts'] * np.log(f0 / (f))) - np.log(p0))[ii]
 
-    return qq
+    return qq'''
 
 
 def run_it_importances(imp1, pvalue=0.05):
@@ -227,7 +227,7 @@ def run_it_importances(imp1, pvalue=0.05):
                                  a=initial_estimates[2])
     df2 = pd.DataFrame({'x': x[x < C], 'y': y[x < C]})
 
-    try:
+    '''try:
         qq = _determine_C(f_fit, df, initial_estimates, start_at=36)
     except:
         qq = None
@@ -236,7 +236,7 @@ def run_it_importances(imp1, pvalue=0.05):
     if qq is not None:
         # in R the 0 were NA and therefore not factored into the equation
         # qq = np.where(qq == 0, np.repeat(np.inf, len(qq)),qq)
-        cc = x[np.argmin(qq)]
+        cc = x[np.argmin(qq)]'''
 
     final_estimates = _fit_to_data_set(df2)
     # should we use the cc option and C as a fallback? Usersettable option?
@@ -255,11 +255,8 @@ def run_it_importances(imp1, pvalue=0.05):
                                        a=final_estimates[2])
 
     temp = {
-        "fdr": aa,
-        "x": df.x,
+        "fdr": aa, #"x": df.x,
         "estimates": final_estimates,
-        "C": C,
-        "cc": cc,
-        "p0": p0,
+        "C": C,#"cc": cc, #"p0": p0,
         "ppp": ppp}
     return temp
