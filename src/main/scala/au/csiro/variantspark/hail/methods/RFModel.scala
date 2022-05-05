@@ -52,6 +52,7 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
 
   val responseVarName: String = "y"
   val entryVarname: String = "e"
+  val covarID: String = "cov__"
 
   // the a stateful object
   // TODO: Maybe refactor to a helper object
@@ -154,7 +155,7 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
           val varImp = brVarImp.value
           val splitCount = brSplitCount.value
 
-          it.filter(tf => !tf.label.contains("cov__"))
+          it.filter(tf => !tf.label.startsWith(covarID))
             .map { tf =>
               RFModel.tfFeatureToImpRow(tf.label, varImp.getOrElse(tf.index, 0.0),
                 splitCount.getOrElse(tf.index, 0L))
@@ -178,9 +179,9 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
           val varImp = brVarImp.value
           val splitCount = brSplitCount.value
 
-          it.filter { tf => tf.label.contains("cov__") }
+          it.filter { tf => tf.label.startsWith(covarID))
             .map { tf =>
-              Row(tf.label.split("cov__")(1), varImp.getOrElse(tf.index, 0.0),
+              Row(tf.label.split(covarID)(1), varImp.getOrElse(tf.index, 0.0),
                 splitCount.getOrElse(tf.index, 0L))
             }
         }

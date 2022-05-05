@@ -23,29 +23,11 @@ from . import rf
 )
 def random_forest_model(y, x, covariates={}, oob=True, mtry_fraction=None,
                         min_node_size=None, max_depth=None, seed=None, imputation_type=None):
-    mt = matrix_table_source('random_forest_model/x', x)
-    check_entry_indexed('random_forest_model/x', x)
-
-    for key, e in covariates.items():
-        analyze('random_forest_model/covariates', e, mt._col_indices)
-
-    pass_through=()
-    row_fields = _get_regression_row_fields(mt, pass_through, 'random_forest_model')
-
-    y = wrap_to_list(y)
-    y_field = ['y']
-    y_dict = dict(zip(y_field, y))
-
-    mts = mt._select_all(col_exprs=dict(**y_dict,
-                                        **{'cov__'+k:v for k,v in covariates.items()}),
-                         row_exprs=row_fields,
-                         col_key=[],
-                         entry_exprs=dict(e=x))
     """Creates an empty random forest classifier with specified parameters.
 
     :param Float64Expression y:  Column-indexed response expressions.
     :param Float64Expression x:  Entry-indexed expression for input variable.
-    :param covariates: Reserved for future use.
+    :param covariates: Dictionary of covariate names and their respective expression.
     :param bool oob: Should OOB error be calculated.
     :param float mtry_fraction: The fraction of variables to try at each split.
     :param int min_node_size: The minimum number of samples in a node to be consider for splitting.
@@ -58,6 +40,24 @@ def random_forest_model(y, x, covariates={}, oob=True, mtry_fraction=None,
     :return: An empty random forest classifier.
     :rtype: :py:class:`RandomForestModel`
     """
+
+    mt = matrix_table_source('random_forest_model/x', x)
+    check_entry_indexed('random_forest_model/x', x)
+
+    for key, e in covariates.items():
+        analyze('random_forest_model/covariates', e, mt._col_indices)
+
+    '''potential multi-predictions
+    y = wrap_to_list(y)
+    y_field = ['y']
+    y_dict = dict(zip(y_field, y))'''
+    y_dict = {'y':y}
+
+    mts = mt._select_all(col_exprs=dict(**y_dict,
+                                        **{'cov__'+k:v for k,v in covariates.items()}),
+                         row_exprs={},
+                         col_key=[],
+                         entry_exprs=dict(e=x))
 
 
     return rf.RandomForestModel(mts._mir,
