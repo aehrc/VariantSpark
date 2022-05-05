@@ -179,7 +179,7 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
           val varImp = brVarImp.value
           val splitCount = brSplitCount.value
 
-          it.filter { tf => tf.label.startsWith(covarID))
+          it.filter { tf => tf.label.startsWith(covarID)}
             .map { tf =>
               Row(tf.label.split(covarID)(1), varImp.getOrElse(tf.index, 0.0),
                 splitCount.getOrElse(tf.index, 0L))
