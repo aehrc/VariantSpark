@@ -251,7 +251,7 @@ def run_it_importances(imp1, pvalue=0.05):
     mean_aa = np.argmin(np.abs(aa - np.mean(imp1)))
     ww = np.argmin(np.abs(aa[mean_aa:119] - pvalue))
     a1 = imp1[imp1 > df.x[ww + mean_aa]]
-    ppp = 1 - scipy.stats.skewnorm.cdf(a1, loc=final_estimates[0], scale=final_estimates[1],
+    ppp = 1 - scipy.stats.skewnorm.cdf(imp1, loc=final_estimates[0], scale=final_estimates[1],
                                        a=final_estimates[2])
 
     temp = {
