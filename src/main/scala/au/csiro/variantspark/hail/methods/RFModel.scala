@@ -52,7 +52,7 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
 
   val responseVarName: String = "y"
   val entryVarname: String = "e"
-  val covarID: String = "cov__"
+  val covariateName: String = "cov__"
 
   // the a stateful object
   // TODO: Maybe refactor to a helper object
@@ -151,11 +151,12 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
           keySignature.insertFields(Array(("importance", TFloat64), ("splitCount", TInt64)))
         val brVarImp = importanceMapBroadcast
         val brSplitCount = splitCountMapBroadcast
+        val covName = covariateName
         val mapRDD = inputData.mapPartitions { it =>
           val varImp = brVarImp.value
           val splitCount = brSplitCount.value
 
-          it.filter(tf => !tf.label.startsWith(covarID))
+          it.filter(tf => !tf.label.startsWith(covName))
             .map { tf =>
               RFModel.tfFeatureToImpRow(tf.label, varImp.getOrElse(tf.index, 0.0),
                 splitCount.getOrElse(tf.index, 0L))
@@ -175,13 +176,14 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
             TInt64)
         val brVarImp = importanceMapBroadcast
         val brSplitCount = splitCountMapBroadcast
+        val covName = covariateName
         val mapRDD = inputData.mapPartitions { it =>
           val varImp = brVarImp.value
           val splitCount = brSplitCount.value
 
-          it.filter { tf => tf.label.startsWith(covarID) }
+          it.filter { tf => tf.label.startsWith(covName) }
             .map { tf =>
-              Row(tf.label.split(covarID)(1), varImp.getOrElse(tf.index, 0.0),
+              Row(tf.label.split(covName)(1), varImp.getOrElse(tf.index, 0.0),
                 splitCount.getOrElse(tf.index, 0L))
             }
         }

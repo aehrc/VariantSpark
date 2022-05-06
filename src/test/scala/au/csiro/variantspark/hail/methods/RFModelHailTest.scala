@@ -64,9 +64,11 @@ class RFModelHailTest {
 
     withResource(RFModel.pyApply(sparkBackend, matrixIR, null, true, null, null, 13, "mode")) {
       rfModel =>
+        println("fit")
         rfModel.fitTrees(100, 50)
+        println("assert")
         assertTrue("OOB Error is defined", !rfModel.oobError.isNaN)
-
+        println("importance")
         // Assessing gene features
         val importanceTableIR: TableIR = rfModel.variableImportance
 
