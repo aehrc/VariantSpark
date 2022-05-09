@@ -27,7 +27,9 @@ def main():
     print(mt.count())
 
     with vshl.random_forest_model(y=mt.hipster.label,
-                                  x=mt.GT.n_alt_alleles(), seed=13, mtry_fraction=0.05,
+                                  x=mt.GT.n_alt_alleles(), 
+                                  covariates={'age':mt.hipster.age, 'PC0':mt.hipster.PC0, 'PC1':mt.hipster.PC1, 'PC2':mt.hipster.PC2},
+                                  seed=13, mtry_fraction=0.05,
                                   min_node_size=5, max_depth=10) as rf_model:
         rf_model.fit_trees(100, 50)
         print("OOB error: %s" % rf_model.oob_error())
