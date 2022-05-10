@@ -1,6 +1,7 @@
 # This is a Python adaptation from: https://github.com/parsifal9/RFlocalfdr
 
 import sys
+from collections import namedtuple
 
 import numpy as np
 import pandas as pd
@@ -206,6 +207,8 @@ def _propTrueNullByLocalFDR(p):
 
     return qq'''
 
+FdrResult = namedtuple('FdrResult', ['fdr', 'estimates', 'C', 'ppp'])
+
 
 def run_it_importances(imp1, pvalue=0.05):
     """
@@ -254,9 +257,8 @@ def run_it_importances(imp1, pvalue=0.05):
     ppp = 1 - scipy.stats.skewnorm.cdf(imp1, loc=final_estimates[0], scale=final_estimates[1],
                                        a=final_estimates[2])
 
-    temp = {
-        "fdr": aa, #"x": df.x,
-        "estimates": final_estimates,
-        "C": C,#"cc": cc, #"p0": p0,
-        "ppp": ppp}
-    return temp
+    return FdrResult(
+        fdr=aa,  # "x": df.x,
+        estimates=final_estimates,
+        C=C,  # "cc": cc, #"p0": p0,
+        ppp=ppp)
