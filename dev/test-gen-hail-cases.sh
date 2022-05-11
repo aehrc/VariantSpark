@@ -23,6 +23,7 @@ mkdir -p "${WORK_DIR}"
 
 # also generate hail vds
 python "${FWDIR}/src/test/python/extract_rf_vds.py"
+python "${FWDIR}/src/test/python/extract_rf_pheno_vds.py"
 
 # chr22-100
 RESP="22_16050408"

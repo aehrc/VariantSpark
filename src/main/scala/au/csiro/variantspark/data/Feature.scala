@@ -4,7 +4,7 @@ import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
 
 /**
-  * TODO: Rethingk this inheritance
+  * TODO: Rethink this inheritance
   */
 trait Feature extends Data {
   def label: String
