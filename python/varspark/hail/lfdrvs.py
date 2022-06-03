@@ -1,4 +1,8 @@
 from varspark.stats.lfdr import *
+import seaborn as sns
+
+from unidip import UniDip
+
 
 class LocalFdrVs(NamedTuple):
     local_fdr: object
@@ -7,30 +11,39 @@ class LocalFdrVs(NamedTuple):
     def __init__(self, df):
         """
         Constructor class
-        :param p: Takes a pandas dataframe as argument with three columns: variant_id, logImportance and splitCount.
+        :param df: Takes a pandas dataframe as argument with three columns: variant_id,
+        logImportance and splitCount.
         """
-
         self._df = df.sort_values('logImportance', ascending=False)
 
 
     @classmethod
-    def from_imp_table(cls,impTable):
+    def from_imp_df(cls, df):
+        """
+        Alternative class instantiation from a pandas dataframe
+        :param cls: LocalFdrVs class
+        :param df: Pandas dataframe with columns locus, alleles, importance, and splitCount.
+        :return: Initialized class instance.
+        """
+        df = df.assign(logImportance = np.log(df.importance))
+        df['variant_id'] = df.apply(lambda row: str(row['locus'][0])+'_'+str(row['locus'][1])+'_'+ \
+                                            str('_'.join(row['alleles'])), axis=1)
+        return cls(df[['variant_id', 'logImportance', 'splitCount']])
+
+
+    @classmethod
+    def from_imp_table(cls, impTable):
         """
         Alternative class instantiation from a Hail Table (VariantSpark users).
-        :param cls: FdrCalculator class
+        :param cls: LocalFdrVs class
         :param impTable: Hail table with locus, alleles, importance, and splitCount.
         :return: Initialized class instance.
         """
-
         impTable = impTable.filter(impTable.splitCount >= 1)
-        impDf  = impTable.to_spark(flatten=False).toPandas()
-        df = impDf.assign(logImportance = np.log(impDf.importance))
-        df['variant_id'] = df.apply(lambda row: str(row['locus'][0])+'_'+str(row['locus'][1])+'_'+ \
-                                                str('_'.join(row['alleles'])), axis=1)
-        return cls(df)
+        return LocalFdrVs.from_imp_df(impTable.to_spark(flatten=False).toPandas())
 
-    def plot_log_densities(self, ax, min_split_count = 1, max_split_count=6, find_automatic_best=False,
-                           palette = 'Set1', xLabel = 'log(importance)', yLabel = 'density'):
+    def plot_log_densities(self, ax, min_split_count=1, max_split_count=6, palette='Set1',
+                           find_automatic_best=False, xLabel='log(importance)', yLabel='density'):
         """
         Plotting the log densities to visually identify the unimodal distributions.
         :param ax: Matplotlib axis as a canvas for this plot.
@@ -49,20 +62,20 @@ class LocalFdrVs(NamedTuple):
         assert type(yLabel) == str, 'yLabel should be a string'
 
         n_lines = max_split_count - min_split_count + 1
-        colors= sns.mpl_palette(palette, n_lines)
+        colors = sns.mpl_palette(palette, n_lines)
         df = self._df
-        for i,c in zip(range(min_split_count, max_split_count + 1), colors):
+        for i, c in zip(range(min_split_count, max_split_count + 1), colors):
             sns.kdeplot(df.logImportance[df.splitCount >= i],
-                        ax = ax, c=c, bw_adjust=0.5) #bw low show sharper distributions
-
-        #TODO: put the three loops in one
-        best_split = list(range(min_split_count,max_split_count+1))
+                        ax=ax, c=c, bw_adjust=0.5) #bw low show sharper distributions
 
         if find_automatic_best:
             potential_best = self.find_split_count_th( min_split_count, max_split_count)
             sns.kdeplot(df.logImportance[df.splitCount >= potential_best],
                         ax = ax, c=colors[potential_best-1], bw_adjust=0.5, lw=8, linestyle=':')
-            best_split = [str(x) if x!=potential_best else str(x)+'*' for x in range(min_split_count,max_split_count+1)]
+            best_split = [str(x) if x != potential_best else str(x)+'*' for x in range(
+                min_split_count, max_split_count+1)]
+        else:
+            best_split = list(range(min_split_count, max_split_count+1))
 
         ax.legend(title='Minimum split counts in distribution')
         ax.legend(labels=best_split, bbox_to_anchor=(1,1))
@@ -70,10 +83,9 @@ class LocalFdrVs(NamedTuple):
         ax.set_ylabel(yLabel)
 
 
-    def plot_log_hist(self, ax, split_count, bins = 100,
-                      xLabel = 'log(importance)', yLabel = 'count'):
+    def plot_log_hist(self, ax, split_count, bins=100, xLabel='log(importance)', yLabel='count'):
         """
-        Ploting the log histogram for the choosen split_count
+        Ploting the log histogram for the chosen split_count
         :param ax: Matplotlib axis as a canvas for this plot.
         :param split_count: Minimum split count threshold for the plot.
         :param bins: Number of bins in the histogram
@@ -87,15 +99,14 @@ class LocalFdrVs(NamedTuple):
         assert type(yLabel) == str, 'yLabel should be a string'
 
         df = self._df
-        sns.histplot(df.logImportance[df.splitCount >= split_count], ax = ax, bins=bins)
+        sns.histplot(df.logImportance[df.splitCount >= split_count], ax=ax, bins=bins)
         ax.set_xlabel(xLabel)
         ax.set_ylabel(yLabel)
 
 
-    # WHAT TODO
-    def find_split_count_th(self, min_split_count = 1, max_split_count=6, ntrials=1000):
+    # WHAT TODO?
+    def find_split_count_th(self, min_split_count=1, max_split_count=6, ntrials=1000):
         """
-
         :param min_split_count: Minimum split count threshold to be tested.
         :param max_split_count: Maximum split count threshold to be tested.
         :param ntrials: Number of trials for each threshold tested.
@@ -107,15 +118,15 @@ class LocalFdrVs(NamedTuple):
         assert ntrials > 0, 'min_split_count should be bigger than 0'
 
         df = self._df
-        for splitCountThreshold in range(min_split_count,max_split_count + 1):
-            dat = np.msort(df[df['splitCount']>splitCountThreshold]['logImportance'])
+        for splitCountThreshold in range(min_split_count, max_split_count + 1):
+            dat = np.msort(df[df['splitCount'] > splitCountThreshold]['logImportance'])
             intervals = UniDip(dat, ntrials=ntrials).run() #ntrials can be increased to achieve higher robustness
-            if len(intervals) <= 1:
+            if len(intervals) <= 1: #Stops at the first one it has a single distribution
                 break
         return splitCountThreshold
 
-    #TODO
-    def compute_fdr(self, countThreshold = 2, fdr_cutoff = 0.05):
+
+    def compute_fdr(self, countThreshold=2, fdr_cutoff=0.05):
         """
         Compute the FDR p-values of the significant SNPs.
         :param countThreshold: The split count threshold for the SNPs to be considered.
@@ -130,18 +141,12 @@ class LocalFdrVs(NamedTuple):
 
         impDfWithLog = self._df[self._df.splitCount >= countThreshold]
         impDfWithLog = impDfWithLog[['variant_id','logImportance']].set_index('variant_id').squeeze()
-        impDfWithLog = impDfWithLog + sys.float_info.epsilon
 
-        #temp = self._run_it_importances(impDfWithLog)
-        #corrected_pvals,frd_result,positional_cut = self._significant_genes(temp,impDfWithLog,fdr_cutoff)
-        #resultDf = impDfWithLog.head(len(corrected_pvals)).reset_index()
-
-        fdr_model = LocalFdrModel.fit(impDfWithLog)
-        corrected_pvals = fdr_model.get_pvalues(z)
+        self.local_fdr = LocalFdr.fit(impDfWithLog)
+        corrected_pvals = self.local_fdr.get_pvalues(impDfWithLog)
+        frd_result = self.local_fdr.get_fdr_cutoff(fdr_cutoff)
 
         return (
-            self._df.assign(
-                pvalue = corrected_pvals,
-            ),
+            self._df.assign(pvalue = corrected_pvals),
             frd_result
         )
