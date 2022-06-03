@@ -142,7 +142,8 @@ class LocalFdrVs(NamedTuple):
         impDfWithLog = self._df[self._df.splitCount >= countThreshold]
         impDfWithLog = impDfWithLog[['variant_id','logImportance']].set_index('variant_id').squeeze()
 
-        self.local_fdr = LocalFdr.fit(impDfWithLog)
+        self.local_fdr = LocalFdr()
+        self.local_fdr = self.local_fdr.fit(impDfWithLog)
         corrected_pvals = self.local_fdr.get_pvalues(impDfWithLog)
         frd_result = self.local_fdr.get_fdr_cutoff(fdr_cutoff)
 
