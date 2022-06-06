@@ -3,7 +3,7 @@ from hail.table import Table
 from hail.typecheck import *
 from hail.utils.java import Env
 
-from varspark.pvalues_calculation import *
+#from varspark.pvalues_calculation import *
 import hail as hl
 
 

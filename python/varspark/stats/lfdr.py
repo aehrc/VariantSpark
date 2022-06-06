@@ -1,5 +1,4 @@
 import functools as ft
-from typing import NamedTuple
 
 import numpy as np
 import patsy
@@ -7,6 +6,7 @@ import scipy
 import statsmodels.api as sm
 from scipy.stats import skewnorm
 import sys
+import seaborn as sns
 
 
 class SkewnormParams(NamedTuple):
@@ -35,21 +35,23 @@ class SkewnormParams(NamedTuple):
         ]
 
 
-    
-    
-#TODO: Descriptions
-#TODO: enable parameters passing to the hidden functions
-#TODO: Ensure logic is correct
-class LocalFdr(NamedTuple):
+
+class LocalFdr:
     """
     This is mostly based on the ideas from this Effrom paper"
     https://efron.ckirby.su.domains//papers/2005LocalFDR.pdf
 
-    f_observed - actual PDF for distribution of observations `z` (from histogram)
-    f - estimated (smoothed) PDF for distribution of observations `z`
-    f0 - PDF of the null distribution
+    z - Inpute data
+    x - Breakpoints from the histogram
+    f_observed_y - Observed density of the data
+    f_y - Fitted density
+    C - Cutoff between the f0 and the significant
+    f0_params - Parameter estimates for the background distribution
+    f0_y - Observed distribution based on function estimates
     p0 - the proportion of the null observations
+    local_fdr - FDR array for each position
     """
+    z: np.array
     x: np.array
     f_observed_y: np.array
     f_y: np.array
@@ -59,11 +61,7 @@ class LocalFdr(NamedTuple):
     p0: np.float64
     local_fdr: np.array
 
-    #No need for this
-    def __init__(self):
-        pass
-        
-        
+
     def _observed_density(self, z, num_bins=120):
         """
         Groups the data into bins to create a density distribution.
@@ -104,25 +102,28 @@ class LocalFdr(NamedTuple):
         return np.sum(i * q) / n / n1 * 2
 
 
-    #TODO
     def _local_fdr(self, f, f0, p0=1):
         """
         Computes the local fdr values.
-        :param f: A dictionary containing the fitted splines (from _ff_fit)
-        :param x: Array with the importance values
-        :param estimates: Array length==3 containing location, scale and skewness (xi, omega, and
-            lambda) parameters to compute the density distribution
-        :param FUN: Function to compute the probability density. The default is the skew-normal distribution
+        :param f: The fitted splines
+        :param f0: Probability distribution from the fitted data
         :param p0: Maximum pvalue allowed
         :return: Array of the same length as x of FDR corrected p-values
         """
         f_normalised = (np.sum(f0) * f) / np.sum(f)
-        return np.minimum((p0 * f0) / f, 1)
+        return np.minimum((p0 * f0) / f_normalised, 1)
 
 
-    #TODO
     def _estimate_skewnorm_params(self, x, y, initial_params_list=SkewnormParams.default(),
                                   max_nfev=400):
+        """
+        Estimate the best parameters for the observed function
+        :param x: x-axis values
+        :param y: y-axis values
+        :param initial_params_list: Starting initial parameters
+        :param max_nfev: Maximum number of function evaluations before the termination.
+        :return: Returns SkewnormParams class with the found best fitted parameters
+        """
         def _fit_skew_normal(initial_params):
             return scipy.optimize.least_squares(
                 lambda p, x, y: skewnorm.pdf(x, a=p[0], loc=p[1], scale=p[2]) - y,
@@ -132,9 +133,8 @@ class LocalFdr(NamedTuple):
                 method='lm', max_nfev=max_nfev
             )
 
-        #TODO: Success may be missleading. Do old style?
         def _has_converged(optimisation_result):
-            return optimisation_result and optimisation_result.success
+            return optimisation_result and optimisation_result.success and optimisation_result.cost != 0
 
         if isinstance(initial_params_list, SkewnormParams):
             initial_params_list = [initial_params_list]
@@ -150,10 +150,10 @@ class LocalFdr(NamedTuple):
     def fit(self, z):
         """
         Core function to estimate the f0, and the local fdr
-        :param z: Input values, pandas Series
+        :param z: Input values
         """
-        z = z + sys.float_info.epsilon
-        self.x, self.f_observed_y = self._observed_density(z)
+        self.z = z + sys.float_info.epsilon
+        self.x, self.f_observed_y = self._observed_density(self.z)
         self.f_y = self._fit_density(self.x, self.f_observed_y)
         #
         # Estimate the tentative of the null distribution (skew-normal)
@@ -161,10 +161,11 @@ class LocalFdr(NamedTuple):
         #
         initial_f0_params = self._estimate_skewnorm_params(self.x, self.f_observed_y,
                                                            SkewnormParams.initial_list(z))
-        self.C = skewnorm.ppf(0.95, **self.initial_f0_params._asdict())
+
+        self.C = skewnorm.ppf(0.95, **initial_f0_params._asdict())
         self.f0_params = self._estimate_skewnorm_params(self.x[self.x < self.C],
-                                                        self.f_observed_y[self.x < self.C],
-                                                        initial_f0_params)
+                                                        self.f_observed_y[self.x < self.C])
+
 
         self.f0_y = skewnorm.pdf(self.x, **self.f0_params._asdict())
         self.p0 = self._estimate_p0(skewnorm.cdf(z, **self.f0_params._asdict()))
@@ -172,38 +173,54 @@ class LocalFdr(NamedTuple):
         self.local_fdr = self._local_fdr(self.f_y, self.f0_y, self.p0)
 
 
-    def get_pvalues(self, z):
-        return 1 - skewnorm.cdf(z, **self.f0_params._asdict())
-    
-    #TODO
+    def get_pvalues(self):
+        """
+        Returns the p-values for all elements
+        :return: Returns the p-values for each of the elements within the array
+        """
+        return 1 - skewnorm.cdf(self.z, **self.f0_params._asdict())
+
+
     def get_fdr_cutoff(self, pvalue=0.05):
-        start_x = np.argmin(np.abs(obj['x'] - np.mean(imp1)))
-        ww = np.argmin(np.abs(obj['fdr'][start_x:119] - cutoff))
-        num_sig_genes = np.sum(imp1 > obj['x'].iloc[ww+start_x])
-        a1 = imp1 > obj['x'].iloc[ww+start_x]
-        ppp_sg = 1-scipy.stats.skewnorm.cdf(imp1[a1], loc=obj['estimates'][0], scale=obj['estimates'][1],
-                                   a=obj['estimates'][2])
-        cut = 1-scipy.stats.skewnorm.cdf(obj['x'].iloc[ww+start_x], loc=obj['estimates'][0], scale=obj['estimates'][1],
-                                   a=obj['estimates'][2])
+        """
+        Returns the FDR corrected p-value threshold
+        :param pvalue: Selected threshold for the significant genes
+        :return: Returns the corrected p-value threshold
+        """
+        start_x = scipy.stats.skewnorm.ppf(0.95, **self.f0_params._asdict())
 
-        FDR = cut*len(imp1)/len(ppp_sg)
+        start_x = np.where(self.x > start_x)[0][0]
 
-    #TODO
+        ww = np.argmin(np.abs(self.local_fdr.iloc[start_x:119] - pvalue))
+        mask = self.z > self.x[ww+start_x]
+
+        ppp_sg = self.get_pvalues()[mask]
+        cut = self.get_pvalues()[ww+start_x]
+        print(self.get_pvalues())
+        print(cut,len(self.z),len(ppp_sg))
+        return cut*len(ppp_sg)/len(self.z)
+
+
     def plot(self, ax):
-        sns.histplot(impDfWithLog, ax = ax, stat='density', bins=120, color='purple', label="Binned importances")
-        ax.plot(temp['x'],self._my_dsn(temp['estimates'], temp['x']),color='red', label='fitted curve')
+        """
+        Returns the built canvas for a sanity check.
+        :param ax: Mataplot axis
+        :return:
+        """
+        sns.histplot(self.z, ax=ax, stat='density', bins=120, color='purple', label="Binned "
+                                                                                    "importances")
+        ax.plot(self.x, skewnorm.pdf(self.x,  **self.f0_params._asdict()), color='red',
+                label='fitted curve')
 
-        ax.axvline(x=temp['C'], color='blue', label="C")
-        ax.axvline(x=temp['cc'], color='green', label="cc")
-        ax.axvline(x=temp['q95'], color='purple', label="95% quantile")
-        ax.axvline(x=positional_cut, color='lime', label="FDR cutoff")
-        ax.axhline(y=fdr_cutoff, color='black', label="p-value")
+        ax.axvline(x=self.C, color='blue', label="C")
+        #ax.axvline(x=self.get_fdr_cutoff(), color='lime', label="FDR cutoff 0.05")
+        ax.axhline(y=0.05, color='black', label="p-value 0.05")
         ax.set_xlabel("importances", fontsize=14)
-        ax.set_ylabel("density",fontsize=14)
+        ax.set_ylabel("density", fontsize=14)
 
-        ax.scatter(np.nan, np.nan, color='blue', label = 'fdr') #Adding to the legend
+        ax.plot(np.nan, np.nan, color='blue', label = 'fdr') #Adding to the legend
         ax2=ax.twinx()
-        ax2.set_ylabel("local FDR",fontsize=14)
-        ax2.scatter(temp['zh1'][:-1],temp['fdr'], color='blue', label="fdr")
+        ax2.set_ylabel("local FDR", fontsize=14)
+        ax2.plot(self.x, self.local_fdr, color='blue')
 
         ax.legend(loc="upper right")
