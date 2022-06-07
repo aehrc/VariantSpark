@@ -4,9 +4,9 @@ import seaborn as sns
 from unidip import UniDip
 
 
-class LocalFdrVs(NamedTuple):
+class LocalFdrVs:
     local_fdr: object
-    _df: object
+    df_: object
 
     def __init__(self, df):
         """
@@ -14,7 +14,7 @@ class LocalFdrVs(NamedTuple):
         :param df: Takes a pandas dataframe as argument with three columns: variant_id,
         logImportance and splitCount.
         """
-        self._df = df.sort_values('logImportance', ascending=False)
+        self.df_ = df.sort_values('logImportance', ascending=True)
 
 
     @classmethod
@@ -63,7 +63,7 @@ class LocalFdrVs(NamedTuple):
 
         n_lines = max_split_count - min_split_count + 1
         colors = sns.mpl_palette(palette, n_lines)
-        df = self._df
+        df = self.df_
         for i, c in zip(range(min_split_count, max_split_count + 1), colors):
             sns.kdeplot(df.logImportance[df.splitCount >= i],
                         ax=ax, c=c, bw_adjust=0.5) #bw low show sharper distributions
@@ -98,7 +98,7 @@ class LocalFdrVs(NamedTuple):
         assert type(xLabel) == str, 'xLabel should be a string'
         assert type(yLabel) == str, 'yLabel should be a string'
 
-        df = self._df
+        df = self.df_
         sns.histplot(df.logImportance[df.splitCount >= split_count], ax=ax, bins=bins)
         ax.set_xlabel(xLabel)
         ax.set_ylabel(yLabel)
@@ -117,7 +117,7 @@ class LocalFdrVs(NamedTuple):
         assert min_split_count > 0, 'min_split_count should be bigger than 0'
         assert ntrials > 0, 'min_split_count should be bigger than 0'
 
-        df = self._df
+        df = self.df_
         for splitCountThreshold in range(min_split_count, max_split_count + 1):
             dat = np.msort(df[df['splitCount'] > splitCountThreshold]['logImportance'])
             intervals = UniDip(dat, ntrials=ntrials).run() #ntrials can be increased to achieve higher robustness
@@ -139,15 +139,15 @@ class LocalFdrVs(NamedTuple):
         assert countThreshold > 0, 'countThreshold should be bigger than 0'
         assert fdr_cutoff > 0 and fdr_cutoff < 1, 'fdr_cutoff should be between 0 and 1'
 
-        impDfWithLog = self._df[self._df.splitCount >= countThreshold]
+        impDfWithLog = self.df_[self.df_.splitCount >= countThreshold]
         impDfWithLog = impDfWithLog[['variant_id','logImportance']].set_index('variant_id').squeeze()
 
         self.local_fdr = LocalFdr()
-        self.local_fdr = self.local_fdr.fit(impDfWithLog)
-        corrected_pvals = self.local_fdr.get_pvalues(impDfWithLog)
+        self.local_fdr.fit(impDfWithLog)
+        corrected_pvals = self.local_fdr.get_pvalues()
         frd_result = self.local_fdr.get_fdr_cutoff(fdr_cutoff)
 
         return (
-            self._df.assign(pvalue = corrected_pvals),
+            impDfWithLog.reset_index().assign(pvalue=corrected_pvals),
             frd_result
         )

@@ -1,4 +1,5 @@
 import functools as ft
+from typing import NamedTuple
 
 import numpy as np
 import patsy
@@ -134,7 +135,7 @@ class LocalFdr:
             )
 
         def _has_converged(optimisation_result):
-            return optimisation_result and optimisation_result.success and optimisation_result.cost != 0
+            return optimisation_result and optimisation_result.cost != 0
 
         if isinstance(initial_params_list, SkewnormParams):
             initial_params_list = [initial_params_list]
@@ -196,8 +197,6 @@ class LocalFdr:
 
         ppp_sg = self.get_pvalues()[mask]
         cut = self.get_pvalues()[ww+start_x]
-        print(self.get_pvalues())
-        print(cut,len(self.z),len(ppp_sg))
         return cut*len(ppp_sg)/len(self.z)
 
 
@@ -212,15 +211,15 @@ class LocalFdr:
         ax.plot(self.x, skewnorm.pdf(self.x,  **self.f0_params._asdict()), color='red',
                 label='fitted curve')
 
-        ax.axvline(x=self.C, color='blue', label="C")
+        ax.axvline(x=self.C, color='orange', label="C")
         #ax.axvline(x=self.get_fdr_cutoff(), color='lime', label="FDR cutoff 0.05")
-        ax.axhline(y=0.05, color='black', label="p-value 0.05")
         ax.set_xlabel("importances", fontsize=14)
         ax.set_ylabel("density", fontsize=14)
 
         ax.plot(np.nan, np.nan, color='blue', label = 'fdr') #Adding to the legend
         ax2=ax.twinx()
         ax2.set_ylabel("local FDR", fontsize=14)
+        ax2.axhline(y=0.05, color='black', label="p-value 0.05")
         ax2.plot(self.x, self.local_fdr, color='blue')
 
         ax.legend(loc="upper right")
