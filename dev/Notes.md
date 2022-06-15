@@ -25,7 +25,7 @@ Pre-requisites:
 
 - pgp installed 
 - a default pgp key generated in registered in a public registry ( e.g. keys.openpgp.org)
-- `~/.m2/settting.xml` with credentials to oss.sonatype.org
+- `~/.m2/settings.xml` with credentials to oss.sonatype.org
 
 
     export GPG_TTY=$(tty)
@@ -36,7 +36,7 @@ Note: Snapshot releases do not require the last step (i.e. after maven deploy th
     
 More info:  https://central.sonatype.org/pages/apache-maven.html#performing-a-release-deployment-with-the-maven-release-plugin
 
-see: `~/.m2/settting.xml for all the passwords etc`
+see: `~/.m2/settings.xml for all the passwords etc`
 
 Also see: 
 
