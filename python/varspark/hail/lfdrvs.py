@@ -1,7 +1,6 @@
 from varspark.stats.lfdr import *
 import seaborn as sns
 
-from unidip import UniDip
 
 
 class LocalFdrVs:
@@ -104,33 +103,15 @@ class LocalFdrVs:
         ax.set_ylabel(yLabel)
 
 
-    # WHAT TODO?
-    def find_split_count_th(self, min_split_count=1, max_split_count=6, ntrials=1000):
-        """
-        :param min_split_count: Minimum split count threshold to be tested.
-        :param max_split_count: Maximum split count threshold to be tested.
-        :param ntrials: Number of trials for each threshold tested.
-        :return: an integer with the assumed best threshold for the split count.
-        """
-
-        assert min_split_count < max_split_count, 'min_split_count should be smaller than max_split_count'
-        assert min_split_count > 0, 'min_split_count should be bigger than 0'
-        assert ntrials > 0, 'min_split_count should be bigger than 0'
-
-        df = self.df_
-        for splitCountThreshold in range(min_split_count, max_split_count + 1):
-            dat = np.msort(df[df['splitCount'] > splitCountThreshold]['logImportance'])
-            intervals = UniDip(dat, ntrials=ntrials).run() #ntrials can be increased to achieve higher robustness
-            if len(intervals) <= 1: #Stops at the first one it has a single distribution
-                break
-        return splitCountThreshold
+    def plot(self, ax):
+        self.local_fdr(ax)
 
 
-    def compute_fdr(self, countThreshold=2, fdr_cutoff=0.05):
+    def compute_fdr(self, countThreshold=2, pvalue=0.05):
         """
         Compute the FDR p-values of the significant SNPs.
         :param countThreshold: The split count threshold for the SNPs to be considered.
-        :param fdr_cutoff: the non-corrected p-value threshold
+        :param pvalue: the p-value threshold
         :param ax: matplotlib axis to show the distribution and cutoffs
         :return: A tuple with a dataframe containing the SNPs and their corrected p-values,
                     and the corrected FDR threshold.
@@ -145,9 +126,10 @@ class LocalFdrVs:
         self.local_fdr = LocalFdr()
         self.local_fdr.fit(impDfWithLog)
         corrected_pvals = self.local_fdr.get_pvalues()
-        frd_result = self.local_fdr.get_fdr_cutoff(fdr_cutoff)
+        frd = self.local_fdr.get_fdr(pvalue)
+        significance =
 
         return (
-            impDfWithLog.reset_index().assign(pvalue=corrected_pvals),
-            frd_result
+            impDfWithLog.reset_index().assign(pvalue=corrected_pvals,is_significant=significance),
+            frd
         )

@@ -181,23 +181,38 @@ class LocalFdr:
         """
         return 1 - skewnorm.cdf(self.z, **self.f0_params._asdict())
 
-
-    def get_fdr_cutoff(self, pvalue=0.05):
+    def get_cut(self, pvalue=0.05):
         """
-        Returns the FDR corrected p-value threshold
+        Gets the position and the value that thresholds the significance
         :param pvalue: Selected threshold for the significant genes
-        :return: Returns the corrected p-value threshold
+        :return: threshold index and p-value
         """
-        start_x = scipy.stats.skewnorm.ppf(0.95, **self.f0_params._asdict())
-
+        start_x = scipy.stats.skewnorm.ppf(0.5, **self.f0_params._asdict())
         start_x = np.where(self.x > start_x)[0][0]
-
         ww = np.argmin(np.abs(self.local_fdr.iloc[start_x:119] - pvalue))
-        mask = self.z > self.x[ww+start_x]
-
-        ppp_sg = self.get_pvalues()[mask]
         cut = self.get_pvalues()[ww+start_x]
+        return ww+start_x,cut
+
+    def get_significant_mask(self,position):
+        """
+        Calculates which are the significant features
+        :param pvalue: P-value significance threshold
+        :return: binary mask of significance
+        """
+
+
+
+    def get_fdr(self, pvalue=0.05):
+        """
+        Estimates false discovery rate based on the threshold
+        :param pvalue: Selected threshold for the significant genes
+        :return: Returns the false discovery rate
+        """
+        position, cut = self.get_cut(pvalue)
+        mask = self.z > self.x[position]
+        ppp_sg = self.get_pvalues()[mask]
         return cut*len(ppp_sg)/len(self.z)
+
 
 
     def plot(self, ax):
