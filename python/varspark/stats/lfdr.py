@@ -181,38 +181,20 @@ class LocalFdr:
         """
         return 1 - skewnorm.cdf(self.z, **self.f0_params._asdict())
 
-    def get_cut(self, pvalue=0.05):
+
+    def get_fdr(self, pvalue=0.05):
         """
-        Gets the position and the value that thresholds the significance
+        Estimates false discovery rate based on the threshold and the mask for the values included
         :param pvalue: Selected threshold for the significant genes
-        :return: threshold index and p-value
+        :return: Returns the false discovery rate, and a mask for the significant genes
         """
         start_x = scipy.stats.skewnorm.ppf(0.5, **self.f0_params._asdict())
         start_x = np.where(self.x > start_x)[0][0]
         ww = np.argmin(np.abs(self.local_fdr.iloc[start_x:119] - pvalue))
         cut = self.get_pvalues()[ww+start_x]
-        return ww+start_x,cut
-
-    def get_significant_mask(self,position):
-        """
-        Calculates which are the significant features
-        :param pvalue: P-value significance threshold
-        :return: binary mask of significance
-        """
-
-
-
-    def get_fdr(self, pvalue=0.05):
-        """
-        Estimates false discovery rate based on the threshold
-        :param pvalue: Selected threshold for the significant genes
-        :return: Returns the false discovery rate
-        """
-        position, cut = self.get_cut(pvalue)
-        mask = self.z > self.x[position]
-        ppp_sg = self.get_pvalues()[mask]
-        return cut*len(ppp_sg)/len(self.z)
-
+        mask = self.z > self.x[ww+start_x]
+        mask = mask.to_numpy()
+        return cut*sum(mask)/len(self.z), mask
 
 
     def plot(self, ax):
@@ -228,12 +210,13 @@ class LocalFdr:
 
         ax.axvline(x=self.C, color='orange', label="C")
         #ax.axvline(x=self.get_fdr_cutoff(), color='lime', label="FDR cutoff 0.05")
-        ax.set_xlabel("importances", fontsize=14)
-        ax.set_ylabel("density", fontsize=14)
+        ax.set_xlabel("Importances", fontsize=14)
+        ax.set_ylabel("Density", fontsize=14)
 
-        ax.plot(np.nan, np.nan, color='blue', label = 'fdr') #Adding to the legend
+        ax.plot(np.nan, np.nan, color='blue', label = 'local fdr') #Adding to the legend
+        ax.axhline(y=np.nan, color='black', label="p-value 0.05")
         ax2=ax.twinx()
-        ax2.set_ylabel("local FDR", fontsize=14)
+        ax2.set_ylabel("Local FDR", fontsize=14)
         ax2.axhline(y=0.05, color='black', label="p-value 0.05")
         ax2.plot(self.x, self.local_fdr, color='blue')
 

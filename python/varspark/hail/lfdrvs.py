@@ -104,7 +104,7 @@ class LocalFdrVs:
 
 
     def plot(self, ax):
-        self.local_fdr(ax)
+        self.local_fdr.plot(ax)
 
 
     def compute_fdr(self, countThreshold=2, pvalue=0.05):
@@ -118,7 +118,7 @@ class LocalFdrVs:
         """
 
         assert countThreshold > 0, 'countThreshold should be bigger than 0'
-        assert fdr_cutoff > 0 and fdr_cutoff < 1, 'fdr_cutoff should be between 0 and 1'
+        assert pvalue > 0 and pvalue < 1, 'fdr_cutoff should be between 0 and 1'
 
         impDfWithLog = self.df_[self.df_.splitCount >= countThreshold]
         impDfWithLog = impDfWithLog[['variant_id','logImportance']].set_index('variant_id').squeeze()
@@ -126,10 +126,8 @@ class LocalFdrVs:
         self.local_fdr = LocalFdr()
         self.local_fdr.fit(impDfWithLog)
         corrected_pvals = self.local_fdr.get_pvalues()
-        frd = self.local_fdr.get_fdr(pvalue)
-        significance =
-
+        fdr, mask = self.local_fdr.get_fdr(pvalue)
         return (
-            impDfWithLog.reset_index().assign(pvalue=corrected_pvals,is_significant=significance),
-            frd
+            impDfWithLog.reset_index().assign(pvalue=corrected_pvals,is_significant=mask),
+            fdr
         )
