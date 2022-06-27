@@ -81,6 +81,23 @@ class RandomForestModel(object):
         return LocalFdrVs.from_imp_table(self.variable_importance())
 
 
+    def covariate_importance(self):
+        """ Returns the covariate importance for this model in a hail `Table` with the following
+        row fields:
+
+                'covariate': str
+                'importance': float64
+                'splitCount': float64
+
+            and indexed with: ['covariate'].
+
+            The `importance` column contains gini importance for each of the covariates.
+
+            :rtype: :py:class:`hail.is.Table`
+        """
+        return Table._from_java(self._jrf_model.covariatesImportance())
+
+
     @typecheck_method(
         filename=str,
         resolve_names=bool
