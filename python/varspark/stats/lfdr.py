@@ -1,12 +1,12 @@
 import functools as ft
 from typing import NamedTuple
 
+import sys
 import numpy as np
 import patsy
 import scipy
 import statsmodels.api as sm
 from scipy.stats import skewnorm
-import sys
 import seaborn as sns
 
 
@@ -167,10 +167,8 @@ class LocalFdr:
         self.f0_params = self._estimate_skewnorm_params(self.x[self.x < self.C],
                                                         self.f_observed_y[self.x < self.C])
 
-
         self.f0_y = skewnorm.pdf(self.x, **self.f0_params._asdict())
-        self.p0 = self._estimate_p0(skewnorm.cdf(z, **self.f0_params._asdict()))
-
+        self.p0 = self._estimate_p0(skewnorm.cdf(self.z, **self.f0_params._asdict()))
         self.local_fdr = self._local_fdr(self.f_y, self.f0_y, self.p0)
 
 
@@ -209,7 +207,6 @@ class LocalFdr:
                 label='fitted curve')
 
         ax.axvline(x=self.C, color='orange', label="C")
-        #ax.axvline(x=self.get_fdr_cutoff(), color='lime', label="FDR cutoff 0.05")
         ax.set_xlabel("Importances", fontsize=14)
         ax.set_ylabel("Density", fontsize=14)
 

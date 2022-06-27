@@ -1,6 +1,4 @@
 from varspark.stats.lfdr import *
-import seaborn as sns
-
 
 
 class LocalFdrVs:
@@ -118,7 +116,7 @@ class LocalFdrVs:
         """
 
         assert countThreshold > 0, 'countThreshold should be bigger than 0'
-        assert pvalue > 0 and pvalue < 1, 'fdr_cutoff should be between 0 and 1'
+        assert 0 < pvalue < 1, 'p-value threshold should be between 0 and 1'
 
         impDfWithLog = self.df_[self.df_.splitCount >= countThreshold]
         impDfWithLog = impDfWithLog[['variant_id','logImportance']].set_index('variant_id').squeeze()
