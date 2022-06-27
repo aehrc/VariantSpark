@@ -1,7 +1,6 @@
 package au.csiro.variantspark.hail.methods
 
 import java.io.OutputStreamWriter
-
 import au.csiro.pbdava.ssparkle.common.utils.{LoanUtils, Logging}
 import au.csiro.variantspark.algo.{
   DefTreeRepresentationFactory,
@@ -26,9 +25,11 @@ import is.hail.stats.RegressionUtils
 import is.hail.types.virtual._
 import is.hail.utils.{ExecutionTimer, fatal}
 import is.hail.variant._
+
 import javax.annotation.Nullable
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 import org.apache.spark.storage.StorageLevel
@@ -51,6 +52,7 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
 
   val responseVarName: String = "y"
   val entryVarname: String = "e"
+  val covariateName: String = "cov__"
 
   // the a stateful object
   // TODO: Maybe refactor to a helper object
@@ -93,15 +95,12 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
 
         lazy val rf: RandomForest = new RandomForest(rfParams)
 
-        val featuresRDD: RDD[Feature] =
-          RFModel.mvToFeatureRDD(mv, imputationStrategy.getOrElse(DisabledImputationStrategy))
-        inputData = DefTreeRepresentationFactory.createRepresentation(featuresRDD.zipWithIndex())
-
         // These are currently obrained as doubles and converted to Int's needed by RandomForest
         // This is because getPhenosCovCompleteSamples only works on Double64 columns
         // This may be optimized in the future
         val (yMat, cov, completeColIdx) =
-          RegressionUtils.getPhenosCovCompleteSamples(mv, Array(responseVarName), Array[String]())
+          RegressionUtils.getPhenosCovCompleteSamples(mv, Array(mv.typ.colType.fieldNames.head),
+            mv.typ.colType.fieldNames.tail)
         // completeColIdx are indexes of the complete samples.
         // These can be used to subsample the entry data
         // but for now let's just assume that there are no NAs in the labels (and or covariates).
@@ -116,6 +115,20 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
                 + " with all present values equal to 0 or 1")
         }
         val labels = labelVector.map(_.toInt).toArray
+
+        val covFeatures = mv.typ.colType.fieldNames.tail.toSeq.zipWithIndex
+          .map {
+            case (name, i) =>
+              StdFeature.from(name, Vectors.dense(cov(::, i).toArray))
+          }
+
+        val covariateRDD = backend.sc.makeRDD(covFeatures)
+        val genotypeRDD: RDD[Feature] =
+          RFModel.mvToFeatureRDD(mv, imputationStrategy.getOrElse(DisabledImputationStrategy))
+
+        val featuresRDD = genotypeRDD.union(covariateRDD)
+
+        inputData = DefTreeRepresentationFactory.createRepresentation(featuresRDD.zipWithIndex())
 
         // now we somehow need to get to row data
         if (inputData.getStorageLevel == StorageLevel.NONE) {
@@ -138,15 +151,43 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
           keySignature.insertFields(Array(("importance", TFloat64), ("splitCount", TInt64)))
         val brVarImp = importanceMapBroadcast
         val brSplitCount = splitCountMapBroadcast
+        val covName = covariateName
         val mapRDD = inputData.mapPartitions { it =>
           val varImp = brVarImp.value
           val splitCount = brSplitCount.value
-          it.map { tf =>
-            RFModel.tfFeatureToImpRow(tf.label, varImp.getOrElse(tf.index, 0.0),
-              splitCount.getOrElse(tf.index, 0L))
-          }
+
+          it.filter(tf => !tf.label.startsWith(covName))
+            .map { tf =>
+              RFModel.tfFeatureToImpRow(tf.label, varImp.getOrElse(tf.index, 0.0),
+                splitCount.getOrElse(tf.index, 0L))
+            }
         }
         TableLiteral(TableValue(ctx, sig, key, mapRDD))
+      }
+    }
+  }
+
+  def covariatesImportance: TableIR = {
+    ExecutionTimer.logTime("RFModel.fitTrees") { timer =>
+      backend.withExecuteContext(timer) { ctx =>
+        // the result should keep the key + add importance related field
+        val sig: TStruct = TStruct("covariate" -> TString, "importance" -> TFloat64,
+          "splitCount" ->
+            TInt64)
+        val brVarImp = importanceMapBroadcast
+        val brSplitCount = splitCountMapBroadcast
+        val covName = covariateName
+        val mapRDD = inputData.mapPartitions { it =>
+          val varImp = brVarImp.value
+          val splitCount = brSplitCount.value
+
+          it.filter { tf => tf.label.startsWith(covName) }
+            .map { tf =>
+              Row(tf.label.split(covName)(1), varImp.getOrElse(tf.index, 0.0),
+                splitCount.getOrElse(tf.index, 0L))
+            }
+        }
+        TableLiteral(TableValue(ctx, sig, Array("covariate"), mapRDD))
       }
     }
   }
