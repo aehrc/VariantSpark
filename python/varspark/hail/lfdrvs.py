@@ -80,7 +80,7 @@ class LocalFdrVs:
         ax.set_ylabel(yLabel)
 
 
-    def plot_log_hist(self, ax, split_count, bins=100, xLabel='log(importance)', yLabel='count'):
+    def plot_log_hist(self, ax, split_count, bins=120, xLabel='log(importance)', yLabel='count'):
         """
         Ploting the log histogram for the chosen split_count
         :param ax: Matplotlib axis as a canvas for this plot.
@@ -105,12 +105,12 @@ class LocalFdrVs:
         self.local_fdr.plot(ax)
 
 
-    def compute_fdr(self, countThreshold=2, pvalue=0.05):
+    def compute_fdr(self, countThreshold=2, pvalue=0.05, bins=120):
         """
         Compute the FDR p-values of the significant SNPs.
         :param countThreshold: The split count threshold for the SNPs to be considered.
         :param pvalue: the p-value threshold
-        :param ax: matplotlib axis to show the distribution and cutoffs
+        :param bins: number of bins to which the log importances will be aggregated
         :return: A tuple with a dataframe containing the SNPs and their corrected p-values,
                     and the corrected FDR threshold.
         """
@@ -122,7 +122,7 @@ class LocalFdrVs:
         impDfWithLog = impDfWithLog[['variant_id','logImportance']].set_index('variant_id').squeeze()
 
         self.local_fdr = LocalFdr()
-        self.local_fdr.fit(impDfWithLog)
+        self.local_fdr.fit(impDfWithLog, bins)
         corrected_pvals = self.local_fdr.get_pvalues()
         fdr, mask = self.local_fdr.get_fdr(pvalue)
         return (

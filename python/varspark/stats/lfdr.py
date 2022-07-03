@@ -52,6 +52,7 @@ class LocalFdr:
     p0 - the proportion of the null observations
     local_fdr - FDR array for each position
     """
+    bins: np.int
     z: np.array
     x: np.array
     f_observed_y: np.array
@@ -63,14 +64,14 @@ class LocalFdr:
     local_fdr: np.array
 
 
-    def _observed_density(self, z, num_bins=120):
+    def _observed_density(self, z):
         """
         Groups the data into bins to create a density distribution.
         :param z: Input data (pandas Series)
         :param num_bins: Number of bins to aggregate the data
         :return: returns the mid points of the bins and the density data
         """
-        z_density, breaks = np.histogram(z, bins=num_bins, density=True)
+        z_density, breaks = np.histogram(z, bins=self.bins, density=True)
         breaks_mid_points = (breaks[:-1] + breaks[1:]) / 2
         return breaks_mid_points, z_density
 
@@ -148,11 +149,13 @@ class LocalFdr:
             raise ValueError('All fittings failed')
 
 
-    def fit(self, z):
+    def fit(self, z, bins):
         """
         Core function to estimate the f0, and the local fdr
         :param z: Input values
+        :param bins: Number of bins to aggregate the data
         """
+        self.bins = bins
         self.z = z + sys.float_info.epsilon
         self.x, self.f_observed_y = self._observed_density(self.z)
         self.f_y = self._fit_density(self.x, self.f_observed_y)
@@ -188,7 +191,7 @@ class LocalFdr:
         """
         start_x = scipy.stats.skewnorm.ppf(0.5, **self.f0_params._asdict())
         start_x = np.where(self.x > start_x)[0][0]
-        ww = np.argmin(np.abs(self.local_fdr.iloc[start_x:119] - pvalue))
+        ww = np.argmin(np.abs(self.local_fdr.iloc[start_x:self.bins] - pvalue))
         cut = self.get_pvalues()[ww+start_x]
         mask = self.z > self.x[ww+start_x]
         mask = mask.to_numpy()
@@ -201,7 +204,7 @@ class LocalFdr:
         :param ax: Mataplot axis
         :return:
         """
-        sns.histplot(self.z, ax=ax, stat='density', bins=120, color='purple', label="Binned "
+        sns.histplot(self.z, ax=ax, stat='density', bins=self.bins, color='purple', label="Binned "
                                                                                     "importances")
         ax.plot(self.x, skewnorm.pdf(self.x,  **self.f0_params._asdict()), color='red',
                 label='fitted curve')
