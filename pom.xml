@@ -3,8 +3,8 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>au.csiro.aehrc.variant-spark</groupId>
-  <artifactId>variant-spark_2.11</artifactId>
-  <version>0.5.0-a0-dev2-SNAPSHOT</version>
+  <artifactId>variant-spark_2.12</artifactId>
+  <version>0.5.0</version>
   <packaging>jar</packaging>
 
   <name>variant-spark</name>
@@ -46,8 +46,14 @@
     <developer>
       <name>Robert Dunne</name>
       <email>Rob.Dunne@data61.csiro.au</email>
-      <organization>CSIRO eHealth</organization>
+      <organization>CSIRO Data61</organization>
       <organizationUrl>http://www.data61.csiro.au/</organizationUrl>
+    </developer>
+    <developer>
+      <name>Roc Reguant</name>
+      <email>roc.reguant@csiro.au</email>
+      <organization>CSIRO eHealth</organization>
+      <organizationUrl>https://aehrc.com</organizationUrl>
     </developer>
   </developers>
 
