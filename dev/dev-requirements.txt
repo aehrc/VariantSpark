@@ -9,10 +9,12 @@ pylint==2.6.0
 pytest==6.2.2
 twine==3.2.0
 # varspark dependencies
+Jinja2==3.0.3
 pandas==1.1.4
 typedecorator==0.0.5
-Jinja2==3.0.3
 hail==0.2.74
+pyspark==3.1.3
+scipy==1.6.3
 numpy==1.21.2
 patsy==0.5.2
 statsmodels==0.13.2
