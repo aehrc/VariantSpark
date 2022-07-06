@@ -185,10 +185,10 @@ class LocalFdr:
 
     def get_fdr(self, cutoff=0.05):
         """
-        Estimates false discovery rate based on the threshold and the mask for the values
-        included :param cutoff: Selected threshold for the significant genes (how many False
-        positives are there over the total number of genes) :return: Returns the false discovery
-        rate, and a mask for the significant genes
+        Estimates false discovery rate based on the threshold and the mask for the values included.
+        :param cutoff: Selected threshold for the local fdr (how many False
+        positives are there over the total number of genes)
+        :return: Returns the false discovery rate, and a mask for the significant genes
         """
         start_x = scipy.stats.skewnorm.ppf(0.5, **self.f0_params._asdict())
         start_x = np.where(self.x > start_x)[0][0]
