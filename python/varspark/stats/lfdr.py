@@ -183,18 +183,18 @@ class LocalFdr:
         return 1 - skewnorm.cdf(self.z, **self.f0_params._asdict())
 
 
-    def get_fdr(self, cutoff=0.05):
+    def get_fdr(self, local_fdr_cutoff=0.05):
         """
         Estimates false discovery rate based on the threshold and the mask for the values included.
-        :param cutoff: Selected threshold for the local fdr (how many False
+        :param local_fdr_cutoff: Selected threshold for the local fdr (how many False
         positives are there over the total number of genes)
         :return: Returns the false discovery rate, and a mask for the significant genes
         """
         start_x = scipy.stats.skewnorm.ppf(0.5, **self.f0_params._asdict())
-        start_x = np.where(self.x > start_x)[0][0]
-        ww = np.argmin(np.abs(self.local_fdr.iloc[start_x:self.bins] - cutoff))
-        cut = self.get_pvalues()[ww+start_x]
-        mask = self.z > self.x[ww+start_x]
+        start_x_index = np.where(self.x > start_x)[0][0]
+        cutoff_index = np.argmin(np.abs(self.local_fdr.iloc[start_x_index:self.bins] - local_fdr_cutoff))
+        cut = 1 - skewnorm.cdf(self.x[cutoff_index+start_x_index], **self.f0_params._asdict())
+        mask = self.z > self.x[cutoff_index+start_x_index]
         mask = mask.to_numpy()
         return cut*sum(mask)/len(self.z), mask
 
@@ -202,7 +202,7 @@ class LocalFdr:
     def plot(self, ax):
         """
         Returns the built canvas for a sanity check.
-        :param ax: Mataplot axis
+        :param ax: Matplot axis
         :return:
         """
         sns.histplot(self.z, ax=ax, stat='density', bins=self.bins, color='purple', label="Binned "
@@ -214,11 +214,11 @@ class LocalFdr:
         ax.set_xlabel("Importances", fontsize=14)
         ax.set_ylabel("Density", fontsize=14)
 
-        ax.plot(np.nan, np.nan, color='blue', label = 'local fdr') #Adding to the legend
-        ax.axhline(y=np.nan, color='black', label="cutoff 0.05")
+        ax.plot(np.nan, np.nan, color='blue', label='local fdr') #Adding to the legend
+        ax.axhline(y=np.nan, color='black', label="local fdr cutoff = 0.05")
         ax2=ax.twinx()
         ax2.set_ylabel("Local FDR", fontsize=14)
-        ax2.axhline(y=0.05, color='black', label="cutoff 0.05")
+        ax2.axhline(y=0.05, color='black', label="local fdr cutoff = 0.05")
         ax2.plot(self.x, self.local_fdr, color='blue')
 
         ax.legend(loc="upper right")
