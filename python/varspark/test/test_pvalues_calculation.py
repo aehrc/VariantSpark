@@ -42,7 +42,7 @@ class PValuesCalculationTest(unittest.TestCase):
         as the original R script.
         :return:
         """
-        df,fdr = self.lfdrvs.compute_fdr(countThreshold=2, pvalue=0.05)
+        df,fdr = self.lfdrvs.compute_fdr(countThreshold=2, local_fdr_cutoff=0.05)
 
         self.assertEqual(df.is_significant.sum(), 17)
 
