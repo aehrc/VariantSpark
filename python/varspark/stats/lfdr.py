@@ -183,15 +183,16 @@ class LocalFdr:
         return 1 - skewnorm.cdf(self.z, **self.f0_params._asdict())
 
 
-    def get_fdr(self, pvalue=0.05):
+    def get_fdr(self, cutoff=0.05):
         """
-        Estimates false discovery rate based on the threshold and the mask for the values included
-        :param pvalue: Selected threshold for the significant genes
-        :return: Returns the false discovery rate, and a mask for the significant genes
+        Estimates false discovery rate based on the threshold and the mask for the values
+        included :param cutoff: Selected threshold for the significant genes (how many False
+        positives are there over the total number of genes) :return: Returns the false discovery
+        rate, and a mask for the significant genes
         """
         start_x = scipy.stats.skewnorm.ppf(0.5, **self.f0_params._asdict())
         start_x = np.where(self.x > start_x)[0][0]
-        ww = np.argmin(np.abs(self.local_fdr.iloc[start_x:self.bins] - pvalue))
+        ww = np.argmin(np.abs(self.local_fdr.iloc[start_x:self.bins] - cutoff))
         cut = self.get_pvalues()[ww+start_x]
         mask = self.z > self.x[ww+start_x]
         mask = mask.to_numpy()
@@ -214,10 +215,10 @@ class LocalFdr:
         ax.set_ylabel("Density", fontsize=14)
 
         ax.plot(np.nan, np.nan, color='blue', label = 'local fdr') #Adding to the legend
-        ax.axhline(y=np.nan, color='black', label="p-value 0.05")
+        ax.axhline(y=np.nan, color='black', label="cutoff 0.05")
         ax2=ax.twinx()
         ax2.set_ylabel("Local FDR", fontsize=14)
-        ax2.axhline(y=0.05, color='black', label="p-value 0.05")
+        ax2.axhline(y=0.05, color='black', label="cutoff 0.05")
         ax2.plot(self.x, self.local_fdr, color='blue')
 
         ax.legend(loc="upper right")

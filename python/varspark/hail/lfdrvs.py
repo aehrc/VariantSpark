@@ -105,18 +105,18 @@ class LocalFdrVs:
         self.local_fdr.plot(ax)
 
 
-    def compute_fdr(self, countThreshold=2, pvalue=0.05, bins=120):
+    def compute_fdr(self, countThreshold=2, cutoff=0.05, bins=120):
         """
-        Compute the FDR p-values of the significant SNPs.
+        Compute the FDR and p-values of the SNPs.
         :param countThreshold: The split count threshold for the SNPs to be considered.
-        :param pvalue: the p-value threshold
+        :param cutoff: Threshold of False positives over total of genes
         :param bins: number of bins to which the log importances will be aggregated
-        :return: A tuple with a dataframe containing the SNPs and their corrected p-values,
-                    and the corrected FDR threshold.
+        :return: A tuple with a dataframe containing the SNPs and their p-values,
+                    and the expected FDR for the significant genes.
         """
 
         assert countThreshold > 0, 'countThreshold should be bigger than 0'
-        assert 0 < pvalue < 1, 'p-value threshold should be between 0 and 1'
+        assert 0 < cutoff < 1, 'cutoff threshold should be between 0 and 1'
 
         impDfWithLog = self.df_[self.df_.splitCount >= countThreshold]
         impDfWithLog = impDfWithLog[['variant_id','logImportance']].set_index('variant_id').squeeze()
@@ -124,7 +124,7 @@ class LocalFdrVs:
         self.local_fdr = LocalFdr()
         self.local_fdr.fit(impDfWithLog, bins)
         corrected_pvals = self.local_fdr.get_pvalues()
-        fdr, mask = self.local_fdr.get_fdr(pvalue)
+        fdr, mask = self.local_fdr.get_fdr(cutoff)
         return (
             impDfWithLog.reset_index().assign(pvalue=corrected_pvals,is_significant=mask),
             fdr
