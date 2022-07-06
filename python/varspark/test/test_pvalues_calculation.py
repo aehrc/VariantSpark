@@ -1,14 +1,11 @@
 import os
-import sys
 import unittest
 
-import numpy as np
 import hail as hl
-import varspark.hail as vshl
-
 import pytest
 
-PROJECT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
+import varspark.hail as vshl
+from varspark.test import PROJECT_DIR
 
 
 @pytest.mark.pvalues
@@ -35,17 +32,15 @@ class PValuesCalculationTest(unittest.TestCase):
 
         self.lfdrvs = rf_model.get_lfdr()
 
-
     def test_number_of_significant_variants(self):
         """
         Assess weather the p-values calculation returns the same number of significant variants
         as the original R script.
         :return:
         """
-        df,fdr = self.lfdrvs.compute_fdr(countThreshold=2, local_fdr_cutoff=0.05)
+        df, fdr = self.lfdrvs.compute_fdr(countThreshold=2, local_fdr_cutoff=0.05)
 
         self.assertEqual(df.is_significant.sum(), 17)
-
 
 
 if __name__ == '__main__':
