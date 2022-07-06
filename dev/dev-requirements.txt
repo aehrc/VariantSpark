@@ -13,3 +13,7 @@ pandas==1.1.4
 typedecorator==0.0.5
 Jinja2==3.0.3
 hail==0.2.74
+numpy==1.21.2
+patsy==0.5.2
+statsmodels==0.13.2
+seaborn==0.11.2

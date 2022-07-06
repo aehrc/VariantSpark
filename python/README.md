@@ -73,7 +73,9 @@ For more information about how the VariantSpark wide random forest algorithm wor
 
 Install VariantSpark for development using this command:
 
-    git https://github.com/aehrc/VariantSpark.git
+    git clone https://github.com/aehrc/VariantSpark.git
+    mvn clean install
+    pip install -r dev/dev-requirements.txt
     cd VariantSpark/python
     pip install -e .
 

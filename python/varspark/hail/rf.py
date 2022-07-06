@@ -2,6 +2,10 @@ from hail.ir import *
 from hail.table import Table
 from hail.typecheck import *
 from hail.utils.java import Env
+from varspark.hail.lfdrvs import LocalFdrVs
+
+#from varspark.pvalues_calculation import *
+import hail as hl
 
 
 class RandomForestModel(object):
@@ -69,6 +73,14 @@ class RandomForestModel(object):
         """
         return Table._from_java(self._jrf_model.variableImportance())
 
+
+    def get_lfdr(self):
+        """ Returns the class with the information preloaded to compute the local FDR
+        :return: class LocalFdrVs with the importances loaded
+        """
+        return LocalFdrVs.from_imp_table(self.variable_importance())
+
+
     def covariate_importance(self):
         """ Returns the covariate importance for this model in a hail `Table` with the following
         row fields:
@@ -84,6 +96,7 @@ class RandomForestModel(object):
             :rtype: :py:class:`hail.is.Table`
         """
         return Table._from_java(self._jrf_model.covariatesImportance())
+
 
     @typecheck_method(
         filename=str,
