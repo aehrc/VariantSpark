@@ -1,13 +1,13 @@
 import functools as ft
+import sys
 from typing import NamedTuple
 
-import sys
 import numpy as np
 import patsy
 import scipy
+import seaborn as sns
 import statsmodels.api as sm
 from scipy.stats import skewnorm
-import seaborn as sns
 
 
 class SkewnormParams(NamedTuple):
@@ -36,7 +36,6 @@ class SkewnormParams(NamedTuple):
         ]
 
 
-
 class LocalFdr:
     """
     This is mostly based on the ideas from this Effrom paper"
@@ -63,7 +62,6 @@ class LocalFdr:
     p0: np.float64
     local_fdr: np.array
 
-
     def _observed_density(self, z):
         """
         Groups the data into bins to create a density distribution.
@@ -75,7 +73,6 @@ class LocalFdr:
         breaks_mid_points = (breaks[:-1] + breaks[1:]) / 2
         return breaks_mid_points, z_density
 
-
     def _fit_density(self, x, y, df=10):
         """
         Fits the data using a poison function using splines
@@ -85,10 +82,10 @@ class LocalFdr:
         :return: returns the smoothed data for the density distribution
         """
         transformed_x = patsy.dmatrix(f"cr(x, df={df})", {"x": x}, return_type='dataframe')
-        transformed_x = sm.add_constant(transformed_x)  # Makes no difference but added for consistency
+        transformed_x = sm.add_constant(
+            transformed_x)  # Makes no difference but added for consistency
         model = sm.GLM(y, transformed_x, family=sm.families.Poisson()).fit()
         return model.predict(transformed_x)
-
 
     def _estimate_p0(self, p):
         """
@@ -103,7 +100,6 @@ class LocalFdr:
         n1 = n + 1
         return np.sum(i * q) / n / n1 * 2
 
-
     def _local_fdr(self, f, f0, p0=1):
         """
         Computes the local fdr values.
@@ -115,7 +111,6 @@ class LocalFdr:
         f_normalised = (np.sum(f0) * f) / np.sum(f)
         return np.minimum((p0 * f0) / f_normalised, 1)
 
-
     def _estimate_skewnorm_params(self, x, y, initial_params_list=SkewnormParams.default(),
                                   max_nfev=400):
         """
@@ -126,6 +121,7 @@ class LocalFdr:
         :param max_nfev: Maximum number of function evaluations before the termination.
         :return: Returns SkewnormParams class with the found best fitted parameters
         """
+
         def _fit_skew_normal(initial_params):
             return scipy.optimize.least_squares(
                 lambda p, x, y: skewnorm.pdf(x, a=p[0], loc=p[1], scale=p[2]) - y,
@@ -143,11 +139,11 @@ class LocalFdr:
 
         converged_results = filter(_has_converged, map(_fit_skew_normal, initial_params_list))
         if converged_results:
-            best_result = ft.reduce(lambda r1, r2: r2 if r2.cost < r1.cost else r1, converged_results)
+            best_result = ft.reduce(lambda r1, r2: r2 if r2.cost < r1.cost else r1,
+                                    converged_results)
             return SkewnormParams._make(best_result.x)
         else:
             raise ValueError('All fittings failed')
-
 
     def fit(self, z, bins):
         """
@@ -174,7 +170,6 @@ class LocalFdr:
         self.p0 = self._estimate_p0(skewnorm.cdf(self.z, **self.f0_params._asdict()))
         self.local_fdr = self._local_fdr(self.f_y, self.f0_y, self.p0)
 
-
     def get_pvalues(self):
         """
         Returns the p-values for all elements
@@ -182,22 +177,24 @@ class LocalFdr:
         """
         return 1 - skewnorm.cdf(self.z, **self.f0_params._asdict())
 
-
     def get_fdr(self, local_fdr_cutoff=0.05):
         """
         Estimates false discovery rate based on the threshold and the mask for the values included.
         :param local_fdr_cutoff: Selected threshold for the local fdr (how many False
-        positives are there over the total number of genes)
+        positives are in each bin)
         :return: Returns the false discovery rate, and a mask for the significant genes
         """
         start_x = scipy.stats.skewnorm.ppf(0.5, **self.f0_params._asdict())
         start_x_index = np.where(self.x > start_x)[0][0]
-        cutoff_index = np.argmin(np.abs(self.local_fdr.iloc[start_x_index:self.bins] - local_fdr_cutoff))
-        cut = 1 - skewnorm.cdf(self.x[cutoff_index+start_x_index], **self.f0_params._asdict())
-        mask = self.z > self.x[cutoff_index+start_x_index]
-        mask = mask.to_numpy()
-        return cut*sum(mask)/len(self.z), mask
-
+        cutoff_index = start_x_index + np.argmin(
+            np.abs(self.local_fdr.iloc[start_x_index:self.bins] - local_fdr_cutoff))
+        cutoff_x = self.x[cutoff_index]
+        cutoff_pvalue = 1 - skewnorm.cdf(cutoff_x, **self.f0_params._asdict())
+        significant_mask = (self.z > cutoff_x).to_numpy()
+        # the proportion of false positives expected from null distribution
+        # to the identified positives
+        FDR = cutoff_pvalue * len(self.z) / sum(significant_mask)
+        return FDR, significant_mask
 
     def plot(self, ax):
         """
@@ -206,17 +203,17 @@ class LocalFdr:
         :return:
         """
         sns.histplot(self.z, ax=ax, stat='density', bins=self.bins, color='purple', label="Binned "
-                                                                                    "importances")
-        ax.plot(self.x, skewnorm.pdf(self.x,  **self.f0_params._asdict()), color='red',
+                                                                                          "importances")
+        ax.plot(self.x, skewnorm.pdf(self.x, **self.f0_params._asdict()), color='red',
                 label='fitted curve')
 
         ax.axvline(x=self.C, color='orange', label="C")
         ax.set_xlabel("Importances", fontsize=14)
         ax.set_ylabel("Density", fontsize=14)
 
-        ax.plot(np.nan, np.nan, color='blue', label='local fdr') #Adding to the legend
+        ax.plot(np.nan, np.nan, color='blue', label='local fdr')  # Adding to the legend
         ax.axhline(y=np.nan, color='black', label="local fdr cutoff = 0.05")
-        ax2=ax.twinx()
+        ax2 = ax.twinx()
         ax2.set_ylabel("Local FDR", fontsize=14)
         ax2.axhline(y=0.05, color='black', label="local fdr cutoff = 0.05")
         ax2.plot(self.x, self.local_fdr, color='blue')
