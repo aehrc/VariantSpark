@@ -22,7 +22,6 @@ on:
       - branch-*
 jobs:
   build:
-
     runs-on: ubuntu-latest
     env:
       BUILD_TYPE: issue

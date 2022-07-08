@@ -12,8 +12,10 @@
 name: Publish Release
 
 on:
-  release:
-    types: [ published ]
+  workflow_run:
+    workflows: [Java and Python CI with Maven]
+    types:
+      - completed
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -46,13 +48,29 @@ jobs:
           pip cache dir
           pip install pypandoc==1.5 setuptools wheel twine
           if [ -f dev/dev-requirements.txt ]; then pip install -r dev/dev-requirements.txt; fi
-      - name: Build with Maven
-        run: mvn -DskipTests=true -B package --file pom.xml
-      - name: Build and publish to PyPI
-        env:
-          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      - name: Install GPG key
         run: |
-          cd python
-          python setup.py sdist bdist_wheel
-          twine upload dist/*
+          cat <(echo -e "${{ secrets.GPG_KEY }}") | gpg --batch --import
+          gpg --list-secret-keys --keyid-format LONG
+      - name: Configure Maven settings
+        uses: s4u/maven-settings-action@v2.6.0
+        with:
+          servers: |
+            [{
+              "id": "ossrh",
+              "username": "${{ secrets.OSSRH_USERNAME }}",
+              "password": "${{ secrets.OSSRH_PASSWORD }}"
+            }]
+      - name: Build with Maven
+        run: |
+          mvn -Prelease -DskipTests=true -Dgpg.passphrase="${{ secrets.GPG_PASSPHRASE }}" \
+          --batch-mode --file pom.xml \
+          install
+#      - name: Build and publish to PyPI
+#        env:
+#          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+#          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+#        run: |
+#          cd python
+#          python setup.py sdist bdist_wheel
+#          twine upload dist/*
