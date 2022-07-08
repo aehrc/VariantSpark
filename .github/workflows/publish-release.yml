@@ -65,7 +65,7 @@ jobs:
         run: |
           mvn -Prelease -DskipTests=true -Dgpg.passphrase="${{ secrets.GPG_PASSPHRASE }}" \
           --batch-mode --file pom.xml \
-          install
+          deploy
 #      - name: Build and publish to PyPI
 #        env:
 #          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
