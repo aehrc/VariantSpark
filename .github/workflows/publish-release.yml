@@ -12,10 +12,10 @@
 name: Publish Release
 
 on:
-  workflow_run:
-    workflows: [Java and Python CI with Maven]
-    types:
-      - completed
+  pull_request:
+    branches:
+      - master
+      - branch-*
 jobs:
   build:
     runs-on: ubuntu-latest
