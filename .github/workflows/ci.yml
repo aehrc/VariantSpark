@@ -9,7 +9,7 @@
 #   by hail is not available for python 3.8
 #
 
-name: Java and Python CI with Maven
+name: Verify
 
 on:
   push:
@@ -22,7 +22,6 @@ on:
       - branch-*
 jobs:
   build:
-
     runs-on: ubuntu-latest
     env:
       BUILD_TYPE: issue
@@ -68,5 +67,4 @@ jobs:
         run: mvn -Dbuild.type=${BUILD_TYPE} -B package --file pom.xml
       - name: Test with pytest
         run: |
-          pytest -s -m spark ./python
-          pytest -s -m hail ./python
+          dev/py-test.sh
