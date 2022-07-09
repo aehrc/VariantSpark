@@ -12,10 +12,10 @@
 name: Publish Release
 
 on:
-  pull_request:
-    branches:
-      - master
-      - branch-*
+  workflow_run:
+    workflows: [ Verify ]
+    types:
+      - completed
 jobs:
   build:
     runs-on: ubuntu-latest
