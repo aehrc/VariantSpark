@@ -7,7 +7,7 @@ from hail.utils.java import Env
 import varspark as vs
 
 
-def init(quiet=False, spark_conf=None, **kwargs):
+def init(sc=None, quiet=False, spark_conf=None, **kwargs):
     """ Initialises hail context with variant-spark support.
 
         :param kwargs: same as for hail.init()
@@ -20,7 +20,7 @@ def init(quiet=False, spark_conf=None, **kwargs):
         sys.stderr.write("using variant-spark jar at '%s'\n" % vs_jar_path)
     if not vs_jar_path in jars:
         jars.append(vs_jar_path)
-    hl.init(quiet=quiet, spark_conf={'spark.jars': ",".join(jars)}, **kwargs)
+    hl.init(sc=sc, quiet=quiet, spark_conf={'spark.jars': ",".join(jars)}, **kwargs)
 
 
 def version():
