@@ -3,6 +3,6 @@
 #
 #these are needed by variant spark
 typedecorator>=0.0.5
-pandas>=0.22.0
-hail==0.2.16
+pandas==1.1.4
+hail==0.2.74
 nbsphinx
