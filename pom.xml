@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>au.csiro.aehrc.variant-spark</groupId>
   <artifactId>variant-spark_2.12</artifactId>
-  <version>0.5.2</version>
+  <version>0.5.3-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>variant-spark</name>
