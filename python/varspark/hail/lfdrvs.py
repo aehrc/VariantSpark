@@ -40,13 +40,12 @@ class LocalFdrVs:
         return LocalFdrVs.from_imp_df(impTable.to_spark(flatten=False).toPandas())
 
     def plot_log_densities(self, ax, min_split_count=1, max_split_count=6, palette='Set1',
-                           find_automatic_best=False, xLabel='log(importance)', yLabel='density'):
+                           xLabel='log(importance)', yLabel='density'):
         """
         Plotting the log densities to visually identify the unimodal distributions.
         :param ax: Matplotlib axis as a canvas for this plot.
         :param min_split_count: n>=1, from which the split count plotting starts.
         :param max_split_count: when to stop the split count filtering.
-        :param find_automatic_best: The user may let the computer highlight the potential best option.
         :param palette: Matplotlib color palette used for the plotting.
         :param xLabel: Label on the x-axis of the plot.
         :param yLabel: Label on the y-axis of the plot.
@@ -65,14 +64,7 @@ class LocalFdrVs:
             sns.kdeplot(df.logImportance[df.splitCount >= i],
                         ax=ax, c=c, bw_adjust=0.5) #bw low show sharper distributions
 
-        if find_automatic_best:
-            potential_best = self.find_split_count_th( min_split_count, max_split_count)
-            sns.kdeplot(df.logImportance[df.splitCount >= potential_best],
-                        ax = ax, c=colors[potential_best-1], bw_adjust=0.5, lw=8, linestyle=':')
-            best_split = [str(x) if x != potential_best else str(x)+'*' for x in range(
-                min_split_count, max_split_count+1)]
-        else:
-            best_split = list(range(min_split_count, max_split_count+1))
+        best_split = list(range(min_split_count, max_split_count+1))
 
         ax.legend(title='Minimum split counts in distribution')
         ax.legend(labels=best_split, bbox_to_anchor=(1,1))
