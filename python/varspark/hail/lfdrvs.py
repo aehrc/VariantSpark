@@ -13,7 +13,6 @@ class LocalFdrVs:
         """
         self.df_ = df.sort_values('logImportance', ascending=True)
 
-
     @classmethod
     def from_imp_df(cls, df):
         """
@@ -22,11 +21,11 @@ class LocalFdrVs:
         :param df: Pandas dataframe with columns locus, alleles, importance, and splitCount.
         :return: Initialized class instance.
         """
-        df = df.assign(logImportance = np.log(df.importance))
-        df['variant_id'] = df.apply(lambda row: str(row['locus'][0])+'_'+str(row['locus'][1])+'_'+ \
-                                            str('_'.join(row['alleles'])), axis=1)
+        df = df.assign(logImportance=np.log(df.importance))
+        df['variant_id'] = df.apply(
+            lambda row: str(row['locus'][0]) + '_' + str(row['locus'][1]) + '_' + \
+                        str('_'.join(row['alleles'])), axis=1)
         return cls(df[['variant_id', 'logImportance', 'splitCount']])
-
 
     @classmethod
     def from_imp_table(cls, impTable):
@@ -39,8 +38,7 @@ class LocalFdrVs:
         impTable = impTable.filter(impTable.splitCount >= 1)
         return LocalFdrVs.from_imp_df(impTable.to_spark(flatten=False).toPandas())
 
-
-    def find_split_count_th(self, cutoff_list=[1,2,3,4,5,10,15,20], quantile=0.75, bins=120):
+    def find_split_count_th(self, cutoff_list=[1, 2, 3, 4, 5, 10, 15, 20], quantile=0.75, bins=120):
         """
         Finds the ideal threshold for the splitCount. Ideal being the lowest differences between
         the fitted skewed normal distribution vs the real data
@@ -49,16 +47,16 @@ class LocalFdrVs:
         :param bins: Number of bins for the distribution
         :return: best splitCount threshold
         """
-        best_split=[1, np.inf]
+        best_split = [1, np.inf]
 
         for split in cutoff_list:
-            #impDfWithLog = self.df_[self.df_.splitCount >= split]
-            impDfWithLog = self.df_[self.df_.splitCount >= split] #temp
-            impDfWithLog = impDfWithLog[['variant_id','logImportance']].set_index('variant_id').squeeze()
+            # impDfWithLog = self.df_[self.df_.splitCount >= split]
+            impDfWithLog = self.df_[self.df_.splitCount >= split]  # temp
+            impDfWithLog = impDfWithLog[['variant_id', 'logImportance']].set_index(
+                'variant_id').squeeze()
 
             local_fdr = LocalFdr()
-            local_fdr.bins=bins
-
+            local_fdr.bins = bins
 
             impDfWithLog = impDfWithLog + sys.float_info.epsilon
             x, f_observed_y = local_fdr._observed_density(impDfWithLog)
@@ -66,17 +64,19 @@ class LocalFdrVs:
 
             C = np.quantile(impDfWithLog, q=quantile)
 
-            initial_f0_params = local_fdr._estimate_skewnorm_params(x[x < C], f_observed_y[x < C], SkewnormParams.initial_list(impDfWithLog))
+            initial_f0_params = local_fdr._estimate_skewnorm_params(x[x < C], f_observed_y[x < C],
+                                                                    SkewnormParams.initial_list(impDfWithLog))
 
-            res = skewnorm.pdf(x, a=initial_f0_params.a, loc=initial_f0_params.loc, scale=initial_f0_params.scale) - f_observed_y
-            res = sum(res[x < C]**2)
+            res = skewnorm.pdf(x, a=initial_f0_params.a, loc=initial_f0_params.loc,
+                               scale=initial_f0_params.scale) - f_observed_y
+            res = sum(res[x < C] ** 2)
             if best_split[1] > res:
-                best_split[0]=split
-                best_split[1]=res
+                best_split[0] = split
+                best_split[1] = res
 
         return best_split[0]
 
-    def plot_log_densities(self, ax, cutoff_list=[1,2,3,4,5,10,15,20], palette='Set1',
+    def plot_log_densities(self, ax, cutoff_list=[1, 2, 3, 4, 5, 10, 15, 20], palette='Set1',
                            find_automatic_best=False, xLabel='log(importance)', yLabel='density'):
         """
         Plotting the log densities to visually identify the unimodal distributions.
@@ -96,21 +96,20 @@ class LocalFdrVs:
         df = self.df_
         for i, c in zip(cutoff_list, colors):
             sns.kdeplot(df.logImportance[df.splitCount >= i],
-                        ax=ax, c=c, bw_adjust=0.5) #bw low show sharper distributions
+                        ax=ax, c=c, bw_adjust=0.5)  # bw low show sharper distributions
 
         if find_automatic_best:
             potential_best = self.find_split_count_th(cutoff_list=cutoff_list)
             sns.kdeplot(df.logImportance[df.splitCount >= potential_best],
-                        ax = ax, c=colors[potential_best-1], bw_adjust=0.5, lw=8, linestyle=':')
-            best_split = [str(x) if x != potential_best else str(x)+'*' for x in cutoff_list]
+                        ax=ax, c=colors[potential_best - 1], bw_adjust=0.5, lw=8, linestyle=':')
+            best_split = [str(x) if x != potential_best else str(x) + '*' for x in cutoff_list]
         else:
             best_split = cutoff_list
 
         ax.legend(title='Minimum split counts in distribution')
-        ax.legend(labels=best_split, bbox_to_anchor=(1,1))
+        ax.legend(labels=best_split, bbox_to_anchor=(1, 1))
         ax.set_xlabel(xLabel)
         ax.set_ylabel(yLabel)
-
 
     def plot_log_hist(self, ax, split_count, bins=120, xLabel='log(importance)', yLabel='count'):
         """
@@ -132,10 +131,8 @@ class LocalFdrVs:
         ax.set_xlabel(xLabel)
         ax.set_ylabel(yLabel)
 
-
     def plot(self, ax):
         self.local_fdr.plot(ax)
-
 
     def compute_fdr(self, countThreshold=2, local_fdr_cutoff=0.05, bins=120):
         """
@@ -151,7 +148,8 @@ class LocalFdrVs:
         assert 0 < local_fdr_cutoff < 1, 'local_fdr_cutoff threshold should be between 0 and 1'
 
         impDfWithLog = self.df_[self.df_.splitCount >= countThreshold]
-        impDfWithLog = impDfWithLog[['variant_id','logImportance']].set_index('variant_id').squeeze()
+        impDfWithLog = impDfWithLog[['variant_id', 'logImportance']].set_index(
+            'variant_id').squeeze()
 
         self.local_fdr = LocalFdr()
         self.local_fdr.fit(impDfWithLog, bins)
