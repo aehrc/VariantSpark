@@ -28,8 +28,8 @@ trait ImpurityAggregator {
 }
 
 /**
-  * Mutable class that encapsulates classification impirity calculation.
-  * The state is modified by adding or removing speficic labels.
+  * Mutable class that encapsulates classification impurity calculation.
+  * The state is modified by adding or removing specific labels.
   */
 trait ClassificationImpurityAggregator extends ImpurityAggregator {
   def addLabel(label: Int)
@@ -37,28 +37,41 @@ trait ClassificationImpurityAggregator extends ImpurityAggregator {
 }
 
 /**
-  * Mutatabe class that encapsulates regression impority calculation.
-  * The stat is modified by adding or removing continous values.
+  * Mutable class that encapsulates regression impurity calculation.
+  * The stat is modified by adding or removing continuous values.
   */
 trait RegressionImpurityAggregator extends ImpurityAggregator {
+
   def addValue(value: Double)
   def subValue(value: Double)
 }
 
 /**
-  *  Base trait for representing impurituy measure
+  *  Base trait for representing impurity measure
   */
 trait Impurity
 
 /**
   * Base trait for representing classification impurity measures.
   */
-trait ClassficationImpurity extends Impurity {
+trait ClassificationImpurity extends Impurity {
 
   /**
     * Creates an aggregator for this impurity.
     *
-    * @param nCategories the number of categories (lables) in the response variable.
+    * @param nCategories the number of categories (labels) in the response variable.
     */
   def createAggregator(nCategories: Int): ClassificationImpurityAggregator
+}
+
+/**
+ * Base trait for representing regression impurity measures.
+ */
+trait RegressionImpurity extends Impurity {
+
+  /**
+   * Creates an aggregator for this impurity.
+   *
+   */
+  def createAggregator(): RegressionImpurityAggregator
 }
