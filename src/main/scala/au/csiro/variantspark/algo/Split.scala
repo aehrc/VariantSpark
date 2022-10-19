@@ -205,7 +205,7 @@ class DefStatefulIndexedSplitterFactory(val impurity: ClassificationImpurity,
   * Split aggregator for classification. The indexes refer to nominal labels.
   */
 class RegressionSplitterFactory(
-    val impurity: RegressionImpurity, val labels: Array[Float])
+    val impurity: RegressionImpurity, val labels: Array[Double])
     extends IndexedSplitterFactory {
 
   lazy val splitAggregator: RegressionSplitAggregator =
@@ -216,7 +216,7 @@ class RegressionSplitterFactory(
   }
 }
 
-class RegressionSplitAggregator private (val labels: Array[Float],
+class RegressionSplitAggregator private (val labels: Array[Double],
     val left: RegressionImpurityAggregator, val right: RegressionImpurityAggregator)
     extends IndexedSplitAggregator {
 
@@ -235,7 +235,7 @@ class RegressionSplitAggregator private (val labels: Array[Float],
 }
 
 object RegressionSplitAggregator {
-  def apply(impurity: RegressionImpurity, labels: Array[Float]): RegressionSplitAggregator =
+  def apply(impurity: RegressionImpurity, labels: Array[Double]): RegressionSplitAggregator =
     new RegressionSplitAggregator(labels, impurity.createAggregator(),
       impurity.createAggregator())
 }
