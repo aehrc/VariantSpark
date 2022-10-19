@@ -75,3 +75,5 @@ trait RegressionImpurity extends Impurity {
    */
   def createAggregator(): RegressionImpurityAggregator
 }
+
+
