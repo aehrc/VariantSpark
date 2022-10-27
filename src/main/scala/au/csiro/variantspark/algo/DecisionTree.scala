@@ -394,7 +394,7 @@ case class AirVariableSplitter(labels: Array[Int], permutationOrder: Array[Int],
     * @return takes the varData and maps the value of the dataset
     */
   def findSplitsForVars(varData: Iterator[TreeFeature], splits: Array[SubsetInfo])(
-      implicit rng: RandomGenerator): Iterator[Array[VarSplitInfo]] = {
+      implicit rng: RandomGenerator): Iterator[Array[RegressionVarSplitInfo]] = {
     profIt("Local: splitting") {
       val sbf = threadSafeSpliterBuilderFactory(labels)
       val permutatedSbf = threadSafeSpliterBuilderFactory(permutatedLabels)
@@ -937,26 +937,19 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(),
   }
 }
 
-
-
-
-
-
 /** REGRESSION SECTION */
-
-
 /** This is the main split function
- *
- * 1. specifies the number of categories based on the label input
- * 2. Finds the splits in the data based on the gini value
- *
- * @param labels: input an array of labels used by the dataset
- * @param mTryFraction:  the fraction of variable to try at each split (default to 1.0)
- * @param randomizeEquality: default to false
- */
+  *
+  * 1. specifies the number of categories based on the label input
+  * 2. Finds the splits in the data based on the gini value
+  *
+  * @param labels: input an array of labels used by the dataset
+  * @param mTryFraction:  the fraction of variable to try at each split (default to 1.0)
+  * @param randomizeEquality: default to false
+  */
 case class RegressionVariableSplitter(labels: Array[Double], permutationOrder: Array[Int],
-                               mTryFraction: Double, randomizeEquality: Boolean)
-  extends VariableSplitter with Logging with Prof {
+    mTryFraction: Double, randomizeEquality: Boolean)
+    extends AirVariableSplitter with Logging with Prof {
 
   lazy val permutatedLabels: Array[Double] = permutationOrder.map(labels(_))
 
@@ -967,16 +960,16 @@ case class RegressionVariableSplitter(labels: Array[Double], permutationOrder: A
 //  }
 
   /** Find the splits in the data based on the gini value
-   *
-   * Specify the 'data' and 'splits' inputs
-   *
-   * @param typedData: input the data from the dataset of generic type V
-   * @param splits: input an array of the [[au.csiro.variantspark.algo.SubsetInfo]] class
-   * @return returns an array [[au.csiro.variantspark.algo.SplitInfo]]
-   */
+    *
+    * Specify the 'data' and 'splits' inputs
+    *
+    * @param typedData: input the data from the dataset of generic type V
+    * @param splits: input an array of the [[au.csiro.variantspark.algo.SubsetInfo]] class
+    * @return returns an array [[au.csiro.variantspark.algo.SplitInfo]]
+    */
   def findSplits(typedData: TreeFeature, splits: Array[SubsetInfo], sbf: IndexedSplitterFactory,
-                 permutedSbf: IndexedSplitterFactory, permSubsets: Array[Array[Int]])(
-                  implicit rng: RandomGenerator): Array[RegressionVarSplitInfo] = {
+      permutedSbf: IndexedSplitterFactory, permSubsets: Array[Array[Int]])(
+      implicit rng: RandomGenerator): Array[RegressionVarSplitInfo] = {
 
     val splitter = sbf.create(typedData)
     val permutedSplitter = permutedSbf.create(typedData)
@@ -1007,13 +1000,13 @@ case class RegressionVariableSplitter(labels: Array[Double], permutationOrder: A
   }
 
   /** Returns the result of a split based on a variable
-   *
-   * @param varData: input an Iterator of a tuple containing the dataset and indices
-   * @param splits: input an Array of the [[au.csiro.variantspark.algo.SubsetInfo]] class
-   * @return takes the varData and maps the value of the dataset
-   */
+    *
+    * @param varData: input an Iterator of a tuple containing the dataset and indices
+    * @param splits: input an Array of the [[au.csiro.variantspark.algo.SubsetInfo]] class
+    * @return takes the varData and maps the value of the dataset
+    */
   def findSplitsForVars(varData: Iterator[TreeFeature], splits: Array[SubsetInfo])(
-    implicit rng: RandomGenerator): Iterator[Array[RegressionVarSplitInfo]] = {
+      implicit rng: RandomGenerator): Iterator[Array[RegressionVarSplitInfo]] = {
     profIt("Local: splitting") {
       val sbf = threadSafeSpliterBuilderFactory(labels)
       val permutedSbf = threadSafeSpliterBuilderFactory(permutatedLabels)
@@ -1026,14 +1019,14 @@ case class RegressionVariableSplitter(labels: Array[Double], permutationOrder: A
   }
 
   /** Splits the subsets of the RDD and returns a split based on the variable of split index
-   *
-   * @param varData: input an interator containing the dataset and an index
-   * @param subsets: input an array of [[au.csiro.variantspark.algo.SubsetInfo]]
-   * @param bestSplits: input an array of the [[au.csiro.variantspark.algo.RegressionVarSplitInfo]]
-   * @return returns a flattened iterator
-   */
+    *
+    * @param varData: input an interator containing the dataset and an index
+    * @param subsets: input an array of [[au.csiro.variantspark.algo.SubsetInfo]]
+    * @param bestSplits: input an array of the [[au.csiro.variantspark.algo.RegressionVarSplitInfo]]
+    * @return returns a flattened iterator
+    */
   def splitSubsets(varData: Iterator[TreeFeature], subsets: Array[SubsetInfo],
-                   bestSplits: Array[RegressionVarSplitInfo]): Iterator[(Int, (SubsetInfo, SubsetInfo))] = {
+      bestSplits: Array[RegressionVarSplitInfo]): Iterator[(Int, (SubsetInfo, SubsetInfo))] = {
 
     val usefulSubsetSplitAndIndex =
       subsets.zip(bestSplits).filter(_._2 != null).zipWithIndex.toList
@@ -1055,112 +1048,95 @@ case class RegressionVariableSplitter(labels: Array[Double], permutationOrder: A
 
 }
 
-object AirVariableSplitter {
-  def apply(labels: Array[Double], seed: Long, mTryFraction: Double = 1.0,
-            randomizeEquality: Boolean = false): AirVariableSplitter = {
-    val rng = new XorShift1024StarRandomGenerator(seed)
-    val permutationOrder = labels.indices.toArray
-    MathArrays.shuffle(permutationOrder, rng)
-    AirVariableSplitter(labels, permutationOrder, mTryFraction, randomizeEquality)
-  }
-}
-
-
-
-
 
 /** Allows for a general description of the construct
- *
- * Specify the 'indices', 'impurtity', and 'majoritylabel' these values will not be visible
- * outside the class
- *
- * {{{
- * val subInfo = SubsetInfo(indices, impurtity, majorityLabel)
- * val subInfoAlt = SubsetInfo(indices, impurity, labels, nLabels)
- * }}}
- *
- * @constructor creates value based on the indices, impurity, and majorityLabel
- * @param indices: input an array of integers representing the indices of the values
- * @param impurity: input the value of impurity of the data construct
- */
-case class RegressionSubsetInfo(indices: Array[Int], impurity: Double) {
+  *
+  * Specify the 'indices', 'impurtity', and 'majoritylabel' these values will not be visible
+  * outside the class
+  *
+  * {{{
+  * val subInfo = SubsetInfo(indices, impurtity, majorityLabel)
+  * val subInfoAlt = SubsetInfo(indices, impurity, labels, nLabels)
+  * }}}
+  *
+  * @constructor creates value based on the indices, impurity, and majorityLabel
+  * @param indices: input an array of integers representing the indices of the values
+  * @param impurity: input the value of impurity of the data construct
+  */
+case class RegressionSubsetInfo(indices: Array[Int], impurity: Double, labels: Array[Double]) {
 
   /** An alternative constructor for the SubsetInfo class, use this if the majorityLabel has not
-   * already been defined
-   *
-   * Specify the 'indices', 'impurity', 'labels', and 'nLabels'
-   *
-   * {{{
-   * val subInfo = SubsetInfo(indices, impurity, labels, nLables)
-   * }}}
-   *
-   * @param indices: input an array of integers that contains the indices required
-   * @param impurity: a value based on the gini impurity of the dataset sent in
-   * @param labels: in put an array of integers that contains the labels of the values for each row
-   * @param nLabels: specify the number of labels for that specific dataset
-   *
-   */
-
-  /** def this(indices: Array[Int], impurity: Double, labels: Array[Double]) { //#TODO-no-need
-   * this(indices, impurity, FactorVariable.classCounts(indices, labels, nLabels))
-   * }
-   */
+    * already been defined
+    *
+    * Specify the 'indices', 'impurity', 'labels', and 'nLabels'
+    *
+    * {{{
+    * val RegressionSubsetInfo = RegressionSubsetInfo(indices, impurity, labels)
+    * }}}
+    *
+    * @param indices: input an array of integers that contains the indices required
+    * @param impurity: a value based on the gini impurity of the dataset sent in
+    * @param labels: in put an array of integers that contains the labels of the values for each row
+    * @param nLabels: specify the number of labels for that specific dataset
+    *
+    */
+   def this(indices: Array[Int], impurity: Double, labels: Array[Double]) {
+     this(indices, impurity, labels)
+     }
 
   def length: Int = indices.length
   override def toString: String = s"SubsetInfo(${indices.toList},${impurity})"
 }
 
 /** Class utilized to give an insight into the split data
- *
- * Specify the 'variableIndex', 'splitPoint', 'gini', 'leftGini', and 'rightGini'
- *
- * @constructor creates information about the split that occured on a specifc variable
- * @param variableIndex: specifies the index of the variable that the dataset will
- *                     split on
- * @param splitPoint: specifies the point in the index of the exact split
- * @param gini: general gini value of the dataset
- * @param leftGini: the gini impurity of the left split of the dataset
- * @param rightGini: the gini impurity of the right split of the dataset
- */
+  *
+  * Specify the 'variableIndex', 'splitPoint', 'gini', 'leftGini', and 'rightGini'
+  *
+  * @constructor creates information about the split that occured on a specifc variable
+  * @param variableIndex: specifies the index of the variable that the dataset will
+  *                     split on
+  * @param splitPoint: specifies the point in the index of the exact split
+  * @param gini: general gini value of the dataset
+  * @param leftGini: the gini impurity of the left split of the dataset
+  * @param rightGini: the gini impurity of the right split of the dataset
+  */
 case class RegressionVarSplitInfo(variableIndex: Long, splitPoint: Double, impurity: Double,
-                             leftImpurity: Double, rightImpurity: Double, isPermuted: Boolean) {
+    leftImpurity: Double, rightImpurity: Double, isPermuted: Boolean) {
 
   /** Creates a list of the subsetInfos for the dataset split
-   *
-   * @param v: input the specific data construct
-   * @param labels: input an array of integer labels
-   * @param nCategories: specify the number of categories of the dataset or 'columns'
-   * @param subset: specify the SubsetInfo class touched on previously at
-   *              [[au.csiro.variantspark.algo.SubsetInfo]]
-   * @return returns a tupple of the subset information
-   */
-  def split(v: TreeFeature, labels: Array[Int], nCategories: Int)(
-    subset: SubsetInfo): (SubsetInfo, SubsetInfo) = {
-    (new SubsetInfo(subset.indices.filter(v.at(_) <= splitPoint), leftImpurity, labels,
-      nCategories),
-      new SubsetInfo(subset.indices.filter(v.at(_) > splitPoint), rightImpurity, labels,
-        nCategories))
+    *
+    * @param v: input the specific data construct
+    * @param labels: input an array of integer labels
+    * @param nCategories: specify the number of categories of the dataset or 'columns'
+    * @param subset: specify the SubsetInfo class touched on previously at
+    *              [[au.csiro.variantspark.algo.SubsetInfo]]
+    * @return returns a tupple of the subset information
+    */
+  def split(v: TreeFeature, labels: Array[Double])(
+      subset: SubsetInfo): (SubsetInfo, SubsetInfo) = {
+    (new RegressionSubsetInfo(subset.indices.filter(v.at(_) <= splitPoint), leftImpurity, labels),
+      new RegressionSubsetInfo(subset.indices.filter(v.at(_) > splitPoint), rightImpurity, labels))
   }
-  def splitPermuted(v: TreeFeature, labels: Array[Int], nCategories: Int,
-                      permutationOder: Array[Int])(subset: SubsetInfo): (SubsetInfo, SubsetInfo) = {
-    (new SubsetInfo(subset.indices.filter(i => v.at(permutationOder(i)) <= splitPoint),
-      leftImpurity, labels, nCategories),
-      new SubsetInfo(subset.indices.filter(i => v.at(permutationOder(i)) > splitPoint),
-        rightImpurity, labels, nCategories))
+  def splitPermuted(v: TreeFeature, labels: Array[Double],
+      permutationOder: Array[Int])(subset: SubsetInfo): (SubsetInfo, SubsetInfo) = {
+    (new RegressionSubsetInfo(subset.indices.filter(i => v.at(permutationOder(i)) <= splitPoint),
+        leftImpurity, labels),
+      new RegressionSubsetInfo(subset.indices.filter(i => v.at(permutationOder(i)) > splitPoint),
+        rightImpurity, labels))
   }
 }
 
 /** Utilized to return a RegressionVarSplitInfo object
- */
+  */
 object RegressionVarSplitInfo {
 
   /** Applies the values obtained from the [[au.csiro.variantspark.algo.SplitInfo]] class to
-   *  create an [[au.csiro.variantspark.algo.RegressionVarSplitInfo]] object
-   *
-   * @param variableIndex: input an index of where the variable split from
-   * @param split: input a [[au.csiro.variantspark.algo.SplitInfo]] object
-   * @return returns a [[au.csiro.variantspark.algo.RegressionVarSplitInfo]] object
-   */
+    *  create an [[au.csiro.variantspark.algo.RegressionVarSplitInfo]] object
+    *
+    * @param variableIndex: input an index of where the variable split from
+    * @param split: input a [[au.csiro.variantspark.algo.SplitInfo]] object
+    * @return returns a [[au.csiro.variantspark.algo.RegressionVarSplitInfo]] object
+    */
   def apply(variableIndex: Long, split: SplitInfo, isPermuted: Boolean): RegressionVarSplitInfo =
     apply(variableIndex, split.splitPoint, split.gini, split.leftGini, split.rightGini,
       isPermuted)
