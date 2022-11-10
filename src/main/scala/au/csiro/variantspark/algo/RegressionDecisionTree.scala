@@ -105,9 +105,9 @@ object RegressionVarSplitInfo {
     * @return returns a [[au.csiro.variantspark.algo.VarSplitInfo]] object
     */
   def apply(variableIndex: Long, split: SplitInfo,
-      isPermutated: Boolean): RegressionVarSplitInfo =
+      isPermuted: Boolean): RegressionVarSplitInfo =
     apply(variableIndex, split.splitPoint, split.gini, split.leftGini, split.rightGini,
-      isPermutated) // TODO: Decided to use existing SpitInfo even though the naming is not
+      isPermuted) // TODO: Decided to use existing SpitInfo even though the naming is not
   // correct here
 }
 
@@ -420,46 +420,48 @@ object RegressionDecisionTree extends Logging with Prof {
     }
   }
 }
-// TODO: to continue
+
 @SerialVersionUID(1L)
-abstract class DecisionTreeNode(val majorityLabel: Int, val size: Int, val nodeImpurity: Double)
+abstract class RegressionDecisionTreeNode(val meanLabel: Int, val size: Int,
+    val nodeImpurity: Double)
     extends Serializable {
+
   def isLeaf: Boolean
-
-  def classCounts: Array[Int]
-
   def printout(level: Int)
   def impurityContribution: Double = nodeImpurity * size
-  def traverse(f: SplitNode => Boolean): LeafNode = this match {
-    case leaf: LeafNode => leaf
-    case split: SplitNode => (if (f(split)) split.left else split.right).traverse(f)
+  def traverse(f: RegressionSplitNode => Boolean): RegressionLeafNode = this match {
+    case leaf: RegressionLeafNode => leaf
+    case split: RegressionSplitNode => (if (f(split)) split.left else split.right).traverse(f)
   }
-  def toStream: Stream[DecisionTreeNode]
-  def splitsToStream: Stream[SplitNode] =
-    toStream.filter(!_.isLeaf).asInstanceOf[Stream[SplitNode]]
-  def leafsToStream: Stream[LeafNode] = toStream.filter(_.isLeaf).asInstanceOf[Stream[LeafNode]]
+  def toStream: Stream[RegressionDecisionTreeNode]
+  def splitsToStream: Stream[RegressionSplitNode] =
+    toStream.filter(!_.isLeaf).asInstanceOf[Stream[RegressionSplitNode]]
+  def leafsToStream: Stream[RegressionLeafNode] =
+    toStream
+      .filter(_.isLeaf)
+      .asInstanceOf[Stream[RegressionLeafNode]]
 }
 
 @SerialVersionUID(1L)
-case class LeafNode(override val majorityLabel: Int, classCounts: Array[Int],
-    override val size: Int, override val nodeImpurity: Double)
-    extends DecisionTreeNode(majorityLabel, size, nodeImpurity) {
+case class RegressionLeafNode(override val meanLabel: Int, override val size: Int,
+    override val nodeImpurity: Double)
+    extends RegressionDecisionTreeNode(meanLabel, size, nodeImpurity) {
   val isLeaf: Boolean = true
 
   def printout(level: Int) {
     print(new String(Array.fill(level)(' ')))
     val nodeType = "leaf"
-    println(s"${nodeType}[${majorityLabel}, ${size}, ${nodeImpurity}]")
+    println(s"${nodeType}[${meanLabel}, ${size}, ${nodeImpurity}]")
   }
 
-  override def toString: String = s"leaf[${majorityLabel}, ${size}, ${nodeImpurity}]"
+  override def toString: String = s"leaf[${meanLabel}, ${size}, ${nodeImpurity}]"
 
-  def toStream: Stream[DecisionTreeNode] = this #:: Stream.empty
+  def toStream: Stream[RegressionDecisionTreeNode] = this #:: Stream.empty
 }
 
-object LeafNode {
-  def apply(subset: SubsetInfo): LeafNode =
-    apply(subset.majorityLabel, subset.classCounts, subset.length, subset.impurity)
+object RegressionLeafNode {
+  def apply(subset: RegressionSubsetInfo): RegressionLeafNode =
+    apply(subset.meanLabel, subset.length, subset.impurity) // TODO
 
   /**
     * Create a tree leaf for a standard classifier tree with voting information onlu
@@ -468,18 +470,18 @@ object LeafNode {
     * @param nodeImpurity
     * @return
     */
-  def voting(majorityLabel: Int, size: Int, nodeImpurity: Double): LeafNode = {
-    LeafNode(majorityLabel, null, size, nodeImpurity)
+  def voting(meanLabel: Int, size: Int, nodeImpurity: Double): RegressionLeafNode = {
+    RegressionLeafNode(meanLabel, null, size, nodeImpurity) // TODO
   }
 
 }
 
 @SerialVersionUID(1L)
-case class SplitNode(override val majorityLabel: Int, classCounts: Array[Int],
-    override val size: Int, override val nodeImpurity: Double, splitVariableIndex: Long,
-    splitPoint: Double, impurityReduction: Double, left: DecisionTreeNode,
-    right: DecisionTreeNode, isPermutated: Boolean = false)
-    extends DecisionTreeNode(majorityLabel, size, nodeImpurity) {
+case class RegressionSplitNode(override val meanLabel: Int, override val size: Int,
+    override val nodeImpurity: Double, splitVariableIndex: Long, splitPoint: Double,
+    impurityReduction: Double, left: RegressionDecisionTreeNode,
+    right: RegressionDecisionTreeNode, isPermuted: Boolean = false)
+    extends RegressionDecisionTreeNode(meanLabel, size, nodeImpurity) {
 
   val isLeaf: Boolean = false
 
@@ -487,42 +489,42 @@ case class SplitNode(override val majorityLabel: Int, classCounts: Array[Int],
     print(new String(Array.fill(level)(' ')))
     val nodeType = "split"
     println(
-        s"${nodeType}[${splitVariableIndex}, ${splitPoint}, ${majorityLabel},"
+        s"${nodeType}[${splitVariableIndex}, ${splitPoint}, ${meanLabel},"
           + s" ${size}, ${impurityReduction}, ${nodeImpurity}]")
     left.printout(level + 1)
     right.printout(level + 1)
   }
   override def toString: String =
-    (s"split[${splitVariableIndex}, ${splitPoint}, ${majorityLabel}, ${size},"
+    (s"split[${splitVariableIndex}, ${splitPoint}, ${meanLabel}, ${size},"
       + s" ${impurityReduction}, ${nodeImpurity}]")
 
-  def childFor(value: Double): DecisionTreeNode = if (value <= splitPoint) left else right
+  def childFor(value: Double): RegressionDecisionTreeNode =
+    if (value <= splitPoint) left else right
 
   def impurityDelta: Double = {
     val deltaAbs = impurityContribution - (left.impurityContribution + right.impurityContribution)
-    if (isPermutated) -deltaAbs else deltaAbs
+    if (isPermuted) -deltaAbs else deltaAbs
   }
-  def toStream: Stream[DecisionTreeNode] = this #:: left.toStream #::: right.toStream
+  def toStream: Stream[RegressionDecisionTreeNode] = this #:: left.toStream #::: right.toStream
 }
 
-object SplitNode {
-  def apply(subset: SubsetInfo, split: VarSplitInfo, left: DecisionTreeNode,
-      right: DecisionTreeNode): SplitNode =
-    apply(subset.majorityLabel, subset.classCounts, subset.length, subset.impurity,
-      split.variableIndex, split.splitPoint, subset.impurity - split.gini, left, right,
-      split.isPermutated)
+object RegressionSplitNode {
+  def apply(subset: RegressionSubsetInfo, split: RegressionVarSplitInfo,
+      left: RegressionDecisionTreeNode, right: RegressionDecisionTreeNode): SplitNode =
+    apply(subset.meanLabel, subset.length, subset.impurity, split.variableIndex, split.splitPoint,
+      subset.impurity - split.impurity, left, right, split.isPermutated)
 
   def voting(majorityLabel: Int, size: Int, nodeImpurity: Double, splitVariableIndex: Long,
       splitPoint: Double, impurityReduction: Double, left: DecisionTreeNode,
-      right: DecisionTreeNode, isPermutated: Boolean = false): SplitNode = {
+      right: DecisionTreeNode, isPermuted: Boolean = false): SplitNode = {
     SplitNode(majorityLabel, null, size, nodeImpurity, splitVariableIndex, splitPoint,
-      impurityReduction, left, right, isPermutated)
+      impurityReduction, left, right, isPermuted)
   }
 
 }
 
 @SerialVersionUID(1L)
-case class DecisionTreeModel(rootNode: DecisionTreeNode)
+case class RegressionDecisionTreeModel(rootNode: RegressionDecisionTreeNode)
     extends PredictiveModelWithImportance with Logging with Serializable {
 
   def splitVariableIndexes: Set[Long] = rootNode.splitsToStream.map(_.splitVariableIndex).toSet
@@ -538,7 +540,7 @@ case class DecisionTreeModel(rootNode: DecisionTreeNode)
       .map(i =>
           rootNode
             .traverse(s => treeVariableData(s.splitVariableIndex).at(i) <= s.splitPoint)
-            .majorityLabel)
+            .meanLabel)
       .toArray
   }
 
@@ -548,11 +550,11 @@ case class DecisionTreeModel(rootNode: DecisionTreeNode)
 
   def printoutByLevel() {
     @scala.annotation.tailrec
-    def printLevel(levelNodes: Seq[DecisionTreeNode]) {
+    def printLevel(levelNodes: Seq[RegressionDecisionTreeNode]) {
       if (levelNodes.nonEmpty) {
         println(levelNodes.mkString(" "))
         printLevel(levelNodes.flatMap(_ match {
-          case t: SplitNode => List(t.left, t.right)
+          case t: RegressionSplitNode => List(t.left, t.right)
           case _ => Nil
         }))
       }
@@ -582,7 +584,7 @@ case class DecisionTreeModel(rootNode: DecisionTreeNode)
 
 /** Contains the object for the [[au.csiro.variantspark.algo.DecisionTreeModel]] class
   */
-object DecisionTreeModel {
+object RegressionDecisionTreeModel {
 
   /** Returns the resolved list of the split nodes and indices
     *
@@ -593,9 +595,9 @@ object DecisionTreeModel {
     *         class and it's index
     */
   def resolveSplitNodes(indexedData: RDD[(DataLike, Long)],
-      splitNodes: List[(SplitNode, Int)]): List[(DecisionTreeNode, Int)] = {
+      splitNodes: List[(RegressionSplitNode, Int)]): List[(RegressionDecisionTreeNode, Int)] = {
     val varsAndIndexesToCollect = splitNodes
-      .asInstanceOf[List[(SplitNode, Int)]]
+      .asInstanceOf[List[(RegressionSplitNode, Int)]]
       .map { case (n, i) => (n.splitVariableIndex, i) }
       .zipWithIndex
       .toArray
@@ -612,12 +614,12 @@ object DecisionTreeModel {
           }
         }.collectAsMap
     }
-    splitNodes.asInstanceOf[List[(SplitNode, Int)]].zipWithIndex.map {
+    splitNodes.asInstanceOf[List[(RegressionSplitNode, Int)]].zipWithIndex.map {
       case ((n, i), v) => (n.childFor(varValuesForSplits(v)), i)
     }
   }
 
-  def batchPredict(indexedData: RDD[(DataLike, Long)], trees: Seq[DecisionTreeModel],
+  def batchPredict(indexedData: RDD[(DataLike, Long)], trees: Seq[RegressionDecisionTreeModel],
       indexes: Seq[Array[Int]]): Seq[Array[Int]] = {
 
     /** Takes the decision tree nodes and outputs the leaf nodes
@@ -627,17 +629,18 @@ object DecisionTreeModel {
       * @param nodesAndIndexes: input a list of tuples of tuple
       * @return a list of tuples of tuple
       */
-    def predict(
-        nodesAndIndexes: List[((DecisionTreeNode, Int), Int)]): List[((LeafNode, Int), Int)] = {
+    def predict(nodesAndIndexes: List[((RegressionDecisionTreeNode, Int), Int)])
+        : List[((RegressionLeafNode, Int), Int)] = {
       val (leaves, splits) = nodesAndIndexes.partition(_._1._1.isLeaf)
       if (splits.isEmpty) {
-        leaves.asInstanceOf[List[((LeafNode, Int), Int)]]
+        leaves.asInstanceOf[List[((RegressionLeafNode, Int), Int)]]
       } else {
         val (bareSplits, splitIndexes) = splits.unzip
         val transformedSplits =
-          resolveSplitNodes(indexedData, bareSplits.asInstanceOf[List[(SplitNode, Int)]])
+          resolveSplitNodes(indexedData,
+            bareSplits.asInstanceOf[List[(RegressionSplitNode, Int)]])
             .zip(splitIndexes)
-        leaves.asInstanceOf[List[((LeafNode, Int), Int)]] ::: predict(transformedSplits)
+        leaves.asInstanceOf[List[((RegressionLeafNode, Int), Int)]] ::: predict(transformedSplits)
       }
     }
 
@@ -649,25 +652,11 @@ object DecisionTreeModel {
       .toList
     val leaveNodesAndIndexes = predict(rootNodesAndIndexes)
 
-    val orderedPredictions = leaveNodesAndIndexes.sortBy(_._2).map(_._1).map(_._1.majorityLabel)
+    val orderedPredictions = leaveNodesAndIndexes.sortBy(_._2).map(_._1).map(_._1.meanLabel)
     val orderedPredictionsIter = orderedPredictions.toIterator
 
     indexes.map(a => Array.fill(a.length)(orderedPredictionsIter.next()))
   }
-}
-
-/** A Class to specify the parameters of the decision tree model
-  *
-  * @param maxDepth: input the max value
-  * @param minNodeSize: specify the minimum node size
-  * @param seed: specify the seed for the random number generator
-  * @param randomizeEquality: specify the randomization merger or the determinate merger
-  */
-case class DecisionTreeParams(maxDepth: Int = Int.MaxValue, minNodeSize: Int = 1,
-    seed: Long = defRng.nextLong, randomizeEquality: Boolean = false,
-    correctImpurity: Boolean = false, airRandomSeed: Long = 0L) {
-
-  override def toString: String = ToStringBuilder.reflectionToString(this)
 }
 
 /** Class for the Decision tree model
@@ -689,7 +678,7 @@ case class DecisionTreeParams(maxDepth: Int = Int.MaxValue, minNodeSize: Int = 1
   * @param params: input the [[au.csiro.variantspark.algo.DecisionTreeParams]] class
   *              containing the main aspects of the model
   */
-class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(),
+class RegressionDecisionTree(val params: DecisionTreeParams = DecisionTreeParams(),
     val trf: TreeRepresentationFactory = DefTreeRepresentationFactory)
     extends Logging with Prof {
 
@@ -704,7 +693,8 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(),
     * @param indexedData: input an RDD of the dataset
     * @param labels: input an array of integers changed to an integer representation
     */
-  def train(indexedData: RDD[(Feature, Long)], labels: Array[Int]): DecisionTreeModel =
+  def train(indexedData: RDD[(Feature, Long)],
+      labels: Array[Double]): RegressionDecisionTreeModel =
     train(indexedData, labels, 1.0, Sample.all(indexedData.first._1.size))
 
   /** Alternative train function
@@ -715,8 +705,8 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(),
     * @param sample: input the [[au.csiro.variantspark.utils.Sample]] class that
     *              contains the size and the indices
     */
-  def train(indexedData: RDD[(Feature, Long)], labels: Array[Int], nvarFraction: Double,
-      sample: Sample): DecisionTreeModel =
+  def train(indexedData: RDD[(Feature, Long)], labels: Array[Double], nvarFraction: Double,
+      sample: Sample): RegressionDecisionTreeModel =
     batchTrain(indexedData, labels, nvarFraction, List(sample)).head
 
   /** Trains all the trees for specified samples at the same time
@@ -729,8 +719,8 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(),
     * @return Returns a Sequence of [[au.csiro.variantspark.algo.DecisionTreeModel]]
     *         classes containing the dataset
     */
-  def batchTrain(indexedFeatures: RDD[(Feature, Long)], labels: Array[Int], nvarFraction: Double,
-      sample: Seq[Sample]): Seq[DecisionTreeModel] = {
+  def batchTrain(indexedFeatures: RDD[(Feature, Long)], labels: Array[Double],
+      nvarFraction: Double, sample: Seq[Sample]): Seq[DecisionTreeModel] = {
     batchTrainInt(trf.createRepresentation(indexedFeatures), labels, nvarFraction, sample)
   }
 
@@ -744,28 +734,24 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(),
     * @return Returns a Sequence of [[au.csiro.variantspark.algo.DecisionTreeModel]]
     *         classes containing the dataset
     */
-  def batchTrainInt(features: RDD[TreeFeature], labels: Array[Int], nvarFraction: Double,
-      sample: Seq[Sample]): Seq[DecisionTreeModel] = {
+  def batchTrainInt(features: RDD[TreeFeature], labels: Array[Double], nvarFraction: Double,
+      sample: Seq[Sample]): Seq[RegressionDecisionTreeModel] = {
 
     // manage persistence here - cache the features if not already cached
     withCached(features) { cachedFeatures =>
-      val splitter: VariableSplitter =
-        if (params.correctImpurity) {
-          AirVariableSplitter(labels,
-            if (params.airRandomSeed != 0L) params.airRandomSeed else params.seed, nvarFraction,
-            randomizeEquality = params.randomizeEquality)
-        } else {
-          StdVariableSplitter(labels, nvarFraction, randomizeEquality = params.randomizeEquality)
-        }
+      val splitter: RegressionAirVariableSplitter =
+        RegressionAirVariableSplitter(labels,
+          if (params.airRandomSeed != 0L) params.airRandomSeed else params.seed, nvarFraction,
+          randomizeEquality = params.randomizeEquality)
       val subsets = sample.map(splitter.initialSubset).toList
       val rootNodes = withBroadcast(cachedFeatures)(splitter) { br_splitter =>
         buildSplit(cachedFeatures, subsets, br_splitter, 0)
       }
-      rootNodes.map(new DecisionTreeModel(_))
+      rootNodes.map(new RegressionDecisionTreeModel(_))
     }
   }
 
-  private def summarize(subsets: List[SubsetInfo]): String = {
+  private def summarize(subsets: List[RegressionSubsetInfo]): String = {
     s"#${subsets.size} => ${subsets.map(_.length)}"
   }
 
@@ -779,8 +765,9 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(),
     * @param treeLevel: specify the current level of the tree being built
     * @return Returns a subset of the splits
     */
-  private def buildSplit(indexedTypedData: RDD[TreeFeature], subsets: List[SubsetInfo],
-      br_splitter: Broadcast[VariableSplitter], treeLevel: Int): List[DecisionTreeNode] = {
+  private def buildSplit(indexedTypedData: RDD[TreeFeature], subsets: List[RegressionSubsetInfo],
+      br_splitter: Broadcast[RegressionVariableSplitter],
+      treeLevel: Int): List[RegressionDecisionTreeNode] = {
 
     logDebug(s"Building level ${treeLevel}")
     logDebug(s"Initial subsets: ${summarize(subsets)}")
@@ -818,9 +805,9 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(),
         // format: off
         subsetIndexToSplitIndexMap
           .get(i)
-          .map(splitIndex => SplitNode(subset, usefulSplits(splitIndex),
+          .map(splitIndex => RegressionSplitNode(subset, usefulSplits(splitIndex),
             nextLevelNodes(2 * splitIndex), nextLevelNodes(2 * splitIndex + 1)))
-          .getOrElse(LeafNode(subset))
+          .getOrElse(RegressionLeafNode(subset))
       // format: on
     }
     profPoint("building done")
@@ -837,11 +824,12 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(),
     *                   the [[au.csiro.variantspark.algo.SubsetInfo]] class
     */
   private def findBestSplitsAndSubsets(treeFeatures: RDD[TreeFeature],
-      subsetsToSplit: List[SubsetInfo], br_splitter: Broadcast[VariableSplitter]) = {
+      subsetsToSplit: List[RegressionSubsetInfo],
+      br_splitter: Broadcast[RegressionVariableSplitter]) = {
     profIt("findBestSplitsAndSubsets") {
       val subsetsToSplitAsIndices = subsetsToSplit.toArray
       withBroadcast(treeFeatures)(subsetsToSplitAsIndices) { br_splits =>
-        val bestSplits = DecisionTree.findBestSplits(treeFeatures, br_splits, br_splitter)
+        val bestSplits = RegressionDecisionTree.findBestSplits(treeFeatures, br_splits, br_splitter)
         (bestSplits,
           RegressionDecisionTree.splitSubsets(treeFeatures, bestSplits, br_splits, br_splitter))
       }
