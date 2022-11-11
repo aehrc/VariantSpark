@@ -520,8 +520,6 @@ abstract class RegressionDecisionTreeNode(val meanLabel: Int, val size: Int,
   extends Serializable {
   def isLeaf: Boolean
 
-  def classCounts: Array[Int]
-
   def printout(level: Int)
   def impurityContribution: Double = nodeImpurity * size
   def traverse(f: RegressionSplitNode => Boolean): RegressionLeafNode = this match {
@@ -536,7 +534,7 @@ abstract class RegressionDecisionTreeNode(val meanLabel: Int, val size: Int,
 }
 
 @SerialVersionUID(1L)
-case class RegressionLeafNode(override val meanLabel: Int, classCounts: Array[Int],
+case class RegressionLeafNode(override val meanLabel: Int,
                               override val size: Int, override val nodeImpurity: Double)
   extends RegressionDecisionTreeNode(meanLabel, size, nodeImpurity) {
   val isLeaf: Boolean = true
@@ -564,7 +562,7 @@ object RegressionLeafNode {
    * @return
    */
   def voting(meanLabel: Int, size: Int, nodeImpurity: Double): RegressionLeafNode = {
-    RegressionLeafNode(meanLabel, null, size, nodeImpurity)
+    RegressionLeafNode(meanLabel, size, nodeImpurity)
   }
 
 }
@@ -657,15 +655,15 @@ case class RegressionDecisionTreeModel(rootNode: RegressionDecisionTreeNode)
 
   override def variableImportanceAsFastMap: Long2DoubleOpenHashMap = {
     rootNode.splitsToStream.foldLeft(new Long2DoubleOpenHashMap()) {
-      case (m, RegressionSplitNode) =>
-        m.increment(RegressionSplitNode.splitVariableIndex, RegressionSplitNode.impurityDelta)
+      case (m, splitNode) =>
+        m.increment(splitNode.splitVariableIndex, splitNode.impurityDelta)
     }
   }
 
   override def variableSplitCountAsFastMap: Long2LongOpenHashMap = {
     rootNode.splitsToStream.foldLeft(new Long2LongOpenHashMap()) {
-      case (m, RegressionSplitNode) =>
-        m.increment(RegressionSplitNode.splitVariableIndex, 1L)
+      case (m, splitNode) =>
+        m.increment(splitNode.splitVariableIndex, 1L)
     }
   }
 
