@@ -16,3 +16,17 @@ trait PredictiveModelWithImportance extends PredictiveModel {
   def variableImportance(): Map[Long, Double] = variableImportanceAsFastMap.asScala
   def variableSplitCount(): Map[Long, Long] = variableSplitCountAsFastMap.asScala
 }
+
+
+/** REGRESSION */
+trait RegressionPredictiveModel {
+  def predict(data: RDD[(Feature, Long)]): Array[Double]
+  def printout()
+}
+
+trait RegressionPredictiveModelWithImportance extends RegressionPredictiveModel {
+  def variableImportanceAsFastMap: Long2DoubleOpenHashMap
+  def variableSplitCountAsFastMap: Long2LongOpenHashMap
+  def variableImportance(): Map[Long, Double] = variableImportanceAsFastMap.asScala
+  def variableSplitCount(): Map[Long, Long] = variableSplitCountAsFastMap.asScala
+}
