@@ -515,7 +515,7 @@ object RegressionDecisionTree extends Logging with Prof {
 }
 
 @SerialVersionUID(1L)
-abstract class RegressionDecisionTreeNode(val meanLabel: Int, val size: Int,
+abstract class RegressionDecisionTreeNode(val meanLabel: Double, val size: Int,
                                           val nodeImpurity: Double)
   extends Serializable {
   def isLeaf: Boolean
@@ -534,7 +534,7 @@ abstract class RegressionDecisionTreeNode(val meanLabel: Int, val size: Int,
 }
 
 @SerialVersionUID(1L)
-case class RegressionLeafNode(override val meanLabel: Int,
+case class RegressionLeafNode(override val meanLabel: Double,
                               override val size: Int, override val nodeImpurity: Double)
   extends RegressionDecisionTreeNode(meanLabel, size, nodeImpurity) {
   val isLeaf: Boolean = true
@@ -561,14 +561,14 @@ object RegressionLeafNode {
    * @param nodeImpurity
    * @return
    */
-  def voting(meanLabel: Int, size: Int, nodeImpurity: Double): RegressionLeafNode = {
+  def voting(meanLabel: Double, size: Int, nodeImpurity: Double): RegressionLeafNode = {
     RegressionLeafNode(meanLabel, size, nodeImpurity)
   }
 
 }
 
 @SerialVersionUID(1L)
-case class RegressionSplitNode(override val meanLabel: Int, override val size: Int,
+case class RegressionSplitNode(override val meanLabel: Double, override val size: Int,
                                override val nodeImpurity: Double, splitVariableIndex: Long, splitPoint: Double,
                                impurityReduction: Double, left: RegressionDecisionTreeNode,
                                right: RegressionDecisionTreeNode, isPermuted: Boolean = false)
@@ -616,16 +616,16 @@ object RegressionSplitNode {
 
 @SerialVersionUID(1L)
 case class RegressionDecisionTreeModel(rootNode: RegressionDecisionTreeNode)
-  extends PredictiveModelWithImportance with Logging with Serializable {
+  extends RegressionPredictiveModelWithImportance with Logging with Serializable {
 
   def splitVariableIndexes: Set[Long] = rootNode.splitsToStream.map(_.splitVariableIndex).toSet
 
   def predict[T](indexedData: RDD[(T, Long)], variableType: VariableType)(
-    implicit db: DataBuilder[T]): Array[Int] = {
+    implicit db: DataBuilder[T]): Array[Double] = {
     predict(indexedData.map({ case (v, i) => (StdFeature.from(null, variableType, v), i) }))
   }
 
-  def predict(indexedData: RDD[(Feature, Long)]): Array[Int] = {
+  def predict(indexedData: RDD[(Feature, Long)]): Array[Double] = {
     val treeVariableData = indexedData.collectAtIndexes(splitVariableIndexes)
     Range(0, indexedData.size)
       .map(i =>
@@ -712,7 +712,7 @@ object RegressionDecisionTreeModel {
   }
 
   def batchPredict(indexedData: RDD[(DataLike, Long)], trees: Seq[RegressionDecisionTreeModel],
-                   indexes: Seq[Array[Int]]): Seq[Array[Int]] = {
+                   indexes: Seq[Array[Int]]): Seq[Array[Double]] = {
 
     /** Takes the decision tree nodes and outputs the leaf nodes
      * Partitions the nodesAndIndexes variable and recursively iterates through each
