@@ -29,7 +29,7 @@ import org.apache.spark.rdd.RDD.rddToPairRDDFunctions
   * @constructor creates value based on the indices, impurity, and meanLabel
   * @param indices: input an array of integers representing the indices of the values
   * @param impurity: input the value of impurity of the data construct
-  * @param classCounts: input the counts for each class
+  * @param meanLabel: input mean value of all labels in the class
   */
 case class RegressionSubsetInfo(indices: Array[Int], impurity: Double, meanLabel: Double) {
 
@@ -475,7 +475,7 @@ object RegressionDecisionTree extends Logging with Prof {
     */
   def splitSubsets(indexedData: RDD[TreeFeature], bestSplits: Array[RegressionVarSplitInfo],
       br_subsets: Broadcast[Array[RegressionSubsetInfo]],
-      br_splitter: Broadcast[RegressionVariableSplitter]): List[RegressionSubsetInfo] = {
+      br_splitter: Broadcast[RegressionAirVariableSplitter]): List[RegressionSubsetInfo] = {
     profIt("REM: splitSubsets") {
       val indexedSplittedSubsets = withBroadcast(indexedData)(bestSplits) { br_bestSplits =>
         // format: off
@@ -508,7 +508,7 @@ object RegressionDecisionTree extends Logging with Prof {
     */
   def findBestSplits(treeFeatures: RDD[TreeFeature],
       br_splits: Broadcast[Array[RegressionSubsetInfo]],
-      br_splitter: Broadcast[RegressionVariableSplitter])(
+      br_splitter: Broadcast[RegressionAirVariableSplitter])(
       implicit rng: RandomGenerator): Array[RegressionVarSplitInfo] = {
     val seed = rng.nextLong()
     val RegressionMerger = br_splitter.value.createRegressionMerger(seed)
@@ -868,7 +868,7 @@ class RegressionDecisionTree(val params: DecisionTreeParams = DecisionTreeParams
     * @return Returns a subset of the splits
     */
   private def buildSplit(indexedTypedData: RDD[TreeFeature], subsets: List[RegressionSubsetInfo],
-      br_splitter: Broadcast[RegressionVariableSplitter],
+      br_splitter: Broadcast[RegressionAirVariableSplitter],
       treeLevel: Int): List[RegressionDecisionTreeNode] = {
 
     logDebug(s"Building level ${treeLevel}")
@@ -927,7 +927,7 @@ class RegressionDecisionTree(val params: DecisionTreeParams = DecisionTreeParams
     */
   private def findBestSplitsAndSubsets(treeFeatures: RDD[TreeFeature],
       subsetsToSplit: List[RegressionSubsetInfo],
-      br_splitter: Broadcast[RegressionVariableSplitter]) = {
+      br_splitter: Broadcast[RegressionAirVariableSplitter]) = {
     profIt("findBestSplitsAndSubsets") {
       val subsetsToSplitAsIndices = subsetsToSplit.toArray
       withBroadcast(treeFeatures)(subsetsToSplitAsIndices) { br_splits =>
