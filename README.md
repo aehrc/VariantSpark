@@ -124,30 +124,25 @@ After the test data has been successfully copied to HDFS you can run examples sc
 
 Note: if you installed the data to a non default location the `VS_DATA_DIR` needs to be set accordingly when running the examples
 
-#### Databricks notebook examples
+### VariantSpark on the cloud
 
-For convenience we have also provided a sample end-to-end variant-spark workflow
-in a Databricks (Jupyter-style) notebook for Spark 2.2. The examples, using a synthetic phenotype (Hipster-index)
-can be found in the `notebook-examples` folder of this repository.
+VariantSpark can easily be used in AWS and Azure. For more examples and information, check the [cloud folder](https://github.com/aehrc/VariantSpark/tree/master/cloud). For a quick start, check the few pointers below.
 
-To use an example:
+#### AWS Marketplace
 
-1. **Create** a free, community [Databricks](https://databricks.com/) account
-2. **Download** the `VariantSpark_HipsterIndex_Spark2.2.scala` file. Databricks notebook is for Spark 2.2 (scala 2.11)
-3. **Import** the notebook file into your Databricks instance. Read the instructions in the notebook on how to import a new library to use the `variant-spark` library.
-4. **Start** a cluster (be sure to select the version of Spark and Scala specified in the notebook). Wait up to 5 minutes for the cluster to be ready.
-5. **Attach** the notebook to the cluster
-6. **Run** the sample notebook
+VariantSpark is now available on [AWS Marketplace](https://aws.amazon.com/marketplace/pp/AEHRC-VariantSpark-Notebook/B07YVND4TD). Please read the [Guidlines](contributions/AwsMarketplace/README.md) for specification and step-by-step instructions.
+
+#### Azure Databricks
+
+VariantSpark can be easily deployed in Azure Databricks through the button below. Please read the [VariantSpark azure manual](https://github.com/aehrc/VariantSpark-Azure-deployment) for specification and step-by-step instructions.
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Faehrc%2FVariantSpark-Azure-deployment%2Fmaster%2Fazuredeploy.json)
 
 ### Contributions
 
 #### JsonRfAnalyser
 
 [JsonRfAnalyser](contributions/JsonRfAnalyser) is a python program that looks into the JSON RandomForest model and list variables on each tree and branch. Please read [README](contributions/JsonRfAnalyser/README.md) to see the complete list of functionalities.
-
-#### VariantSpark on AWS Marketplace
-
-VariantSpark is now available on [AWS Marketplace](https://aws.amazon.com/marketplace/pp/AEHRC-VariantSpark-Notebook/B07YVND4TD). Please read the [Guidlines](contributions/AwsMarketplace/README.md) for specification and step-by-step instructions.
 
 #### WebVisualiser
 
