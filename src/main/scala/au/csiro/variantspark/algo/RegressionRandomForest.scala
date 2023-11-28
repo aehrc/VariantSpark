@@ -248,7 +248,7 @@ class RandomForest(params: RandomForestParams = RandomForestParams(),
   implicit lazy val rng: XorShift1024StarRandomGenerator =
     new XorShift1024StarRandomGenerator(params.seed)
   def batchTrain(indexedData: RDD[(Feature, Long)], labels: Array[Int], nTrees: Int,
-      nBatchSize: Int = RandomForest.defaultBatchSize): RandomForestModel = {
+      nBatchSize: Int = RandomForest.defaultBatchSize): RegressionRandomForestModel = {
     val treeFeatures: RDD[TreeFeature] = trf.createRepresentation(indexedData)
     batchTrainTyped(treeFeatures, labels, nTrees, nBatchSize)
   }
@@ -256,7 +256,8 @@ class RandomForest(params: RandomForestParams = RandomForestParams(),
   // TODO (Design): Make a param rather then an extra method
   // TODO (Func): Add OOB Calculation
   def batchTrainTyped(treeFeatures: RDD[TreeFeature], labels: Array[Int], nTrees: Int,
-      nBatchSize: Int)(implicit callback: RandomForestCallback = null): RandomForestModel = {
+      nBatchSize: Int)(implicit callback: RandomForestCallback = null): RegressionRandomForestModel
+  = {
 
     require(nBatchSize > 0)
     require(nTrees > 0)
@@ -317,7 +318,7 @@ class RandomForest(params: RandomForestParams = RandomForestParams(),
       .toList
       .unzip
 
-    RandomForestModel(allTrees, nLabels, errors, actualParams)
+    RegressionRandomForestModel(allTrees, nLabels, errors, actualParams)
   }
 
 }
@@ -329,22 +330,22 @@ class RandomForest(params: RandomForestParams = RandomForestParams(),
 // TODO (Design): Avoid using type cast change design
 trait BatchRegressionTreeModel {
   def batchTrain(indexedData: RDD[TreeFeature], labels: Array[Double], nTryFraction: Double,
-                 samples: Seq[Sample]): Seq[PredictiveModelWithImportance]
+                 samples: Seq[Sample]): Seq[RegressionPredictiveModelWithImportance]
 
   def batchPredict(indexedData: RDD[TreeFeature], models: Seq[PredictiveModelWithImportance],
                    indexes: Seq[Array[Int]]): Seq[Array[Int]]
 }
 
 object RegressionRandomForest {
-  type ModelBuilderFactory = DecisionTreeParams => BatchTreeModel
+  type ModelBuilderFactory = DecisionTreeParams => BatchRegressionTreeModel
   val defaultBatchSize: Int = 10
 
-  def wideDecisionTreeBuilder(params: DecisionTreeParams): BatchTreeModel = {
+  def wideDecisionTreeBuilder(params: DecisionTreeParams): BatchRegressionTreeModel = {
     val decisionTree = new RegressionDecisionTree(params)
-    new BatchTreeModel() {
+    new BatchRegressionTreeModel() {
       override def batchTrain(indexedData: RDD[TreeFeature], labels: Array[Double],
                               nTryFraction: Double,
-                              samples: Seq[Sample]): Seq[PredictiveModelWithImportance] =
+                              samples: Seq[Sample]): Seq[RegressionPredictiveModelWithImportance] =
         decisionTree.batchTrainInt(indexedData, labels, nTryFraction, samples)
 
       override def batchPredict(indexedData: RDD[TreeFeature],
@@ -370,16 +371,18 @@ class RegressionRandomForest(params: RandomForestParams = RandomForestParams(),
   implicit lazy val rng: XorShift1024StarRandomGenerator =
     new XorShift1024StarRandomGenerator(params.seed)
   def batchTrain(indexedData: RDD[(Feature, Long)], labels: Array[Double], nTrees: Int,
-                 nBatchSize: Int = RandomForest.defaultBatchSize): RandomForestModel = {
+                 nBatchSize: Int = RandomForest.defaultBatchSize): RegressionRandomForestModel = {
     val treeFeatures: RDD[TreeFeature] = trf.createRepresentation(indexedData)
     batchTrainTyped(treeFeatures, labels, nTrees, nBatchSize)
   }
+
 
   // TODO (Design): Make a param rather then an extra method
   // TODO (Func): Add OOB Calculation
   def batchTrainTyped(treeFeatures: RDD[TreeFeature], labels: Array[Double], nTrees: Int,
                       nBatchSize: Int)
-                     (implicit callback: RandomForestCallback = null): RandomForestModel = {
+                     (implicit callback: RandomForestCallback = null): RegressionRandomForestModel
+  = {
 
     require(nBatchSize > 0)
     require(nTrees > 0)
@@ -425,7 +428,7 @@ class RegressionRandomForest(params: RandomForestParams = RandomForestParams(),
       .toList
       .unzip
 
-    RandomForestModel(allTrees, nLabels, errors, actualParams)
+    RegressionRandomForestModel(allTrees, nLabels, errors, actualParams)
   }
 
 }
