@@ -6,8 +6,8 @@ VariantSpark is built on top of Apache Spark core. It implements a supervised, w
 ### 1. Install VariantSpark
 
 Prerequisites: 
-- Python 2.7 with pip (current version of VariantSpark is not compatible with Python 3)
-- PySpark installed in the system either as a python package or from the distribution package. VariantSpark has been tested with Spark 2.1.x
+- Python 3.7+ with pip 
+- PySpark installed in the system either as a python package or from the distribution package. VariantSpark has been tested with Spark 3.1.2
  
 Installation:
  
@@ -73,7 +73,9 @@ For more information about how the VariantSpark wide random forest algorithm wor
 
 Install VariantSpark for development using this command:
 
-    git https://github.com/aehrc/VariantSpark.git
+    git clone https://github.com/aehrc/VariantSpark.git
+    mvn clean install
+    pip install -r dev/dev-requirements.txt
     cd VariantSpark/python
     pip install -e .
 

@@ -1,14 +1,11 @@
 package au.csiro.variantspark.test.stats
 
-import au.csiro.variantspark.test.AbstractCmdLineTest
-import org.junit.Test
-import org.junit.Assert._
-import java.io.File
-import org.saddle.io.CsvParser
-import org.saddle.io.CsvFile
-import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
 import java.io.FileOutputStream
-import au.csiro.variantspark.test.TestData
+
+import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
+import au.csiro.variantspark.test.{AbstractCmdLineTest, TestCsvUtils, TestData}
+import org.junit.Assert._
+import org.junit.Test
 
 /**
   * This test compare the importance measures produced by this implementation with ones generated with ranger.
@@ -23,7 +20,7 @@ class ImportanceStatsTest extends AbstractCmdLineTest with TestData {
 
   import ImportanceStatsTest._
 
-  def subdir = "stats"
+  def subdir: String = "stats"
 
   def quantile(data: Array[Double])(q: Double): Double = {
     data.filter(_ <= q).size.toDouble / data.size.toDouble
@@ -39,16 +36,9 @@ class ImportanceStatsTest extends AbstractCmdLineTest with TestData {
     runVariantSpark(
         s"""importance -if ${dataFile} -ff ${labelsFile} -fc cat2 -it csv -v -rn ${nTrees} -rbs 250 -sr 13 -on 0 -ovn raw -sp 4 -of ${outputFile}""")
 
-    val importanceStats =
-      CsvParser.parse(CsvFile(data(s"${fullCaseName}-stats.csv"))).withRowIndex(0).withColIndex(0)
-    val importanceMeans =
-      importanceStats.firstCol("mean").mapValues(CsvParser.parseDouble).toSeq.toMap
-    val importanceSds =
-      importanceStats.firstCol("sd").mapValues(CsvParser.parseDouble).toSeq.toMap
-
-    val actualImportances = CsvParser.parse(CsvFile(outputFile)).withRowIndex(0).withColIndex(0)
-    val variableImportance =
-      actualImportances.firstCol("importance").mapValues(CsvParser.parseDouble).toSeq.toMap
+    val importanceMeans = TestCsvUtils.readColumnToDoubleMap(s"${fullCaseName}-stats.csv", "mean")
+    val importanceSds = TestCsvUtils.readColumnToDoubleMap(s"${fullCaseName}-stats.csv", "sd")
+    val variableImportance = TestCsvUtils.readColumnToDoubleMap(outputFile, "importance")
     val residuals = variableImportance.map({
       case (k, v) => (k, (v - importanceMeans(k)) / importanceSds(k))
     })

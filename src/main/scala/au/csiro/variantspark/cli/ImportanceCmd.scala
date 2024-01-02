@@ -53,9 +53,10 @@ class ImportanceCmd
   val randomSeed: Long = defRng.nextLong
 
   override def testArgs: Array[String] =
-    Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051249",
-      "-ovn", "raw", "-on", "1988", "-rn", "1000", "-rbs", "100", "-ic", "-om",
-      "target/ch22-model.json", "-omf", "json", "-sr", "13", "-v", "-io", """{"separator":":"}""")
+    Array("-if", "data/chr22_1000.vcf", "-ff", "data/chr22-labels.csv", "-fc", "22_16051347",
+      "-ovn", "raw", "-on", "1988", "-rn", "1000", "-rbs", "250", "-ic", "-om",
+      "target/ch22-model.ser", "-omf", "java", "-sr", "13", "-v", "-io", """{"separator":":"}""",
+      "-ro", "-rmtf", "0.1")
 
   override def run(): Unit = {
     implicit val fs: FileSystem = FileSystem.get(sc.hadoopConfiguration)
@@ -173,6 +174,7 @@ class ImportanceCmd
                                             } else { Nil })
         }))
     }
+
     saveModel(result, index.toMap)
   }
 }

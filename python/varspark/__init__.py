@@ -1,4 +1,5 @@
 import os
+
 try:
     from varspark.core import VarsparkContext, VariantsContext
 except Exception:

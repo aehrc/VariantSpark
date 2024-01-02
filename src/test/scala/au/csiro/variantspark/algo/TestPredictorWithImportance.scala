@@ -1,18 +1,18 @@
 package au.csiro.variantspark.algo
 
-import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
-import org.apache.spark.mllib.linalg.Vector
+import au.csiro.variantspark.data.Feature
+import it.unimi.dsi.fastutil.longs.{Long2DoubleOpenHashMap, Long2LongOpenHashMap}
 import org.apache.spark.rdd.RDD
 
-import scala.reflect.ClassTag
-import au.csiro.variantspark.data.Feature
-
 case class TestPredictorWithImportance(val predictions: Array[Int],
-    val importance: Long2DoubleOpenHashMap)
+    val importance: Long2DoubleOpenHashMap, val splitCounts: Long2LongOpenHashMap)
     extends PredictiveModelWithImportance {
 
   def predict(data: RDD[(Feature, Long)]): Array[Int] = predictions
-  def variableImportanceAsFastMap: Long2DoubleOpenHashMap = importance
+  override def variableImportanceAsFastMap: Long2DoubleOpenHashMap = importance
+  override def variableSplitCountAsFastMap: Long2LongOpenHashMap = splitCounts
+
   def printout() {}
-  implicit def toMember = RandomForestMember(this)
+  implicit def toMember: RandomForestMember = RandomForestMember(this)
+
 }

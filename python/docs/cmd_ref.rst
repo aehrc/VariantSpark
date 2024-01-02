@@ -4,7 +4,7 @@
 Command Line Reference
 =======================================
 
-**variant-spark** requires an existing spark 2.1+ installation (either a local one or a cluster one).
+**variant-spark** requires an existing spark 2.4+ installation (either a local one or a cluster one).
 
 To run variant-spark use:
 ::
@@ -48,10 +48,5 @@ You can also use the full URI with the schema to address any filesystem for both
 
     variant-spark --spark ... --conf "spark.hadoop.fs.default.name=file:///" ... -- importance  -if hdfs:///user/data/input.csv ... -of output.csv
 
-
-TBP: Reference for running command line:
-- add prerequisites, Spark, SPARK_HOME, Spark Bin on path
-- de-empasise the local mode
-- should also include options and file formats used
 
 

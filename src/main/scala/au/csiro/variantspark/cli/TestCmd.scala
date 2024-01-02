@@ -42,7 +42,7 @@ class TestCmd extends ArgsApp with TestArgs /* with SparkApp */ {
     println(labels(0 to 2).toArray.toList)
     ec(1, 3, 4)
     ec(Array(4, 5): _*)
-    val s = labels(1, Array(4, 5): _*)
+    val s = labels(1, 4, 5)
     println(s.slices)
     println(s.keySet)
 

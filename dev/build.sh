@@ -13,5 +13,4 @@ cd "$FWDIR"
 # build and package the project
 mvn clean package -B
 
-# make build info
-env | tee "target/buildinfo" 
+/bin/bash ${FWDIR}/dev/py-test.sh

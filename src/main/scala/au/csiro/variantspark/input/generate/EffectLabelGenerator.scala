@@ -1,17 +1,13 @@
 package au.csiro.variantspark.input.generate
 
-import org.apache.commons.math3.random.GaussianRandomGenerator
-import org.apache.spark.rdd.RDD.rddToPairRDDFunctions
-
-import au.csiro.pbdava.ssparkle.spark.SparkUtils.withBroadcast
-import au.csiro.variantspark.input.FeatureSource
-import au.csiro.variantspark.input.LabelSource
-import breeze.linalg.DenseVector
-import it.unimi.dsi.util.XorShift1024StarRandomGenerator
-import breeze.linalg.operators.DenseVector_GenericOps
 import au.csiro.pbdava.ssparkle.common.utils.Logging
+import au.csiro.pbdava.ssparkle.spark.SparkUtils.withBroadcast
+import au.csiro.variantspark.input.{FeatureSource, LabelSource}
+import breeze.linalg.DenseVector
 import breeze.stats.meanAndVariance
-import breeze.stats.MeanAndVariance
+import breeze.stats.meanAndVariance.MeanAndVariance
+import it.unimi.dsi.util.XorShift1024StarRandomGenerator
+import org.apache.commons.math3.random.GaussianRandomGenerator
 
 /**
   * Generate a dichotomous response

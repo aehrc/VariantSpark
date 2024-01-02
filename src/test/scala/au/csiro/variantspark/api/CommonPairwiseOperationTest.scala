@@ -1,15 +1,14 @@
 package au.csiro.variantspark.api
 
-import org.junit.Test
+import au.csiro.variantspark.algo.metrics.{
+  AtLeastOneSharedAltAlleleCount,
+  EuclideanPairwiseMetric,
+  ManhattanPairwiseMetric,
+  SharedAltAlleleCount
+}
+import au.csiro.variantspark.test.{SparkTest, TestCsvUtils}
 import org.junit.Assert._
-import au.csiro.variantspark.api._
-import au.csiro.variantspark.algo.metrics.ManhattanPairwiseMetric
-import au.csiro.variantspark.algo.metrics.EuclideanPairwiseMetric
-import au.csiro.variantspark.algo.metrics.SharedAltAlleleCount
-import au.csiro.variantspark.algo.metrics.AtLeastOneSharedAltAlleleCount
-import au.csiro.variantspark.test.SparkTest
-import org.saddle.io.CsvFile
-import org.saddle.io.CsvParser
+import org.junit.Test
 
 class CommonPairwiseOperationTest extends SparkTest {
 
@@ -27,15 +26,8 @@ class CommonPairwiseOperationTest extends SparkTest {
     implicit val vsContext = VSContext(spark)
     val features = vsContext.importCSV("src/test/data/synthetic_100x10k.csv");
     val result = features.pairwiseOperation("manhattan").value
-    val expected = CsvParser
-      .parse(CsvFile("src/test/data/synthetic_100x10k_metrics.csv"))
-      .withRowIndex(0)
-      .withColIndex(0)
-      .firstCol("manhattan")
-      .mapValues(CsvParser.parseDouble)
-      .values
-      .toSeq
-      .toArray
+    val expected = TestCsvUtils.readColumnToDoubleArray(
+        "src/test/data/synthetic_100x10k_metrics.csv", "manhattan")
     assertArrayEquals(expected, result, 1e-5)
   }
 
@@ -44,15 +36,8 @@ class CommonPairwiseOperationTest extends SparkTest {
     implicit val vsContext = VSContext(spark)
     val features = vsContext.importCSV("src/test/data/synthetic_100x10k.csv");
     val result = features.pairwiseOperation("euclidean").value
-    val expected = CsvParser
-      .parse(CsvFile("src/test/data/synthetic_100x10k_metrics.csv"))
-      .withRowIndex(0)
-      .withColIndex(0)
-      .firstCol("euclidean")
-      .mapValues(CsvParser.parseDouble)
-      .values
-      .toSeq
-      .toArray
+    val expected = TestCsvUtils.readColumnToDoubleArray(
+        "src/test/data/synthetic_100x10k_metrics.csv", "euclidean")
     assertArrayEquals(expected, result, 1e-5)
   }
 
@@ -61,15 +46,8 @@ class CommonPairwiseOperationTest extends SparkTest {
     implicit val vsContext = VSContext(spark)
     val features = vsContext.importCSV("src/test/data/synthetic_100x10k.csv");
     val result = features.pairwiseOperation("anySharedAltAlleleCount").value
-    val expected = CsvParser
-      .parse(CsvFile("src/test/data/synthetic_100x10k_metrics.csv"))
-      .withRowIndex(0)
-      .withColIndex(0)
-      .firstCol("anySharedCount")
-      .mapValues(CsvParser.parseDouble)
-      .values
-      .toSeq
-      .toArray
+    val expected = TestCsvUtils.readColumnToDoubleArray(
+        "src/test/data/synthetic_100x10k_metrics.csv", "anySharedCount")
     assertArrayEquals(expected, result, 1e-5)
   }
 
@@ -78,15 +56,8 @@ class CommonPairwiseOperationTest extends SparkTest {
     implicit val vsContext = VSContext(spark)
     val features = vsContext.importCSV("src/test/data/synthetic_100x10k.csv");
     val result = features.pairwiseOperation("sharedAltAlleleCount").value
-    val expected = CsvParser
-      .parse(CsvFile("src/test/data/synthetic_100x10k_metrics.csv"))
-      .withRowIndex(0)
-      .withColIndex(0)
-      .firstCol("allSharedCount")
-      .mapValues(CsvParser.parseDouble)
-      .values
-      .toSeq
-      .toArray
+    val expected = TestCsvUtils.readColumnToDoubleArray(
+        "src/test/data/synthetic_100x10k_metrics.csv", "allSharedCount")
     assertArrayEquals(expected, result, 1e-5)
   }
 }

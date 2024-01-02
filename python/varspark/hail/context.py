@@ -1,28 +1,31 @@
 import os
 import sys
-import pkg_resources
-from pyspark import SparkConf, SparkContext
+
 import hail as hl
+from hail.utils.java import Env
+
 import varspark as vs
 
-def init(**kwargs):
 
-    jars = []
-    vs_jar_path=vs.find_jar()
+def init(sc=None, idempotent=False, quiet=False, spark_conf=None, **kwargs):
+    """ Initialises hail context with variant-spark support.
+
+        :param kwargs: same as for hail.init()
+    """
+
+    jars = [p.strip() for p in spark_conf.get("spark.jars", "").split(",")] if spark_conf else []
+    vs_jar_path = vs.find_jar()
     assert os.path.exists(vs_jar_path), "%s does not exist" % vs_jar_path
-    sys.stderr.write("using variant-spark jar at '%s'\n" % vs_jar_path)
-    jars.append(vs_jar_path)
+    if not quiet:
+        sys.stderr.write("using variant-spark jar at '%s'\n" % vs_jar_path)
+    if not vs_jar_path in jars:
+        jars.append(vs_jar_path)
+    hl.init(sc=sc, idempotent=idempotent, quiet=quiet, spark_conf={'spark.jars': ",".join(jars)}, **kwargs)
 
-    if pkg_resources.resource_exists(hl.__name__, "hail-all-spark.jar"):
-        hail_jar_path = pkg_resources.resource_filename(hl.__name__, "hail-all-spark.jar")
-        assert os.path.exists(hail_jar_path), "%s does not exist" % hail_jar_path
-        sys.stderr.write("using hail jar at '%s'\n" % hail_jar_path)
-        jars.append(hail_jar_path)
 
-    conf = SparkConf()
-    conf.set('spark.jars', ",".join(jars))
-    conf.set('spark.driver.extraClassPath', hail_jar_path)
-    conf.set('spark.executor.extraClassPath', './hail-all-spark.jar')
-    SparkContext._ensure_initialized(conf=conf)
+def version():
+    return Env.jvm().au.csiro.variantspark.python.Metadata.version()
 
-    hl.init(**kwargs)
+
+def version_info():
+    return Env.jvm().au.csiro.variantspark.python.Metadata.gitProperties()

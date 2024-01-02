@@ -1,6 +1,7 @@
 package au.csiro.pbdava.ssparkle.common.utils
 
 import java.io.Closeable
+
 import scala.io.Source
 
 object LoanUtils {
@@ -17,7 +18,18 @@ object LoanUtils {
     try {
       func(cl)
     } finally {
+      if (cl != null) {
+        cl.close()
+      }
+    }
+  }
+
+  def withResource[C <: AutoCloseable, R](cl: C)(func: C => R): R = {
+    try {
+      func(cl)
+    } finally {
       cl.close()
     }
   }
+
 }

@@ -14,7 +14,7 @@ class DelegatingLineIterator(val it: Iterator[String])
 }
 
 class ExtendedVCFCodec extends VCFCodec {
-  def getVersion: VCFHeaderVersion = this.version
+  override def getVersion: VCFHeaderVersion = this.version
 }
 
 case class HeaderAndVersion(header: VCFHeader, version: VCFHeaderVersion)

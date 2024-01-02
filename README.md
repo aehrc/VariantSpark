@@ -1,6 +1,6 @@
 # Variant Spark
 
-[![Travis-Build](https://travis-ci.org/aehrc/VariantSpark.svg?branch=master)](https://travis-ci.org/aehrc/VariantSpark#)
+[![Build](https://github.com/aehrc/VariantSpark/workflows/Java%20and%20Python%20CI%20with%20Maven/badge.svg)](https://github.com/aehrc/VariantSpark/actions?query=workflow%3CI)
 [![Documentation Status](https://readthedocs.org/projects/variantspark/badge/?version=latest)](http://variantspark.readthedocs.io/en/latest/?badge=latest)
 
 _variant-spark_ is a scalable toolkit for genome-wide association studies optimized for GWAS like datasets.
@@ -39,7 +39,7 @@ In order to build the binaries use:
 
     mvn clean install
 
-For python _variant-spark_ requires python 2.7 with pip.
+For python _variant-spark_ requires python 3.6+ with pip.
 The other packages required for development are listed in `dev/dev-requirements.txt` and can be installed with:
 
     pip install -r dev/dev-requirements.txt
@@ -54,7 +54,7 @@ The complete built including all check can be run with:
 
 ### Running
 
-variant-spark requires an existing spark 2.1+ installation (either a local one or a cluster one).
+variant-spark requires an existing spark 3.1+ installation (either a local one or a cluster one).
 
 To run variant-spark use:
 
@@ -84,11 +84,11 @@ The difference between running in `--local` mode and in `--spark` with `local` m
 Also the output will be written to the location determined by the hadoop filesystem settings. In particular paths without schema e.g. 'output.csv' will be resolved with the hadoop default filesystem (usually HDFS)
 To change this behavior you can set the default filesystem in the command line using `spark.hadoop.fs.default.name` option. For example to use local filesystem as the default use:
 
-    veriant-spaek --spark ... --conf "spark.hadoop.fs.default.name=file:///" ... -- importance  ... -of output.csv
+    ./variant-spark --spark ... --conf "spark.hadoop.fs.default.name=file:///" ... -- importance  ... -of output.csv
 
 You can also use the full URI with the schema to address any filesystem for both input and output files e.g.:
 
-    veriant-spaek --spark ... --conf "spark.hadoop.fs.default.name=file:///" ... -- importance  -if hdfs:///user/data/input.csv ... -of output.csv
+    ./variant-spark --spark ... --conf "spark.hadoop.fs.default.name=file:///" ... -- importance  -if hdfs:///user/data/input.csv ... -of output.csv
 
 ### Running examples
 
@@ -100,7 +100,7 @@ variant-spark comes with a few example scripts in the `scripts` directory that d
 
 There is a few small data sets in the `data` directory suitable for running on a single machine. For example
 
-    ./scripts/local_run-importance-ch22.sh
+    ./examples/local_run-importance-ch22.sh
 
 runs variable importance command on a small sample of the chromosome 22 vcf file (from 1000 Genomes Project)
 
@@ -120,34 +120,29 @@ You can choose a different location by setting the `VS_DATA_DIR` environment var
 
 After the test data has been successfully copied to HDFS you can run examples scripts, e.g.:
 
-    ./scripts/yarn_run-importance-ch22.sh
+    ./examples/yarn_run-importance-ch22.sh
 
 Note: if you installed the data to a non default location the `VS_DATA_DIR` needs to be set accordingly when running the examples
 
-#### Databricks notebook examples
+### VariantSpark on the cloud
 
-For convenience we have also provided a sample end-to-end variant-spark workflow
-in a Databricks (Jupyter-style) notebook for Spark 2.2. The examples, using a synthetic phenotype (Hipster-index)
-can be found in the `notebook-examples` folder of this repository.
+VariantSpark can easily be used in AWS and Azure. For more examples and information, check the [cloud folder](https://github.com/aehrc/VariantSpark/tree/master/cloud). For a quick start, check the few pointers below.
 
-To use an example:
+#### AWS Marketplace
 
-1. **Create** a free, community [Databricks](https://databricks.com/) account
-2. **Download** the `VariantSpark_HipsterIndex_Spark2.2.scala` file. Databricks notebook is for Spark 2.2 (scala 2.11)
-3. **Import** the notebook file into your Databricks instance. Read the instructions in the notebook on how to import a new library to use the `variant-spark` library.
-4. **Start** a cluster (be sure to select the version of Spark and Scala specified in the notebook). Wait up to 5 minutes for the cluster to be ready.
-5. **Attach** the notebook to the cluster
-6. **Run** the sample notebook
+VariantSpark is now available on [AWS Marketplace](https://aws.amazon.com/marketplace/pp/AEHRC-VariantSpark-Notebook/B07YVND4TD). Please read the [Guidlines](contributions/AwsMarketplace/README.md) for specification and step-by-step instructions.
+
+#### Azure Databricks
+
+VariantSpark can be easily deployed in Azure Databricks through the button below. Please read the [VariantSpark azure manual](https://github.com/aehrc/VariantSpark-Azure-deployment) for specification and step-by-step instructions.
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Faehrc%2FVariantSpark-Azure-deployment%2Fmaster%2Fazuredeploy.json)
 
 ### Contributions
 
 #### JsonRfAnalyser
 
 [JsonRfAnalyser](contributions/JsonRfAnalyser) is a python program that looks into the JSON RandomForest model and list variables on each tree and branch. Please read [README](contributions/JsonRfAnalyser/README.md) to see the complete list of functionalities.
-
-#### VariantSpark on AWS Marketplace
-
-VariantSpark is now available on [AWS Marketplace](https://aws.amazon.com/marketplace/pp/AEHRC-VariantSpark-Notebook/B07YVND4TD). Please read the [Guidlines](contributions/AwsMarketplace/README.md) for specification and step-by-step instructions.
 
 #### WebVisualiser
 
