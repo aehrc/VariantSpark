@@ -12,7 +12,7 @@ import org.junit.Test
 class RFModelHailTest {
 
   val sparkBackend = SparkBackend.getOrCreate(sc = TestSparkContext.spark.sparkContext);
-  val hc = HailContext.getOrCreate(sparkBackend, skipLoggingConfiguration = true)
+  val hc = HailContext.getOrCreate(sparkBackend)
 
   /**
     * The purpose of this test is basic valdation of the hail interface

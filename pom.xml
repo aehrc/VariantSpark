@@ -79,8 +79,8 @@
     <encoding>UTF-8</encoding>
     <scala.binary.version>2.12</scala.binary.version>
     <scala.version>2.12.14</scala.version>
-    <spark.version>3.1.2</spark.version>
-    <spark.binary.version>3.1</spark.binary.version>
+    <spark.version>3.2.3</spark.version>
+    <spark.binary.version>3.2</spark.binary.version>
     <scalafmt.parameters>--test</scalafmt.parameters>
     <!-- for now, not running scalafmt as part of default verify pipeline -->
     <scalafmt.skip>false</scalafmt.skip>
@@ -88,7 +88,7 @@
     <scalafmt.onlyChangedFiles>false</scalafmt.onlyChangedFiles>
     <sonata.autorelease>true</sonata.autorelease>
     <CodeCacheSize>1g</CodeCacheSize>
-    <hail.version>0.2.74</hail.version>
+    <hail.version>0.2.116</hail.version>
     <skipTests>false</skipTests>
     <build.type>devel</build.type>
   </properties>

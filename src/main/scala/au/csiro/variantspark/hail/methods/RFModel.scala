@@ -162,7 +162,7 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
                 splitCount.getOrElse(tf.index, 0L))
             }
         }
-        TableLiteral(TableValue(ctx, sig, key, mapRDD))
+        TableLiteral(TableValue(ctx, sig, key, mapRDD), ctx.theHailClassLoader)
       }
     }
   }
@@ -187,7 +187,7 @@ case class RFModel(backend: SparkBackend, inputIR: MatrixIR, rfParams: RandomFor
                 splitCount.getOrElse(tf.index, 0L))
             }
         }
-        TableLiteral(TableValue(ctx, sig, Array("covariate"), mapRDD))
+        TableLiteral(TableValue(ctx, sig, Array("covariate"), mapRDD), ctx.theHailClassLoader)
       }
     }
   }
