@@ -421,7 +421,7 @@ class RegressionRandomForest(params: RandomForestParams = RandomForestParams(),
           case (treesAndErrors, elapsedTime) =>
             logDebug(s"Trees: ${treesAndErrors.size} >> oobError: ${treesAndErrors.last._2}, "
               + s"time: ${elapsedTime}")
-            Option(callback).foreach(_.onTreeComplete(treesAndErrors.size, treesAndErrors.last._2,
+            Option(callback).foreach(_.onTreeComplete(treesAndErrors.size, 0.0,
               elapsedTime))
         }.result
       }
