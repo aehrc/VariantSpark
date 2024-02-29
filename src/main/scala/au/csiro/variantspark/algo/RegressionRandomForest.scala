@@ -356,7 +356,7 @@ object RegressionRandomForest {
     }
   }
 }
-
+ 
 /** Implements random forest
  * @param params the RF params
  * @param modelBuilderFactory the type of model, i.e. 'wide decision tree builder'
