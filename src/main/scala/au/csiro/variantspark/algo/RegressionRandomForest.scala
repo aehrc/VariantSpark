@@ -43,7 +43,7 @@ case object ToOneImportanceNormalizer extends StandardImportanceNormalizer(1.0)
   * @param nLabels the number of labels
   * @param nSamples the number of samples
   */
-case class VotingAggregator(nLabels: Int, nSamples: Int) {
+case class VotingAggregator(nSamples: Int) {
   lazy val votes: Array[Array[Int]] = Array.fill(nSamples)(Array.fill(nLabels)(0))
 
   /** Adds a vote with predictions and indexes
@@ -97,7 +97,7 @@ case class RandomForestMember(predictor: PredictiveModelWithImportance,
   * @param oobErrors the out-of-bag errors
   */
 @SerialVersionUID(2L)
-case class RegressionRandomForestModel(members: List[RandomForestMember], labelCount: Int,
+case class RegressionRandomForestModel(members: List[RandomForestMember],
     oobErrors: List[Double] = List.empty, params: RandomForestParams = null) {
 
   def oobError: Double = oobErrors.last
@@ -148,7 +148,7 @@ case class RegressionRandomForestModel(members: List[RandomForestMember], labelC
   def predict(indexedData: RDD[(Feature, Long)], nSamples: Int): Array[Int] = {
     trees
       .map(_.predict(indexedData))
-      .foldLeft(VotingAggregator(labelCount, nSamples))(_.addVote(_))
+      .foldLeft(VotingAggregator(nSamples))(_.addVote(_))
       .predictions
   }
 
@@ -158,7 +158,7 @@ case class RegressionRandomForestModel(members: List[RandomForestMember], labelC
   def predictProb(indexedData: RDD[(Feature, Long)], nSamples: Int): Array[Array[Double]] = {
     val treeVotes = trees
       .map(_.predict(indexedData))
-      .foldLeft(VotingAggregator(labelCount, nSamples))(_.addVote(_))
+      .foldLeft(VotingAggregator(nSamples))(_.addVote(_))
     treeVotes.classProbabilities
   }
 }
@@ -209,24 +209,29 @@ trait RandomForestCallback {
   def onTreeComplete(nTrees: Int, oobError: Double, elapsedTimeMs: Long) {}
 }
 
+// REGRESSION
+
 // TODO (Design): Avoid using type cast change design
-trait BatchTreeModel {
-  def batchTrain(indexedData: RDD[TreeFeature], labels: Array[Int], nTryFraction: Double,
-      samples: Seq[Sample]): Seq[PredictiveModelWithImportance]
+trait BatchRegressionTreeModel {
+  def batchTrain(indexedData: RDD[TreeFeature], labels: Array[Double], nTryFraction: Double,
+      samples: Seq[Sample]): Seq[RegressionPredictiveModelWithImportance]
+
   def batchPredict(indexedData: RDD[TreeFeature], models: Seq[PredictiveModelWithImportance],
       indexes: Seq[Array[Int]]): Seq[Array[Int]]
 }
 
-object RandomForest {
-  type ModelBuilderFactory = DecisionTreeParams => BatchTreeModel
+object RegressionRandomForest {
+  type ModelBuilderFactory = DecisionTreeParams => BatchRegressionTreeModel
   val defaultBatchSize: Int = 10
 
-  def wideDecisionTreeBuilder(params: DecisionTreeParams): BatchTreeModel = {
-    val decisionTree = new DecisionTree(params)
-    new BatchTreeModel() {
-      override def batchTrain(indexedData: RDD[TreeFeature], labels: Array[Int],
-          nTryFraction: Double, samples: Seq[Sample]): Seq[PredictiveModelWithImportance] =
+  def wideDecisionTreeBuilder(params: DecisionTreeParams): BatchRegressionTreeModel = {
+    val decisionTree = new RegressionDecisionTree(params)
+    new BatchRegressionTreeModel() {
+      override def batchTrain(indexedData: RDD[TreeFeature], labels: Array[Double],
+          nTryFraction: Double,
+          samples: Seq[Sample]): Seq[RegressionPredictiveModelWithImportance] =
         decisionTree.batchTrainInt(indexedData, labels, nTryFraction, samples)
+
       override def batchPredict(indexedData: RDD[TreeFeature],
           models: Seq[PredictiveModelWithImportance], indexes: Seq[Array[Int]]): Seq[Array[Int]] =
         DecisionTreeModel.batchPredict(indexedData.map(tf => (tf, tf.index)),
@@ -239,15 +244,16 @@ object RandomForest {
   * @param params the RF params
   * @param modelBuilderFactory the type of model, i.e. 'wide decision tree builder'
   */
-class RandomForest(params: RandomForestParams = RandomForestParams(),
-    modelBuilderFactory: RandomForest.ModelBuilderFactory = RandomForest.wideDecisionTreeBuilder,
+class RegressionRandomForest(params: RandomForestParams = RandomForestParams(),
+    modelBuilderFactory: RegressionRandomForest.ModelBuilderFactory =
+      RegressionRandomForest.wideDecisionTreeBuilder,
     trf: TreeRepresentationFactory = DefTreeRepresentationFactory)
     extends Logging {
 
   // TODO (Design):make this class keep random state (could be externalised to implicit random)
   implicit lazy val rng: XorShift1024StarRandomGenerator =
     new XorShift1024StarRandomGenerator(params.seed)
-  def batchTrain(indexedData: RDD[(Feature, Long)], labels: Array[Int], nTrees: Int,
+  def batchTrain(indexedData: RDD[(Feature, Long)], labels: Array[Double], nTrees: Int,
       nBatchSize: Int = RandomForest.defaultBatchSize): RegressionRandomForestModel = {
     val treeFeatures: RDD[TreeFeature] = trf.createRepresentation(indexedData)
     batchTrainTyped(treeFeatures, labels, nTrees, nBatchSize)
@@ -255,134 +261,9 @@ class RandomForest(params: RandomForestParams = RandomForestParams(),
 
   // TODO (Design): Make a param rather then an extra method
   // TODO (Func): Add OOB Calculation
-  def batchTrainTyped(treeFeatures: RDD[TreeFeature], labels: Array[Int], nTrees: Int,
-      nBatchSize: Int)(implicit callback: RandomForestCallback = null): RegressionRandomForestModel
-  = {
-
-    require(nBatchSize > 0)
-    require(nTrees > 0)
-    val nSamples = labels.length
-    val nVariables = treeFeatures.count().toInt
-    val nLabels = labels.max + 1
-
-    logDebug(s"Data:  nSamples:${nSamples}, nVariables: ${nVariables}, nLabels:${nLabels}")
-
-    val actualParams = params.resolveDefaults(nSamples, nVariables)
-
-    Option(callback).foreach(_.onParamsResolved(actualParams))
-    logDebug(s"Parameters: ${actualParams}")
-    logDebug(s"Batch Training: ${nTrees} with batch size: ${nBatchSize}")
-
-    val oobAggregator =
-      if (actualParams.oob) Option(VotingAggregator(nLabels, nSamples)) else None
-
-    val builder = modelBuilderFactory(actualParams.toDecisionTreeParams(rng.nextLong))
-    val allSamples = Stream
-      .fill(nTrees)(Sample.fraction(nSamples, actualParams.subsample, actualParams.bootstrap))
-
-    val (allTrees, errors) = allSamples
-      .sliding(nBatchSize, nBatchSize)
-      .flatMap { samplesStream =>
-        time {
-
-          val samples = samplesStream.toList
-          val predictors =
-            builder.batchTrain(treeFeatures, labels, actualParams.nTryFraction, samples)
-          val members = if (actualParams.oob) {
-
-            val oobIndexes = samples.map(_.distinctIndexesOut.toArray)
-            val oobPredictions = builder.batchPredict(treeFeatures, predictors, oobIndexes)
-            predictors.zip(oobIndexes.zip(oobPredictions)).map {
-              case (t, (i, p)) => RandomForestMember(t, i, p)
-            }
-
-          } else predictors.map(RandomForestMember(_))
-
-          val oobError = oobAggregator
-            .map { agg =>
-              members.map { m =>
-                agg.addVote(m.oobPred, m.oobIndexes)
-                Metrics.classificationError(labels, agg.predictions)
-              }
-            }
-            .getOrElse(List.fill(predictors.size)(Double.NaN))
-          members.zip(oobError)
-        }.withResultAndTime {
-          case (treesAndErrors, elapsedTime) =>
-            logDebug(s"Trees: ${treesAndErrors.size} >> oobError: ${treesAndErrors.last._2}, "
-                + s"time: ${elapsedTime}")
-            Option(callback).foreach(_.onTreeComplete(treesAndErrors.size, treesAndErrors.last._2,
-                elapsedTime))
-        }.result
-      }
-      .toList
-      .unzip
-
-    RegressionRandomForestModel(allTrees, nLabels, errors, actualParams)
-  }
-
-}
-
-
-// REGRESSION
-
-
-// TODO (Design): Avoid using type cast change design
-trait BatchRegressionTreeModel {
-  def batchTrain(indexedData: RDD[TreeFeature], labels: Array[Double], nTryFraction: Double,
-                 samples: Seq[Sample]): Seq[RegressionPredictiveModelWithImportance]
-
-  def batchPredict(indexedData: RDD[TreeFeature], models: Seq[PredictiveModelWithImportance],
-                   indexes: Seq[Array[Int]]): Seq[Array[Int]]
-}
-
-object RegressionRandomForest {
-  type ModelBuilderFactory = DecisionTreeParams => BatchRegressionTreeModel
-  val defaultBatchSize: Int = 10
-
-  def wideDecisionTreeBuilder(params: DecisionTreeParams): BatchRegressionTreeModel = {
-    val decisionTree = new RegressionDecisionTree(params)
-    new BatchRegressionTreeModel() {
-      override def batchTrain(indexedData: RDD[TreeFeature], labels: Array[Double],
-                              nTryFraction: Double,
-                              samples: Seq[Sample]): Seq[RegressionPredictiveModelWithImportance] =
-        decisionTree.batchTrainInt(indexedData, labels, nTryFraction, samples)
-
-      override def batchPredict(indexedData: RDD[TreeFeature],
-                                models: Seq[PredictiveModelWithImportance],
-                                indexes: Seq[Array[Int]]): Seq[Array[Int]] =
-        DecisionTreeModel.batchPredict(indexedData.map(tf => (tf, tf.index)),
-          models.asInstanceOf[Seq[DecisionTreeModel]], indexes)
-    }
-  }
-}
- 
-/** Implements random forest
- * @param params the RF params
- * @param modelBuilderFactory the type of model, i.e. 'wide decision tree builder'
- */
-class RegressionRandomForest(params: RandomForestParams = RandomForestParams(),
-                   modelBuilderFactory: RegressionRandomForest.ModelBuilderFactory =
-                   RegressionRandomForest.wideDecisionTreeBuilder,
-                   trf: TreeRepresentationFactory = DefTreeRepresentationFactory)
-  extends Logging {
-
-  // TODO (Design):make this class keep random state (could be externalised to implicit random)
-  implicit lazy val rng: XorShift1024StarRandomGenerator =
-    new XorShift1024StarRandomGenerator(params.seed)
-  def batchTrain(indexedData: RDD[(Feature, Long)], labels: Array[Double], nTrees: Int,
-                 nBatchSize: Int = RandomForest.defaultBatchSize): RegressionRandomForestModel = {
-    val treeFeatures: RDD[TreeFeature] = trf.createRepresentation(indexedData)
-    batchTrainTyped(treeFeatures, labels, nTrees, nBatchSize)
-  }
-
-
-  // TODO (Design): Make a param rather then an extra method
-  // TODO (Func): Add OOB Calculation
   def batchTrainTyped(treeFeatures: RDD[TreeFeature], labels: Array[Double], nTrees: Int,
-                      nBatchSize: Int)
-                     (implicit callback: RandomForestCallback = null): RegressionRandomForestModel
-  = {
+      nBatchSize: Int)(
+      implicit callback: RandomForestCallback = null): RegressionRandomForestModel = {
 
     require(nBatchSize > 0)
     require(nTrees > 0)
@@ -398,9 +279,8 @@ class RegressionRandomForest(params: RandomForestParams = RandomForestParams(),
     logDebug(s"Parameters: ${actualParams}")
     logDebug(s"Batch Training: ${nTrees} with batch size: ${nBatchSize}")
 
-    // No oob for regression
+    // TODO: Implement oob for regression
     val oobAggregator = None
-
 
     val builder = modelBuilderFactory(actualParams.toDecisionTreeParams(rng.nextLong))
     val allSamples = Stream
@@ -413,22 +293,21 @@ class RegressionRandomForest(params: RandomForestParams = RandomForestParams(),
 
           val samples = samplesStream.toList
           val predictors = List.empty
-          val members = List.empty
+          val members = predictors.map(RandomForestMember(_))
           val oobError = List.empty
           members.zip(oobError)
 
         }.withResultAndTime {
           case (treesAndErrors, elapsedTime) =>
             logDebug(s"Trees: ${treesAndErrors.size} >> oobError: ${treesAndErrors.last._2}, "
-              + s"time: ${elapsedTime}")
-            Option(callback).foreach(_.onTreeComplete(treesAndErrors.size, 0.0,
-              elapsedTime))
+                + s"time: ${elapsedTime}")
+            Option(callback).foreach(_.onTreeComplete(treesAndErrors.size, 0.0, elapsedTime))
         }.result
       }
       .toList
       .unzip
 
-    RegressionRandomForestModel(allTrees, nLabels, errors, actualParams)
+    RegressionRandomForestModel(allTrees, errors, actualParams)
   }
 
 }
