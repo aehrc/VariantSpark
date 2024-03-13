@@ -38,11 +38,18 @@ class StandardImportanceNormalizer(val scale: Double) extends VarImportanceNorma
 case object To100ImportanceNormalizer extends StandardImportanceNormalizer(100.0)
 case object ToOneImportanceNormalizer extends StandardImportanceNormalizer(1.0)
 
+/*
+TODO: IMPLEMENT THE RIGHT Voting aggregator
+*/
+
+
 /** Implements voting aggregator conditionally
   *
   * @param nLabels the number of labels
   * @param nSamples the number of samples
   */
+
+/*
 case class VotingAggregator(nSamples: Int) {
   lazy val votes: Array[Array[Int]] = Array.fill(nSamples)(Array.fill(nLabels)(0))
 
@@ -82,6 +89,7 @@ case class VotingAggregator(nSamples: Int) {
     }
   }
 }
+*/
 
 /** Implements random forest members conditionally
   * @param predictor the predictor model
