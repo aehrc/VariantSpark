@@ -12,15 +12,14 @@ public class FileUtils {
 	 * @param file: an input file
 	 * @return true if input file is BGZIP by check the first two byte of input file 
 	 */	
-	public static boolean isInputBGZ(final File file) {
-		 
+	public static boolean isBGZFile(String filePath) {
 		/**
-		 * .vcf.bgz is type of GZP file
+		 * .vcf.bgz is type of GZP file, work well with BlockCompressedInputStream
 		 * .vcf.gz is also GZP file but get java.lang.OutOfMemoryError at java.io.InputStreamReader.read(InputStreamReader.java:184)
 		 * .vcf.bz2 is not GZP file and get java.lang.OutOfMemoryError at java.io.InputStreamReader.read(InputStreamReader.java:184)
 		 * .vcf is not GZP file and get htsjdk.samtools.SAMFormatException: at header from java.io.BufferedReader.readLine(BufferedReader.java:389)
-		*/				
-	    try (BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(file))) {
+		*/
+	    try (BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(filePath))) {
 	        bufferedInputStream.mark(100); // mark the current position
 	        boolean isValid = BlockCompressedInputStream.isValidFile(bufferedInputStream);
 	        bufferedInputStream.reset(); // reset back to the marked position
@@ -28,7 +27,7 @@ public class FileUtils {
 	    } catch (IOException e) {
 	        // Handle the exception
 	        return false;
-	    }				
+	    }
 	}
 	
 	/**

@@ -15,9 +15,9 @@ trait SparkArgs extends SparkApp {
   val sparkPar: Int = 0
 
   def textFile(inputFile: String): RDD[String] = {
-    val isBGZ = FileUtils.isInputBGZ(new File(inputFile))
+    val isBGZ = FileUtils.isBGZFile(inputFile)
     println(inputFile + " is loading to spark RDD, isBGZFile: " + isBGZ)
-    if (isBGZ ) {
+    if (isBGZ) {
       val path = new Path(inputFile)
       val fs = path.getFileSystem(sc.hadoopConfiguration)
       val bgzInputStream = new BlockCompressedInputStream(fs.open(path))
