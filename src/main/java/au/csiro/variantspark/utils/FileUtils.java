@@ -14,47 +14,21 @@ public class FileUtils {
 	 */	
 	public static boolean isInputBGZ(final File file) {
 		 
-		//.vcf.bgz is type of GZP file
-		//.vcf.gz is also GZP file but get java.lang.OutOfMemoryError at java.io.InputStreamReader.read(InputStreamReader.java:184)
-		//.vcf.bz2 is not GZP file and get java.lang.OutOfMemoryError at java.io.InputStreamReader.read(InputStreamReader.java:184)
-		//.vcf is not GZP file and get htsjdk.samtools.SAMFormatException: at header from java.io.BufferedReader.readLine(BufferedReader.java:389)
-		
-		boolean isGzip = false; 
-		try {			
-			isGzip = isInputGZip(file);	//ture if .bgz or .gz		  		 
-		} catch (IOException e) {}
-		
-		
-		//if not gzip file, do following check
-		if(isGzip) {
-			
-		    try (BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(file))) {
-		        bufferedInputStream.mark(100); // mark the current position
-		        boolean isValid = BlockCompressedInputStream.isValidFile(bufferedInputStream);
-		        bufferedInputStream.reset(); // reset back to the marked position
-		        return isValid;
-		    } catch (IOException e) {
-		        // Handle the exception
-		        return false;
-		    }
-					
-//			try(final BlockCompressedInputStream bgzInputStream = new BlockCompressedInputStream(file)) {
-//				System.out.println(" inside try block: start bufferReader ...");
-//				BufferedReader reader = new BufferedReader(new InputStreamReader(bgzInputStream));
-//				System.out.println(" inside try block: reader.readLine()... ");
-//	            String line = reader.readLine();
-//	            return line != null && !line.isEmpty();
-//			} catch (Exception e) {
-//				//file is not .vcf.bgz file 
-//				//it will throw any type exception according to file type
-//				//hence we try to catch any type exception
-//				e.printStackTrace();
-//				return false;
-//			}
-		}		
-		
-		return false; 
-
+		/**
+		 * .vcf.bgz is type of GZP file
+		 * .vcf.gz is also GZP file but get java.lang.OutOfMemoryError at java.io.InputStreamReader.read(InputStreamReader.java:184)
+		 * .vcf.bz2 is not GZP file and get java.lang.OutOfMemoryError at java.io.InputStreamReader.read(InputStreamReader.java:184)
+		 * .vcf is not GZP file and get htsjdk.samtools.SAMFormatException: at header from java.io.BufferedReader.readLine(BufferedReader.java:389)
+		*/				
+	    try (BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(file))) {
+	        bufferedInputStream.mark(100); // mark the current position
+	        boolean isValid = BlockCompressedInputStream.isValidFile(bufferedInputStream);
+	        bufferedInputStream.reset(); // reset back to the marked position
+	        return isValid;
+	    } catch (IOException e) {
+	        // Handle the exception
+	        return false;
+	    }				
 	}
 	
 	/**

@@ -2,6 +2,7 @@ package au.csiro.variantspark.cli.args
 
 import org.kohsuke.args4j.Option
 import au.csiro.pbdava.ssparkle.spark.SparkApp
+import au.csiro.variantspark.utils._
 import org.apache.spark.rdd.RDD
 import htsjdk.samtools.util.BlockCompressedInputStream
 import org.apache.hadoop.fs.Path
@@ -14,10 +15,9 @@ trait SparkArgs extends SparkApp {
   val sparkPar: Int = 0
 
   def textFile(inputFile: String): RDD[String] = {
-    val input = new File(inputFile)
-    val isBGZ = input.getName.split('.').lastOption.getOrElse("").equalsIgnoreCase("bgz")
-    println(inputFile + " is loading to spark RDD " + isBGZ)
-    if (isBGZ) {
+    val isBGZ = FileUtils.isInputBGZ(new File(inputFile))
+    println(inputFile + " is loading to spark RDD, isBGZFile: " + isBGZ)
+    if (isBGZ ) {
       val path = new Path(inputFile)
       val fs = path.getFileSystem(sc.hadoopConfiguration)
       val bgzInputStream = new BlockCompressedInputStream(fs.open(path))
