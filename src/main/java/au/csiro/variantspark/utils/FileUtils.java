@@ -20,9 +20,9 @@ public class FileUtils {
 		 * .vcf is not GZP file and get htsjdk.samtools.SAMFormatException: at header from java.io.BufferedReader.readLine(BufferedReader.java:389)
 		*/
 	    try (BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(filePath))) {
-	        bufferedInputStream.mark(100); // mark the current position
+	        //bufferedInputStream.mark(100); // mark the current position
 	        boolean isValid = BlockCompressedInputStream.isValidFile(bufferedInputStream);
-	        bufferedInputStream.reset(); // reset back to the marked position
+	        //bufferedInputStream.reset(); // reset back to the marked position
 	        return isValid;
 	    } catch (IOException e) {
 	        // Handle the exception
