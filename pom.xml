@@ -79,7 +79,7 @@
     <encoding>UTF-8</encoding>
     <scala.binary.version>2.12</scala.binary.version>
     <scala.version>2.12.14</scala.version>
-    <spark.version>3.1.2</spark.version>
+    <spark.version>3.3.2.3.3.7180.12-5</spark.version>
     <spark.binary.version>3.1</spark.binary.version>
     <scalafmt.parameters>--test</scalafmt.parameters>
     <!-- for now, not running scalafmt as part of default verify pipeline -->
