@@ -20,37 +20,11 @@ public class FileUtils {
 		 * .vcf is not GZP file and get htsjdk.samtools.SAMFormatException: at header from java.io.BufferedReader.readLine(BufferedReader.java:389)
 		*/
 	    try (BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(filePath))) {
-	        //bufferedInputStream.mark(100); // mark the current position
 	        boolean isValid = BlockCompressedInputStream.isValidFile(bufferedInputStream);
-	        //bufferedInputStream.reset(); // reset back to the marked position
 	        return isValid;
 	    } catch (IOException e) {
-	        // Handle the exception
+	        //handle exception for non proper bgzip file
 	        return false;
 	    }
 	}
-	
-	/**
-	 * 
-	 * @param file: an input file
-	 * @return true if input file is Gzip by check the first two byte of input file 
-	 * @throws IOException
-	 */
-	public static boolean isInputGZip(final File file) throws IOException {
-		//final PushbackInputStream pb = new PushbackInputStream(input, 2);
-		
-		try(final InputStream input = new FileInputStream(file)){
-			int header = input.read(); //read ID1
-	        if(header == -1)   return false;	        
-	
-	        int b = input.read(); //read ID2
-	        if(b == -1)  return false;
-	        
-	        //ID2 * 256 + ID1 = 35615
-	        if( ( (b << 8) | header) == GZIPInputStream.GZIP_MAGIC) 
-	            return true;	         
-		}
-	     
-		return false;		
-	} 
 }
