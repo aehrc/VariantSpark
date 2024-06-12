@@ -35,7 +35,7 @@ class AnalyzeRFCmd
   val inputModel: String = null
 
   @Option(name = "-ii", required = false, usage = "Path to input variable index file",
-    aliases = Array("--input-idnex"))
+    aliases = Array("--input-index"))
   val inputIndex: String = null
 
   @Option(name = "-ob", required = false, usage = "Path to output importance",
