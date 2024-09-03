@@ -220,18 +220,11 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <!-- the all artifact is broken in repo, use the default one here  -->
       <groupId>au.csiro.aehrc.third.hail-is</groupId>
       <artifactId>hail_${scala.binary.version}_${spark.binary.version}</artifactId>
       <version>${hail.version}-SNAPSHOT</version>
-      <!--classifier>all</classifier-->
       <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>au.csiro.aehrc.third.hail-is</groupId>
-      <artifactId>hail_${scala.binary.version}_${spark.binary.version}</artifactId>
-      <version>${hail.version}-SNAPSHOT</version>
-      <classifier>all</classifier>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
