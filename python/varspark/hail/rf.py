@@ -5,8 +5,6 @@ from hail.utils.java import Env
 from varspark.hail.lfdrvs import LocalFdrVs
 
 #from varspark.pvalues_calculation import *
-import hail as hl
-
 
 class RandomForestModel(object):
     """ Represents a random forest model object. Do not construct it directly but rather
