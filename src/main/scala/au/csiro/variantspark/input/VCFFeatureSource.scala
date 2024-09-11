@@ -7,6 +7,9 @@ import collection.JavaConverters._
 import au.csiro.variantspark.data.Feature
 import au.csiro.variantspark.data.BoundedOrdinalVariable
 import au.csiro.variantspark.data.StdFeature
+import org.apache.spark.sql.types.{StringType, ByteType, StructField, StructType}
+import org.apache.spark.SparkContext
+import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 
 trait VariantToFeatureConverter {
   def convert(vc: VariantContext): Feature
@@ -56,6 +59,23 @@ class VCFFeatureSource(vcfSource: VCFSource, converter: VariantToFeatureConverte
     val converterRef = converter
     vcfSource.genotypes().map(converterRef.convert)
   }
+
+  lazy val sampleNamesStructArr: Array[StructField] =
+    sampleNames.map(StructField(_, ByteType, true)).toArray
+
+  lazy val featureDFSchema: StructType =
+    StructType(Seq(StructField("variant_id", StringType, true)) ++ sampleNamesStructArr)
+
+  def toDF(sqlContext: SQLContext): DataFrame = {
+    val sc = sqlContext.sparkContext
+
+    val featureRDD: RDD[Row] =
+      features.mapPartitions { it =>
+        it.map { f => Row.fromSeq(f.label +: f.valueAsByteArray.toSeq) }
+      }
+    sqlContext.createDataFrame(featureRDD, featureDFSchema)
+  }
+
 }
 
 object VCFFeatureSource {
