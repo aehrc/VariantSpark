@@ -31,12 +31,9 @@ class ReproducibilityTest extends SparkTest {
     val rfModel1 = RFModelTrainer.trainModel(features, label, params, 40, 20)
     val impAnalysis1 = new ImportanceAnalysis(sqlContext, features, rfModel1)
     val topVariables1 = impAnalysis1.importantVariables(20, false)
-    topVariables1.foreach(println)
-    println()
     val rfModel2 = RFModelTrainer.trainModel(features, label, params, 40, 20)
     val impAnalysis2 = new ImportanceAnalysis(sqlContext, features, rfModel2)
     val topVariables2 = impAnalysis2.importantVariables(20, false)
-    topVariables2.foreach(println)
     topVariables1.zip(topVariables2).foreach { p => assertEquals(p._1, p._2) }
   }
 }
