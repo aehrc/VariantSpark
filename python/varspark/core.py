@@ -101,7 +101,7 @@ class VarsparkContext(object):
         if transposed:
             _jcs = self._jvsc.importTransposedCSV(cov_file_path, cov_types_list)
         else:
-            _jcs = self._jvsc.importStdCSV(cov_file_path)
+            _jcs = self._jvsc.importStdCSV(cov_file_path, cov_types_list)
         return FeatureSource(
             self._jvm,
             self._vs_api,
