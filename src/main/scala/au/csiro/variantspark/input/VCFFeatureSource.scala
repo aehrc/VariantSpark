@@ -60,20 +60,19 @@ class VCFFeatureSource(vcfSource: VCFSource, converter: VariantToFeatureConverte
     vcfSource.genotypes().map(converterRef.convert)
   }
 
-  lazy val sampleNamesStructArr: Array[StructField] =
-    sampleNames.map(StructField(_, ByteType, true)).toArray
-
-  lazy val featureDFSchema: StructType =
-    StructType(Seq(StructField("variant_id", StringType, true)) ++ sampleNamesStructArr)
-
-  def toDF(sqlContext: SQLContext): DataFrame = {
+  def head(sqlContext: SQLContext, rowLim: Int = 10, colLim: Int = 10): DataFrame = {
+    lazy val sampleNamesStructArr: Array[StructField] =
+      sampleNames.take(colLim).map(StructField(_, ByteType, true)).toArray
+    lazy val featureDFSchema: StructType =
+      StructType(Seq(StructField("variant_id", StringType, true)) ++ sampleNamesStructArr)
     val sc = sqlContext.sparkContext
 
-    val featureRDD: RDD[Row] =
-      features.mapPartitions { it =>
-        it.map { f => Row.fromSeq(f.label +: f.valueAsByteArray.toSeq) }
+    val slicedFeatureArray: Array[Row] =
+      features.take(rowLim).map { f =>
+        Row.fromSeq(f.label +: f.valueAsByteArray.take(colLim).toSeq)
       }
-    sqlContext.createDataFrame(featureRDD, featureDFSchema)
+    val slicedFeatureRDD: RDD[Row] = sc.parallelize(slicedFeatureArray)
+    sqlContext.createDataFrame(slicedFeatureRDD, featureDFSchema)
   }
 
 }
