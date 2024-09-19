@@ -184,27 +184,26 @@ class LocalFdrVs:
         self.local_fdr = LocalFdr()
         self.local_fdr.fit(impDfWithLog, bins)
         pvals = self.local_fdr.get_pvalues()
-        fdr, mask = self.local_fdr.get_fdr(local_fdr_cutoff)
+        fdr, cutoff_pvalue, mask = self.local_fdr.get_fdr(local_fdr_cutoff)
+        self.fdr = fdr
+        self.cutoff_pvalue = cutoff_pvalue
         self.pvalsDF = impDfWithLog.reset_index().assign(
             pvalue=pvals, is_significant=mask
         )
         return (self.pvalsDF, fdr)
 
-    def plot_manhattan_imp(self, fdr=None, gap_size=None):
+    def plot_manhattan_imp(self, gap_size=None):
         """Displays manhattan plot of negative log importances for each feature, as well as significance cutoff.
             Categorises features in respective chromosomes, ordered by locus.
         :param gap_size: The size of gap between each chromosome.
             Included as an adjustable parameter as this value scales with the total number of loci
         """
         pvals = self.pvalsDF
+        cutoff_pvalue = self.cutoff_pvalue
         # Estimate appropriate size for gap between chromosomes based on number of loci to plot
         gap_size = (
             gap_size if gap_size is not None else int(np.ceil(pvals.shape[0] / 80))
         )
-        if fdr is None:
-            cutoff = self.local_fdr_cutoff
-        else:
-            cutoff = fdr
 
         def process_variant_id(variant_id):
             """Extracts chromosome, locus, and alleles from the variant_id field using regex
@@ -243,14 +242,15 @@ class LocalFdrVs:
             x="x",
             y="-logp",
             aspect=3.7,
+            linewidth=0,
             hue="chrom",
             palette="bright",
             legend=None,
         )
-        cutoff_logp = -np.log10(cutoff)
-        plot.ax.axhline(y=cutoff_logp, color="black", linestyle="--")
+        cutoff_logp = -np.log10(cutoff_pvalue)
+        plot.ax.axhline(y=cutoff_logp, color="gray", linestyle="--")
         plot.ax.text(
-            plot.ax.get_xlim()[1] + 0.1, cutoff_logp, f"FDR Cutoff = {cutoff:.6f}"
+            plot.ax.get_xlim()[1] + 0.1, cutoff_logp, f"Cutoff = {cutoff_pvalue:.6f}"
         )
         chrom_df = sorted_pvals.groupby("chrom")["x"].median()
         plot.ax.set_xlabel("chrom")
