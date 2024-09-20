@@ -47,7 +47,7 @@ class ExportModel(rfModel: RandomForestModel, featureSource: FeatureSource) {
     val writer = new BufferedWriter(new OutputStreamWriter(outputStream))
 
     try {
-      writer.write("{\n\"forest\": ")
+      writer.write("{\n\"params\" : ")
       writer.write(writePretty(rfModel.params))
       writer.write(",\n\"trees\": [\n")
 
@@ -83,12 +83,16 @@ class ExportModel(rfModel: RandomForestModel, featureSource: FeatureSource) {
         writer.flush()
       }
 
-      writer.write("\n]}\n")
+      writer.write("\n]")
+      if (rfModel.params.oob == true) {
+        writer.write(", \n\"oobErrors\" : ")
+        writer.write(writePretty(rfModel.oobErrors))
+      }
+      writer.write("\n}\n")
     } finally {
       writer.close()
       outputStream.close()
+      println(s"Model saved successfully to: ${jsonFilename}")
     }
-
-    println(s"Model saved successfully to: ${jsonFilename}")
   }
 }
