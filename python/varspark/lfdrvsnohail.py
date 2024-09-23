@@ -1,4 +1,4 @@
-import regex as re
+import re
 import pandas as pd
 from varspark.stats.lfdr import *
 
