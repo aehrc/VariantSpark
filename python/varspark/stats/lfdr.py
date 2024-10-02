@@ -206,7 +206,6 @@ class LocalFdr:
         # the proportion of false positives expected from null distribution
         # to the identified positives
         FDR = cutoff_pvalue * len(self.z) / sum(significant_mask)
-        print(cutoff_pvalue)
         return FDR, cutoff_pvalue, significant_mask
 
     def plot(self, ax):
