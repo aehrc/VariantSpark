@@ -24,7 +24,7 @@ class CommonPairwiseOperationTest extends SparkTest {
   @Test
   def testManhattanPaiwiseOperation() {
     implicit val vsContext = VSContext(spark)
-    val features = vsContext.importCSV("src/test/data/synthetic_100x10k.csv");
+    val features = vsContext.importTransposedCSV("src/test/data/synthetic_100x10k.csv");
     val result = features.pairwiseOperation("manhattan").value
     val expected = TestCsvUtils.readColumnToDoubleArray(
         "src/test/data/synthetic_100x10k_metrics.csv", "manhattan")
@@ -34,7 +34,7 @@ class CommonPairwiseOperationTest extends SparkTest {
   @Test
   def testEuclideanPaiwiseOperation() {
     implicit val vsContext = VSContext(spark)
-    val features = vsContext.importCSV("src/test/data/synthetic_100x10k.csv");
+    val features = vsContext.importTransposedCSV("src/test/data/synthetic_100x10k.csv");
     val result = features.pairwiseOperation("euclidean").value
     val expected = TestCsvUtils.readColumnToDoubleArray(
         "src/test/data/synthetic_100x10k_metrics.csv", "euclidean")
@@ -44,7 +44,7 @@ class CommonPairwiseOperationTest extends SparkTest {
   @Test
   def testAnySharedAltCountPaiwiseOperation() {
     implicit val vsContext = VSContext(spark)
-    val features = vsContext.importCSV("src/test/data/synthetic_100x10k.csv");
+    val features = vsContext.importTransposedCSV("src/test/data/synthetic_100x10k.csv");
     val result = features.pairwiseOperation("anySharedAltAlleleCount").value
     val expected = TestCsvUtils.readColumnToDoubleArray(
         "src/test/data/synthetic_100x10k_metrics.csv", "anySharedCount")
@@ -54,7 +54,7 @@ class CommonPairwiseOperationTest extends SparkTest {
   @Test
   def testAllSharedAltCountPaiwiseOperation() {
     implicit val vsContext = VSContext(spark)
-    val features = vsContext.importCSV("src/test/data/synthetic_100x10k.csv");
+    val features = vsContext.importTransposedCSV("src/test/data/synthetic_100x10k.csv");
     val result = features.pairwiseOperation("sharedAltAlleleCount").value
     val expected = TestCsvUtils.readColumnToDoubleArray(
         "src/test/data/synthetic_100x10k_metrics.csv", "allSharedCount")
