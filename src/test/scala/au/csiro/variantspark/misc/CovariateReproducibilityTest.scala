@@ -28,7 +28,7 @@ class CovariateReproducibilityTest extends SparkTest {
   def testCovariateReproducibleResults() {
     implicit val vsContext = VSContext(spark)
     implicit val sqlContext = spark.sqlContext
-    val genotypes = vsContext.importVCF("data/chr22_1000.vcf", 3)
+    val genotypes = vsContext.importVCF("data/chr22_1000.vcf")
     val optVariableTypes = new ArrayList[String](Arrays.asList("CONTINUOUS", "ORDINAL(2)",
         "CONTINUOUS", "CONTINUOUS", "CONTINUOUS", "CONTINUOUS"))
     val covariates =

@@ -56,15 +56,26 @@ class VarsparkContext(object):
                 "                                      /_/                         \n"
             )
 
-    @params(self=object, vcf_file_path=str, min_partitions=int)
-    def import_vcf(self, vcf_file_path, min_partitions=0):
-        """Import features from a VCF file."""
+    @params(self=object, vcf_file_path=str, imputation_strategy=Nullable(str))
+    def import_vcf(self, vcf_file_path, imputation_strategy="none"):
+        """Import features from a VCF file.
+        
+        :param vcf_file_path String: The file path for the vcf file to import
+        :param imputation_strategy String:
+            The imputation strategy to use. Options for imputation include:
+
+            - none: No imputation will be performed. Missing values will be replaced with -1 (not recommended unless there are no missing values)
+            - mode: Missing values will be replaced with the most commonly occuring value among that feature. Recommended option
+            - zeros: Missing values will be replaced with zeros. Faster than mode imputation
+        """
+        if imputation_strategy == "none":
+            print("WARNING: Imputation strategy is set to none - please ensure that there are no missing values in the data.")
         return FeatureSource(
             self._jvm,
             self._vs_api,
             self._jsql,
             self.sql,
-            self._jvsc.importVCF(vcf_file_path, min_partitions),
+            self._jvsc.importVCF(vcf_file_path, imputation_strategy),
         )
 
     @params(
@@ -76,7 +87,7 @@ class VarsparkContext(object):
     def import_covariates(self, cov_file_path, cov_types=None, transposed=False):
         """Import covariates from a CSV file.
 
-        :param cov_file_path: The file path for covariate csv file
+        :param cov_file_path String: The file path for covariate csv file
         :param cov_types Dict[String]:
             A dictionary specifying types for each covariate, where the key is the variable name
             and the value is the type. The value can be one of the following:

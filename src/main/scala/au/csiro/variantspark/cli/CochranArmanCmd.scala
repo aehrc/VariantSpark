@@ -89,7 +89,7 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
       VCFSource(sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
     verbose(s"VCF Version: ${vcfSource.version}")
     verbose(s"VCF Header: ${vcfSource.header}")
-    VCFFeatureSource(vcfSource)
+    VCFFeatureSource(vcfSource, imputationStrategy = "none")
   }
 
   def loadCSV(): CsvFeatureSource = {
