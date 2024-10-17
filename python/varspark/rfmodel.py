@@ -6,7 +6,7 @@ from typedecorator import params, Nullable
 from varspark import java
 from varspark.core import VarsparkContext
 from varspark.importanceanalysis import ImportanceAnalysis
-from varspark.lfdrvsnohail import LocalFdrVs
+from varspark.lfdrvs import LocalFdrVs
 
 
 class RandomForestModel(object):
