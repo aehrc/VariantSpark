@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>au.csiro.aehrc.variant-spark</groupId>
   <artifactId>variant-spark_2.12</artifactId>
-  <version>0.5.3-SNAPSHOT</version>
+  <version>0.5.4</version>
   <packaging>jar</packaging>
 
   <name>variant-spark</name>
@@ -88,7 +88,6 @@
     <scalafmt.onlyChangedFiles>false</scalafmt.onlyChangedFiles>
     <sonata.autorelease>true</sonata.autorelease>
     <CodeCacheSize>1g</CodeCacheSize>
-    <hail.version>0.2.74</hail.version>
     <skipTests>false</skipTests>
     <build.type>devel</build.type>
   </properties>
@@ -217,13 +216,6 @@
       <groupId>org.ow2.asm</groupId>
       <artifactId>asm-analysis</artifactId>
       <version>5.1</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <!-- the all artifact is broken in repo, use the default one here  -->
-      <groupId>au.csiro.aehrc.third.hail-is</groupId>
-      <artifactId>hail_${scala.binary.version}_${spark.binary.version}</artifactId>
-      <version>${hail.version}-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>

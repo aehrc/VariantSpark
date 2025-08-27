@@ -1,5 +1,4 @@
 import sys
-from random import randint
 
 from pyspark import SparkConf
 from pyspark.sql import SQLContext
@@ -7,15 +6,15 @@ from typedecorator import params, Nullable, setup_typecheck
 
 from varspark import java
 from varspark.etc import find_jar
+from varspark.featuresource import FeatureSource
 
 
 class VarsparkContext(object):
-    """The main entry point for VariantSpark functionality.
-    """
+    """The main entry point for VariantSpark functionality."""
 
     @classmethod
     def spark_conf(cls, conf=SparkConf()):
-        """ Adds the necessary option to the spark configuration.
+        """Adds the necessary option to the spark configuration.
         Note: In client mode these need to be setup up using --jars or --driver-class-path
         """
         return conf.set("spark.jars", find_jar())
@@ -31,37 +30,112 @@ class VarsparkContext(object):
         self.sql = SQLContext.getOrCreate(self.sc)
         self._jsql = self.sql._jsqlContext
         self._jvm = self.sc._jvm
-        self._vs_api = getattr(self._jvm, 'au.csiro.variantspark.api')
+        self._vs_api = getattr(self._jvm, "au.csiro.variantspark.api")
         jss = ss._jsparkSession
         self._jvsc = self._vs_api.VSContext.apply(jss)
 
         setup_typecheck()
 
         if not self.silent:
-            sys.stderr.write('Running on Apache Spark version {}\n'.format(self.sc.version))
-            if self.sc._jsc.sc().uiWebUrl().isDefined():
-                sys.stderr.write('SparkUI available at {}\n'.format(
-                    self.sc._jsc.sc().uiWebUrl().get()))
             sys.stderr.write(
-                'Welcome to\n'
-                ' _    __           _             __  _____                  __    \n'
-                '| |  / /___ ______(_)___ _____  / /_/ ___/____  ____ ______/ /__  \n'
-                '| | / / __ `/ ___/ / __ `/ __ \/ __/\__ \/ __ \/ __ `/ ___/ //_/  \n'
-                '| |/ / /_/ / /  / / /_/ / / / / /_ ___/ / /_/ / /_/ / /  / ,<     \n'
-                '|___/\__,_/_/  /_/\__,_/_/ /_/\__//____/ .___/\__,_/_/  /_/|_|    \n'
-                '                                      /_/                         \n')
+                "Running on Apache Spark version {}\n".format(self.sc.version)
+            )
+            if self.sc._jsc.sc().uiWebUrl().isDefined():
+                sys.stderr.write(
+                    "SparkUI available at {}\n".format(
+                        self.sc._jsc.sc().uiWebUrl().get()
+                    )
+                )
+            sys.stderr.write(
+                "Welcome to\n"
+                " _    __           _             __  _____                  __    \n"
+                "| |  / /___ ______(_)___ _____  / /_/ ___/____  ____ ______/ /__  \n"
+                "| | / / __ `/ ___/ / __ `/ __ \/ __/\__ \/ __ \/ __ `/ ___/ //_/  \n"
+                "| |/ / /_/ / /  / / /_/ / / / / /_ ___/ / /_/ / /_/ / /  / ,<     \n"
+                "|___/\__,_/_/  /_/\__,_/_/ /_/\__//____/ .___/\__,_/_/  /_/|_|    \n"
+                "                                      /_/                         \n"
+            )
 
-    @params(self=object, vcf_file_path=str, min_partitions=int)
-    def import_vcf(self, vcf_file_path, min_partitions=0):
-        """ Import features from a VCF file.
+    @params(self=object, vcf_file_path=str, imputation_strategy=Nullable(str))
+    def import_vcf(self, vcf_file_path, imputation_strategy="none"):
+        """Import features from a VCF file.
+        
+        :param vcf_file_path String: The file path for the vcf file to import
+        :param imputation_strategy String:
+            The imputation strategy to use. Options for imputation include:
+
+            - none: No imputation will be performed. Missing values will be replaced with -1 (not recommended unless there are no missing values)
+            - mode: Missing values will be replaced with the most commonly occuring value among that feature. Recommended option
+            - zeros: Missing values will be replaced with zeros. Faster than mode imputation
         """
-        return FeatureSource(self._jvm, self._vs_api,
-                             self._jsql, self.sql, self._jvsc.importVCF(vcf_file_path,
-                                                                        min_partitions))
+        if imputation_strategy == "none":
+            print("WARNING: Imputation strategy is set to none - please ensure that there are no missing values in the data.")
+        return FeatureSource(
+            self._jvm,
+            self._vs_api,
+            self._jsql,
+            self.sql,
+            self._jvsc.importVCF(vcf_file_path, imputation_strategy),
+        )
+
+    @params(
+        self=object,
+        cov_file_path=str,
+        cov_types=Nullable(dict),
+        transposed=Nullable(bool),
+    )
+    def import_covariates(self, cov_file_path, cov_types=None, transposed=False):
+        """Import covariates from a CSV file.
+
+        :param cov_file_path String: The file path for covariate csv file
+        :param cov_types Dict[String]:
+            A dictionary specifying types for each covariate, where the key is the variable name
+            and the value is the type. The value can be one of the following:
+
+            - CONTINUOUS: A continuous variable type.
+            - DISCRETE: A discrete variable type.
+            - NOMINAL: A nominal variable type.
+            - ORDINAL: An ordinal variable type.
+            - ORDINAL(order_count): Specifies the number of ordered levels, where `order_count` represents the number of levels.
+            - NOMINAL(class_count): Specifies the number of distinct classes, where `class_count` represents the number of categories.
+
+            See VariableType.scala for more information.
+        :param transposed bool: Whether or not the covariate csv file is transposed
+        """
+        if cov_types is not None:
+            cov_types_list = [f"{k},{c}" for k, c in cov_types.items()]
+            _jctypes = self._jvm.java.util.ArrayList()
+            for item in cov_types_list:
+                _jctypes.add(item)
+        else:
+            _jctypes = None
+        if transposed:
+            _jcs = self._jvsc.importTransposedCSV(cov_file_path, cov_types_list)
+        else:
+            _jcs = self._jvsc.importStdCSV(cov_file_path, cov_types_list)
+        return FeatureSource(
+            self._jvm,
+            self._vs_api,
+            self._jsql,
+            self.sql,
+            _jcs,
+        )
+
+    @params(self=object, feature_source=FeatureSource, covariate_source=FeatureSource)
+    def union_features_and_covariates(self, feature_source, covariate_source):
+        return FeatureSource(
+            self._jvm,
+            self._vs_api,
+            self._jsql,
+            self.sql,
+            self._jvsc.unionFeaturesAndCovariates(
+                feature_source._jfs, covariate_source._jfs
+            ),
+        )
 
     @params(self=object, label_file_path=str, col_name=str)
     def load_label(self, label_file_path, col_name):
-        """ Loads the label source file
+        """Loads the label source file
 
         :param label_file_path: The file path for the label source file
         :param col_name: the name of the column containing labels
@@ -69,8 +143,7 @@ class VarsparkContext(object):
         return self._jvsc.loadLabel(label_file_path, col_name)
 
     def stop(self):
-        """ Shut down the VariantsContext.
-        """
+        """Shut down the VariantsContext."""
 
         self.sc.stop()
         self.sc = None
@@ -78,85 +151,3 @@ class VarsparkContext(object):
 
 # Deprecated
 VariantsContext = VarsparkContext
-
-
-class FeatureSource(object):
-
-    def __init__(self, _jvm, _vs_api, _jsql, sql, _jfs):
-        self._jfs = _jfs
-        self._jvm = _jvm
-        self._vs_api = _vs_api
-        self._jsql = _jsql
-        self.sql = sql
-
-    @params(self=object, label_source=object, n_trees=Nullable(int), mtry_fraction=Nullable(float),
-            oob=Nullable(bool), seed=Nullable(int), batch_size=Nullable(int),
-            var_ordinal_levels=Nullable(int), max_depth=int, min_node_size=int)
-    def importance_analysis(self, label_source, n_trees=1000, mtry_fraction=None,
-                            oob=True, seed=None, batch_size=100, var_ordinal_levels=3,
-                            max_depth=java.MAX_INT, min_node_size=1):
-        """Builds random forest classifier.
-
-        :param label_source: The ingested label source
-        :param int n_trees: The number of trees to build in the forest.
-        :param float mtry_fraction: The fraction of variables to try at each split.
-        :param bool oob: Should OOB error be calculated.
-        :param int seed: Random seed to use.
-        :param int batch_size: The number of trees to build in one batch.
-        :param int var_ordinal_levels:
-
-        :return: Importance analysis model.
-        :rtype: :py:class:`ImportanceAnalysis`
-        """
-        vs_algo = self._jvm.au.csiro.variantspark.algo
-        jrf_params = vs_algo.RandomForestParams(bool(oob),
-                                                java.jfloat_or(
-                                                    mtry_fraction),
-                                                True, java.NAN, True,
-                                                java.jlong_or(seed,
-                                                              randint(
-                                                                  java.MIN_LONG,
-                                                                  java.MAX_LONG)),
-                                                max_depth,
-                                                min_node_size, False,
-                                                0)
-        jia = self._vs_api.ImportanceAnalysis(self._jsql, self._jfs, label_source,
-                                              jrf_params, n_trees, batch_size, var_ordinal_levels)
-        return ImportanceAnalysis(jia, self.sql)
-
-
-class ImportanceAnalysis(object):
-    """ Model for random forest based importance analysis
-    """
-
-    def __init__(self, _jia, sql):
-        self._jia = _jia
-        self.sql = sql
-
-    @params(self=object, limit=Nullable(int))
-    def important_variables(self, limit=10):
-        """ Gets the top limit important variables as a list of tuples (name, importance) where:
-            - name: string - variable name
-            - importance: double - gini importance
-        """
-        jimpvarmap = self._jia.importantVariablesJavaMap(limit)
-        return sorted(jimpvarmap.items(), key=lambda x: x[1], reverse=True)
-
-    def oob_error(self):
-        """ OOB (Out of Bag) error estimate for the model
-
-        :rtype: float
-        """
-        return self._jia.oobError()
-
-    def variable_importance(self):
-        """ Returns a DataFrame with the gini importance of variables.
-
-        The DataFrame has two columns:
-        - variable: string - variable name
-        - importance: double - gini importance
-        """
-        jdf = self._jia.variableImportance()
-        jdf.count()
-        jdf.createTempView("df")
-        return self.sql.table("df")
