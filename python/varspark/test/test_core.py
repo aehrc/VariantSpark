@@ -55,7 +55,7 @@ class VariantSparkAPITestCase(VariantSparkPySparkTestCase):
         feature_data_path = os.path.join(PROJECT_DIR, "data/chr22_1000.vcf")
         features = self.vc.import_vcf(vcf_file_path=feature_data_path)
         rf = RFModelContext(
-            self.spark, mtry_fraction=None, oob=True, seed=17, var_ordinal_levels=3
+            self.vc, mtry_fraction=None, oob=True, seed=17, var_ordinal_levels=3
         )
         rf.fit_trees(features, label, n_trees=200, batch_size=50)
         imp_analysis = rf.importance_analysis()

@@ -56,8 +56,8 @@ class VarsparkContext(object):
                 "                                      /_/                         \n"
             )
 
-    @params(self=object, vcf_file_path=str, imputation_strategy=Nullable(str))
-    def import_vcf(self, vcf_file_path, imputation_strategy="none"):
+    @params(self=object, vcf_file_path=str, imputation_strategy=Nullable(str), spark_par=Nullable(int))
+    def import_vcf(self, vcf_file_path, imputation_strategy="none", spark_par=0):
         """Import features from a VCF file.
         
         :param vcf_file_path String: The file path for the vcf file to import
@@ -67,6 +67,7 @@ class VarsparkContext(object):
             - none: No imputation will be performed. Missing values will be replaced with -1 (not recommended unless there are no missing values)
             - mode: Missing values will be replaced with the most commonly occuring value among that feature. Recommended option
             - zeros: Missing values will be replaced with zeros. Faster than mode imputation
+        :param spark_par Int: Number of spark partitions to use when reading the input VCF
         """
         if imputation_strategy == "none":
             print("WARNING: Imputation strategy is set to none - please ensure that there are no missing values in the data.")
@@ -75,7 +76,7 @@ class VarsparkContext(object):
             self._vs_api,
             self._jsql,
             self.sql,
-            self._jvsc.importVCF(vcf_file_path, imputation_strategy),
+            self._jvsc.importVCF(vcf_file_path, imputation_strategy, spark_par),
         )
 
     @params(
