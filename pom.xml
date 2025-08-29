@@ -351,14 +351,6 @@
             <transformer
               implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
           </transformers>
-          <relocations>
-            <relocation>
-              <!-- Relocate fastutils due to a conflict with an older version used with hail 0.2.61
-                fastutils:6.2.2  from com.indeed.lsmtree-core: 1.0.7=-->
-              <pattern>it.unimi.dsi.fastutil</pattern>
-              <shadedPattern>it.shaded.dsi.fastutil</shadedPattern>
-            </relocation>
-          </relocations>
         </configuration>
       </plugin>
       <plugin>
