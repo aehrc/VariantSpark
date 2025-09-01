@@ -33,6 +33,4 @@ Contents:
    
    varspark
    varspark.core 
-   varspark.hail
-   varspark.utils
 
