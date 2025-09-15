@@ -57,9 +57,9 @@ jobs:
         with:
           servers: |
             [{
-              "id": "ossrh",
-              "username": "${{ secrets.OSSRH_USERNAME }}",
-              "password": "${{ secrets.OSSRH_PASSWORD }}"
+              "id": "central",
+              "username": "${{ secrets.CENTRAL_TOKEN_USERNAME }}",
+              "password": "${{ secrets.CENTRAL_TOKEN_PASSWORD }}"
             }]
       - name: Build with Maven
         run: |
