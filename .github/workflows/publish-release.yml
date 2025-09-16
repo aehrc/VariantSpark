@@ -73,7 +73,7 @@ jobs:
         run: |
           cd python
           python setup.py sdist bdist_wheel
-#          twine upload dist/*
+          twine upload dist/*
 
   create-release:
     name: Draft GitHub release
