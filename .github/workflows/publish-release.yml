@@ -76,7 +76,7 @@ jobs:
       - name: Build with Maven
         run: |
           mvn -Prelease -DskipTests=true -Dgpg.passphrase="${{ secrets.GPG_PASSPHRASE }}" \
-          --batch-mode --file pom.xml -X -e\
+          --batch-mode --file pom.xml \
           deploy
       - name: Build python package
         run: |
