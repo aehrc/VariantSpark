@@ -223,7 +223,7 @@
       <!-- the all artifact is broken in repo, use the default one here  -->
       <groupId>au.csiro.aehrc.third.hail-is</groupId>
       <artifactId>hail_${scala.binary.version}_${spark.binary.version}</artifactId>
-      <version>${hail.version}-SNAPSHOT</version>
+      <version>${hail.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -235,6 +235,15 @@
   </dependencies>
   <build>
     <plugins>
+    <plugin>
+        <groupId>org.sonatype.central</groupId>
+        <artifactId>central-publishing-maven-plugin</artifactId>
+        <version>0.8.0</version>
+        <extensions>true</extensions>
+        <configuration>
+          <publishingServerId>central</publishingServerId>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>pl.project13.maven</groupId>
         <artifactId>git-commit-id-plugin</artifactId>
@@ -478,6 +487,7 @@
             <executions>
               <execution>
                 <id>attach-sources</id>
+                <phase>package</phase>
                 <goals>
                   <goal>jar-no-fork</goal>
                 </goals>
@@ -494,6 +504,7 @@
             <executions>
               <execution>
                 <id>sign-artifacts</id>
+                <phase>verify</phase>
                 <goals>
                   <goal>sign</goal>
                 </goals>
@@ -503,6 +514,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-deploy-plugin</artifactId>
+            <version>3.1.4</version>
             <configuration>
               <skip>true</skip>
             </configuration>

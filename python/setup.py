@@ -120,7 +120,8 @@ try:
             'varspark.jars': ['*-all.jar'],
         },
         data_files=[
-            ('share/variant-spark/examples', glob.glob(os.path.join(dst_path('examples'), '*'))),
+            ('share/variant-spark/examples',
+             [p for p in glob.glob(os.path.join(dst_path('examples'), '*')) if not os.path.isdir(p)]),
             ('share/variant-spark/data',
              [p for p in glob.glob(os.path.join(dst_path('data'), '*')) if not os.path.isdir(p)]),
         ],
