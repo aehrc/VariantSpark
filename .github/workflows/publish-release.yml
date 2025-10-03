@@ -70,7 +70,7 @@ jobs:
           -Dfile=hail-is.jar \
           -DgroupId=au.csiro.aehrc.third.hail-is \
           -DartifactId=hail_2.12_3.1 \
-          -Dversion=0.2.74-20240126.014320-5 \
+          -Dversion=0.2.74 \
           -Dpackaging=jar \
           -DgeneratePom=true
       - name: Build with Maven
