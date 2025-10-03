@@ -110,7 +110,7 @@ jobs:
     runs-on: ubuntu-22.04
     environment:
       name: deploy
-    needs: [ deploy-pypi]
+    needs: [ deploy-pypi ]
     steps:
       - name: Create release
         id: create_release
