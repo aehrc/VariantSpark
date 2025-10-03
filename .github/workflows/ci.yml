@@ -63,6 +63,16 @@ jobs:
           if [ -f dev/dev-requirements.txt ]; then pip install -r dev/dev-requirements.txt; fi
       - name: Validate Python code
         run: pylint --max-line-length=140 python/varspark --rcfile python/pylintrc
+      - name: Pull in hail-is snapshot jar
+        run: |
+          curl -o hail-is.jar https://oss.sonatype.org/service/local/repositories/snapshots/content/au/csiro/aehrc/third/hail-is/hail_2.12_3.1/0.2.74-SNAPSHOT/hail_2.12_3.1-0.2.74-20240126.014320-5.jar
+          mvn install:install-file \
+          -Dfile=hail-is.jar \
+          -DgroupId=au.csiro.aehrc.third.hail-is \
+          -DartifactId=hail_2.12_3.1 \
+          -Dversion=0.2.74 \
+          -Dpackaging=jar \
+          -DgeneratePom=true
       - name: Build with Maven
         run: mvn -Dbuild.type=${BUILD_TYPE} -B package --file pom.xml
       - name: Test with pytest
