@@ -91,7 +91,7 @@ try https://variantspark.readthedocs.io/en/latest/getting_started.html
 	22_16053509_A_G	0.0004548314795407337
 
   ```
-  - python3.8 call compute_local_fdr.py  : `import varspark as vs`
+  - python3.8 call compute_local_fdr.py  : `import hail as hl; import varspark.hail as vshl`
    ```
 
 	   root@a874b29b622c:/app/VariantSpark# python3 compute_local_fdr.py         
