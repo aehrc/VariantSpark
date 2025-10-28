@@ -32,12 +32,15 @@ try https://variantspark.readthedocs.io/en/latest/getting_started.html
 	- variant-spark --spark --master 'local[*]' -- importance -if gitHub/VariantSpark/data/chr22_1000.vcf -ff gitHub/VariantSpark/data/chr22-labels.csv -fc 22_16050408 -v -rn 500 -rbs 20 -ro -sr 13
 - pip3 install --no-cache-dir -r /app/VariantSpark/requirements.txt # install python dependency
 
-## about pip install variant-spark
-- variant-spark_2.12-0.5.5-all.jar : installed by pip install variant-spark
-	- jar tf variant-spark_2.12-0.5.5-all.jar
-		- jar is included inside the python package: 
-		- /usr/local/lib/python3.8/dist-packages/varspark/jars/variant-spark_2.12-0.5.5-all.jar
+## pip install variant-spark
+- /usr/local/lib/python3.8/dist-packages/varspark is installed, includes
+	- /usr/local/lib/python3.8/dist-packages/varspark/jars/variant-spark_2.12-0.5.5-all.jar
 		- but this jar is not fat jar which didn't includes au.csiro.aehrc.third.hail-is
+ 	- /usr/local/lib/python3.8/dist-packages/varspark: from variant-spark-0.5.5.tar.gz/varspark
+- /usr/local/share/variant-spark/data/chr22*.vcf: from variant-spark-0.5.5.tar.gz/target/data
+- /usr/local/bin/jvariant-spark and variant-spark etc:  from variant-spark-0.5.5.tar.gz/target/bin
+    - 
+## p
 - hail-all-spark.jar : installed by pip3 install hail==0.2.74 inside the requirement.txt
 	 - is used by the Python hail package at runtime.
 	 - /usr/local/lib/python3.8/dist-packages/hail/backend/hail-all-spark.jar
