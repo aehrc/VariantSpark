@@ -13,9 +13,11 @@ try https://variantspark.readthedocs.io/en/latest/getting_started.html
 	pip3 show variant-spark # To find where variant-spark is installed 	
 ```
 - docker cp variantspark_script.py vsrun2:/app/VariantSpark/variantspark_script.py # copy file from local to docker
-- vs works without mvn install but only pip install inside docker container
-	- variant-spark importance -if gitHub/VariantSpark/data/chr22_1000.vcf -ff gitHub/VariantSpark/data/chr22-labels.csv -fc 22_16050408 -v -rn 500 -rbs 20 -ro -sr 13
+- vs works with only `pip install variant-spark`:
+  - `which variant-spark` # to find  https://github.com/aehrc/VariantSpark/tree/master/bin/variant-spark
+  -  to run scala importance don't need hail to be installed (no mvn install, no pip install hails)
 	```
+        root@16542009db87:/app/VariantSpark# variant-spark importance -if gitHub/VariantSpark/data/chr22_1000.vcf -ff gitHub/VariantSpark/data/chr22-labels.csv -fc 22_16050408 -v -rn 500 -rbs 20 -ro -sr 13
 		root@16542009db87:/app/VariantSpark# variant-spark importance -if gitHub/VariantSpark/data/chr22_1000.vcf -ff gitHub/VariantSpark/data/chr22-labels.csv -fc 22_16050408 -v -rn 500 -rbs 20 -ro -sr 13
 		25/10/27 08:41:06 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
 		log4j:WARN No appenders could be found for logger (au.csiro.variantspark.cli.ImportanceCmd).
@@ -29,13 +31,12 @@ try https://variantspark.readthedocs.io/en/latest/getting_started.html
 		22_16051480_T_C,17.593204808682323
 		...
 	```
-	- variant-spark --spark --master 'local[*]' -- importance -if gitHub/VariantSpark/data/chr22_1000.vcf -ff gitHub/VariantSpark/data/chr22-labels.csv -fc 22_16050408 -v -rn 500 -rbs 20 -ro -sr 13
-
-- `which variant-spark` # to find variant-spark bash script
-   - seek bash script: https://github.com/aehrc/VariantSpark/tree/master/bin/variant-spark
-   - it requires to set up spark
-     
+  - `python compute_local_fdr.py` failed with error "ModuleNotFoundError: No module named 'hail'"
+  - `python run_importance_chr22.py` failed with error "ModuleNotFoundError: No module named 'pyspark'"
+	     
 - pip3 install --no-cache-dir -r /app/VariantSpark/requirements.txt # install python dependency
+  - now hai and pyspark are installed in container: /usr/local/lib/python3.8/dist-packages/hail/
+  - now `python compute_local_fdr.py` and `python run_importance_chr22.py` works
 ## pip install variant-spark
 - it only install compulsary dependency like typecore, but not includes hail and payspark. 
 - /usr/local/lib/python3.8/dist-packages/varspark is installed, includes
