@@ -39,9 +39,9 @@ try https://variantspark.readthedocs.io/en/latest/getting_started.html
 		- /usr/local/lib/python3.8/dist-packages/varspark/jars/variant-spark_2.12-0.5.5-all.jar
 		- but this jar is not fat jar which didn't includes au.csiro.aehrc.third.hail-is
 - hail-all-spark.jar : installed by pip3 install hail==0.2.74 inside the requirement.txt
- - is used by the Python hail package at runtime.
- - /usr/local/lib/python3.8/dist-packages/hail/backend/hail-all-spark.jar
- - jar tf hail-all-spark.jar | grep hail | grep SparkBackend  
+	 - is used by the Python hail package at runtime.
+	 - /usr/local/lib/python3.8/dist-packages/hail/backend/hail-all-spark.jar
+	 - jar tf hail-all-spark.jar | grep hail | grep SparkBackend  
 
 - mvn install with hail
 	- Maven will try to download a JAR matching hail_2.12_3.1:0.2.74 from repo: au.csiro.aehrc.third.hail-is based on pom.xml
