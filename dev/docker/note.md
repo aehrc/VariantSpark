@@ -1,36 +1,36 @@
 
-# try https://variantspark.readthedocs.io/en/latest/getting_started.html
+try https://variantspark.readthedocs.io/en/latest/getting_started.html
 ## ask gpt to create dockerfile
 	- any python base image eg. FROM python:3.8, don't support openjdk package installation. 
 	- try ubuntu which set python 3.8 as default. 
 
 ## test it interactively locl
-	- docker build -t vsapp .
-	- docker run -it --name vsrun1 vsapp 
+- docker build -t vsapp .
+- docker run -it --name vsrun1 vsapp 
+```
+	python --version  # Should show Python 3.8.x
+	java -version  # Should show OpenJDK 8
+	pip3 show variant-spark # To find where variant-spark is installed 	
+```
+- docker cp variantspark_script.py vsrun2:/app/VariantSpark/variantspark_script.py # copy file from local to docker
+- vs works without mvn install but only pip install inside docker container
+	- variant-spark importance -if gitHub/VariantSpark/data/chr22_1000.vcf -ff gitHub/VariantSpark/data/chr22-labels.csv -fc 22_16050408 -v -rn 500 -rbs 20 -ro -sr 13
 	```
-		python --version  # Should show Python 3.8.x
-		java -version  # Should show OpenJDK 8
-		pip3 show variant-spark # To find where variant-spark is installed 	
+		root@16542009db87:/app/VariantSpark# variant-spark importance -if gitHub/VariantSpark/data/chr22_1000.vcf -ff gitHub/VariantSpark/data/chr22-labels.csv -fc 22_16050408 -v -rn 500 -rbs 20 -ro -sr 13
+		25/10/27 08:41:06 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+		log4j:WARN No appenders could be found for logger (au.csiro.variantspark.cli.ImportanceCmd).
+		...
+		Last build trees: 20, time: 779 ms, timePerTree: 38 ms
+		Finished trees: 500, current oobError: 0.016483516483516484, totalTime: 36.185 s,  avg timePerTree: 0.07237 s
+		Last build trees: 20, time: 675 ms, timePerTree: 33 ms
+		Random forest oob accuracy: 0.016483516483516484, took: 36.4 s
+		variable,importance
+		22_16050408_T_C,18.484457676767143
+		22_16051480_T_C,17.593204808682323
+		...
 	```
-	- docker cp variantspark_script.py vsrun2:/app/VariantSpark/variantspark_script.py # copy file from local to docker
-	- vs works without mvn install but only pip install inside docker container
-		- variant-spark importance -if gitHub/VariantSpark/data/chr22_1000.vcf -ff gitHub/VariantSpark/data/chr22-labels.csv -fc 22_16050408 -v -rn 500 -rbs 20 -ro -sr 13
-		```
-			root@16542009db87:/app/VariantSpark# variant-spark importance -if gitHub/VariantSpark/data/chr22_1000.vcf -ff gitHub/VariantSpark/data/chr22-labels.csv -fc 22_16050408 -v -rn 500 -rbs 20 -ro -sr 13
-			25/10/27 08:41:06 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
-			log4j:WARN No appenders could be found for logger (au.csiro.variantspark.cli.ImportanceCmd).
-			...
-			Last build trees: 20, time: 779 ms, timePerTree: 38 ms
-			Finished trees: 500, current oobError: 0.016483516483516484, totalTime: 36.185 s,  avg timePerTree: 0.07237 s
-			Last build trees: 20, time: 675 ms, timePerTree: 33 ms
-			Random forest oob accuracy: 0.016483516483516484, took: 36.4 s
-			variable,importance
-			22_16050408_T_C,18.484457676767143
-			22_16051480_T_C,17.593204808682323
-			...
-		```
-		- variant-spark --spark --master 'local[*]' -- importance -if gitHub/VariantSpark/data/chr22_1000.vcf -ff gitHub/VariantSpark/data/chr22-labels.csv -fc 22_16050408 -v -rn 500 -rbs 20 -ro -sr 13
-	- pip3 install --no-cache-dir -r /app/VariantSpark/requirements.txt # install python dependency
+	- variant-spark --spark --master 'local[*]' -- importance -if gitHub/VariantSpark/data/chr22_1000.vcf -ff gitHub/VariantSpark/data/chr22-labels.csv -fc 22_16050408 -v -rn 500 -rbs 20 -ro -sr 13
+- pip3 install --no-cache-dir -r /app/VariantSpark/requirements.txt # install python dependency
 
 ## about pip install variant-spark
 - variant-spark_2.12-0.5.5-all.jar : installed by pip install variant-spark
@@ -39,8 +39,9 @@
 		- /usr/local/lib/python3.8/dist-packages/varspark/jars/variant-spark_2.12-0.5.5-all.jar
 		- but this jar is not fat jar which didn't includes au.csiro.aehrc.third.hail-is
 - hail-all-spark.jar : installed by pip3 install hail==0.2.74 inside the requirement.txt
-	- is used by the Python hail package at runtime.
-	- jar tf hail-all-spark.jar | grep hail | grep SparkBackend  
+ - is used by the Python hail package at runtime.
+ - /usr/local/lib/python3.8/dist-packages/hail/backend/hail-all-spark.jar
+ - jar tf hail-all-spark.jar | grep hail | grep SparkBackend  
 
 - mvn install with hail
 	- Maven will try to download a JAR matching hail_2.12_3.1:0.2.74 from repo: au.csiro.aehrc.third.hail-is based on pom.xml
@@ -57,7 +58,7 @@
    - orginal from https://github.com/aehrc/VariantSpark/tree/master/bin/variant-spark
    - it requires to set up spark
 
-## 
+
 
 
 ## Docker Build on ARM vs. AMD64
