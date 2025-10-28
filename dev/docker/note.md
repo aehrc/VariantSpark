@@ -91,7 +91,7 @@ try https://variantspark.readthedocs.io/en/latest/getting_started.html
 	22_16053509_A_G	0.0004548314795407337
 
   ```
-  - python3.8 call compute_local_fdr.py  : `import hail as hl; import varspark.hail as vshl`
+  - python3.8 call compute_local_fdr.py  : `import hail as hl; import varspark.hail as vshl`, got all version conflict, due to `RUN pip install --no-cache-dir pyspark==3.1.1 "variant-spark[hail,deps]" hail==0.2.74` install lists of dependency under /usr/local/lib/python3.8/dist-packages/; all incorrect version
    ```
 
 	   root@a874b29b622c:/app/VariantSpark# python3 compute_local_fdr.py         
@@ -106,6 +106,7 @@ try https://variantspark.readthedocs.io/en/latest/getting_started.html
 	  File "/usr/local/lib/python3.8/dist-packages/hail/__init__.py", line 48, in <module>
 
    ```
+   - python3.8 call compute_local_fdr.py  after `pip install -r requirement.txt` to install correct verion. now `import hail as hl` working.
 
 ## Docker Build on ARM vs. AMD64
 - `docker build -t vsapp . ` on your Mac (with an ARM-based chip like M1/M2), Docker builds the image for the native architecture, which is linux/arm64.
