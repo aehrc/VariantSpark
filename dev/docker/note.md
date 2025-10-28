@@ -30,8 +30,12 @@ try https://variantspark.readthedocs.io/en/latest/getting_started.html
 		...
 	```
 	- variant-spark --spark --master 'local[*]' -- importance -if gitHub/VariantSpark/data/chr22_1000.vcf -ff gitHub/VariantSpark/data/chr22-labels.csv -fc 22_16050408 -v -rn 500 -rbs 20 -ro -sr 13
-- pip3 install --no-cache-dir -r /app/VariantSpark/requirements.txt # install python dependency
 
+- `which variant-spark` # to find variant-spark bash script
+   - seek bash script: https://github.com/aehrc/VariantSpark/tree/master/bin/variant-spark
+   - it requires to set up spark
+     
+- pip3 install --no-cache-dir -r /app/VariantSpark/requirements.txt # install python dependency
 ## pip install variant-spark
 - /usr/local/lib/python3.8/dist-packages/varspark is installed, includes
 	- /usr/local/lib/python3.8/dist-packages/varspark/jars/variant-spark_2.12-0.5.5-all.jar
@@ -39,14 +43,14 @@ try https://variantspark.readthedocs.io/en/latest/getting_started.html
  	- /usr/local/lib/python3.8/dist-packages/varspark: from variant-spark-0.5.5.tar.gz/varspark
 - /usr/local/share/variant-spark/data/chr22*.vcf: from variant-spark-0.5.5.tar.gz/target/data
 - /usr/local/bin/jvariant-spark and variant-spark etc:  from variant-spark-0.5.5.tar.gz/target/bin
-    - 
-## p
+
+## pip install hail==0.2.74
 - hail-all-spark.jar : installed by pip3 install hail==0.2.74 inside the requirement.txt
 	 - is used by the Python hail package at runtime.
 	 - /usr/local/lib/python3.8/dist-packages/hail/backend/hail-all-spark.jar
 	 - jar tf hail-all-spark.jar | grep hail | grep SparkBackend  
 
-- mvn install with hail
+## mvn install 
 	- Maven will try to download a JAR matching hail_2.12_3.1:0.2.74 from repo: au.csiro.aehrc.third.hail-is based on pom.xml
 	- the JAR is stored in your local Maven repository (~/.m2/repository/au/csiro/aehrc/third/hail-is/hail_2.12_3.1/0.2.74/).
 	 
@@ -57,9 +61,7 @@ try https://variantspark.readthedocs.io/en/latest/getting_started.html
 	- python: vshl.random_forest_model(...) calls scala RFModel.scala based on park classpath
 	- summary: python calls scala depend on hail-all-spark.jar but not mvn installed hails
 
-- which variant-spark # to find variant-spark bash script
-   - orginal from https://github.com/aehrc/VariantSpark/tree/master/bin/variant-spark
-   - it requires to set up spark
+
 
 
 
