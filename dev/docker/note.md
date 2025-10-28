@@ -37,6 +37,7 @@ try https://variantspark.readthedocs.io/en/latest/getting_started.html
      
 - pip3 install --no-cache-dir -r /app/VariantSpark/requirements.txt # install python dependency
 ## pip install variant-spark
+- it only install compulsary dependency like typecore, but not includes hail and payspark. 
 - /usr/local/lib/python3.8/dist-packages/varspark is installed, includes
 	- /usr/local/lib/python3.8/dist-packages/varspark/jars/variant-spark_2.12-0.5.5-all.jar
 		- but this jar is not fat jar which didn't includes au.csiro.aehrc.third.hail-is
