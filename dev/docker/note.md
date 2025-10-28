@@ -140,3 +140,4 @@ try https://variantspark.readthedocs.io/en/latest/getting_started.html
 	Required-by: variant-spark
 
 	```
+- try micromaba with python 3.7
