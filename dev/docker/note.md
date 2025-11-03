@@ -65,8 +65,48 @@ try https://variantspark.readthedocs.io/en/latest/getting_started.html
 
 
 
+## python 3.7 vs 3.8
+- Ubuntu 20.04 or older, or Debian, where Python 3.7 reached End of Life (EOL: June 2023) and was removed from repos
+- Ubuntu 20.04 contains python3.8 as default (python3).
+  - python3.8 with importance call : `import varspark as vs`
+  ```
+	  root@a874b29b622c:/app/VariantSpark# python3 run_importance_chr22.py 
+	25/10/28 13:47:17 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+	Using Spark's default log4j profile: org/apache/spark/log4j-defaults.properties
+	Setting default log level to "WARN".
+	To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+	Features loaded: <varspark.core.FeatureSource object at 0x7fffe9a84d30>
+	Labels loaded: au.csiro.variantspark.input.CsvLabelSource@47be15fa
+																					
+	Variable        Importance                                                      
+	22_16050408_T_C	0.0008041915634907004
+	22_16051480_T_C	0.0007654163908573393
+	22_16050678_C_T	0.0006921965571074235
+	22_16053197_G_T	0.00065148141258399
+	22_16053435_G_T	0.0006144056480311232
+	22_16051107_C_A	0.0006139653108376215
+	22_16051882_C_T	0.0005007281009782979
+	22_16053797_T_C	0.0004618498469961836
+	22_16052838_T_A	0.0004613601158382499
+	22_16053509_A_G	0.0004548314795407337
 
+  ```
+  - python3.8 call compute_local_fdr.py  : `import hail as hl; import varspark.hail as vshl`, got all version conflict, due to `RUN pip install --no-cache-dir pyspark==3.1.1 "variant-spark[hail,deps]" hail==0.2.74` install lists of dependency under /usr/local/lib/python3.8/dist-packages/; all incorrect version
+   ```
 
+	   root@a874b29b622c:/app/VariantSpark# python3 compute_local_fdr.py         
+	An error occurred: module 'importlib.metadata' has no attribute 'packages_distributions'
+	/usr/local/lib/python3.8/dist-packages/google/api_core/_python_version_support.py:237: FutureWarning: You are using a non-supported Python version (3.8.10). Google will not post any further updates to google.api_core supporting this Python version. Please upgrade to the latest Python version, or at least Python 3.10, and then update google.api_core.
+	  warnings.warn(message, FutureWarning)
+	/usr/local/lib/python3.8/dist-packages/scipy/__init__.py:138: UserWarning: A NumPy version >=1.16.5 and <1.23.0 is required for this version of SciPy (detected version 1.24.4)
+	  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion} is required for this version of "
+	Traceback (most recent call last):
+	  File "compute_local_fdr.py", line 1, in <module>
+	    import hail as hl
+	  File "/usr/local/lib/python3.8/dist-packages/hail/__init__.py", line 48, in <module>
+
+   ```
+   - python3.8 call compute_local_fdr.py  after `pip install -r requirement.txt` to install correct verion. now `import hail as hl` working.
 
 ## Docker Build on ARM vs. AMD64
 - `docker build -t vsapp . ` on your Mac (with an ARM-based chip like M1/M2), Docker builds the image for the native architecture, which is linux/arm64.
@@ -76,7 +116,6 @@ try https://variantspark.readthedocs.io/en/latest/getting_started.html
 - `uname -m` # shows x86_64 for AMD64; or aarch64 for ARM64
 
 
-# optimize dockerfile with two layout dockerfile
 
 # to do list
 - pip3 show variant-spark shows Version: 0.5.5 but author Piotr Szul et. al is wrong
@@ -85,7 +124,7 @@ try https://variantspark.readthedocs.io/en/latest/getting_started.html
   	from pyspark import SparkConf
 	ModuleNotFoundError: No module named 'pyspark'
   ```
-  - pip3 show Jinja2 pandas typedecorator hail pyspark scipy numpy patsy statsmodels seaborn # only typedecorator installed
+- pip3 show Jinja2 pandas typedecorator hail pyspark scipy numpy patsy statsmodels seaborn # only typedecorator installed
 	```
 	root@16542009db87:/app/VariantSpark# pip3 show Jinja2 pandas typedecorator hail pyspark scipy numpy patsy statsmodels seaborn
 	WARNING: Package(s) not found: Jinja2, hail, numpy, pandas, patsy, pyspark, scipy, seaborn, statsmodels
@@ -101,3 +140,4 @@ try https://variantspark.readthedocs.io/en/latest/getting_started.html
 	Required-by: variant-spark
 
 	```
+- try micromaba with python 3.7
