@@ -35,10 +35,11 @@ ENV PATH=$SPARK_HOME/bin:$PATH
 # ENV PYSPARK_DRIVER_PYTHON=python3.8
 
 # Install VariantSpark
-RUN pip3 install --no-cache-dir variant-spark
+RUN pip3 install --no-cache-dir variant-spark==0.5.5
 
 # Install matching PySpark + Hail
-RUN pip install --no-cache-dir pyspark==3.1.1 variant-spark hail==0.2.74 \
+RUN pip install --no-cache-dir pyspark==3.1.1 \
+hail==0.2.74 \
 Jinja2==3.0.3 \
 pandas==1.1.4 \
 typedecorator==0.0.5 \
@@ -50,7 +51,9 @@ seaborn==0.11.2 \
 chardet==3.0.4 \
 google-auth==1.35.0 \
 google-cloud-core==1.7.3 \
-google-cloud-storage==1.25.0 \
+google-cloud-storage==1.25.0 
+
+RUN pip install variant-spark==0.5.5
 
 # Clone the VariantSpark repository
 # RUN git clone https://github.com/aehrc/VariantSpark.git
