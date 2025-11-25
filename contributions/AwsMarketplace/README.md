@@ -2,7 +2,7 @@
 
 [Link to VariantSpark on Marketplace](https://aws.amazon.com/marketplace/pp/AEHRC-VariantSpark-Notebook/B07YVND4TD)
 
-Installing and configuring a computer cluster with all required software is a complicated and time-consuming task. The VariantSpark module on AWS Marketplace is made to simplify the process. It creates an AWS EMR computer cluster and provide user with the link to a Jupyter notebook, baked by the cluster. The cluster is preconfigured with VariantSpark and Hail installed and an example notebook to help you build your own pipeline. This document includes:
+Installing and configuring a computer cluster with all required software is a complicated and time-consuming task. The VariantSpark module on AWS Marketplace is made to simplify the process. It creates an AWS EMR computer cluster and provide user with the link to a Jupyter notebook, baked by the cluster. The cluster is preconfigured with VariantSpark installed and an example notebook to help you build your own pipeline. This document includes:
 
 - A detailed specification of what is created by this module is provided in _Specification_.
 - A step-by-step guide with screenshots is provided for user in _Step by Step Guide to Use VariantSpark Marketplace Module_.
@@ -51,7 +51,6 @@ The most up to date VariantSpark marketplace product uses **emr-5.27.0** with **
 - Install
   - Python 3.6 and relevant Python packages installed via conda
   - Jupyter Notebook
-  - Hail v0.2
   - VariantSpark
 - Initiate a Jupyter notebook server on port 8888 with no password.
 - Set the Jupyter notebook path to the corresponding S3 bucket
@@ -73,7 +72,7 @@ _Figure 1: VariantSpark AWS Marketplace_
 
 _Figure 2: Configure Marketplace_
 
-3. Select the AWS Region you would like to allocate resources in. Currently there are two version of this Marketplace product. The older version comes with Hail v0.1. Select the Software version and click &quot;Continue to Lunch&quot;
+3. Select the AWS Region you would like to allocate resources in. Currently there are two version of this Marketplace product.  Select the Software version and click &quot;Continue to Lunch&quot;
 
 ![](Figs/ss03-Region.png)
 
@@ -175,7 +174,7 @@ _Figure 18: S3 Bucket_
 
 _Figure 19: Jupyter Notebook_
 
-20. It contains the basic instruction how to use Hail and VariantSpark
+20. It contains the basic instruction how to use VariantSpark
 
 ![](Figs/ss18-Notebook.png)
 
