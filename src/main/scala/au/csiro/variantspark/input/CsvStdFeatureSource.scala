@@ -166,10 +166,18 @@ case class CsvStdFeatureSource[V](data: RDD[String],
   def featuresAs[T](implicit cr: DataBuilder[T]): RDD[Feature] = {
     val types = br_types.value
     val representationFactory = DefRepresentationFactory
-    transposedData.map {
+    transposedData.flatMap {
       case (varId, values) =>
-        val variableType = types.flatMap(_.get(varId)).getOrElse(defaultType)
-        StdFeature.from[T](varId, variableType, values.toList)
+        // If types are specified, only include variables in the type map
+        // Otherwise, use default type for all variables
+        types match {
+          case Some(typeMap) =>
+            typeMap.get(varId).map { variableType =>
+              StdFeature.from[T](varId, variableType, values.toList)
+            }
+          case None =>
+            Some(StdFeature.from[T](varId, defaultType, values.toList))
+        }
     }
   }
 }
