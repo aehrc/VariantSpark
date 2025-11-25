@@ -20,8 +20,8 @@ to create the two required roles (the template is untested at this moment).
 The two templates to create a VariantSpark cluster on AWS EMR
 service are:
 
-- `VariantSpark_Hail_EMR_Step.yaml` for processing "batch" jobs or steps, and
-- `VariantSpark_Hail_EMR_Notebook.yaml` for starting a cluster with a Jupyter notebook.
+- `VariantSpark_EMR_Step.yaml` for processing "batch" jobs or steps, and
+- `VariantSpark_EMR_Notebook.yaml` for starting a cluster with a Jupyter notebook.
 
 The first template provisions a cluster, runs a single step (VariantSpark
 job) and then terminates the cluster.

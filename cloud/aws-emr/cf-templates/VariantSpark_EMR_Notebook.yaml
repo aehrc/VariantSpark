@@ -152,23 +152,6 @@ Resources:
             - "--notebookPath"
             - Ref: NotebookDir
           Path: "s3://variant-spark/s3-bootstrap.sh"
-      - Name: Install Hail
-        ScriptBootstrapAction:
-          Args:
-            - "--path-prefix"
-            - !Sub
-              - "${repo}/raw/${version}"
-              - {repo: !FindInMap [Constants, GitHub, Repo], version: !FindInMap [Constants, GitHub, Version]}
-            - "--bootstrap-file"
-            - "/cloud/aws-emr/bootstrap/install-hail.sh"
-            - "--"
-            - "--input-path"
-            - "s3://variant-spark/HailJupyter/hail/0.1_2.2.1"
-            - "--hail-version"
-            - "0.1"
-            - "--spark-version"
-            - "2.2.1"
-          Path: "s3://variant-spark/s3-bootstrap.sh"
       Configurations:
       - Classification: emrfs-site
         ConfigurationProperties:
@@ -179,11 +162,11 @@ Resources:
       - Classification: spark-defaults
         ConfigurationProperties:
           spark.sql.files.openCostInBytes: '1099511627776'
-          spark.hadoop.io.compression.codecs: 'org.apache.hadoop.io.compress.DefaultCodec,is.hail.io.compress.BGzipCodec,org.apache.hadoop.io.compress.GzipCodec'
+          spark.hadoop.io.compression.codecs: 'org.apache.hadoop.io.compress.DefaultCodec,org.apache.hadoop.io.compress.GzipCodec'
           spark.hadoop.parquet.block.size: '1099511627776'
-          spark.executor.extraClassPath: '/usr/lib/hadoop-lzo/lib/*:/usr/lib/hadoop/hadoop-aws.jar:/usr/share/aws/aws-java-sdk/*:/usr/share/aws/emr/emrfs/conf:/usr/share/aws/emr/emrfs/lib/*:/usr/share/aws/emr/emrfs/auxlib/*:/usr/share/aws/emr/security/conf:/usr/share/aws/emr/security/lib/*:/home/hadoop/hail-all-spark.jar'
+          spark.executor.extraClassPath: '/usr/lib/hadoop-lzo/lib/*:/usr/lib/hadoop/hadoop-aws.jar:/usr/share/aws/aws-java-sdk/*:/usr/share/aws/emr/emrfs/conf:/usr/share/aws/emr/emrfs/lib/*:/usr/share/aws/emr/emrfs/auxlib/*:/usr/share/aws/emr/security/conf:/usr/share/aws/emr/security/lib/*'
           spark.locality.wait: '10s'
-          spark.driver.extraClassPath: '/usr/lib/hadoop-lzo/lib/*:/usr/lib/hadoop/hadoop-aws.jar:/usr/share/aws/aws-java-sdk/*:/usr/share/aws/emr/emrfs/conf:/usr/share/aws/emr/emrfs/lib/*:/usr/share/aws/emr/emrfs/auxlib/*:/usr/share/aws/emr/security/conf:/usr/share/aws/emr/security/lib/*:/home/hadoop/hail-all-spark.jar'
+          spark.driver.extraClassPath: '/usr/lib/hadoop-lzo/lib/*:/usr/lib/hadoop/hadoop-aws.jar:/usr/share/aws/aws-java-sdk/*:/usr/share/aws/emr/emrfs/conf:/usr/share/aws/emr/emrfs/lib/*:/usr/share/aws/emr/emrfs/auxlib/*:/usr/share/aws/emr/security/conf:/usr/share/aws/emr/security/lib/*'
           spark.serializer: 'org.apache.spark.serializer.KryoSerializer'
           spark.sql.files.maxPartitionBytes: '1099511627776'
           spark.dynamicAllocation.enabled: 'false'
