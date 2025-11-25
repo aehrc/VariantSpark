@@ -85,8 +85,7 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
 
   def loadVCF(): VCFFeatureSource = {
     echo(s"Loading header from VCF file: ${inputFile}")
-    val vcfSource =
-      VCFSource(sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
+    val vcfSource = VCFSource(sc, inputFile)
     verbose(s"VCF Version: ${vcfSource.version}")
     verbose(s"VCF Header: ${vcfSource.header}")
     VCFFeatureSource(vcfSource, imputationStrategy = "none")

@@ -22,7 +22,7 @@ class VcfToLabels extends ArgsApp with SparkApp {
   val limit: Int = 10
 
   override def run(): Unit = {
-    val vcfSource = VCFSource(sc.textFile(inputFile))
+    val vcfSource = VCFSource(sc, inputFile)
     val header = vcfSource.header
     val version = vcfSource.version
     println(header)

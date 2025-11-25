@@ -40,8 +40,11 @@ class VSContext(val spark: SparkSession) extends SqlContextHolder {
     */
   def importVCF(inputFile: String, imputationStrategy: String = "none",
       sparkPar: Int = 0): FeatureSource = {
-    val vcfSource =
-      VCFSource(sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism))
+    val vcfSource = if (sparkPar > 0) {
+      VCFSource(sc, inputFile, sparkPar)
+    } else {
+      VCFSource(sc, inputFile)
+    }
     VCFFeatureSource(vcfSource, imputationStrategy)
   }
 

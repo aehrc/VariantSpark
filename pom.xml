@@ -156,6 +156,11 @@
       <version>2.21.0</version>
     </dependency>
     <dependency>
+      <groupId>org.seqdoop</groupId>
+      <artifactId>hadoop-bam</artifactId>
+      <version>7.10.0</version>
+    </dependency>
+    <dependency>
       <groupId>joda-time</groupId>
       <artifactId>joda-time</artifactId>
       <version>2.7</version>
