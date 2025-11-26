@@ -2,7 +2,6 @@
 set -x -e
 
 INPUT_PATH=""
-HAIL_VERSION="0.1"
 SPARK_VERSION="2.2.1"
 IS_MASTER=false
 
@@ -16,10 +15,6 @@ while [ $# -gt 0 ]; do
     --input-path)
       shift
       INPUT_PATH=$1
-      ;;
-    --hail-version)
-      shift
-      HAIL_VERSION=$1
       ;;
     --spark-version)
       shift
@@ -46,8 +41,9 @@ done
 BUCKET=$(awk -v XX="$NotebookPath" 'BEGIN{x=substr(XX,6); split(x,a,"/"); print(a[1])}')
 PREFIX=$(awk -v XX="$NotebookPath" -v YY="$BUCKET" 'BEGIN{y=length(YY); print(substr(XX,7+y));}')
 
-wget "${PATH_PREFIX}/cloud/aws-emr/cf-templates/VariantSpark_example_with_Hail_library.ipynb"
-aws s3 cp VariantSpark_example_with_Hail_library.ipynb $NotebookPath/
+// TODO: Upload new example notebook when available
+// wget "${PATH_PREFIX}/cloud/aws-emr/cf-templates/deprecated_VariantSpark_example.ipynb"
+// aws s3 cp VariantSpark_example.ipynb $NotebookPath/
 
 upstart_jupyter() {
   sudo puppet apply << PUPPET_SCRIPT
@@ -63,7 +59,7 @@ upstart_jupyter() {
     script           => '
     sudo su - hadoop > /home/hadoop/jupyter.log 2>&1 <<BASH_SCRIPT
 export SPARK_HOME=/usr/lib/spark
-export PYTHONPATH=$PYTHONPATH:/home/hadoop/hail-python.zip
+export PYTHONPATH=$PYTHONPATH:
 /home/hadoop/miniconda2/envs/jupyter/bin/jupyter notebook
 BASH_SCRIPT
     ',
@@ -117,15 +113,6 @@ EOF
   "{connection_file}",
   "--ext=juspark"
  ]
-}
-EOF
-
-    # Setup profiles for juspark
-    mkdir -p ~/.juspark/profiles
-    cat > ~/.juspark/profiles/hail << EOF
-{
-    "spark.jars":"/home/hadoop/hail-all-spark.jar",
-    "spark.submit.pyFiles":"/home/hadoop/hail-python.zip"
 }
 EOF
 

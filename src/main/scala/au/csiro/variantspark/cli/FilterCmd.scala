@@ -29,8 +29,8 @@ class FilterCmd extends ArgsApp with TestArgs with SparkApp {
     implicit val fs: FileSystem = FileSystem.get(sc.hadoopConfiguration)
     logDebug(s"Running with filesystem: ${fs}, home: ${fs.getHomeDirectory}")
 
-    val vcfSource = VCFSource(sc.textFile(inputFile))
-    val source = VCFFeatureSource(vcfSource)
+    val vcfSource = VCFSource(sc, inputFile)
+    val source = VCFFeatureSource(vcfSource, imputationStrategy = "none")
     val features = source.features.zipWithIndex().cache()
     val featureCount = features.count()
     println(s"No features: ${featureCount}")

@@ -36,11 +36,20 @@ case class CsvFeatureSource(data: RDD[String], defaultType: VariableType = Conti
       val types = br_types.value
       it.filter(!_.equals(header))
         .map(csvParser.parseLine(_).get)
-        .map {
+        .flatMap {
           case label :: stringValues =>
-            val variableType = types.flatMap(_.get(label)).getOrElse(defaultType)
-            StdFeature(label, variableType,
-              representationFactory.createRepresentation(variableType, stringValues))
+            // If types are specified, only include variables in the type map
+            // Otherwise, use default type for all variables
+            types match {
+              case Some(typeMap) =>
+                typeMap.get(label).map { variableType =>
+                  StdFeature(label, variableType,
+                    representationFactory.createRepresentation(variableType, stringValues))
+                }
+              case None =>
+                Some(StdFeature(label, defaultType,
+                    representationFactory.createRepresentation(defaultType, stringValues)))
+            }
         }
     }
   }
@@ -67,9 +76,18 @@ case class CsvFeatureSource(data: RDD[String], defaultType: VariableType = Conti
       // format: off
       it.filter(!_.equals(header))
         .map(csvParser.parseLine(_).get)
-        .map(l => StdFeature.from[V](l.head,
-          types.flatMap(_.get(l.head)).getOrElse(defaultType),
-          l.tail))
+        .flatMap { l =>
+          // If types are specified, only include variables in the type map
+          // Otherwise, use default type for all variables
+          types match {
+            case Some(typeMap) =>
+              typeMap.get(l.head).map { variableType =>
+                StdFeature.from[V](l.head, variableType, l.tail)
+              }
+            case None =>
+              Some(StdFeature.from[V](l.head, defaultType, l.tail))
+          }
+        }
         // format: on
     }
   }

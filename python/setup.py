@@ -107,9 +107,6 @@ try:
             ],
             'test': [
                 'pyspark>=3.1.0',
-            ],
-            'hail': [
-                'hail>=0.2.74',
             ]
         },
         include_package_data=True,

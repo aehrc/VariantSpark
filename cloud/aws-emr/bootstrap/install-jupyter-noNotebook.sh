@@ -2,7 +2,6 @@
 set -x -e
 
 INPUT_PATH=""
-HAIL_VERSION="0.1"
 SPARK_VERSION="2.2.1"
 IS_MASTER=false
 
@@ -16,10 +15,6 @@ while [ $# -gt 0 ]; do
     --input-path)
       shift
       INPUT_PATH=$1
-      ;;
-    --hail-version)
-      shift
-      HAIL_VERSION=$1
       ;;
     --spark-version)
       shift

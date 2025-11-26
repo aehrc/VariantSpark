@@ -11,9 +11,9 @@ A more detailed explanation can be found at the [manuscript](https://www.biorxiv
 
 python==3.8.12\
 numpy==1.21.2 \
-pandas==1.4.1 \
+pandas==1.1.4 \
 patsy==0.5.2 \
-scipy==1.7.3\
+scipy==1.6.3\
 statsmodels==0.13.2
 
 ## Usage
@@ -34,18 +34,15 @@ However, this method is also integrated with VariantSpark. This enables the p-va
 with a single function call. Training a model, calculating the p-values, and getting them can be done 
 in few lines of code using VariantSpark as shown in the following snippet: 
 
+        vc = vs.VarsparkContext(spark, silent=True)
+        features = vc.import_vcf(os.path.join(PROJECT_DIR, 'data/chr22_1000.vcf'))
+        labels = vc.load_label(os.path.join(PROJECT_DIR, 'data/chr22-labels.csv'), '22_16050408')
 
-        vds = hl.import_vcf(os.path.join(PROJECT_DIR, 'data/chr22_1000.vcf'))
-        labels = hl.import_table(os.path.join(PROJECT_DIR, 'data/chr22-labels-hail.csv'),
-                                 impute=True, delimiter=",").key_by('sample')
-
-        vds = vds.annotate_cols(label=labels[vds.s])
-        rf_model = vshl.random_forest_model(y=vds.label['x22_16050408'], x=vds.GT.n_alt_alleles(),
-                                            seed=13, mtry_fraction=0.05, min_node_size=5,
+        rf_model = vs.RandomForestModel(vc, seed=13, mtry_fraction=0.05, min_node_size=5,
                                             max_depth=10)
-        rf_model.fit_trees(100, 50)
-
-        significant_variants = rf_model.get_significant_variances()
+        rf_model.fit_trees(features, labels, 100, 50)
+        fdrCalc = rf_model.get_lfdr()
+        
 
 Notes: If you wish to use the VariantSpark implementation please consider reading more about the 
 tool [here](https://github.com/aehrc/VariantSpark/blob/master/README.md) and [here](https://github.com/aehrc/VariantSpark/blob/master/python/README.md).
