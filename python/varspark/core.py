@@ -56,10 +56,15 @@ class VarsparkContext(object):
                 "                                      /_/                         \n"
             )
 
-    @params(self=object, vcf_file_path=str, imputation_strategy=Nullable(str), spark_par=Nullable(int))
+    @params(
+        self=object,
+        vcf_file_path=str,
+        imputation_strategy=Nullable(str),
+        spark_par=Nullable(int),
+    )
     def import_vcf(self, vcf_file_path, imputation_strategy="none", spark_par=0):
         """Import features from a VCF file.
-        
+
         :param vcf_file_path String: The file path for the vcf file to import
         :param imputation_strategy String:
             The imputation strategy to use. Options for imputation include:
@@ -70,7 +75,9 @@ class VarsparkContext(object):
         :param spark_par Int: Number of spark partitions to use when reading the input VCF
         """
         if imputation_strategy == "none":
-            print("WARNING: Imputation strategy is set to none - please ensure that there are no missing values in the data.")
+            print(
+                "WARNING: Imputation strategy is set to none - please ensure that there are no missing values in the data."
+            )
         return FeatureSource(
             self._jvm,
             self._vs_api,
@@ -111,9 +118,9 @@ class VarsparkContext(object):
         else:
             _jctypes = None
         if transposed:
-            _jcs = self._jvsc.importTransposedCSV(cov_file_path, cov_types_list)
+            _jcs = self._jvsc.importTransposedCSV(cov_file_path, _jctypes)
         else:
-            _jcs = self._jvsc.importStdCSV(cov_file_path, cov_types_list)
+            _jcs = self._jvsc.importStdCSV(cov_file_path, _jctypes)
         return FeatureSource(
             self._jvm,
             self._vs_api,
