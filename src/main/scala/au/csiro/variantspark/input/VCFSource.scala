@@ -6,6 +6,7 @@ import htsjdk.variant.variantcontext.VariantContext
 import htsjdk.variant.vcf.{VCFCodec, VCFHeader, VCFHeaderVersion}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import au.csiro.variantspark.utils.BGZLoader
 
 class DelegatingLineIterator(val it: Iterator[String])
     extends AbstractIterator[String] with LineIterator {
@@ -37,12 +38,13 @@ class VCFSource(val lines: RDD[String], val headerLines: Int = 500) {
 }
 
 object VCFSource {
-
   def apply(lines: RDD[String], headerLines: Int = 500): VCFSource =
     new VCFSource(lines, headerLines)
   def apply(sc: SparkContext, fileName: String, headerLines: Int): VCFSource =
-    apply(sc.textFile(fileName), headerLines)
-  def apply(sc: SparkContext, fileName: String): VCFSource = apply(sc.textFile(fileName))
+    apply(BGZLoader.textFile(sc, fileName), headerLines)
+  def apply(sc: SparkContext, fileName: String): VCFSource = {
+    apply(BGZLoader.textFile(sc, fileName))
+  }
 
   private def computeGenotypes(lines: RDD[String], headerAndVersion: HeaderAndVersion) = {
     val br_headerAndVersion = lines.context.broadcast(headerAndVersion)

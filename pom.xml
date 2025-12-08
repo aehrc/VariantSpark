@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>au.csiro.aehrc.variant-spark</groupId>
   <artifactId>variant-spark_2.12</artifactId>
-  <version>0.5.3-SNAPSHOT</version>
+  <version>0.5.4</version>
   <packaging>jar</packaging>
 
   <name>variant-spark</name>
@@ -88,7 +88,6 @@
     <scalafmt.onlyChangedFiles>false</scalafmt.onlyChangedFiles>
     <sonata.autorelease>true</sonata.autorelease>
     <CodeCacheSize>1g</CodeCacheSize>
-    <hail.version>0.2.116</hail.version>
     <skipTests>false</skipTests>
     <build.type>devel</build.type>
   </properties>
@@ -157,6 +156,11 @@
       <version>2.21.0</version>
     </dependency>
     <dependency>
+      <groupId>org.seqdoop</groupId>
+      <artifactId>hadoop-bam</artifactId>
+      <version>7.10.0</version>
+    </dependency>
+    <dependency>
       <groupId>joda-time</groupId>
       <artifactId>joda-time</artifactId>
       <version>2.7</version>
@@ -218,20 +222,6 @@
       <artifactId>asm-analysis</artifactId>
       <version>5.1</version>
       <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>au.csiro.aehrc.third.hail-is</groupId>
-      <artifactId>hail_${scala.binary.version}_${spark.binary.version}</artifactId>
-      <version>${hail.version}-SNAPSHOT</version>
-      <!--classifier>all</classifier-->
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>au.csiro.aehrc.third.hail-is</groupId>
-      <artifactId>hail_${scala.binary.version}_${spark.binary.version}</artifactId>
-      <version>${hail.version}-SNAPSHOT</version>
-      <classifier>all</classifier>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -366,14 +356,6 @@
             <transformer
               implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
           </transformers>
-          <relocations>
-            <relocation>
-              <!-- Relocate fastutils due to a conflict with an older version used with hail 0.2.61
-                fastutils:6.2.2  from com.indeed.lsmtree-core: 1.0.7=-->
-              <pattern>it.unimi.dsi.fastutil</pattern>
-              <shadedPattern>it.shaded.dsi.fastutil</shadedPattern>
-            </relocation>
-          </relocations>
         </configuration>
       </plugin>
       <plugin>

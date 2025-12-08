@@ -26,8 +26,8 @@ object VCFFeatureSourceFactory {
   val DEF_SEPARATOR: String = "_"
 }
 
-case class VCFFeatureSourceFactory(inputFile: String, isBiallelic: Option[Boolean],
-    separator: Option[String])
+case class VCFFeatureSourceFactory(inputFile: String, imputationStrategy: Option[String],
+    isBiallelic: Option[Boolean], separator: Option[String])
     extends FeatureSourceFactory with Echoable {
   def createSource(sparkArgs: SparkArgs): FeatureSource = {
     echo(s"Loading header from VCF file: ${inputFile}")
@@ -36,8 +36,8 @@ case class VCFFeatureSourceFactory(inputFile: String, isBiallelic: Option[Boolea
     verbose(s"VCF Header: ${vcfSource.header}")
 
     import VCFFeatureSourceFactory._
-    VCFFeatureSource(vcfSource, isBiallelic.getOrElse(DEF_IS_BIALLELIC),
-      separator.getOrElse(DEF_SEPARATOR))
+    VCFFeatureSource(vcfSource, imputationStrategy.getOrElse("none"),
+      isBiallelic.getOrElse(DEF_IS_BIALLELIC), separator.getOrElse(DEF_SEPARATOR))
   }
 }
 

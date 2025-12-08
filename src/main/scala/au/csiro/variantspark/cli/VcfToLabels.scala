@@ -22,12 +22,12 @@ class VcfToLabels extends ArgsApp with SparkApp {
   val limit: Int = 10
 
   override def run(): Unit = {
-    val vcfSource = VCFSource(sc.textFile(inputFile))
+    val vcfSource = VCFSource(sc, inputFile)
     val header = vcfSource.header
     val version = vcfSource.version
     println(header)
     println(version)
-    val source = VCFFeatureSource(vcfSource)
+    val source = VCFFeatureSource(vcfSource, imputationStrategy = "none")
     val columns = source.features.take(limit)
     CSVUtils.withFile(new File(outputFile)) { writer =>
       writer.writeRow("" :: columns.map(_.label).toList)

@@ -2,6 +2,7 @@ package au.csiro.variantspark.cli.args
 
 import org.kohsuke.args4j.Option
 import au.csiro.pbdava.ssparkle.spark.SparkApp
+import au.csiro.variantspark.utils.BGZLoader
 import org.apache.spark.rdd.RDD
 
 trait SparkArgs extends SparkApp {
@@ -10,7 +11,7 @@ trait SparkArgs extends SparkApp {
     aliases = Array("--spark-par"))
   val sparkPar: Int = 0
 
-  def textFile(inputFile: String): RDD[String] =
-    sc.textFile(inputFile, if (sparkPar > 0) sparkPar else sc.defaultParallelism)
-
+  def textFile(inputFile: String): RDD[String] = {
+    BGZLoader.textFile(sc, inputFile)
+  }
 }
