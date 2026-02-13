@@ -4,10 +4,17 @@ from pyspark import SparkConf
 from pyspark.sql import SQLContext
 from typedecorator import params, Nullable, setup_typecheck
 
-from varspark import java
 from varspark.etc import find_jar
 from varspark.featuresource import FeatureSource
 
+
+def configure_spark(builder):
+    """Applies recommended Kryo registrator for VariantSpark.
+    """
+    return builder \
+        .config('spark.serializer', 'org.apache.spark.serializer.KryoSerializer') \
+        .config('spark.kryo.registrator', 'au.csiro.variantspark.spark.VariantSparkKryoRegistrator') \
+        .config('spark.kryo.registrationRequired', 'false')
 
 class VarsparkContext(object):
     """The main entry point for VariantSpark functionality."""

@@ -59,6 +59,8 @@ dist
 _build
 spark-warehouse
 .*.crc
+.metals
+.vscode
 
 
 

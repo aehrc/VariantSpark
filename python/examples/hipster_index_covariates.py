@@ -15,7 +15,9 @@ PROJECT_DIR = os.path.abspath(
 
 
 def main():
-    spark = SparkSession.builder.config("spark.jars", vs.find_jar()).getOrCreate()
+    spark = vs.configure_spark(
+        SparkSession.builder.config("spark.jars", vs.find_jar())
+    ).getOrCreate()
     vc = vs.VarsparkContext(spark)
 
     genotypes = vc.import_vcf(
