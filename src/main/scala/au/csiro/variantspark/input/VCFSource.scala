@@ -78,11 +78,11 @@ object VCFSource {
     if (isBGZ) {
       // For BGZ files, use byte-based parsing for memory efficiency
       val data = BGZLoader.bytesFile(sc, fileName)
-      new VCFSource(Some(data), None, headerLines, None, numPartitions)
+      new VCFSource(Some(data), None, headerLines, numPartitions)
     } else {
       // For non-BGZ files, use String-based parsing to avoid wasteful conversions
       val data = BGZLoader.textFile(sc, fileName)
-      new VCFSource(None, Some(data), headerLines, None, numPartitions)
+      new VCFSource(None, Some(data), headerLines, numPartitions)
     }
   }
 
