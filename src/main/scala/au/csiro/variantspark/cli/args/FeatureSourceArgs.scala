@@ -31,7 +31,7 @@ case class VCFFeatureSourceFactory(inputFile: String, imputationStrategy: Option
     extends FeatureSourceFactory with Echoable {
   def createSource(sparkArgs: SparkArgs): FeatureSource = {
     echo(s"Loading header from VCF file: ${inputFile}")
-    val vcfSource = VCFSource(sparkArgs.textFile(inputFile))
+    val vcfSource = VCFSource(sparkArgs.sc, inputFile)
     verbose(s"VCF Version: ${vcfSource.version}")
     verbose(s"VCF Header: ${vcfSource.header}")
 
