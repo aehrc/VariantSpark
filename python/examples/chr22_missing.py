@@ -11,7 +11,9 @@ from pyspark.sql import SparkSession
 PROJECT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
 
 def main():
-    spark = SparkSession.builder.config('spark.jars', vs.find_jar()).getOrCreate()
+    spark = vs.configure_spark(
+        SparkSession.builder.config('spark.jars', vs.find_jar())
+    ).getOrCreate()
     vc = vs.VarsparkContext(spark)
 
     data = vc.import_vcf(os.path.join(PROJECT_DIR, 'data/chr22_1000_missing.vcf'), imputation_strategy="mode")
