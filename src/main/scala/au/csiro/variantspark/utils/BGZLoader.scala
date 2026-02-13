@@ -17,7 +17,7 @@ object BGZLoader {
       val existingCodecs =
         Option(conf.getStrings("io.compression.codecs")).getOrElse(Array.empty[String])
       if (!existingCodecs.contains(bgzfCodec)) {
-        conf.setStrings("io.compression.codecs", (existingCodecs :+ bgzfCodec): _*)
+        conf.setStrings("io.compression.codecs", (bgzfCodec +: existingCodecs): _*)
       }
       sc.newAPIHadoopFile[LongWritable, Text, TextInputFormat](inputFile,
           classOf[TextInputFormat], classOf[LongWritable], classOf[Text], conf)
