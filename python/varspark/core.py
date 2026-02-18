@@ -68,9 +68,8 @@ class VarsparkContext(object):
         vcf_file_path=str,
         imputation_strategy=Nullable(str),
         spark_par=Nullable(int),
-        header_lines=Nullable(int),
     )
-    def import_vcf(self, vcf_file_path, imputation_strategy="none", spark_par=0, header_lines=500):
+    def import_vcf(self, vcf_file_path, imputation_strategy="none", spark_par=0):
         """Import features from a VCF file.
 
         :param vcf_file_path String: The file path for the vcf file to import
@@ -81,7 +80,6 @@ class VarsparkContext(object):
             - mode: Missing values will be replaced with the most commonly occuring value among that feature. Recommended option
             - zeros: Missing values will be replaced with zeros. Faster than mode imputation
         :param spark_par Int: Number of spark partitions to use when reading the input VCF
-        :param header_lines: Number of lines in the header (defaults to 500)
         """
         if imputation_strategy == "none":
             print(
@@ -92,7 +90,7 @@ class VarsparkContext(object):
             self._vs_api,
             self._jsql,
             self.sql,
-            self._jvsc.importVCF(vcf_file_path, imputation_strategy, spark_par, header_lines),
+            self._jvsc.importVCF(vcf_file_path, imputation_strategy, spark_par),
         )
 
     @params(

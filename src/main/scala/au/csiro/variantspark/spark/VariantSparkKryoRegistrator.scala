@@ -2,6 +2,7 @@ package au.csiro.variantspark.spark
 
 import com.esotericsoftware.kryo.Kryo
 import org.apache.spark.serializer.KryoRegistrator
+import htsjdk.variant.variantcontext.VariantContext
 
 /**
   * Kryo registrator for VariantSpark classes.
@@ -15,7 +16,7 @@ class VariantSparkKryoRegistrator extends KryoRegistrator {
   override def registerClasses(kryo: Kryo): Unit = {
 
     // === Input/VCF classes ===
-    kryo.register(classOf[au.csiro.variantspark.input.Variant])
+    kryo.register(classOf[htsjdk.variant.variantcontext.VariantContext])
     kryo.register(classOf[au.csiro.variantspark.input.HeaderAndVersion])
     kryo.register(classOf[au.csiro.variantspark.input.DefVariantToFeatureConverter])
     kryo.register(classOf[au.csiro.variantspark.input.ModeImputationStrategy])
@@ -76,7 +77,7 @@ class VariantSparkKryoRegistrator extends KryoRegistrator {
     kryo.register(classOf[Array[Array[Double]]])
 
     // === Array of VariantSpark types ===
-    kryo.register(classOf[Array[au.csiro.variantspark.input.Variant]])
+    kryo.register(classOf[Array[htsjdk.variant.variantcontext.VariantContext]])
     kryo.register(classOf[Array[au.csiro.variantspark.data.StdFeature]])
     kryo.register(classOf[Array[au.csiro.variantspark.algo.RandomForestMember]])
 
