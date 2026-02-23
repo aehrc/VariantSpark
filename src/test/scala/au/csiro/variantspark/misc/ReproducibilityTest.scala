@@ -28,12 +28,16 @@ class ReproducibilityTest extends SparkTest {
     val features = vsContext.importVCF("data/chr22_1000.vcf")
     val label = vsContext.loadLabel("data/chr22-labels.csv", "22_16051249")
     val params = RandomForestParams(seed = 13L)
-    val rfModel1 = RFModelTrainer.trainModel(features, label, params, 40, 20)
-    val impAnalysis1 = new ImportanceAnalysis(sqlContext, features, rfModel1)
+    val trainResult1 = RFModelTrainer.trainModel(features, label, params, 40, 20)
+    val impAnalysis1 =
+      new ImportanceAnalysis(sqlContext, trainResult1.model, trainResult1.indexedFeatures)
     val topVariables1 = impAnalysis1.importantVariables(20, false)
-    val rfModel2 = RFModelTrainer.trainModel(features, label, params, 40, 20)
-    val impAnalysis2 = new ImportanceAnalysis(sqlContext, features, rfModel2)
+    trainResult1.releaseIndexedData()
+    val trainResult2 = RFModelTrainer.trainModel(features, label, params, 40, 20)
+    val impAnalysis2 =
+      new ImportanceAnalysis(sqlContext, trainResult2.model, trainResult2.indexedFeatures)
     val topVariables2 = impAnalysis2.importantVariables(20, false)
+    trainResult2.releaseIndexedData()
     topVariables1.zip(topVariables2).foreach { p => assertEquals(p._1, p._2) }
   }
 }
