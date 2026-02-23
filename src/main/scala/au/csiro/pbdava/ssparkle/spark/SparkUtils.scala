@@ -12,7 +12,7 @@ object SparkUtils {
     val manageCaching = rdd.getStorageLevel == StorageLevel.NONE
     try {
       if (manageCaching) {
-        rdd.persist()
+        rdd.persist(StorageLevel.MEMORY_AND_DISK)
       }
       f(rdd)
     } finally {
