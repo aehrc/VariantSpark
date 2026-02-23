@@ -21,23 +21,15 @@ trait FeatureSourceFactory {
   def createSource(sparkArgs: SparkArgs): FeatureSource
 }
 
-object VCFFeatureSourceFactory {
-  val DEF_IS_BIALLELIC: Boolean = false
-  val DEF_SEPARATOR: String = "_"
-}
-
-case class VCFFeatureSourceFactory(inputFile: String, imputationStrategy: Option[String],
-    isBiallelic: Option[Boolean], separator: Option[String])
+case class VCFFeatureSourceFactory(inputFile: String, imputationStrategy: Option[String])
     extends FeatureSourceFactory with Echoable {
   def createSource(sparkArgs: SparkArgs): FeatureSource = {
     echo(s"Loading header from VCF file: ${inputFile}")
-    val vcfSource = VCFSource(sparkArgs.textFile(inputFile))
+    val vcfSource = VCFSource(sparkArgs.sc, inputFile)
     verbose(s"VCF Version: ${vcfSource.version}")
     verbose(s"VCF Header: ${vcfSource.header}")
 
-    import VCFFeatureSourceFactory._
-    VCFFeatureSource(vcfSource, imputationStrategy.getOrElse("none"),
-      isBiallelic.getOrElse(DEF_IS_BIALLELIC), separator.getOrElse(DEF_SEPARATOR))
+    VCFFeatureSource(vcfSource, imputationStrategy.getOrElse("none"))
   }
 }
 
