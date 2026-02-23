@@ -38,7 +38,7 @@ class VSContext(val spark: SparkSession) extends SqlContextHolder {
     * @param inputFile path to file or directory with VCF files to load
     * @return FeatureSource loaded from the VCF file
     */
-  def importVCF(inputFile: String, imputationStrategy: String = "none", sparkPar: Int = 0,
+  def importVCF(inputFile: String, imputationStrategy: String = "none", nPartitions: Int = 0,
       headerLines: Int = 500): FeatureSource = {
     val vcfSource = VCFSource(sc, inputFile, nPartitions, headerLines)
     VCFFeatureSource(vcfSource, imputationStrategy)

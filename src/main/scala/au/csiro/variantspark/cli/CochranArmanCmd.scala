@@ -77,7 +77,7 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
 
   @Option(name = "-sp", required = false, usage = "Spark parallelism (def=<default-spark-par>)",
     aliases = Array("--spark-par"))
-  val sparkPar: Int = 0
+  val nPartitions: Int = 0
 
   override def testArgs: Array[String] =
     Array("-if", "target/getds.parquet", "-it", "parquet", "-ff", "target/features.csv", "-fc",
@@ -94,7 +94,7 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
   def loadCSV(): CsvFeatureSource = {
     echo(s"Loading csv file: ${inputFile}")
     CsvFeatureSource(sc.textFile(inputFile,
-        if (sparkPar > 0) sparkPar else sc.defaultParallelism))
+        if (nPartitions > 0) nPartitions else sc.defaultParallelism))
   }
 
   def loadParquet(): ParquetFeatureSource = {

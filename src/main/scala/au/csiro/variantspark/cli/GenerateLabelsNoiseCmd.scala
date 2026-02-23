@@ -108,7 +108,7 @@ class GenerateLabelsNoiseCmd
   // spark related
   @Option(name = "-sp", required = false, usage = "Spark parallelism (def=<default-spark-par>)",
     aliases = Array("--spark-par"))
-  val sparkPar: Int = 0
+  val nPartitions: Int = 0
 
   override def testArgs: Array[String] =
     Array("-if", "target/getds.parquet", "-sp", "4", "-ff", "target/features.csv", "-fc", "resp",
@@ -127,7 +127,7 @@ class GenerateLabelsNoiseCmd
       effectsDef.asScala.map(_.split(":")).map { case Array(v, e) => (v, e.toDouble) }.toMap
     echo(s"Effects: ${effects}")
 
-    verbose(s"Random seed is: ${randomSeed}, sparkPar is: ${sparkPar}")
+    verbose(s"Random seed is: ${randomSeed}, nPartitions is: ${nPartitions}")
 
     echo(s"Loading parquet file: ${inputFile}")
     val featureSource = ParquetFeatureSource(inputFile)

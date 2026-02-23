@@ -9,7 +9,7 @@ trait SparkArgs extends SparkApp {
 
   @Option(name = "-sp", required = false, usage = "Spark parallelism (def=<default-spark-par>)",
     aliases = Array("--spark-par"))
-  val sparkPar: Int = 0
+  val nPartitions: Int = 0
 
   def textFile(inputFile: String): RDD[String] = {
     BGZLoader.textFile(sc, inputFile)

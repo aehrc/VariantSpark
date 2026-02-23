@@ -58,7 +58,7 @@ class GenerateFeaturesCmd extends ArgsApp with SparkApp with Echoable with Loggi
 
   @Option(name = "-sp", required = false, usage = "Spark parallelism (def=<default-spark-par>)",
     aliases = Array("--spark-par"))
-  val sparkPar: Int = 0
+  val nPartitions: Int = 0
 
   override def testArgs: Array[String] = Array("-of", "target/getds.parquet", "-sp", "4")
 
@@ -70,7 +70,7 @@ class GenerateFeaturesCmd extends ArgsApp with SparkApp with Echoable with Loggi
     verbose(s"Random seed is: ${randomSeed}")
 
     val generator = OrdinalFeatureGenerator(nLevels = nLevels, nSamples = nSamples,
-      nVariables = nVariables, seed = randomSeed, sparkPar = sparkPar)
+      nVariables = nVariables, seed = randomSeed, nPartitions = nPartitions)
 
     echo(s"Saving output to ${outputFile}")
     val sink = new ParquetFeatureSink(outputFile)

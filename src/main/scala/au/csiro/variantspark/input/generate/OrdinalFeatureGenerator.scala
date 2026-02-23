@@ -11,7 +11,7 @@ import au.csiro.variantspark.data.BoundedOrdinalVariable
 import au.csiro.variantspark.data.Feature
 
 case class OrdinalFeatureGenerator(nLevels: Int, nVariables: Long, nSamples: Int,
-    seed: Long = 13L, sparkPar: Int = 0)(implicit sc: SparkContext)
+    seed: Long = 13L, nPartitions: Int = 0)(implicit sc: SparkContext)
     extends FeatureSource {
 
   def features: RDD[Feature] = {
@@ -19,7 +19,8 @@ case class OrdinalFeatureGenerator(nLevels: Int, nVariables: Long, nSamples: Int
     val nSamples = this.nSamples
     val seed = this.seed
     // TODO (Feature): Honor parallelism
-    sc.range(0L, nVariables, numSlices = if (sparkPar > 0) sparkPar else sc.defaultParallelism)
+    sc.range(0L, nVariables,
+        numSlices = if (nPartitions > 0) nPartitions else sc.defaultParallelism)
       .mapPartitionsWithIndex {
         case (pi, iter) =>
           implicit val rf: XorShift1024StarRandomGenerator =
