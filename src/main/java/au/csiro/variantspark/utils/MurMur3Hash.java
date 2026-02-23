@@ -31,6 +31,41 @@ public final class MurMur3Hash {
 		return fmix(h1, Longs.BYTES);
 	}
 
+	public static int hashString(String input) {
+		return hashString(input, 0);
+	}
+
+	public static int hashString(String input, int seed) {
+		byte[] bytes = input.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+		int h1 = seed;
+		int i = 0;
+
+		// Process 4 bytes at a time
+		for (; i + 3 < bytes.length; i += 4) {
+			int k1 = (bytes[i] & 0xFF)
+				| ((bytes[i + 1] & 0xFF) << 8)
+				| ((bytes[i + 2] & 0xFF) << 16)
+				| ((bytes[i + 3] & 0xFF) << 24);
+			h1 = mixH1(h1, mixK1(k1));
+		}
+
+		// Handle remaining bytes
+		int k1 = 0;
+		switch (bytes.length - i) {
+			case 3:
+				k1 ^= (bytes[i + 2] & 0xFF) << 16;
+				// fall through
+			case 2:
+				k1 ^= (bytes[i + 1] & 0xFF) << 8;
+				// fall through
+			case 1:
+				k1 ^= (bytes[i] & 0xFF);
+				h1 = mixH1(h1, mixK1(k1));
+		}
+
+		return fmix(h1, bytes.length);
+	}
+
 	private static int mixK1(int k1) {
 		k1 *= C1;
 		k1 = Integer.rotateLeft(k1, 15);
