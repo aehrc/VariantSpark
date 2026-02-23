@@ -23,8 +23,17 @@ import scala.collection.mutable.ListBuffer
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap
 import scala.collection.JavaConverters._
 
-class ExportModel(rfModel: RandomForestModel, featureSource: FeatureSource) {
-  val sc: SparkContext = featureSource.features.sparkContext
+class ExportModel(rfModel: RandomForestModel,
+    indexedFeatures: RDD[(au.csiro.variantspark.data.Feature, Long)]) {
+  val sc: SparkContext = indexedFeatures.sparkContext
+
+  /** Secondary constructor for backward compatibility.
+    * Uses FeatureIndexer to deterministically index features.
+    * Prefer the primary constructor with pre-indexed data from TrainResult.
+    */
+  def this(rfModel: RandomForestModel, featureSource: FeatureSource) = {
+    this(rfModel, FeatureIndexer.index(featureSource.features))
+  }
 
   private lazy val br_variableImportance = {
     val indexImportance = rfModel.variableImportance
@@ -36,7 +45,7 @@ class ExportModel(rfModel: RandomForestModel, featureSource: FeatureSource) {
   def toJson(jsonFilename: String, resolveVarNames: Boolean, batchSize: Int): Unit = {
     println(s"Saving model")
     val inputData: RDD[TreeFeature] =
-      DefTreeRepresentationFactory.createRepresentation(featureSource.features.zipWithIndex())
+      DefTreeRepresentationFactory.createRepresentation(indexedFeatures)
     implicit val hadoopConf: Configuration = sc.hadoopConfiguration
     implicit val formats: Formats = Serialization.formats(NoTypeHints)
 

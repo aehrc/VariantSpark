@@ -19,6 +19,7 @@ class RandomForestModel(object):
         var_ordinal_levels=Nullable(int),
         max_depth=Nullable(int),
         min_node_size=Nullable(int),
+        n_partitions=Nullable(int),
     )
     def __init__(
         self,
@@ -29,6 +30,7 @@ class RandomForestModel(object):
         var_ordinal_levels=3,
         max_depth=java.MAX_INT,
         min_node_size=1,
+        n_partitions=0,
     ):
         self.sc = vc.sc
         self.sql = vc.sql
@@ -42,6 +44,7 @@ class RandomForestModel(object):
         self.var_ordinal_levels = var_ordinal_levels
         self.max_depth = max_depth
         self.min_node_size = min_node_size
+        self.n_partitions = n_partitions
         self.vs_algo = self._jvm.au.csiro.variantspark.algo
         self.jrf_params = self.vs_algo.RandomForestParams(
             bool(oob),
@@ -72,16 +75,20 @@ class RandomForestModel(object):
         self.n_trees = n_trees
         self.batch_size = batch_size
         self._jfs = X._jfs
-        self._jrf_model = self._vs_api.RFModelTrainer.trainModel(
-            X._jfs, y, self.jrf_params, self.n_trees, self.batch_size
+        train_result = self._vs_api.RFModelTrainer.trainModel(
+            X._jfs, y, self.jrf_params, self.n_trees, self.batch_size, self.n_partitions
         )
+        self._jrf_model = train_result.model()
+        self._jindexed_features = train_result.indexedFeatures()
 
     @params(self=object)
     def importance_analysis(self):
         """Returns gini variable importances for a fitted random forest model
         :return ImportanceAnalysis: Class containing importances and associated methods
         """
-        jia = self._vs_api.ImportanceAnalysis(self._jsql, self._jfs, self._jrf_model)
+        jia = self._vs_api.ImportanceAnalysis(
+            self._jsql, self._jrf_model, self._jindexed_features
+        )
         return ImportanceAnalysis(jia, self.sql)
 
     @params(self=object)
@@ -91,6 +98,15 @@ class RandomForestModel(object):
         """
         oob_error = self._jrf_model.oobError()
         return oob_error
+
+    @params(self=object)
+    def release_indexed_data(self):
+        """Releases the persisted indexed feature RDD from memory/disk.
+        Call this when done with importance analysis and model export.
+        """
+        if self._jindexed_features is not None:
+            self._jindexed_features.unpersist()
+            self._jindexed_features = None
 
     @params(self=object)
     def get_lfdr(self):
@@ -112,7 +128,9 @@ class RandomForestModel(object):
         :param (bool) resolve_variable_names: Indicates whether to associate variant ids with exported nodes
         :param (int) batch_size: Number of trees to process in a single batch during export
         """
-        jexp = self._vs_api.ExportModel(self._jrf_model, self._jfs)
+        jexp = self._vs_api.ExportModel(
+            self._jrf_model, self._jindexed_features
+        )
         jexp.toJson(file_name, resolve_variable_names, batch_size)
 
 
