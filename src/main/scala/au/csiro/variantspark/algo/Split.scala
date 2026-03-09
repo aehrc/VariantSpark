@@ -51,7 +51,7 @@ trait IndexedSplitAggregator {
 /**
   * Split aggregator for classification. The indexes refer to nominal labels.
   */
-class ClassificationSplitAggregator private (val labels: Array[Int],
+class ClassificationSplitAggregator private (val labels: Array[Int], val nCategories: Int,
     val left: ClassificationImpurityAggregator, val right: ClassificationImpurityAggregator)
     extends IndexedSplitAggregator {
 
@@ -72,7 +72,7 @@ class ClassificationSplitAggregator private (val labels: Array[Int],
 object ClassificationSplitAggregator {
   def apply(impurity: ClassficationImpurity, labels: Array[Int],
       nCategories: Int): ClassificationSplitAggregator =
-    new ClassificationSplitAggregator(labels, impurity.createAggregator(nCategories),
+    new ClassificationSplitAggregator(labels, nCategories, impurity.createAggregator(nCategories),
       impurity.createAggregator(nCategories))
 }
 
