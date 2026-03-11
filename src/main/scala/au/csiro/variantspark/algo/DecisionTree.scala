@@ -60,18 +60,15 @@ case class SubsetInfo(indices: Array[Int], impurity: Double, classCounts: Array[
 
 /** Class utilized to give an insight into the split data
   *
-  * Specify the 'variableIndex', 'splitPoint', 'gini', 'leftGini', and 'rightGini'
+  * Specify the 'variableIndex', 'splitInfo', and 'isPermutated'
   *
   * @constructor creates information about the split that occured on a specifc variable
   * @param variableIndex: specifies the index of the variable that the dataset will
   *                     split on
-  * @param splitPoint: specifies the point in the index of the exact split
-  * @param gini: general gini value of the dataset
-  * @param leftGini: the gini impurity of the left split of the dataset
-  * @param rightGini: the gini impurity of the right split of the dataset
+  * @param splitInfo: specifies the information about the split that occured on the dataset
+  * @param isPermutated: specifies whether the split was based on permutated labels or not
   */
-case class VarSplitInfo(variableIndex: Long, splitPoint: Double, gini: Double, leftGini: Double,
-    rightGini: Double, isPermutated: Boolean) {
+case class VarSplitInfo(variableIndex: Long, splitInfo: SplitInfo, isPermutated: Boolean) {
 
   /** Creates a list of the subsetInfos for the dataset split
     *
@@ -84,32 +81,17 @@ case class VarSplitInfo(variableIndex: Long, splitPoint: Double, gini: Double, l
     */
   def split(v: TreeFeature, labels: Array[Int], nCategories: Int)(
       subset: SubsetInfo): (SubsetInfo, SubsetInfo) = {
-    (new SubsetInfo(subset.indices.filter(v.at(_) <= splitPoint), leftGini, labels, nCategories),
-      new SubsetInfo(subset.indices.filter(v.at(_) > splitPoint), rightGini, labels, nCategories))
+    val (leftIndices, rightIndices) = subset.indices.partition(i => splitInfo.goesLeft(v.at(i)))
+    (new SubsetInfo(leftIndices, splitInfo.leftGini, labels, nCategories),
+      new SubsetInfo(rightIndices, splitInfo.rightGini, labels, nCategories))
   }
   def splitPermutated(v: TreeFeature, labels: Array[Int], nCategories: Int,
-      permutationOder: Array[Int])(subset: SubsetInfo): (SubsetInfo, SubsetInfo) = {
-    (new SubsetInfo(subset.indices.filter(i => v.at(permutationOder(i)) <= splitPoint), leftGini,
-        labels, nCategories),
-      new SubsetInfo(subset.indices.filter(i => v.at(permutationOder(i)) > splitPoint), rightGini,
-        labels, nCategories))
+      permutationOrder: Array[Int])(subset: SubsetInfo): (SubsetInfo, SubsetInfo) = {
+    val (leftIndices, rightIndices) =
+      subset.indices.partition(i => splitInfo.goesLeft(v.at(permutationOrder(i))))
+    (new SubsetInfo(leftIndices, splitInfo.leftGini, labels, nCategories),
+      new SubsetInfo(rightIndices, splitInfo.rightGini, labels, nCategories))
   }
-}
-
-/** Utilized to return a VarSplitInfo object
-  */
-object VarSplitInfo {
-
-  /** Applies the values obtained from the [[au.csiro.variantspark.algo.SplitInfo]] class to
-    *  create an [[au.csiro.variantspark.algo.VarSplitInfo]] object
-    *
-    * @param variableIndex: input an index of where the variable split from
-    * @param split: input a [[au.csiro.variantspark.algo.SplitInfo]] object
-    * @return returns a [[au.csiro.variantspark.algo.VarSplitInfo]] object
-    */
-  def apply(variableIndex: Long, split: SplitInfo, isPermutated: Boolean): VarSplitInfo =
-    apply(variableIndex, split.splitPoint, split.gini, split.leftGini, split.rightGini,
-      isPermutated)
 }
 
 /** Defines the trait for the case class [[au.csiro.variantspark.algo.DeterministicMerger]]
@@ -151,8 +133,8 @@ case class DeterministicMerger() extends Merger {
     def mergeSplitInfo(s1: VarSplitInfo, s2: VarSplitInfo) = {
       if (s1 == null) s2
       else if (s2 == null) s1
-      else if (s1.gini < s2.gini) s1
-      else if (s2.gini < s1.gini) s2
+      else if (s1.splitInfo.gini < s2.splitInfo.gini) s1
+      else if (s2.splitInfo.gini < s1.splitInfo.gini) s2
       else if (s1.variableIndex < s2.variableIndex) s1
       else s2
     }
@@ -201,8 +183,8 @@ case class RandomizingMergerMurmur3(seed: Long) extends Merger {
     def mergeSplitInfo(s1: VarSplitInfo, s2: VarSplitInfo, id: Int) = {
       if (s1 == null) s2
       else if (s2 == null) s1
-      else if (s1.gini < s2.gini) s1
-      else if (s2.gini < s1.gini) s2
+      else if (s1.splitInfo.gini < s2.splitInfo.gini) s1
+      else if (s2.splitInfo.gini < s1.splitInfo.gini) s2
       else chooseEqual(s1, s2, id)
     }
     a1.indices.foreach(i => a1(i) = mergeSplitInfo(a1(i), a2(i), i))
@@ -566,7 +548,7 @@ object LeafNode {
 @SerialVersionUID(1L)
 case class SplitNode(override val majorityLabel: Int, classCounts: Array[Int],
     override val size: Int, override val nodeImpurity: Double, splitVariableIndex: Long,
-    splitPoint: Double, impurityReduction: Double, left: DecisionTreeNode,
+    splitCriteria: SplitCriteria, impurityReduction: Double, left: DecisionTreeNode,
     right: DecisionTreeNode, isPermutated: Boolean = false)
     extends DecisionTreeNode(majorityLabel, size, nodeImpurity) {
 
@@ -576,16 +558,17 @@ case class SplitNode(override val majorityLabel: Int, classCounts: Array[Int],
     print(new String(Array.fill(level)(' ')))
     val nodeType = "split"
     println(
-        s"${nodeType}[${splitVariableIndex}, ${splitPoint}, ${majorityLabel},"
+        s"${nodeType}[${splitVariableIndex}, ${splitCriteria}, ${majorityLabel},"
           + s" ${size}, ${impurityReduction}, ${nodeImpurity}]")
     left.printout(level + 1)
     right.printout(level + 1)
   }
   override def toString: String =
-    (s"split[${splitVariableIndex}, ${splitPoint}, ${majorityLabel}, ${size},"
+    (s"split[${splitVariableIndex}, ${splitCriteria}, ${majorityLabel}, ${size},"
       + s" ${impurityReduction}, ${nodeImpurity}]")
 
-  def childFor(value: Double): DecisionTreeNode = if (value <= splitPoint) left else right
+  def childFor(value: Double): DecisionTreeNode =
+    if (splitCriteria.goesLeft(value)) left else right
 
   def impurityDelta: Double = {
     val deltaAbs = impurityContribution - (left.impurityContribution + right.impurityContribution)
@@ -598,13 +581,13 @@ object SplitNode {
   def apply(subset: SubsetInfo, split: VarSplitInfo, left: DecisionTreeNode,
       right: DecisionTreeNode): SplitNode =
     apply(subset.majorityLabel, subset.classCounts, subset.length, subset.impurity,
-      split.variableIndex, split.splitPoint, subset.impurity - split.gini, left, right,
-      split.isPermutated)
+      split.variableIndex, split.splitInfo.toCriteria, subset.impurity - split.splitInfo.gini,
+      left, right, split.isPermutated)
 
   def voting(majorityLabel: Int, size: Int, nodeImpurity: Double, splitVariableIndex: Long,
-      splitPoint: Double, impurityReduction: Double, left: DecisionTreeNode,
+      splitCriteria: SplitCriteria, impurityReduction: Double, left: DecisionTreeNode,
       right: DecisionTreeNode, isPermutated: Boolean = false): SplitNode = {
-    SplitNode(majorityLabel, null, size, nodeImpurity, splitVariableIndex, splitPoint,
+    SplitNode(majorityLabel, null, size, nodeImpurity, splitVariableIndex, splitCriteria,
       impurityReduction, left, right, isPermutated)
   }
 
@@ -626,7 +609,7 @@ case class DecisionTreeModel(rootNode: DecisionTreeNode)
     Range(0, indexedData.size)
       .map(i =>
           rootNode
-            .traverse(s => treeVariableData(s.splitVariableIndex).at(i) <= s.splitPoint)
+            .traverse(s => s.splitCriteria.goesLeft(treeVariableData(s.splitVariableIndex).at(i)))
             .majorityLabel)
       .toArray
   }
@@ -665,7 +648,12 @@ case class DecisionTreeModel(rootNode: DecisionTreeNode)
 
   def impurity: List[Double] = rootNode.toStream.map(_.nodeImpurity).toList
   def variables: List[Long] = rootNode.splitsToStream.map(_.splitVariableIndex).toList
-  def thresholds: List[Double] = rootNode.splitsToStream.map(_.splitPoint).toList
+
+  /** Returns the split criteria for each internal node in tree traversal order.
+    * Each element is either a [[ThresholdSplitCriteria]] (ordered features) or a
+    * [[SubsetSplitCriteria]] (nominal features).
+    */
+  def criteria: List[SplitCriteria] = rootNode.splitsToStream.map(_.splitCriteria).toList
 
 }
 

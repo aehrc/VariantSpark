@@ -4,6 +4,7 @@ import au.csiro.variantspark.algo.RandomForestModel
 import au.csiro.variantspark.algo.DecisionTreeNode
 import au.csiro.variantspark.algo.LeafNode
 import au.csiro.variantspark.algo.SplitNode
+import au.csiro.variantspark.algo.SplitCriteria
 import au.csiro.variantspark.algo.RandomForestMember
 import au.csiro.variantspark.algo.DecisionTreeModel
 import au.csiro.variantspark.algo.RandomForestParams
@@ -16,7 +17,7 @@ case class Leaf(majorityLabel: Int, classCounts: Array[Int], size: Int, impurity
 
 @SerialVersionUID(1L)
 case class Split(majorityLabel: Int, classCounts: Array[Int], size: Int, impurity: Double,
-    splitVar: String, splitVarIndex: Long, permutated: Boolean, splitPoint: Double,
+    splitVar: String, splitVarIndex: Long, permutated: Boolean, splitCriteria: SplitCriteria,
     impurityReduction: Double, left: Node, right: Node)
     extends Node with Serializable
 

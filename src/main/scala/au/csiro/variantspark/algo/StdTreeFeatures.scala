@@ -48,8 +48,8 @@ class SmallOrderedTreeFeature(val label: String, val index: Long, orderedData: A
     new JOrderedFastIndexedSplitter(confusionAgg, impCalc, orderedData, nLevels)
 }
 
-/** A representation for nominal factors with no more than 127 levels. Stored as
-  * {{Array[Byte]}}
+/** A representation for nominal factors with no more than 64 levels. Stored as
+  * {{Array[Byte]}}. Limited to 64 levels because the split bitmask is a Long
   */
 class SmallNominalTreeFeature(val label: String, val index: Long, nominalData: Array[Byte],
     nLevels: Int)
@@ -76,7 +76,7 @@ case object DefTreeRepresentationFactory extends TreeRepresentationFactory {
     f.variableType match {
       case BoundedOrdinalVariable(nLevels) if nLevels < 127 =>
         new SmallOrderedTreeFeature(f.label, index, f.data.valueAsByteArray, nLevels)
-      case BoundedNominalVariable(nLevels) if nLevels < 127 =>
+      case BoundedNominalVariable(nLevels) if nLevels < 64 =>
         new SmallNominalTreeFeature(f.label, index, f.data.valueAsByteArray, nLevels)
       case ContinuousVariable =>
         new StdContinousTreeFeature(f.label, index, f.data.valueAsVector.toArray)

@@ -6,6 +6,7 @@ import au.csiro.variantspark.algo.DecisionTreeModel
 import au.csiro.variantspark.algo.DecisionTreeNode
 import au.csiro.variantspark.algo.LeafNode
 import au.csiro.variantspark.algo.SplitNode
+import au.csiro.variantspark.algo.SplitCriteria
 import org.apache.spark.rdd.RDD
 import au.csiro.pbdava.ssparkle.spark.SparkUtils
 
@@ -16,10 +17,10 @@ class ModelConverter(varIndex: Map[Long, String]) {
       case LeafNode(majorityLabel, classCounts, size, nodeImpurity) =>
         Leaf(majorityLabel, classCounts, size, nodeImpurity)
       case SplitNode(majorityLabel, classCounts, size, nodeImpurity, splitVariableIndex,
-          splitPoint, impurityReduction, left, right, isPermutated) => {
+          splitCriteria, impurityReduction, left, right, isPermutated) => {
         Split(majorityLabel, classCounts, size, nodeImpurity,
           varIndex.getOrElse(splitVariableIndex, null), splitVariableIndex, isPermutated,
-          splitPoint, impurityReduction, toExternal(left), toExternal(right))
+          splitCriteria, impurityReduction, toExternal(left), toExternal(right))
       }
       case _ => throw new IllegalArgumentException("Unknow node type:" + node)
     }

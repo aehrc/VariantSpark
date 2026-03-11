@@ -2,6 +2,7 @@ package au.csiro.variantspark.algo.split;
 
 import au.csiro.variantspark.algo.IndexedSplitAggregator;
 import au.csiro.variantspark.algo.SplitInfo;
+import au.csiro.variantspark.algo.ThresholdSplitInfo;
 
 /**
  * @author szu004
@@ -52,7 +53,7 @@ public class JOrderedIndexedSplitter extends  AbstractIndexedSplitterBase {
 			if (impurityCalc.hasProperSplit()) {
 				double g = impurityCalc.getValue(leftRightImpurity);
 				if (g < minImpurity ) {
-					result = new SplitInfo(sp, g, leftRightImpurity.left(), leftRightImpurity.right());
+					result = new ThresholdSplitInfo(sp, g, leftRightImpurity.left(), leftRightImpurity.right());
 					minImpurity = g;
 				}
 			}

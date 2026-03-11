@@ -2,6 +2,7 @@ package au.csiro.variantspark.algo.split;
 
 import au.csiro.variantspark.algo.IndexedSplitAggregator;
 import au.csiro.variantspark.algo.SplitInfo;
+import au.csiro.variantspark.algo.ThresholdSplitInfo;
 import it.unimi.dsi.fastutil.doubles.DoubleArrays;
 
 
@@ -68,6 +69,6 @@ public class JNaiveContinousIndexedSplitter extends AbstractIndexedSplitterBase 
 			lastValue = currentValue;
 		}
 		// if splitValue is not NaN we seem to have a split here
-		return (!Double.isNaN(splitValue))? new SplitInfo(splitValue, minImpurity, splitLeftImpurity, splitRightImpurity):null;
+		return (!Double.isNaN(splitValue))? new ThresholdSplitInfo(splitValue, minImpurity, splitLeftImpurity, splitRightImpurity):null;
 	}
 }

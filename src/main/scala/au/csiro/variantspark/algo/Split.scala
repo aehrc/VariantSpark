@@ -1,16 +1,75 @@
 package au.csiro.variantspark.algo
 
-/** An immutable container for the information that was recently split
-  *
-  * Specify 'splitPoint', 'gini', 'leftGini', and 'rightGini'
-  *
-  * @constructor create an object containing the information about the split
-  * @param splitPoint: specifies the exact point in the dataset that it was split at
-  * @param gini: general gini value of the dataset
-  * @param leftGini: the gini impurity of the left split of the dataset
-  * @param rightGini: the gini impurity of the right split of the dataset
+/** The lean, prediction-time representation of a split decision stored in a tree node.
+  * Encodes only what is needed to route a sample left or right at inference time.
   */
-case class SplitInfo(splitPoint: Double, gini: Double, leftGini: Double, rightGini: Double)
+@SerialVersionUID(1L)
+sealed trait SplitCriteria extends Serializable {
+  def goesLeft(value: Double): Boolean
+}
+
+/** A split criteria for ordered (continuous, discrete, or ordinal) features.
+  * Routes a sample left if its value is less than or equal to the split point.
+  *
+  * @param splitPoint the threshold value at which the split occurs
+  */
+case class ThresholdSplitCriteria(splitPoint: Double) extends SplitCriteria {
+  def goesLeft(value: Double): Boolean = value <= splitPoint
+}
+
+/** A split criteria for nominal features.
+  * Routes a sample left if its integer level is a member of the subset encoded
+  * by the bitmask (i.e. bit {{level}} is set).
+  *
+  * @param mask a Long bitmask where bit i set means level i goes left
+  */
+case class SubsetSplitCriteria(mask: Long) extends SplitCriteria {
+  def goesLeft(value: Double): Boolean = (mask & (1L << value.toInt)) != 0
+}
+
+/** Build-time information about a split, combining the prediction criteria with
+  * the impurity statistics needed during tree construction.
+  * Only lives during training; the lean [[SplitCriteria]] is extracted via
+  * {{toCriteria}} and stored in the persisted [[SplitNode]].
+  *
+  * @param gini the weighted gini impurity of the split
+  * @param leftGini the gini impurity of the left child
+  * @param rightGini the gini impurity of the right child
+  */
+sealed trait SplitInfo {
+  def gini: Double
+  def leftGini: Double
+  def rightGini: Double
+  def goesLeft(value: Double): Boolean
+  def toCriteria: SplitCriteria
+}
+
+/** [[SplitInfo]] for ordered (continuous, discrete, or ordinal) features.
+  *
+  * @param splitPoint the threshold value at which the split occurs
+  * @param gini the weighted gini impurity of the split
+  * @param leftGini the gini impurity of the left child
+  * @param rightGini the gini impurity of the right child
+  */
+case class ThresholdSplitInfo(splitPoint: Double, gini: Double, leftGini: Double,
+    rightGini: Double)
+    extends SplitInfo {
+  def goesLeft(value: Double): Boolean = value <= splitPoint
+  def toCriteria: SplitCriteria = ThresholdSplitCriteria(splitPoint)
+}
+
+/** [[SplitInfo]] for nominal features.
+  *
+  * @param mask a Long bitmask where bit i set means level i goes left
+  * @param gini the weighted gini impurity of the split
+  * @param leftGini the gini impurity of the left child
+  * @param rightGini the gini impurity of the right child
+  */
+case class SubsetSplitInfo(mask: Long, gini: Double, leftGini: Double, rightGini: Double)
+    extends SplitInfo {
+  def goesLeft(value: Double): Boolean = (mask & (1L << value.toInt)) != 0
+  def toCriteria: SplitCriteria = SubsetSplitCriteria(mask)
+}
 
 /**
   * An aggregator for calculating split impurity for two sets of labels or values

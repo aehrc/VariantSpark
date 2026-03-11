@@ -3,6 +3,7 @@ package au.csiro.variantspark.algo.split;
 import au.csiro.variantspark.algo.ClassificationSplitAggregator;
 import au.csiro.variantspark.algo.IndexedSplitAggregator;
 import au.csiro.variantspark.algo.SplitInfo;
+import au.csiro.variantspark.algo.SubsetSplitInfo;
 import it.unimi.dsi.fastutil.doubles.DoubleArrays;
 
 /**
@@ -52,11 +53,11 @@ public class JNominalIndexedSplitter extends AbstractIndexedSplitterBase {
         // Collect non-empty (active) levels and build a bitmask of active levels.
         int nActive = 0;
         int[] activeLevels = new int[nLevels];
-        int activeMask = 0;
+        long activeMask = 0L;
         for (int l = 0; l < nLevels; l++) {
             if (levelTotals[l] > 0) {
                 activeLevels[nActive++] = l;
-                activeMask |= (1 << l);
+                activeMask |= (1L << l);
             }
         }
 
@@ -89,16 +90,16 @@ public class JNominalIndexedSplitter extends AbstractIndexedSplitterBase {
             //   - reset impurityCalc (init puts everything in Right)
             //   - move samples whose level is in the left bitmask to Left
             //   - evaluate the split
-            int leftMask = 0;
+            long leftMask = 0L;
             for (int j = 0; j < nActive - 1; j++) {
                 int level = activeLevels[order[j]];
-                leftMask |= (1 << level);
+                leftMask |= (1L << level);
 
                 // Cost: O(N) rescan per prefix.
                 impurityCalc.init(splitIndices);
                 for (int i : splitIndices) {
                     int sampleLevel = data[i] & 0xFF;
-                    if ((leftMask & (1 << sampleLevel)) != 0) {
+                    if ((leftMask & (1L << sampleLevel)) != 0) {
                         impurityCalc.update(i);
                     }
                 }
@@ -107,16 +108,16 @@ public class JNominalIndexedSplitter extends AbstractIndexedSplitterBase {
                     double thisImpurity = impurityCalc.getValue(leftRightImpurity);
                     if (thisImpurity < minImpurity) {
                         // Normalise: if highestActiveLevel ended up in Left, complement mask.
-                        int finalMask = leftMask;
+                        long finalMask = leftMask;
                         double leftImp = leftRightImpurity.left();
                         double rightImp = leftRightImpurity.right();
-                        if ((finalMask & (1 << highestActiveLevel)) != 0) {
+                        if ((finalMask & (1L << highestActiveLevel)) != 0) {
                             finalMask = activeMask ^ finalMask;
                             double tmp = leftImp;
                             leftImp = rightImp;
                             rightImp = tmp;
                         }
-                        result = new SplitInfo(finalMask, thisImpurity, leftImp, rightImp);
+                        result = new SubsetSplitInfo(finalMask, thisImpurity, leftImp, rightImp);
                         minImpurity = thisImpurity;
                     }
                 }

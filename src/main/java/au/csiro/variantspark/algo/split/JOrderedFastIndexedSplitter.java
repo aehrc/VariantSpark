@@ -4,6 +4,7 @@ import au.csiro.variantspark.algo.ConfusionAggregator;
 import au.csiro.variantspark.algo.ImpurityAggregator;
 import au.csiro.variantspark.algo.IndexedSplitAggregator;
 import au.csiro.variantspark.algo.SplitInfo;
+import au.csiro.variantspark.algo.ThresholdSplitInfo;
 
 /**
  * @author szu004
@@ -49,7 +50,7 @@ public class JOrderedFastIndexedSplitter extends AbstractIndexedSplitterBase {
 				if (impurityCalc.hasProperSplit()) {
 					double thisImpurity = impurityCalc.getValue(leftRightImpurity);
 					if (thisImpurity < minImpurity) {
-						result = new SplitInfo(sp, thisImpurity, leftRightImpurity.left(), leftRightImpurity.right());
+						result = new ThresholdSplitInfo(sp, thisImpurity, leftRightImpurity.left(), leftRightImpurity.right());
 						minImpurity = thisImpurity;
 					}
 				}

@@ -4,6 +4,7 @@ import au.csiro.variantspark.algo.ClassificationSplitAggregator;
 import au.csiro.variantspark.algo.ConfusionAggregator;
 import au.csiro.variantspark.algo.IndexedSplitAggregator;
 import au.csiro.variantspark.algo.SplitInfo;
+import au.csiro.variantspark.algo.SubsetSplitInfo;
 import it.unimi.dsi.fastutil.doubles.DoubleArrays;
 
 /**
@@ -61,11 +62,11 @@ public class JNominalFastIndexedSplitter extends AbstractIndexedSplitterBase {
         // Collect non-empty (active) levels and build a bitmask of active levels
         int nActive = 0;
         int[] activeLevels = new int[nLevels];
-        int activeMask = 0;
+        long activeMask = 0L;
         for (int l = 0; l < nLevels; l++) {
             if (levelTotals[l] > 0) {
                 activeLevels[nActive++] = l;
-                activeMask |= (1 << l);
+                activeMask |= (1L << l);
             }
         }
 
@@ -116,26 +117,26 @@ public class JNominalFastIndexedSplitter extends AbstractIndexedSplitterBase {
             // Unlike the continuous splitter we do NOT skip levels with equal
             // proportions. Each level is a distinct categorical value, so every
             // boundary is a genuinely different partition.
-            int mask = 0;
+            long mask = 0L;
             for (int j = 0; j < nActive - 1; j++) {
                 int level = sortedLevels[j];
-                mask |= (1 << level);
+                mask |= (1L << level);
                 impurityCalc.update(confusionAgg.apply(level));
 
                 if (impurityCalc.hasProperSplit()) {
                     double thisImpurity = impurityCalc.getValue(leftRightImpurity);
                     if (thisImpurity < minImpurity) {
                         // Normalise mask so the highest active level stays in Right
-                        int finalMask = mask;
+                        long finalMask = mask;
                         double leftImp = leftRightImpurity.left();
                         double rightImp = leftRightImpurity.right();
-                        if ((finalMask & (1 << highestActiveLevel)) != 0) {
+                        if ((finalMask & (1L << highestActiveLevel)) != 0) {
                             finalMask = activeMask ^ finalMask;
                             double tmp = leftImp;
                             leftImp = rightImp;
                             rightImp = tmp;
                         }
-                        result = new SplitInfo(finalMask, thisImpurity, leftImp, rightImp);
+                        result = new SubsetSplitInfo(finalMask, thisImpurity, leftImp, rightImp);
                         minImpurity = thisImpurity;
                     }
                 }
