@@ -16,8 +16,9 @@ class DecisionTreeNodeTest {
     val leftLabel = 7
     val rightLabel = 9
     val splitNode = SplitNode(majorityLabel = 0, null, size = 10, nodeImpurity = 0.0,
-      splitVariableIndex = 1L, splitPoint = 1.0, impurityReduction = 0.0,
-      left = LeafNode(leftLabel, null, 0, 0.0), right = LeafNode(rightLabel, null, 0, 0.0))
+      splitVariableIndex = 1L, splitCriteria = ThresholdSplitCriteria(1.0),
+      impurityReduction = 0.0, left = LeafNode(leftLabel, null, 0, 0.0),
+      right = LeafNode(rightLabel, null, 0, 0.0))
 
     assertEquals(splitNode.left, splitNode.traverse(_ => true))
     assertEquals(splitNode.right, splitNode.traverse(_ => false))
