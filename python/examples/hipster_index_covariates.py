@@ -32,6 +32,8 @@ def main():
         "PC0": "CONTINUOUS",
         "PC1": "CONTINUOUS",
         "PC2": "CONTINUOUS",
+        "sex": "NOMINAL(2)",
+        "lifestyle": "NOMINAL(4)",
     }
     covariates = vc.import_covariates(
         os.path.join(PROJECT_DIR, "data/hipsterIndex/hipster_labels_covariates.txt"),
@@ -49,7 +51,7 @@ def main():
     print(ia.important_variables(limit=5).head())
 
     rf_model.export_to_json(
-        os.path.join(PROJECT_DIR, "target/chr22_1000_GRCh38-model.json"), True
+        os.path.join(PROJECT_DIR, "target/hipster-index-model.json"), True
     )
 
 
