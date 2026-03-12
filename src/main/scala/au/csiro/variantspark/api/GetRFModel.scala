@@ -2,7 +2,7 @@ package au.csiro.variantspark.api
 
 import au.csiro.variantspark.algo.{RandomForest, RandomForestModel, RandomForestParams}
 import au.csiro.variantspark.data.Feature
-import au.csiro.variantspark.input.{FeatureSource, LabelSource}
+import au.csiro.variantspark.input.{FeatureSource, ResponseSource}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 
@@ -18,7 +18,7 @@ object RFModelTrainer {
     * The caller is responsible for calling `releaseIndexedData()` when done.
     *
     * @param featureSource: FeatureSource object containing training X
-    * @param labelSource: LabelSource object containing training y
+    * @param responseSource: ResponseSource object containing training y
     * @param params: Random forest hyperparameters (passed to model on initialisation)
     * @param nTrees: Number of trees to compute (passed to model during training)
     * @param rfBatchSize: Number of trees per batch (passed to model during training)
@@ -26,17 +26,17 @@ object RFModelTrainer {
     *
     * @return TrainResult with trained model and persisted indexed features
     */
-  def trainModel(featureSource: FeatureSource, labelSource: LabelSource,
+  def trainModel(featureSource: FeatureSource, responseSource: ResponseSource[Int],
       params: RandomForestParams, nTrees: Int, rfBatchSize: Int,
       nPartitions: Int = 0): TrainResult = {
-    val labels = labelSource.getLabels(featureSource.sampleNames)
+    val responses = responseSource.getResponses(featureSource.sampleNames)
 
     // Deterministically repartition and index features using MurMur3 hash
     // on feature labels. This ensures reproducible index assignments.
     val indexedFeatures = FeatureIndexer.index(featureSource.features, nPartitions)
 
     val rf = new RandomForest(params)
-    val rfTrained = rf.batchTrain(indexedFeatures, labels, nTrees, rfBatchSize)
+    val rfTrained = rf.batchTrain(indexedFeatures, responses, nTrees, rfBatchSize)
 
     // Return both model and indexed data; caller manages lifecycle
     TrainResult(rfTrained, indexedFeatures)

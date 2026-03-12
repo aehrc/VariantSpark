@@ -1,7 +1,7 @@
 package au.csiro.variantspark.api
 
 import au.csiro.variantspark.input.{
-  CsvLabelSource,
+  CsvResponseSource,
   FeatureSource,
   VCFFeatureSource,
   VCFSource,
@@ -107,10 +107,10 @@ class VSContext(val spark: SparkSession) extends SqlContextHolder {
     * @param featuresFile path to CSV file with labels
     * @param featureColumn the name of the column to load as the label
     *
-    * @return LabelSource loaded from the column of the CSV file
+    * @return ResponseSource loaded from the column of the CSV file
     */
-  def loadLabel(featuresFile: String, featureColumn: String): CsvLabelSource = {
-    new CsvLabelSource(featuresFile, featureColumn)
+  def loadResponse(featuresFile: String, featureColumn: String): CsvResponseSource[Int] = {
+    new CsvResponseSource(featuresFile, featureColumn, _.toInt)
   }
 
   @deprecated
@@ -118,7 +118,7 @@ class VSContext(val spark: SparkSession) extends SqlContextHolder {
     importVCF(inputFile)
 
   @deprecated
-  def labelSource: (String, String) => CsvLabelSource = loadLabel
+  def labelSource: (String, String) => CsvResponseSource[Int] = loadResponse
 }
 
 object VSContext {

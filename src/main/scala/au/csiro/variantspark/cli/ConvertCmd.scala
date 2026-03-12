@@ -10,7 +10,7 @@ import au.csiro.variantspark.input.VCFSource
 import au.csiro.variantspark.input.VCFFeatureSource
 import au.csiro.variantspark.input.HashingLabelSource
 import org.apache.spark.mllib.linalg.Vectors
-import au.csiro.variantspark.input.CsvLabelSource
+import au.csiro.variantspark.input.CsvResponseSource
 import au.csiro.variantspark.cmd.Echoable
 import au.csiro.pbdava.ssparkle.common.utils.Logging
 import org.apache.commons.lang3.builder.ToStringBuilder

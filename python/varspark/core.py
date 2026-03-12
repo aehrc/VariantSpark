@@ -157,7 +157,7 @@ class VarsparkContext(object):
         :param label_file_path: The file path for the label source file
         :param col_name: the name of the column containing labels
         """
-        return self._jvsc.loadLabel(label_file_path, col_name)
+        return self._jvsc.loadResponse(label_file_path, col_name)
 
     def stop(self):
         """Shut down the VariantsContext."""

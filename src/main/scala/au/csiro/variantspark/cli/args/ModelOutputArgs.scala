@@ -2,7 +2,7 @@ package au.csiro.variantspark.cli.args
 
 import org.kohsuke.args4j.{Option => ArgsOption}
 import au.csiro.variantspark.cmd.Echoable
-import au.csiro.variantspark.input.CsvLabelSource
+import au.csiro.variantspark.input.CsvResponseSource
 import org.apache.hadoop.fs.FileSystem
 import au.csiro.variantspark.algo.RandomForestModel
 import org.json4s.jackson.Serialization

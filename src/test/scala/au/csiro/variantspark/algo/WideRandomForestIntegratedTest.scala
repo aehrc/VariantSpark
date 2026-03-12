@@ -21,7 +21,7 @@ class WideRandomForestIntegratedTest extends SparkTest {
       OrdinalFeatureGenerator(nLevels = 3, nVariables = 1000, nSamples = NoSamples, seed = seed)
     val lg =
       EffectLabelGenerator(fg)(1, Map("v_2" -> 1.0, "v_5" -> 0.75, "v_7" -> 2.0), seed = seed)
-    val labels = lg.getLabels(fg.sampleNames)
+    val labels = lg.getResponses(fg.sampleNames)
     val rf = new RandomForest(RandomForestParams(seed = seed))
     val data = fg.features.zipWithIndex.cache
     println(s"Data size: ${data.count}")

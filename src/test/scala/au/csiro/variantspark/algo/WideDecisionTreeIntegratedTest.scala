@@ -2,7 +2,7 @@ package au.csiro.variantspark.algo
 
 import au.csiro.pbdava.ssparkle.common.utils.FastUtilConversions._
 import au.csiro.variantspark.data.{BoundedOrdinalVariable, ContinuousVariable, VariableType}
-import au.csiro.variantspark.input.{CsvFeatureSource, CsvLabelSource}
+import au.csiro.variantspark.input.{CsvFeatureSource, CsvResponseSource}
 import au.csiro.variantspark.test.{SparkTest, TestCsvUtils}
 import org.apache.hadoop.fs.FileSystem
 import org.junit.Assert._
@@ -22,13 +22,14 @@ class WideDecisionTreeIntegratedTest extends SparkTest {
     *
     */
   def checkCNAE_9_Dataset(maxDepth: Int, dataType: VariableType = BoundedOrdinalVariable(5)) {
-    val labelSource = new CsvLabelSource("data/CNAE-9-labels.csv", "category")
+    val responseSource = new CsvResponseSource("data/CNAE-9-labels.csv", "category", _.toInt)
     val featureSource = new CsvFeatureSource(sc.textFile("data/CNAE-9-wide.csv"), dataType)
-    val labels = labelSource.getLabels(featureSource.sampleNames)
+    val responses = responseSource.getResponses(featureSource.sampleNames)
     val inputData = featureSource.features.zipWithIndex.cache()
     val nVars = inputData.count
     // max fife levels
-    val model = new DecisionTree(DecisionTreeParams(maxDepth = maxDepth)).train(inputData, labels)
+    val model =
+      new DecisionTree(DecisionTreeParams(maxDepth = maxDepth)).train(inputData, responses)
     val prediction = model.predict(inputData)
 
     // check predictions

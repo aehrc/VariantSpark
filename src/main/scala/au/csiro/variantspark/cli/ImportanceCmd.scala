@@ -13,7 +13,7 @@ import au.csiro.variantspark.cli.args.{
 }
 import au.csiro.variantspark.cmd.EchoUtils._
 import au.csiro.variantspark.cmd.Echoable
-import au.csiro.variantspark.input.CsvLabelSource
+import au.csiro.variantspark.input.CsvResponseSource
 import au.csiro.variantspark.utils.{HdfsPath, defRng}
 import org.apache.commons.lang3.builder.ToStringBuilder
 import org.apache.hadoop.conf.Configuration
@@ -86,10 +86,10 @@ class ImportanceCmd
     //  longPreviewSize)}(${f.getClass.getName})"))
     // }
 
-    echo(s"Loading labels from: ${featuresFile}, column: ${featureColumn}")
-    val labelSource = new CsvLabelSource(featuresFile, featureColumn)
-    val labels = labelSource.getLabels(featureSource.sampleNames)
-    echo(s"Loaded labels: ${dumpList(labels.toList)}")
+    echo(s"Loading responses from: ${featuresFile}, column: ${featureColumn}")
+    val responseSource = new CsvResponseSource(featuresFile, featureColumn, _.toInt)
+    val responses = responseSource.getResponses(featureSource.sampleNames)
+    echo(s"Loaded responses: ${dumpList(responses.toList)}")
     echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")
     echo(s"Random seed is: ${randomSeed}")
     val treeBuildingTimer = Timer()
@@ -123,7 +123,7 @@ class ImportanceCmd
       }
     }
 
-    val result = rf.batchTrainTyped(trainingData, labels, nTrees, rfBatchSize)
+    val result = rf.batchTrainTyped(trainingData, responses, nTrees, rfBatchSize)
 
     echo(
         s"Random forest oob accuracy: ${result.oobError},"

@@ -26,7 +26,7 @@ class NoisyEffectLabelGeneratorTest extends SparkTest {
     val labelGenerator = new NoisyEffectLabelGenerator(featureGenerator)(1,
       Map("v_0" -> 1.0, "v_1" -> 0.5, "v_2" -> 0.25), fractionVarianceExplained = 0.2,
       classThresholdPercentile = 0.75)
-    val classes = labelGenerator.getLabels(featureGenerator.sampleNames)
+    val classes = labelGenerator.getResponses(featureGenerator.sampleNames)
     assertEquals(0.75, classes.count(_ == 0).toDouble / classes.size, 0.01)
 
     val baseVariance = meanAndVariance(labelGenerator.baseContinuousResponse).variance
@@ -40,7 +40,7 @@ class NoisyEffectLabelGeneratorTest extends SparkTest {
     val labelGenerator = new NoisyEffectLabelGenerator(featureGenerator)(1,
       Map("v_0" -> 1.0, "v_1" -> 0.5, "v_2" -> 0.25), fractionVarianceExplained = 0.2,
       classThresholdPercentile = 0.75, multiplicative = true)
-    val classes = labelGenerator.getLabels(featureGenerator.sampleNames)
+    val classes = labelGenerator.getResponses(featureGenerator.sampleNames)
     assertEquals(0.75, classes.count(_ == 0).toDouble / classes.size, 0.01)
 
     val baseVariance = meanAndVariance(labelGenerator.baseContinuousResponse).variance
@@ -59,7 +59,7 @@ class NoisyEffectLabelGeneratorTest extends SparkTest {
       Map("v_0" -> 0.1, "v_1" -> 0.5, "v_2" -> 2.0), fractionVarianceExplained = 0.2,
       classThresholdPercentile = 0.75, multiplicative = false)
 
-    val classes = labelGenerator.getLabels(featureGenerator.sampleNames)
+    val classes = labelGenerator.getResponses(featureGenerator.sampleNames)
     assertEquals(DenseVector[Double](-2.6, 0, 2.6, 1.9), labelGenerator.baseContinuousResponse)
   }
 
@@ -74,7 +74,7 @@ class NoisyEffectLabelGeneratorTest extends SparkTest {
       Map("v_0" -> 0.1, "v_1" -> 0.5, "v_2" -> 2.0), fractionVarianceExplained = 0.2,
       classThresholdPercentile = 0.75, multiplicative = true)
 
-    val classes = labelGenerator.getLabels(featureGenerator.sampleNames)
+    val classes = labelGenerator.getResponses(featureGenerator.sampleNames)
     assertEquals(DenseVector[Double](-0.1, 1.0, 0.1, -0.2), labelGenerator.baseContinuousResponse)
   }
   @Test
@@ -83,7 +83,7 @@ class NoisyEffectLabelGeneratorTest extends SparkTest {
     val labelGenerator = new NoisyEffectLabelGenerator(featureGenerator)(1,
       Map("v_0" -> 1.0, "v_1" -> 0.5, "v_2" -> 0.25), fractionVarianceExplained = 0.5,
       classThresholdPercentile = 0.5)
-    val classes = labelGenerator.getLabels(featureGenerator.sampleNames)
+    val classes = labelGenerator.getResponses(featureGenerator.sampleNames)
     assertEquals(0.5, classes.count(_ == 0).toDouble / classes.size, 0.01)
 
     val baseVariance = meanAndVariance(labelGenerator.baseContinuousResponse).variance

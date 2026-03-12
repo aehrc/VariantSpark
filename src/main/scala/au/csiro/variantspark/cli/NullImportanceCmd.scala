@@ -10,7 +10,7 @@ import au.csiro.variantspark.input.VCFSource
 import au.csiro.variantspark.input.VCFFeatureSource
 import au.csiro.variantspark.input.HashingLabelSource
 import org.apache.spark.mllib.linalg.Vectors
-import au.csiro.variantspark.input.CsvLabelSource
+import au.csiro.variantspark.input.CsvResponseSource
 import au.csiro.variantspark.cmd.Echoable
 import au.csiro.pbdava.ssparkle.common.utils.Logging
 import org.apache.commons.lang3.builder.ToStringBuilder
@@ -147,10 +147,10 @@ class NullImportanceCmd
         + s" took: ${dataLoadingTimer.durationInSec}")
     echoDataPreview()
 
-    echo(s"Loading labels from: ${featuresFile}, column: ${featureColumn}")
-    val labelSource = new CsvLabelSource(featuresFile, featureColumn)
-    val labels = labelSource.getLabels(featureSource.sampleNames)
-    echo(s"Loaded labels: ${dumpList(labels.toList)}")
+    echo(s"Loading responses from: ${featuresFile}, column: ${featureColumn}")
+    val responseSource = new CsvResponseSource(featuresFile, featureColumn, _.toInt)
+    val responses = responseSource.getResponses(featureSource.sampleNames)
+    echo(s"Loaded responses: ${dumpList(responses.toList)}")
 
     // discover variable type
     // for now assume it's ordered factor with provided number of levels
@@ -162,12 +162,12 @@ class NullImportanceCmd
 
     // For now do it in a loop
     val iterationImportances = Range(0, nPermutations).map { pn =>
-      // TODO: need to actually permutate the labels
-      // we can do it in place as a permutatino of a permutation is still a permutation
-      // although it might be better to actually get the permutation as oder of indexes
+      // TODO: need to actually permutate the responses
+      // we can do it in place as a permutation of a permutation is still a permutation
+      // although it might be better to actually get the permutation as order of indexes
       echo(s"Running permutation ${pn}")
-      MathArrays.shuffle(labels, permutationRng)
-      verbose(s"The permutation is: ${labels.toList}")
+      MathArrays.shuffle(responses, permutationRng)
+      verbose(s"The permutation is: ${responses.toList}")
       echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")
       echo(s"Random seed is: ${randomSeed}")
       val treeBuildingTimer = Timer()
@@ -197,7 +197,7 @@ class NullImportanceCmd
         }
       }
 
-      val result = rf.batchTrain(trainingData, labels, nTrees, rfBatchSize)
+      val result = rf.batchTrain(trainingData, responses, nTrees, rfBatchSize)
 
       echo(
           s"Random forest oob accuracy: ${result.oobError},"

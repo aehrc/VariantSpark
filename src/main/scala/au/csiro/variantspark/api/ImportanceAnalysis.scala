@@ -5,7 +5,7 @@ import java.util
 import au.csiro.pbdava.ssparkle.spark.SparkUtils
 import au.csiro.variantspark.algo.{RandomForest, RandomForestModel, RandomForestParams}
 import au.csiro.variantspark.data.{Feature}
-import au.csiro.variantspark.input.{FeatureSource, LabelSource}
+import au.csiro.variantspark.input.{FeatureSource, ResponseSource}
 import it.unimi.dsi.fastutil.longs.{Long2DoubleOpenHashMap, Long2LongOpenHashMap}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
@@ -21,7 +21,7 @@ import scala.collection.JavaConverters._
   * @param sqlContext    The SQL context.
   * @param featureSource The feature source.
   * @param rfModel The trained random forest model
-  * @example class ImportanceAnalysis(featureSource, labelSource, nTrees = 1000)
+  * @example class ImportanceAnalysis(featureSource, responseSource, nTrees = 1000)
   */
 class ImportanceAnalysis(val sqlContext: SQLContext, val rfModel: RandomForestModel,
     val indexedFeatures: RDD[(Feature, Long)]) {

@@ -11,7 +11,7 @@ import au.csiro.variantspark.input.VCFSource
 import au.csiro.variantspark.input.VCFFeatureSource
 import au.csiro.variantspark.input.HashingLabelSource
 import org.apache.spark.mllib.linalg.Vectors
-import au.csiro.variantspark.input.CsvLabelSource
+import au.csiro.variantspark.input.CsvResponseSource
 import au.csiro.variantspark.cmd.Echoable
 import au.csiro.pbdava.ssparkle.common.utils.Logging
 import org.apache.commons.lang3.builder.ToStringBuilder
@@ -121,10 +121,10 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
 
     echo(s"Loaded rows: ${dumpList(source.sampleNames)}")
 
-    echo(s"Loading labels from: ${featuresFile}, column: ${featureColumn}")
-    val labelSource = new CsvLabelSource(featuresFile, featureColumn)
-    val labels = labelSource.getLabels(source.sampleNames)
-    echo(s"Loaded labels: ${dumpList(labels.toList)}")
+    echo(s"Loading responses from: ${featuresFile}, column: ${featureColumn}")
+    val responseSource = new CsvResponseSource(featuresFile, featureColumn, _.toInt)
+    val responses = responseSource.getResponses(source.sampleNames)
+    echo(s"Loaded responses: ${dumpList(responses.toList)}")
 
     val dataLoadingTimer = Timer()
     echo(s"Loading features from: ${inputFile}")
@@ -153,8 +153,8 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
     echo(s"Running two sided CochranArmitage test")
     val trainingData = inputData.map { case (f, i) => (f.valueAsByteArray, i) }
 
-    val scorer = new CochranArmitageTestScorer(labels, CochranArmitageTestCalculator.WEIGHT_TREND,
-      nVariables)
+    val scorer = new CochranArmitageTestScorer(responses,
+      CochranArmitageTestCalculator.WEIGHT_TREND, nVariables)
     val topImportantVariables = scorer.topN(trainingData)
     val topImportantVariableIndexes = topImportantVariables.map(_._1).toSet
 

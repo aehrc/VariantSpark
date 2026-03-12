@@ -59,8 +59,8 @@ class EffectLabelGenerator(featureSource: FeatureSource)(zeroLevel: Int,
   var continuousStats: MeanAndVariance = _
   var continouusResponse: DenseVector[Double] = _
 
-  def getLabels(labels: Seq[String]): Array[Int] = {
-    val nSamples = labels.size
+  def getResponses(sampleIds: Seq[String]): Array[Int] = {
+    val nSamples = sampleIds.size
 
     val allEffects = effects ++ noiseEffects
     logDebug(s"Variable effects: ${effects}")

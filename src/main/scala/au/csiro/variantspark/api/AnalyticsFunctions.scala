@@ -1,7 +1,7 @@
 package au.csiro.variantspark.api
 
 import au.csiro.variantspark.input.FeatureSource
-import au.csiro.variantspark.input.LabelSource
+import au.csiro.variantspark.input.ResponseSource
 import au.csiro.variantspark.algo.PairwiseOperation
 import au.csiro.variantspark.algo.LowerTriangMatrix
 import au.csiro.variantspark.algo.RandomForestModel

@@ -2,7 +2,7 @@ package au.csiro.variantspark.cli.args
 
 import org.kohsuke.args4j.{Option => ArgsOption}
 import au.csiro.variantspark.cmd.Echoable
-import au.csiro.variantspark.input.CsvLabelSource
+import au.csiro.variantspark.input.CsvResponseSource
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
 
@@ -16,10 +16,10 @@ trait LabelSourceArgs extends SparkArgs with Echoable {
     aliases = Array("--feature-column"))
   val featureColumn: String = null
 
-  lazy val labelSource: CsvLabelSource = {
+  lazy val labelSource: CsvResponseSource[Int] = {
     implicit val hadoopConf: Configuration = sc.hadoopConfiguration
     echo(s"Loading labels from: ${featuresFile}, column: ${featureColumn}")
-    new CsvLabelSource(featuresFile, featureColumn)
+    new CsvResponseSource(featuresFile, featureColumn, _.toInt)
   }
 
 }

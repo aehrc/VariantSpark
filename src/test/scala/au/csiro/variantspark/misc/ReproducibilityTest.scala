@@ -26,7 +26,7 @@ class ReproducibilityTest extends SparkTest {
     implicit val vsContext = VSContext(spark)
     implicit val sqlContext = spark.sqlContext
     val features = vsContext.importVCF("data/chr22_1000.vcf")
-    val label = vsContext.loadLabel("data/chr22-labels.csv", "22_16051249")
+    val label = vsContext.loadResponse("data/chr22-labels.csv", "22_16051249")
     val params = RandomForestParams(seed = 13L)
     val trainResult1 = RFModelTrainer.trainModel(features, label, params, 40, 20)
     val impAnalysis1 =

@@ -1,28 +1,26 @@
 package au.csiro.variantspark.input
 
 import java.io.InputStreamReader
-
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 import com.github.tototoshi.csv.CSVReader
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.Path
 import au.csiro.variantspark.utils.HdfsPath
+import scala.reflect.ClassTag
 
-class CsvLabelSource(val fileName: String, val columnName: String)(
-    implicit hadoopConf: Configuration)
-    extends LabelSource {
+class CsvResponseSource[T: ClassTag](val fileName: String, val columnName: String,
+    val convert: String => T)(implicit hadoopConf: Configuration)
+    extends ResponseSource[T] {
 
-  lazy val labelMap: Map[String, Int] = {
+  lazy val responseMap: Map[String, T] = {
     LoanUtils.withCloseable(CSVReader.open(new InputStreamReader(HdfsPath(fileName).open()))) {
       reader =>
         // we expect this to be small
         // so local read should be fine
-
         val header = reader.readNext().get
         val columnIndex = header.indexOf(columnName)
-        reader.iterator.map(row => (row.head, row(columnIndex).toInt)).toMap
+        reader.iterator.map(row => (row.head, convert(row(columnIndex)))).toMap
     }
   }
 
-  def getLabels(labels: Seq[String]): Array[Int] = labels.map(labelMap(_)).toArray
+  def getResponses(sampleIds: Seq[String]): Array[T] = sampleIds.map(responseMap(_)).toArray
 }

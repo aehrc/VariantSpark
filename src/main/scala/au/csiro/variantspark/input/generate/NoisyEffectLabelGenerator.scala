@@ -36,10 +36,10 @@ class NoisyEffectLabelGenerator(featureSource: FeatureSource)(zeroLevel: Int,
       .fold(DenseVector.ones[Double](nSamples))(_ *= _)
   }
 
-  def getLabels(labels: Seq[String]): Array[Int] = {
+  def getResponses(sampleIds: Seq[String]): Array[Int] = {
 
     val zeroLevelValue = zeroLevel.toDouble
-    val nSamples = labels.size
+    val nSamples = sampleIds.size
 
     baseContinuousResponse = withBroadcast(featureSource.features.sparkContext)(effects) {
       br_effects =>
