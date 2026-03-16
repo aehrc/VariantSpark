@@ -166,6 +166,7 @@ object RegressionSplitAggregator {
 trait LevelAggregator {
   def reset(nLevels: Int): Unit
   def updateAt(level: Int, yIndex: Int): Unit
+  def apply(level: Int): ImpurityAggregator
 }
 
 /**
