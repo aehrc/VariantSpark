@@ -32,6 +32,7 @@ import au.csiro.pbdava.ssparkle.common.utils.Timer
 import au.csiro.variantspark.utils.defRng
 import au.csiro.variantspark.input.ParquetFeatureSource
 import au.csiro.variantspark.algo.RandomForest
+import au.csiro.variantspark.algo.ResponseVariable
 import au.csiro.variantspark.utils.IndexedRDDFunction._
 import java.io.ObjectOutputStream
 import java.io.FileOutputStream
@@ -149,8 +150,8 @@ class NullImportanceCmd
 
     echo(s"Loading responses from: ${featuresFile}, column: ${featureColumn}")
     val responseSource = new CsvResponseSource(featuresFile, featureColumn, _.toInt)
-    val responses = responseSource.getResponses(featureSource.sampleNames)
-    echo(s"Loaded responses: ${dumpList(responses.toList)}")
+    val response = responseSource.getResponses(featureSource.sampleNames)
+    echo(s"Loaded responses: ${dumpList(response.toList)}")
 
     // discover variable type
     // for now assume it's ordered factor with provided number of levels
@@ -166,8 +167,8 @@ class NullImportanceCmd
       // we can do it in place as a permutation of a permutation is still a permutation
       // although it might be better to actually get the permutation as order of indexes
       echo(s"Running permutation ${pn}")
-      MathArrays.shuffle(responses, permutationRng)
-      verbose(s"The permutation is: ${responses.toList}")
+      MathArrays.shuffle(response, permutationRng)
+      verbose(s"The permutation is: ${response.toList}")
       echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")
       echo(s"Random seed is: ${randomSeed}")
       val treeBuildingTimer = Timer()
@@ -197,7 +198,7 @@ class NullImportanceCmd
         }
       }
 
-      val result = rf.batchTrain(trainingData, responses, nTrees, rfBatchSize)
+      val result = rf.batchTrain(trainingData, ResponseVariable(response), nTrees, rfBatchSize)
 
       echo(
           s"Random forest oob accuracy: ${result.oobError},"

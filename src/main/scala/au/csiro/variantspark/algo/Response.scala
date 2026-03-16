@@ -24,3 +24,8 @@ case class ClassificationResponse(labels: Array[Int]) extends ResponseVariable {
 case class RegressionResponse(values: Array[Double]) extends ResponseVariable {
   def length: Int = values.length
 }
+
+object ResponseVariable {
+  def apply(labels: Array[Int]): ResponseVariable = ClassificationResponse(labels)
+  def apply(values: Array[Double]): ResponseVariable = RegressionResponse(values)
+}

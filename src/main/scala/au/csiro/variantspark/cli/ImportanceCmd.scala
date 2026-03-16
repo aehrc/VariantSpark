@@ -4,7 +4,13 @@ import au.csiro.pbdava.ssparkle.common.arg4j.{AppRunner, TestArgs}
 import au.csiro.pbdava.ssparkle.common.utils.{CSVUtils, Logging, ReusablePrintStream, Timer}
 import au.csiro.pbdava.ssparkle.spark.{SparkApp, SparkUtils}
 import au.csiro.sparkle.common.args4j.ArgsApp
-import au.csiro.variantspark.algo.{RandomForest, RandomForestCallback, RandomForestParams, _}
+import au.csiro.variantspark.algo.{
+  RandomForest,
+  RandomForestCallback,
+  RandomForestParams,
+  ResponseVariable,
+  _
+}
 import au.csiro.variantspark.cli.args.{
   FeatureSourceArgs,
   ImportanceArgs,
@@ -88,8 +94,8 @@ class ImportanceCmd
 
     echo(s"Loading responses from: ${featuresFile}, column: ${featureColumn}")
     val responseSource = new CsvResponseSource(featuresFile, featureColumn, _.toInt)
-    val responses = responseSource.getResponses(featureSource.sampleNames)
-    echo(s"Loaded responses: ${dumpList(responses.toList)}")
+    val response = responseSource.getResponses(featureSource.sampleNames)
+    echo(s"Loaded responses: ${dumpList(response.toList)}")
     echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")
     echo(s"Random seed is: ${randomSeed}")
     val treeBuildingTimer = Timer()
@@ -123,7 +129,7 @@ class ImportanceCmd
       }
     }
 
-    val result = rf.batchTrainTyped(trainingData, responses, nTrees, rfBatchSize)
+    val result = rf.batchTrainTyped(trainingData, ResponseVariable(response), nTrees, rfBatchSize)
 
     echo(
         s"Random forest oob accuracy: ${result.oobError},"
