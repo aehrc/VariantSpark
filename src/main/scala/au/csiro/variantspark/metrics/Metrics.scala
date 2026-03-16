@@ -26,4 +26,25 @@ object Metrics {
 
   def classificationError(expected: Array[Int], predicted: Array[Int]): Double =
     accuracy(expected, predicted)
+
+  def meanSquaredError(expected: Array[Double], predicted: Array[Double]): Double = {
+    require(expected.length == predicted.length)
+    expected.zip(predicted).map { case (e, p) => math.pow(e - p, 2) }.sum / expected.length
+  }
+
+  def rootMeanSquaredError(expected: Array[Double], predicted: Array[Double]): Double =
+    math.sqrt(meanSquaredError(expected, predicted))
+
+  def meanAbsoluteError(expected: Array[Double], predicted: Array[Double]): Double = {
+    require(expected.length == predicted.length)
+    expected.zip(predicted).map { case (e, p) => math.abs(e - p) }.sum / expected.length
+  }
+
+  def r2(expected: Array[Double], predicted: Array[Double]): Double = {
+    require(expected.length == predicted.length)
+    val meanExpected = expected.sum / expected.length
+    val ssTot = expected.map(e => math.pow(e - meanExpected, 2)).sum
+    val ssRes = expected.zip(predicted).map { case (e, p) => math.pow(e - p, 2) }.sum
+    if (ssTot == 0) 0.0 else 1 - (ssRes / ssTot)
+  }
 }

@@ -32,14 +32,14 @@ case class SubsetSplitCriteria(mask: Long) extends SplitCriteria {
   * Only lives during training; the lean [[SplitCriteria]] is extracted via
   * {{toCriteria}} and stored in the persisted [[SplitNode]].
   *
-  * @param gini the weighted gini impurity of the split
-  * @param leftGini the gini impurity of the left child
-  * @param rightGini the gini impurity of the right child
+  * @param impurity the weighted impurity of the split
+  * @param leftImpurity the impurity of the left child
+  * @param rightImpurity the impurity of the right child
   */
 sealed trait SplitInfo {
-  def gini: Double
-  def leftGini: Double
-  def rightGini: Double
+  def impurity: Double
+  def leftImpurity: Double
+  def rightImpurity: Double
   def goesLeft(value: Double): Boolean
   def toCriteria: SplitCriteria
 }
@@ -47,12 +47,12 @@ sealed trait SplitInfo {
 /** [[SplitInfo]] for ordered (continuous, discrete, or ordinal) features.
   *
   * @param splitPoint the threshold value at which the split occurs
-  * @param gini the weighted gini impurity of the split
-  * @param leftGini the gini impurity of the left child
-  * @param rightGini the gini impurity of the right child
+  * @param impurity the weighted impurity of the split
+  * @param leftImpurity the impurity of the left child
+  * @param rightImpurity the impurity of the right child
   */
-case class ThresholdSplitInfo(splitPoint: Double, gini: Double, leftGini: Double,
-    rightGini: Double)
+case class ThresholdSplitInfo(splitPoint: Double, impurity: Double, leftImpurity: Double,
+    rightImpurity: Double)
     extends SplitInfo {
   def goesLeft(value: Double): Boolean = value <= splitPoint
   def toCriteria: SplitCriteria = ThresholdSplitCriteria(splitPoint)
@@ -61,11 +61,12 @@ case class ThresholdSplitInfo(splitPoint: Double, gini: Double, leftGini: Double
 /** [[SplitInfo]] for nominal features.
   *
   * @param mask a Long bitmask where bit i set means level i goes left
-  * @param gini the weighted gini impurity of the split
-  * @param leftGini the gini impurity of the left child
-  * @param rightGini the gini impurity of the right child
+  * @param impurity the weighted impurity of the split
+  * @param leftImpurity the impurity of the left child
+  * @param rightImpurity the impurity of the right child
   */
-case class SubsetSplitInfo(mask: Long, gini: Double, leftGini: Double, rightGini: Double)
+case class SubsetSplitInfo(mask: Long, impurity: Double, leftImpurity: Double,
+    rightImpurity: Double)
     extends SplitInfo {
   def goesLeft(value: Double): Boolean = (mask & (1L << value.toInt)) != 0
   def toCriteria: SplitCriteria = SubsetSplitCriteria(mask)
@@ -136,11 +137,44 @@ object ClassificationSplitAggregator {
 }
 
 /**
+  * Split aggregator for regression. The indexes refer to continuous values.
+  */
+class RegressionSplitAggregator private (val values: Array[Double],
+    val left: RegressionImpurityAggregator, val right: RegressionImpurityAggregator)
+    extends IndexedSplitAggregator {
+
+  def initValue(value: Double) {
+    right.addValue(value)
+  }
+
+  def updateValue(value: Double) {
+    left.addValue(value)
+    right.subValue(value)
+  }
+
+  override def init(index: Int): Unit = initValue(values(index))
+
+  override def update(index: Int): Unit = updateValue(values(index))
+}
+
+object RegressionSplitAggregator {
+  def apply(impurity: RegressionImpurity, values: Array[Double]): RegressionSplitAggregator =
+    new RegressionSplitAggregator(values, impurity.createAggregator(),
+      impurity.createAggregator())
+}
+
+trait LevelAggregator {
+  def reset(nLevels: Int): Unit
+  def updateAt(level: Int, yIndex: Int): Unit
+}
+
+/**
   * Fast but memory intensive split aggregator keeping partial impurity statistics for
   * all the unique values of the feature (only makes senses with indexed features)
   */
-class ConfusionAggregator private (val matrix: Array[ClassificationImpurityAggregator],
-    val labels: Array[Int]) {
+class ClassificationLevelAggregator private (val matrix: Array[ClassificationImpurityAggregator],
+    val labels: Array[Int])
+    extends LevelAggregator {
 
   def this(impurity: ClassficationImpurity, size: Int, nCategories: Int, labels: Array[Int]) {
     this(Array.fill(size)(impurity.createAggregator(nCategories)), labels)
@@ -160,6 +194,28 @@ class ConfusionAggregator private (val matrix: Array[ClassificationImpurityAggre
   def updateAt(level: Int, yIndex: Int): Unit = matrix(level).addLabel(labels(yIndex))
 
   def apply(level: Int): ClassificationImpurityAggregator = matrix(level)
+}
+
+/**
+  * Fast but memory intensive split aggregator for regression, keeping partial
+  * impurity statistics for all the unique values of the feature.
+  */
+class RegressionLevelAggregator private (val matrix: Array[RegressionImpurityAggregator],
+    val values: Array[Double])
+    extends LevelAggregator {
+
+  def this(impurity: RegressionImpurity, size: Int, values: Array[Double]) {
+    this(Array.fill(size)(impurity.createAggregator()), values)
+  }
+
+  def reset(nLevels: Int) {
+    assert(nLevels <= matrix.length)
+    matrix.iterator.take(nLevels).foreach(_.reset())
+  }
+
+  def updateAt(level: Int, yIndex: Int): Unit = matrix(level).addValue(values(yIndex))
+
+  def apply(level: Int): RegressionImpurityAggregator = matrix(level)
 }
 
 /**
@@ -196,7 +252,7 @@ trait FastSplitterProvider extends SplitterProvider {
     */
   def confusionSize: Int
   def createSplitter(impCalc: IndexedSplitAggregator,
-      confusionAgg: ConfusionAggregator): IndexedSplitter
+      confusionAgg: LevelAggregator): IndexedSplitter
 }
 
 /**
@@ -237,21 +293,16 @@ object ThresholdIndexesSplitter {
   * The default implementation of the {{IndexedSplitterFactory}} for classification
   *
   */
-class DefStatefullIndexedSpliterFactory(val impurity: ClassficationImpurity,
-    val labels: Array[Int], val nCategories: Int, val maxConfusionSize: Int = 10,
+class DefStatefulIndexedSplitterFactory(splitAggregator: IndexedSplitAggregator,
+    confusionAgg: Option[LevelAggregator] = None, val maxConfusionSize: Int = 10,
     val qThreshold: Double = ThresholdIndexesSplitter.DefaultQThredhold)
     extends IndexedSplitterFactory {
 
-  lazy val splitAggregator: ClassificationSplitAggregator =
-    ClassificationSplitAggregator(impurity, labels, nCategories)
-  lazy val confusionAgg: ConfusionAggregator =
-    new ConfusionAggregator(impurity, maxConfusionSize, nCategories, labels)
-
   def create(sf: SplitterProvider): IndexedSplitter = {
-    sf match {
-      case fsf: FastSplitterProvider if fsf.confusionSize <= maxConfusionSize =>
-        ThresholdIndexedSplitter(fsf.createSplitter(splitAggregator, confusionAgg),
-          fsf.confusionSize, sf.createSplitter(splitAggregator), qThreshold)
+    (sf, confusionAgg) match {
+      case (fsf: FastSplitterProvider, Some(ca)) if fsf.confusionSize <= maxConfusionSize =>
+        ThresholdIndexedSplitter(fsf.createSplitter(splitAggregator, ca), fsf.confusionSize,
+          sf.createSplitter(splitAggregator), qThreshold)
       case _ => sf.createSplitter(splitAggregator)
     }
   }

@@ -44,7 +44,7 @@ class SmallOrderedTreeFeature(val label: String, val index: Long, orderedData: A
     new JOrderedIndexedSplitter(impCalc, orderedData, nLevels)
   override def confusionSize: Int = nLevels
   override def createSplitter(impCalc: IndexedSplitAggregator,
-      confusionAgg: ConfusionAggregator): IndexedSplitter =
+      confusionAgg: LevelAggregator): IndexedSplitter =
     new JOrderedFastIndexedSplitter(confusionAgg, impCalc, orderedData, nLevels)
 }
 
@@ -62,7 +62,7 @@ class SmallNominalTreeFeature(val label: String, val index: Long, nominalData: A
     new JNominalIndexedSplitter(impCalc, nominalData, nLevels)
   override def confusionSize: Int = nLevels
   override def createSplitter(impCalc: IndexedSplitAggregator,
-      confusionAgg: ConfusionAggregator): IndexedSplitter =
+      confusionAgg: LevelAggregator): IndexedSplitter =
     new JNominalFastIndexedSplitter(confusionAgg, impCalc, nominalData, nLevels)
 }
 

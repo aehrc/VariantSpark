@@ -1,6 +1,6 @@
 package au.csiro.variantspark.algo.split;
 
-import au.csiro.variantspark.algo.ConfusionAggregator;
+import au.csiro.variantspark.algo.LevelAggregator;
 import au.csiro.variantspark.algo.ImpurityAggregator;
 import au.csiro.variantspark.algo.IndexedSplitAggregator;
 import au.csiro.variantspark.algo.SplitInfo;
@@ -21,9 +21,9 @@ import au.csiro.variantspark.algo.ThresholdSplitInfo;
 public class JOrderedFastIndexedSplitter extends AbstractIndexedSplitterBase {
 	private final byte[] data;
 	private final int nLevels;
-	private final  ConfusionAggregator confusionAgg;
+private final  LevelAggregator confusionAgg;
 
-	public JOrderedFastIndexedSplitter(ConfusionAggregator confusionAgg, IndexedSplitAggregator impurityCalc, byte[] data, int nLevels) {
+	public JOrderedFastIndexedSplitter(LevelAggregator confusionAgg, IndexedSplitAggregator impurityCalc, byte[] data, int nLevels) {
 		super(impurityCalc);
 		this.confusionAgg = confusionAgg;
 		this.data = data;

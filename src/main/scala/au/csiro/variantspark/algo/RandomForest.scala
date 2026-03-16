@@ -38,58 +38,13 @@ class StandardImportanceNormalizer(val scale: Double) extends VarImportanceNorma
 case object To100ImportanceNormalizer extends StandardImportanceNormalizer(100.0)
 case object ToOneImportanceNormalizer extends StandardImportanceNormalizer(1.0)
 
-/** Implements voting aggregator conditionally
-  *
-  * @param nLabels the number of labels
-  * @param nSamples the number of samples
-  */
-case class VotingAggregator(nLabels: Int, nSamples: Int) {
-  lazy val votes: Array[Array[Int]] = Array.fill(nSamples)(Array.fill(nLabels)(0))
-
-  /** Adds a vote with predictions and indexes
-    * @param predictions the number of predictions
-    * @param indexes the number of indexes
-    */
-  def addVote(predictions: Array[Int], indexes: Iterable[Int]) {
-    require(predictions.length <= nSamples, "Valid number of samples")
-    predictions.zip(indexes).foreach { case (v, i) => votes(i)(v) += 1 }
-  }
-
-  /** Adds a vote with predictions
-    * @param predictions the number of predictions
-    */
-  def addVote(predictions: Array[Int]): VotingAggregator = {
-    require(predictions.length == nSamples, "Full prediction range")
-    predictions.zipWithIndex.foreach { case (v, i) => votes(i)(v) += 1 }
-    this
-  }
-
-  /** Maps votes to predictions
-    *
-    */
-  def predictions: Array[Int] = votes.map(v => v.indices.maxBy(v))
-
-  /**
-    * Computes class probabilities.
-    * The result is an array with one item per sample, where
-    * each item is a vector with class probabilities for this sample.
-    * @return predicted class probabilities for each sample.
-    */
-  def classProbabilities: Array[Array[Double]] = {
-    votes.map { row =>
-      val sampleTotal = row.sum.toDouble
-      row.map(classCount => classCount / sampleTotal)
-    }
-  }
-}
-
 /** Implements random forest members conditionally
   * @param predictor the predictor model
   * @param oobIndexes an array of out-of-bag index values
   */
 @SerialVersionUID(2L)
 case class RandomForestMember(predictor: PredictiveModelWithImportance,
-    oobIndexes: Array[Int] = null, oobPred: Array[Int] = null) {}
+    oobIndexes: Array[Int] = null, oobPred: Array[Any] = null) {}
 
 /** Implements random forest models conditionally
   * @param members the RF members
@@ -97,8 +52,9 @@ case class RandomForestMember(predictor: PredictiveModelWithImportance,
   * @param oobErrors the out-of-bag errors
   */
 @SerialVersionUID(2L)
-case class RandomForestModel(members: List[RandomForestMember], labelCount: Int,
-    oobErrors: List[Double] = List.empty, params: RandomForestParams = null) {
+case class RandomForestModel(members: List[RandomForestMember],
+    aggregatorFactory: PredictionAggregatorFactory, oobErrors: List[Double] = List.empty,
+    params: RandomForestParams = null) {
 
   def oobError: Double = oobErrors.last
 
@@ -142,13 +98,13 @@ case class RandomForestModel(members: List[RandomForestMember], labelCount: Int,
 
   def size: Int = members.size
 
-  def predict(indexedData: RDD[(Feature, Long)]): Array[Int] =
+  def predict(indexedData: RDD[(Feature, Long)]): Array[Any] =
     predict(indexedData, indexedData.size)
 
-  def predict(indexedData: RDD[(Feature, Long)], nSamples: Int): Array[Int] = {
-    trees
+  def predict(indexedData: RDD[(Feature, Long)], nSamples: Int): Array[Any] = {
+    trees.iterator
       .map(_.predict(indexedData))
-      .foldLeft(VotingAggregator(labelCount, nSamples))(_.addVote(_))
+      .foldLeft(aggregatorFactory.create(nSamples))(_.addPredictions(_))
       .predictions
   }
 
@@ -156,10 +112,15 @@ case class RandomForestModel(members: List[RandomForestMember], labelCount: Int,
     predictProb(indexedData, indexedData.size)
 
   def predictProb(indexedData: RDD[(Feature, Long)], nSamples: Int): Array[Array[Double]] = {
-    val treeVotes = trees
+    val agg = trees
       .map(_.predict(indexedData))
-      .foldLeft(VotingAggregator(labelCount, nSamples))(_.addVote(_))
-    treeVotes.classProbabilities
+      .foldLeft(aggregatorFactory.create(nSamples))(_.addPredictions(_))
+    agg match {
+      case v: VotingAggregator => v.classProbabilities
+      case _ =>
+        throw new UnsupportedOperationException(
+            "predictProb is only supported for classification models")
+    }
   }
 }
 
@@ -172,35 +133,39 @@ case class RandomForestModel(members: List[RandomForestMember], labelCount: Int,
   * @param maxDepth the maxDepth value
   * @param minNodeSize the minNodeSize value
   */
-case class RandomForestParams(oob: Boolean = true, nTryFraction: Double = Double.NaN,
-    bootstrap: Boolean = true, subsample: Double = Double.NaN, randomizeEquality: Boolean = true,
-    seed: Long = defRng.nextLong, maxDepth: Int = Int.MaxValue, minNodeSize: Int = 1,
-    correctImpurity: Boolean = false, airRandomSeed: Long = 0L) {
+case class RandomForestParams(problemType: ProblemType = Classification, oob: Boolean = true,
+    nTryFraction: Double = Double.NaN, bootstrap: Boolean = true, subsample: Double = Double.NaN,
+    randomizeEquality: Boolean = true, seed: Long = defRng.nextLong, maxDepth: Int = Int.MaxValue,
+    minNodeSize: Int = 1, correctImpurity: Boolean = false, airRandomSeed: Long = 0L) {
   def resolveDefaults(nSamples: Int, nVariables: Int): RandomForestParams = {
-    RandomForestParams(oob = oob,
+    RandomForestParams(problemType = problemType, oob = oob,
       nTryFraction =
-        if (!nTryFraction.isNaN) nTryFraction else Math.sqrt(nVariables.toDouble) / nVariables,
+        if (!nTryFraction.isNaN) nTryFraction
+        else if (problemType == Classification) Math.sqrt(nVariables.toDouble) / nVariables
+        else 0.33,
       bootstrap = bootstrap,
       subsample = if (!subsample.isNaN) subsample else if (bootstrap) 1.0 else 0.666,
       randomizeEquality = randomizeEquality, seed = seed, maxDepth = maxDepth,
       minNodeSize = minNodeSize, correctImpurity = correctImpurity, airRandomSeed = airRandomSeed)
   }
   def toDecisionTreeParams(seed: Long): DecisionTreeParams = {
-    DecisionTreeParams(seed = seed, randomizeEquality = randomizeEquality, maxDepth = maxDepth,
-      minNodeSize = minNodeSize, correctImpurity = correctImpurity, airRandomSeed = airRandomSeed)
+    DecisionTreeParams(problemType = problemType, seed = seed,
+      randomizeEquality = randomizeEquality, maxDepth = maxDepth, minNodeSize = minNodeSize,
+      correctImpurity = correctImpurity, airRandomSeed = airRandomSeed)
   }
   override def toString: String = ToStringBuilder.reflectionToString(this)
 }
 
 object RandomForestParams {
-  def fromOptions(oob: Option[Boolean] = None, mTryFraction: Option[Double] = None,
-      bootstrap: Option[Boolean] = None, subsample: Option[Double] = None,
-      seed: Option[Long] = None, maxDepth: Option[Int] = None, minNodeSize: Option[Int] = None,
-      correctImpurity: Option[Boolean] = None,
+  def fromOptions(problemType: Option[ProblemType] = None, oob: Option[Boolean] = None,
+      mTryFraction: Option[Double] = None, bootstrap: Option[Boolean] = None,
+      subsample: Option[Double] = None, seed: Option[Long] = None, maxDepth: Option[Int] = None,
+      minNodeSize: Option[Int] = None, correctImpurity: Option[Boolean] = None,
       airRandomSeed: Option[Long] = None): RandomForestParams =
-    RandomForestParams(oob.getOrElse(true), mTryFraction.getOrElse(Double.NaN),
-      bootstrap.getOrElse(true), subsample.getOrElse(Double.NaN), true,
-      seed.getOrElse(defRng.nextLong), maxDepth.getOrElse(Int.MaxValue), minNodeSize.getOrElse(1),
+    RandomForestParams(problemType.getOrElse(Classification), oob.getOrElse(true),
+      mTryFraction.getOrElse(Double.NaN), bootstrap.getOrElse(true),
+      subsample.getOrElse(Double.NaN), true, seed.getOrElse(defRng.nextLong),
+      maxDepth.getOrElse(Int.MaxValue), minNodeSize.getOrElse(1),
       correctImpurity.getOrElse(false), airRandomSeed.getOrElse(0L))
 }
 
@@ -211,10 +176,10 @@ trait RandomForestCallback {
 
 // TODO (Design): Avoid using type cast change design
 trait BatchTreeModel {
-  def batchTrain(indexedData: RDD[TreeFeature], labels: Array[Int], nTryFraction: Double,
+  def batchTrain(indexedData: RDD[TreeFeature], response: ResponseVariable, nTryFraction: Double,
       samples: Seq[Sample]): Seq[PredictiveModelWithImportance]
   def batchPredict(indexedData: RDD[TreeFeature], models: Seq[PredictiveModelWithImportance],
-      indexes: Seq[Array[Int]]): Seq[Array[Int]]
+      indexes: Seq[Array[Int]]): Seq[Array[Any]]
 }
 
 object RandomForest {
@@ -224,11 +189,11 @@ object RandomForest {
   def wideDecisionTreeBuilder(params: DecisionTreeParams): BatchTreeModel = {
     val decisionTree = new DecisionTree(params)
     new BatchTreeModel() {
-      override def batchTrain(indexedData: RDD[TreeFeature], labels: Array[Int],
+      override def batchTrain(indexedData: RDD[TreeFeature], response: ResponseVariable,
           nTryFraction: Double, samples: Seq[Sample]): Seq[PredictiveModelWithImportance] =
-        decisionTree.batchTrainInt(indexedData, labels, nTryFraction, samples)
+        decisionTree.batchTrainInt(indexedData, response, nTryFraction, samples)
       override def batchPredict(indexedData: RDD[TreeFeature],
-          models: Seq[PredictiveModelWithImportance], indexes: Seq[Array[Int]]): Seq[Array[Int]] =
+          models: Seq[PredictiveModelWithImportance], indexes: Seq[Array[Int]]): Seq[Array[Any]] =
         DecisionTreeModel.batchPredict(indexedData.map(tf => (tf, tf.index)),
           models.asInstanceOf[Seq[DecisionTreeModel]], indexes)
     }
@@ -247,33 +212,36 @@ class RandomForest(params: RandomForestParams = RandomForestParams(),
   // TODO (Design):make this class keep random state (could be externalised to implicit random)
   implicit lazy val rng: XorShift1024StarRandomGenerator =
     new XorShift1024StarRandomGenerator(params.seed)
-  def batchTrain(indexedData: RDD[(Feature, Long)], labels: Array[Int], nTrees: Int,
+  def batchTrain(indexedData: RDD[(Feature, Long)], response: ResponseVariable, nTrees: Int,
       nBatchSize: Int = RandomForest.defaultBatchSize): RandomForestModel = {
     val treeFeatures: RDD[TreeFeature] = trf.createRepresentation(indexedData)
-    batchTrainTyped(treeFeatures, labels, nTrees, nBatchSize)
+    batchTrainTyped(treeFeatures, response, nTrees, nBatchSize)
   }
 
   // TODO (Design): Make a param rather then an extra method
   // TODO (Func): Add OOB Calculation
-  def batchTrainTyped(treeFeatures: RDD[TreeFeature], labels: Array[Int], nTrees: Int,
+  def batchTrainTyped(treeFeatures: RDD[TreeFeature], response: ResponseVariable, nTrees: Int,
       nBatchSize: Int)(implicit callback: RandomForestCallback = null): RandomForestModel = {
 
     require(nBatchSize > 0)
     require(nTrees > 0)
-    val nSamples = labels.length
+    val nSamples = response.length
     val nVariables = treeFeatures.count().toInt
-    val nLabels = labels.max + 1
 
-    logDebug(s"Data:  nSamples:${nSamples}, nVariables: ${nVariables}, nLabels:${nLabels}")
+    logDebug(s"Data:  nSamples:${nSamples}, nVariables: ${nVariables}")
 
     val actualParams = params.resolveDefaults(nSamples, nVariables)
+
+    val calculator = actualParams.problemType.makeCalculator(response)
+    val aggregatorFactory = calculator.createPredictionAggregatorFactory()
 
     Option(callback).foreach(_.onParamsResolved(actualParams))
     logDebug(s"Parameters: ${actualParams}")
     logDebug(s"Batch Training: ${nTrees} with batch size: ${nBatchSize}")
 
-    val oobAggregator =
-      if (actualParams.oob) Option(VotingAggregator(nLabels, nSamples)) else None
+    // TODO: Custom OOB aggregation
+    val oobAggregator: Option[PredictionAggregator] =
+      if (actualParams.oob) Some(aggregatorFactory.create(nSamples)) else None
 
     val builder = modelBuilderFactory(actualParams.toDecisionTreeParams(rng.nextLong))
     val allSamples = Stream
@@ -286,7 +254,7 @@ class RandomForest(params: RandomForestParams = RandomForestParams(),
 
           val samples = samplesStream.toList
           val predictors =
-            builder.batchTrain(treeFeatures, labels, actualParams.nTryFraction, samples)
+            builder.batchTrain(treeFeatures, response, actualParams.nTryFraction, samples)
           val members = if (actualParams.oob) {
 
             val oobIndexes = samples.map(_.distinctIndexesOut.toArray)
@@ -300,8 +268,14 @@ class RandomForest(params: RandomForestParams = RandomForestParams(),
           val oobError = oobAggregator
             .map { agg =>
               members.map { m =>
-                agg.addVote(m.oobPred, m.oobIndexes)
-                Metrics.classificationError(labels, agg.predictions)
+                agg.addPredictions(m.oobPred, m.oobIndexes)
+                response match {
+                  case ClassificationResponse(labels) =>
+                    Metrics.classificationError(labels, agg.predictions.map(_.asInstanceOf[Int]))
+                  case RegressionResponse(values) =>
+                    Metrics.rootMeanSquaredError(values,
+                      agg.predictions.map(_.asInstanceOf[Double]))
+                }
               }
             }
             .getOrElse(List.fill(predictors.size)(Double.NaN))
@@ -317,7 +291,6 @@ class RandomForest(params: RandomForestParams = RandomForestParams(),
       .toList
       .unzip
 
-    RandomForestModel(allTrees, nLabels, errors, actualParams)
+    RandomForestModel(allTrees, aggregatorFactory, errors, actualParams)
   }
-
 }

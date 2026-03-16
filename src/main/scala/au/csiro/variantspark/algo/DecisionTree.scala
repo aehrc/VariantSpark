@@ -18,44 +18,19 @@ import org.apache.spark.rdd.RDD.rddToPairRDDFunctions
 
 /** Allows for a general description of the construct
   *
-  * Specify the 'indices', 'impurtity', and 'majoritylabel' these values will not be visible
-  * outside the class
+  * Specify the 'indices' and 'stats'
   *
   * {{{
-  * val subInfo = SubsetInfo(indices, impurtity, majorityLabel)
-  * val subInfoAlt = SubsetInfo(indices, impurity, labels, nLabels)
+  * val subInfo = SubsetInfo(indices, stats)
   * }}}
   *
-  * @constructor creates value based on the indices, impurity, and majorityLabel
-  * @param indices: input an array of integers representing the indices of the values
-  * @param impurity: input the value of impurity of the data construct
-  * @param classCounts: input the counts for each class
+  * @param indices: input an array of integers that contains the indices required
+  * @param stats: input the impurity statistics for the subset
+  *
   */
-case class SubsetInfo(indices: Array[Int], impurity: Double, classCounts: Array[Int]) {
-
-  val majorityLabel: Int = ArraysUtils.maxIndex(classCounts)
-
-  /** An alternative constructor for the SubsetInfo class, use this if the majorityLabel has not
-    * already been defined
-    *
-    * Specify the 'indices', 'impurity', 'labels', and 'nLabels'
-    *
-    * {{{
-    * val subInfo = SubsetInfo(indices, impurity, labels, nLables)
-    * }}}
-    *
-    * @param indices: input an array of integers that contains the indices required
-    * @param impurity: a value based on the gini impurity of the dataset sent in
-    * @param labels: in put an array of integers that contains the labels of the values for each row
-    * @param nLabels: specify the number of labels for that specific dataset
-    *
-    */
-  def this(indices: Array[Int], impurity: Double, labels: Array[Int], nLabels: Int) {
-    this(indices, impurity, FactorVariable.classCounts(indices, labels, nLabels))
-  }
-
+case class SubsetInfo(indices: Array[Int], impurity: Double) {
   def length: Int = indices.length
-  override def toString: String = s"SubsetInfo(${indices.toList},${impurity}, ${majorityLabel})"
+  override def toString: String = s"SubsetInfo(${indices.toList},${impurity})"
 }
 
 /** Class utilized to give an insight into the split data
@@ -79,18 +54,17 @@ case class VarSplitInfo(variableIndex: Long, splitInfo: SplitInfo, isPermutated:
     *              [[au.csiro.variantspark.algo.SubsetInfo]]
     * @return returns a tupple of the subset information
     */
-  def split(v: TreeFeature, labels: Array[Int], nCategories: Int)(
-      subset: SubsetInfo): (SubsetInfo, SubsetInfo) = {
+  def split(v: TreeFeature)(subset: SubsetInfo): (SubsetInfo, SubsetInfo) = {
     val (leftIndices, rightIndices) = subset.indices.partition(i => splitInfo.goesLeft(v.at(i)))
-    (new SubsetInfo(leftIndices, splitInfo.leftGini, labels, nCategories),
-      new SubsetInfo(rightIndices, splitInfo.rightGini, labels, nCategories))
+    (new SubsetInfo(leftIndices, splitInfo.leftImpurity),
+      new SubsetInfo(rightIndices, splitInfo.rightImpurity))
   }
-  def splitPermutated(v: TreeFeature, labels: Array[Int], nCategories: Int,
-      permutationOrder: Array[Int])(subset: SubsetInfo): (SubsetInfo, SubsetInfo) = {
+  def splitPermutated(v: TreeFeature, permutationOrder: Array[Int])(
+      subset: SubsetInfo): (SubsetInfo, SubsetInfo) = {
     val (leftIndices, rightIndices) =
       subset.indices.partition(i => splitInfo.goesLeft(v.at(permutationOrder(i))))
-    (new SubsetInfo(leftIndices, splitInfo.leftGini, labels, nCategories),
-      new SubsetInfo(rightIndices, splitInfo.rightGini, labels, nCategories))
+    (new SubsetInfo(leftIndices, splitInfo.leftImpurity),
+      new SubsetInfo(rightIndices, splitInfo.rightImpurity))
   }
 }
 
@@ -124,17 +98,17 @@ case class DeterministicMerger() extends Merger {
   def merge(a1: Array[VarSplitInfo], a2: Array[VarSplitInfo]): Array[VarSplitInfo] = {
 
     /** Takes the [[au.csiro.variantspark.algo.VarSplitInfo]] from two seperate splits
-      * and returns the value from either s1 or s2 based on the gini impurity
+      * and returns the value from either s1 or s2 based on the impurity
       *
       * @param s1: input an [[au.csiro.variantspark.algo.VarSplitInfo]]
       * @param s2: input an [[au.csiro.variantspark.algo.VarSplitInfo]]
-      * @return Returns either s1 or s2 based on the gini impurity calculation
+      * @return Returns either s1 or s2 based on the impurity calculation
       */
     def mergeSplitInfo(s1: VarSplitInfo, s2: VarSplitInfo) = {
       if (s1 == null) s2
       else if (s2 == null) s1
-      else if (s1.splitInfo.gini < s2.splitInfo.gini) s1
-      else if (s2.splitInfo.gini < s1.splitInfo.gini) s2
+      else if (s1.splitInfo.impurity < s2.splitInfo.impurity) s1
+      else if (s2.splitInfo.impurity < s1.splitInfo.impurity) s2
       else if (s1.variableIndex < s2.variableIndex) s1
       else s2
     }
@@ -183,8 +157,8 @@ case class RandomizingMergerMurmur3(seed: Long) extends Merger {
     def mergeSplitInfo(s1: VarSplitInfo, s2: VarSplitInfo, id: Int) = {
       if (s1 == null) s2
       else if (s2 == null) s1
-      else if (s1.splitInfo.gini < s2.splitInfo.gini) s1
-      else if (s2.splitInfo.gini < s1.splitInfo.gini) s2
+      else if (s1.splitInfo.impurity < s2.splitInfo.impurity) s1
+      else if (s2.splitInfo.impurity < s1.splitInfo.impurity) s2
       else chooseEqual(s1, s2, id)
     }
     a1.indices.foreach(i => a1(i) = mergeSplitInfo(a1(i), a2(i), i))
@@ -193,7 +167,7 @@ case class RandomizingMergerMurmur3(seed: Long) extends Merger {
 }
 
 trait VariableSplitter {
-
+  def calculator: ImpurityCalculator
   def initialSubset(sample: Sample): SubsetInfo
 
   /** Splits the subsets of the RDD and returns a split based on the variable of split index
@@ -210,25 +184,23 @@ trait VariableSplitter {
   def createMerger(seed: Long): Merger
 }
 
-/** This is the main split function
+/** Standard variable splitter used during normal (non-AIR-corrected) training.
   *
-  * 1. specifies the number of categories based on the label input
-  * 2. Finds the splits in the data based on the gini value
+  * For each subset, tries a random fraction of variables and selects the one
+  * giving the best impurity reduction.
   *
-  * @param labels: input an array of labels used by the dataset
-  * @param mTryFraction:  the fraction of variable to try at each split (default to 1.0)
-  * @param randomizeEquality: default to false
+  * @param calculator the [[ImpurityCalculator]] that computes impurity and creates
+  *                   split factories for the given problem type and response
+  * @param mTryFraction the fraction of variables to try at each split (default 1.0)
+  * @param randomizeEquality when true, breaks impurity ties randomly
   */
-case class StdVariableSplitter(labels: Array[Int], mTryFraction: Double = 1.0,
+case class StdVariableSplitter(calculator: ImpurityCalculator, mTryFraction: Double = 1.0,
     randomizeEquality: Boolean = false)
     extends VariableSplitter with Logging with Prof {
 
-  val nCategories: Int = labels.max + 1
-
   def initialSubset(sample: Sample): SubsetInfo = {
     val currentSet = sample.indexes
-    val (totalGini, classCounts) = Gini.giniImpurity(currentSet, labels, nCategories)
-    SubsetInfo(currentSet, totalGini, classCounts)
+    SubsetInfo(currentSet, calculator.calculate(currentSet).impurity)
   }
 
   /** Find the splits in the data based on the gini value
@@ -246,18 +218,9 @@ case class StdVariableSplitter(labels: Array[Int], mTryFraction: Double = 1.0,
     splits.map { subsetInfo =>
       if (rng.nextDouble() <= mTryFraction) {
         val splitInfo = splitter.findSplit(subsetInfo.indices)
-        if (splitInfo != null && splitInfo.gini < subsetInfo.impurity) splitInfo else null
+        if (splitInfo != null && splitInfo.impurity < subsetInfo.impurity) splitInfo else null
       } else null
     }
-  }
-
-  def threadSafeSpliterBuilderFactory(): IndexedSplitterFactory = {
-    // TODO: this should be actually passed externally (or at least part of it
-    // as it essentially determines what kind of tree are we bulding (e.g what is the metric used
-    // for impurity)
-    // This should obtain a statefule and somehow compartmenalised impurity calculator
-    // (Try trhead local perhaps here, but creating a new one (per partition) also fits the bill)
-    new DefStatefullIndexedSpliterFactory(GiniImpurity, labels, nCategories)
   }
 
   /** Returns the result of a split based on a variable
@@ -269,7 +232,7 @@ case class StdVariableSplitter(labels: Array[Int], mTryFraction: Double = 1.0,
   def findSplitsForVars(varData: Iterator[TreeFeature], splits: Array[SubsetInfo])(
       implicit rng: RandomGenerator): Iterator[Array[VarSplitInfo]] = {
     profIt("Local: splitting") {
-      val sbf = threadSafeSpliterBuilderFactory()
+      val sbf = calculator.createSplitterFactory()
       val result = varData
         .map { vi =>
           val thisVarSplits = findSplits(vi, splits, sbf)
@@ -296,7 +259,7 @@ case class StdVariableSplitter(labels: Array[Int], mTryFraction: Double = 1.0,
     varData.flatMap { vi =>
       splitByVarIndex.getOrElse(vi.index, Nil).map {
         case ((subsetInfo, splitInfo), si) =>
-          (si, splitInfo.split(vi, labels, nCategories)(subsetInfo))
+          (si, splitInfo.split(vi)(subsetInfo))
       }
     }
   }
@@ -306,27 +269,24 @@ case class StdVariableSplitter(labels: Array[Int], mTryFraction: Double = 1.0,
 
 }
 
-/** This is the main split function
+/** Variable splitter with AIR correction for
+  * importance bias. Trains two parallel trees - one on the real response and one
+  * on a permuted copy - so that importance scores can be bias-corrected.
   *
-  * 1. specifies the number of categories based on the label input
-  * 2. Finds the splits in the data based on the gini value
-  *
-  * @param labels: input an array of labels used by the dataset
-  * @param mTryFraction:  the fraction of variable to try at each split (default to 1.0)
-  * @param randomizeEquality: default to false
+  * @param calculator the [[ImpurityCalculator]] for the real response
+  * @param rng the random generator used to produce the permutation order
+  * @param mTryFraction the fraction of variables to try at each split
+  * @param randomizeEquality when true, breaks impurity ties randomly
   */
-case class AirVariableSplitter(labels: Array[Int], permutationOrder: Array[Int],
-    mTryFraction: Double, randomizeEquality: Boolean)
+case class AirVariableSplitter(calculator: ImpurityCalculator,
+    rng: XorShift1024StarRandomGenerator, mTryFraction: Double, randomizeEquality: Boolean)
     extends VariableSplitter with Logging with Prof {
 
-  lazy val permutatedLabels: Array[Int] = permutationOrder.map(labels(_))
-
-  val nCategories: Int = labels.max + 1
+  lazy val (permutedCalculator, permutationOrder) = calculator.permute(rng)
 
   def initialSubset(sample: Sample): SubsetInfo = {
     val currentSet = sample.indexes
-    val (totalGini, classCounts) = Gini.giniImpurity(currentSet, labels, nCategories)
-    SubsetInfo(currentSet, totalGini, classCounts)
+    SubsetInfo(currentSet, calculator.calculate(currentSet).impurity)
   }
 
   /** Find the splits in the data based on the gini value
@@ -353,20 +313,11 @@ case class AirVariableSplitter(labels: Array[Int], permutationOrder: Array[Int],
           val selectedSplitter = if (!permutated) splitter else permutatedSplitter
           val indices = if (!permutated) subsetInfo.indices else permIndexes
           val splitInfo = selectedSplitter.findSplit(indices)
-          if (splitInfo != null && splitInfo.gini < subsetInfo.impurity) {
+          if (splitInfo != null && splitInfo.impurity < subsetInfo.impurity) {
             VarSplitInfo(typedData.index, splitInfo, permutated)
           } else { null }
         } else null
     }
-  }
-
-  def threadSafeSpliterBuilderFactory(labels: Array[Int]): IndexedSplitterFactory = {
-    // TODO: this should be actually passed externally (or at least part of it
-    // as it essentially determines what kind of tree are we bulding (e.g what is the metric
-    // used for impurity)
-    // This should obtain a statefule and somehow compartmenalised impurity calculator
-    // (Try trhead local perhaps here, but creating a new one (per partition) also fits the bill)
-    new DefStatefullIndexedSpliterFactory(GiniImpurity, labels, nCategories)
   }
 
   /** Returns the result of a split based on a variable
@@ -378,8 +329,8 @@ case class AirVariableSplitter(labels: Array[Int], permutationOrder: Array[Int],
   def findSplitsForVars(varData: Iterator[TreeFeature], splits: Array[SubsetInfo])(
       implicit rng: RandomGenerator): Iterator[Array[VarSplitInfo]] = {
     profIt("Local: splitting") {
-      val sbf = threadSafeSpliterBuilderFactory(labels)
-      val permutatedSbf = threadSafeSpliterBuilderFactory(permutatedLabels)
+      val sbf = calculator.createSplitterFactory()
+      val permutatedSbf = permutedCalculator.createSplitterFactory()
 
       // TODO: [Performance] maybe there is not need to permutata all the splits up front
 
@@ -405,9 +356,9 @@ case class AirVariableSplitter(labels: Array[Int], permutationOrder: Array[Int],
       splitByVarIndex.getOrElse(vi.index, Nil).map {
         case ((subsetInfo, splitInfo), si) =>
           if (!splitInfo.isPermutated) {
-            (si, splitInfo.split(vi, labels, nCategories)(subsetInfo))
+            (si, splitInfo.split(vi)(subsetInfo))
           } else {
-            (si, splitInfo.splitPermutated(vi, labels, nCategories, permutationOrder)(subsetInfo))
+            (si, splitInfo.splitPermutated(vi, permutationOrder)(subsetInfo))
           }
       }
     }
@@ -419,12 +370,10 @@ case class AirVariableSplitter(labels: Array[Int], permutationOrder: Array[Int],
 }
 
 object AirVariableSplitter {
-  def apply(labels: Array[Int], seed: Long, mTryFraction: Double = 1.0,
+  def apply(calculator: ImpurityCalculator, seed: Long, mTryFraction: Double = 1.0,
       randomizeEquality: Boolean = false): AirVariableSplitter = {
     val rng = new XorShift1024StarRandomGenerator(seed)
-    val permutationOrder = labels.indices.toArray
-    MathArrays.shuffle(permutationOrder, rng)
-    AirVariableSplitter(labels, permutationOrder, mTryFraction, randomizeEquality)
+    AirVariableSplitter(calculator, rng, mTryFraction, randomizeEquality)
   }
 }
 
@@ -493,14 +442,13 @@ object DecisionTree extends Logging with Prof {
 }
 
 @SerialVersionUID(1L)
-abstract class DecisionTreeNode(val majorityLabel: Int, val size: Int, val nodeImpurity: Double)
-    extends Serializable {
+abstract class DecisionTreeNode(val stats: ImpurityStats) extends Serializable {
   def isLeaf: Boolean
-
-  def classCounts: Array[Int]
+  def size: Int = stats.size
+  def nodeImpurity: Double = stats.impurity
 
   def printout(level: Int)
-  def impurityContribution: Double = nodeImpurity * size
+  def impurityContribution: Double = stats.impurity * size
   def traverse(f: SplitNode => Boolean): LeafNode = this match {
     case leaf: LeafNode => leaf
     case split: SplitNode => (if (f(split)) split.left else split.right).traverse(f)
@@ -512,60 +460,38 @@ abstract class DecisionTreeNode(val majorityLabel: Int, val size: Int, val nodeI
 }
 
 @SerialVersionUID(1L)
-case class LeafNode(override val majorityLabel: Int, classCounts: Array[Int],
-    override val size: Int, override val nodeImpurity: Double)
-    extends DecisionTreeNode(majorityLabel, size, nodeImpurity) {
+case class LeafNode(override val stats: ImpurityStats) extends DecisionTreeNode(stats) {
   val isLeaf: Boolean = true
 
   def printout(level: Int) {
     print(new String(Array.fill(level)(' ')))
-    val nodeType = "leaf"
-    println(s"${nodeType}[${majorityLabel}, ${size}, ${nodeImpurity}]")
+    println(s"leaf${stats.printout}")
   }
 
-  override def toString: String = s"leaf[${majorityLabel}, ${size}, ${nodeImpurity}]"
+  override def toString: String = s"leaf${stats.printout}"
 
   def toStream: Stream[DecisionTreeNode] = this #:: Stream.empty
 }
 
-object LeafNode {
-  def apply(subset: SubsetInfo): LeafNode =
-    apply(subset.majorityLabel, subset.classCounts, subset.length, subset.impurity)
-
-  /**
-    * Create a tree leaf for a standard classifier tree with voting information onlu
-    * @param majorityLabel
-    * @param size
-    * @param nodeImpurity
-    * @return
-    */
-  def voting(majorityLabel: Int, size: Int, nodeImpurity: Double): LeafNode = {
-    LeafNode(majorityLabel, null, size, nodeImpurity)
-  }
-
-}
-
 @SerialVersionUID(1L)
-case class SplitNode(override val majorityLabel: Int, classCounts: Array[Int],
-    override val size: Int, override val nodeImpurity: Double, splitVariableIndex: Long,
+case class SplitNode(override val stats: ImpurityStats, splitVariableIndex: Long,
     splitCriteria: SplitCriteria, impurityReduction: Double, left: DecisionTreeNode,
     right: DecisionTreeNode, isPermutated: Boolean = false)
-    extends DecisionTreeNode(majorityLabel, size, nodeImpurity) {
+    extends DecisionTreeNode(stats) {
 
   val isLeaf: Boolean = false
 
   def printout(level: Int) {
     print(new String(Array.fill(level)(' ')))
-    val nodeType = "split"
     println(
-        s"${nodeType}[${splitVariableIndex}, ${splitCriteria}, ${majorityLabel},"
-          + s" ${size}, ${impurityReduction}, ${nodeImpurity}]")
+        s"split[${splitVariableIndex}, ${splitCriteria},"
+          + s" ${stats.printout}, ${impurityReduction}]")
     left.printout(level + 1)
     right.printout(level + 1)
   }
   override def toString: String =
-    (s"split[${splitVariableIndex}, ${splitCriteria}, ${majorityLabel}, ${size},"
-      + s" ${impurityReduction}, ${nodeImpurity}]")
+    (s"split[${splitVariableIndex}, ${splitCriteria},"
+      + s" ${stats.printout}, ${impurityReduction}]")
 
   def childFor(value: Double): DecisionTreeNode =
     if (splitCriteria.goesLeft(value)) left else right
@@ -578,19 +504,10 @@ case class SplitNode(override val majorityLabel: Int, classCounts: Array[Int],
 }
 
 object SplitNode {
-  def apply(subset: SubsetInfo, split: VarSplitInfo, left: DecisionTreeNode,
+  def apply(stats: ImpurityStats, split: VarSplitInfo, left: DecisionTreeNode,
       right: DecisionTreeNode): SplitNode =
-    apply(subset.majorityLabel, subset.classCounts, subset.length, subset.impurity,
-      split.variableIndex, split.splitInfo.toCriteria, subset.impurity - split.splitInfo.gini,
-      left, right, split.isPermutated)
-
-  def voting(majorityLabel: Int, size: Int, nodeImpurity: Double, splitVariableIndex: Long,
-      splitCriteria: SplitCriteria, impurityReduction: Double, left: DecisionTreeNode,
-      right: DecisionTreeNode, isPermutated: Boolean = false): SplitNode = {
-    SplitNode(majorityLabel, null, size, nodeImpurity, splitVariableIndex, splitCriteria,
-      impurityReduction, left, right, isPermutated)
-  }
-
+    SplitNode(stats, split.variableIndex, split.splitInfo.toCriteria,
+      stats.impurity - split.splitInfo.impurity, left, right, split.isPermutated)
 }
 
 @SerialVersionUID(1L)
@@ -600,17 +517,18 @@ case class DecisionTreeModel(rootNode: DecisionTreeNode)
   def splitVariableIndexes: Set[Long] = rootNode.splitsToStream.map(_.splitVariableIndex).toSet
 
   def predict[T](indexedData: RDD[(T, Long)], variableType: VariableType)(
-      implicit db: DataBuilder[T]): Array[Int] = {
+      implicit db: DataBuilder[T]): Array[Any] = {
     predict(indexedData.map({ case (v, i) => (StdFeature.from(null, variableType, v), i) }))
   }
 
-  def predict(indexedData: RDD[(Feature, Long)]): Array[Int] = {
+  def predict(indexedData: RDD[(Feature, Long)]): Array[Any] = {
     val treeVariableData = indexedData.collectAtIndexes(splitVariableIndexes)
     Range(0, indexedData.size)
       .map(i =>
           rootNode
             .traverse(s => s.splitCriteria.goesLeft(treeVariableData(s.splitVariableIndex).at(i)))
-            .majorityLabel)
+            .stats
+            .predict)
       .toArray
   }
 
@@ -695,7 +613,7 @@ object DecisionTreeModel {
   }
 
   def batchPredict(indexedData: RDD[(DataLike, Long)], trees: Seq[DecisionTreeModel],
-      indexes: Seq[Array[Int]]): Seq[Array[Int]] = {
+      indexes: Seq[Array[Int]]): Seq[Array[Any]] = {
 
     /** Takes the decision tree nodes and outputs the leaf nodes
       * Partitions the nodesAndIndexes variable and recursively iterates through each
@@ -726,7 +644,10 @@ object DecisionTreeModel {
       .toList
     val leaveNodesAndIndexes = predict(rootNodesAndIndexes)
 
-    val orderedPredictions = leaveNodesAndIndexes.sortBy(_._2).map(_._1).map(_._1.majorityLabel)
+    val orderedPredictions = leaveNodesAndIndexes
+      .sortBy(_._2)
+      .map(_._1)
+      .map(_._1.stats.predict)
     val orderedPredictionsIter = orderedPredictions.toIterator
 
     indexes.map(a => Array.fill(a.length)(orderedPredictionsIter.next()))
@@ -740,9 +661,10 @@ object DecisionTreeModel {
   * @param seed: specify the seed for the random number generator
   * @param randomizeEquality: specify the randomization merger or the determinate merger
   */
-case class DecisionTreeParams(maxDepth: Int = Int.MaxValue, minNodeSize: Int = 1,
-    seed: Long = defRng.nextLong, randomizeEquality: Boolean = false,
-    correctImpurity: Boolean = false, airRandomSeed: Long = 0L) {
+case class DecisionTreeParams(problemType: ProblemType = Classification,
+    maxDepth: Int = Int.MaxValue, minNodeSize: Int = 1, seed: Long = defRng.nextLong,
+    randomizeEquality: Boolean = false, correctImpurity: Boolean = false,
+    airRandomSeed: Long = 0L) {
 
   override def toString: String = ToStringBuilder.reflectionToString(this)
 }
@@ -779,60 +701,67 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(),
   /** Basic training operation taking the in the data, the type, and the labels
     *
     * @param indexedData: input an RDD of the dataset
-    * @param labels: input an array of integers changed to an integer representation
+    * @param response: input a [[au.csiro.variantspark.algo.ResponseVariable]] representing
+    *                  the response variable
     */
-  def train(indexedData: RDD[(Feature, Long)], labels: Array[Int]): DecisionTreeModel =
-    train(indexedData, labels, 1.0, Sample.all(indexedData.first._1.size))
+  def train(indexedData: RDD[(Feature, Long)], response: ResponseVariable): DecisionTreeModel =
+    train(indexedData, response, 1.0, Sample.all(indexedData.first._1.size))
 
   /** Alternative train function
     *
     * @param indexedData: input an RDD of the values of the dataset with the indices
-    * @param labels: input an array of integers changed to an integer representation
+    * @param response: input a [[au.csiro.variantspark.algo.ResponseVariable]] representing
+    *                 the response variable
     * @param nvarFraction: fraction of variable to test at each split
     * @param sample: input the [[au.csiro.variantspark.utils.Sample]] class that
     *              contains the size and the indices
     */
-  def train(indexedData: RDD[(Feature, Long)], labels: Array[Int], nvarFraction: Double,
+  def train(indexedData: RDD[(Feature, Long)], response: ResponseVariable, nvarFraction: Double,
       sample: Sample): DecisionTreeModel =
-    batchTrain(indexedData, labels, nvarFraction, List(sample)).head
+    batchTrain(indexedData, response, nvarFraction, List(sample)).head
 
   /** Trains all the trees for specified samples at the same time
     *
     * @param indexedFeatures: input an RDD of the values of the dataset with the indices
-    * @param labels: input an array of integers changed to an integer representation
+    * @param response: input a [[au.csiro.variantspark.algo.ResponseVariable]] representing
+    *                 the response variable
     * @param nvarFraction: fraction of variable to test for each split
     * @param sample: input the [[au.csiro.variantspark.utils.Sample]] class that
     *              contains the size and the indices
     * @return Returns a Sequence of [[au.csiro.variantspark.algo.DecisionTreeModel]]
     *         classes containing the dataset
     */
-  def batchTrain(indexedFeatures: RDD[(Feature, Long)], labels: Array[Int], nvarFraction: Double,
-      sample: Seq[Sample]): Seq[DecisionTreeModel] = {
-    batchTrainInt(trf.createRepresentation(indexedFeatures), labels, nvarFraction, sample)
+  def batchTrain(indexedFeatures: RDD[(Feature, Long)], response: ResponseVariable,
+      nvarFraction: Double, sample: Seq[Sample]): Seq[DecisionTreeModel] = {
+    batchTrainInt(trf.createRepresentation(indexedFeatures), response, nvarFraction, sample)
   }
 
   /** Trains all the trees for specified samples at the same time
     *
     * @param features: input an RDD of the internal tree feature representation
-    * @param labels: input an array of integers changed to an integer representation
+    * @param response: input a [[au.csiro.variantspark.algo.ResponseVariable]] representing
+    *                the response variable
     * @param nvarFraction: fraction of variable to test for each split
     * @param sample: input the [[au.csiro.variantspark.utils.Sample]] class that
     *              contains the size and the indices
     * @return Returns a Sequence of [[au.csiro.variantspark.algo.DecisionTreeModel]]
     *         classes containing the dataset
     */
-  def batchTrainInt(features: RDD[TreeFeature], labels: Array[Int], nvarFraction: Double,
+  def batchTrainInt(features: RDD[TreeFeature], response: ResponseVariable, nvarFraction: Double,
       sample: Seq[Sample]): Seq[DecisionTreeModel] = {
+
+    val calculator: ImpurityCalculator = params.problemType.makeCalculator(response)
 
     // manage persistence here - cache the features if not already cached
     withCached(features) { cachedFeatures =>
       val splitter: VariableSplitter =
         if (params.correctImpurity) {
-          AirVariableSplitter(labels,
+          AirVariableSplitter(calculator,
             if (params.airRandomSeed != 0L) params.airRandomSeed else params.seed, nvarFraction,
             randomizeEquality = params.randomizeEquality)
         } else {
-          StdVariableSplitter(labels, nvarFraction, randomizeEquality = params.randomizeEquality)
+          StdVariableSplitter(calculator, nvarFraction,
+            randomizeEquality = params.randomizeEquality)
         }
       val subsets = sample.map(splitter.initialSubset).toList
       val rootNodes = withBroadcast(cachedFeatures)(splitter) { br_splitter =>
@@ -889,15 +818,18 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(),
 
     val (usefulSplits, usefulSplitsIndices) =
       bestSplits.zip(subsetsToSplit.map(_._2)).filter(_._1 != null).unzip
+    val calculator = br_splitter.value.calculator
     val subsetIndexToSplitIndexMap = usefulSplitsIndices.zipWithIndex.toMap
     val result = subsets.zipWithIndex.map {
       case (subset, i) =>
         // format: off
         subsetIndexToSplitIndexMap
           .get(i)
-          .map(splitIndex => SplitNode(subset, usefulSplits(splitIndex),
-            nextLevelNodes(2 * splitIndex), nextLevelNodes(2 * splitIndex + 1)))
-          .getOrElse(LeafNode(subset))
+          .map(splitIndex => {
+            SplitNode(calculator.calculate(subset.indices), usefulSplits(splitIndex),
+            nextLevelNodes(2 * splitIndex), nextLevelNodes(2 * splitIndex + 1))
+          })
+          .getOrElse(LeafNode(calculator.calculate(subset.indices)))
       // format: on
     }
     profPoint("building done")

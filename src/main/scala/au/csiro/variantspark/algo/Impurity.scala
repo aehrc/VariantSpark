@@ -1,5 +1,30 @@
 package au.csiro.variantspark.algo
 
+import au.csiro.variantspark.utils.ArraysUtils
+
+sealed trait ImpurityStats {
+  def impurity: Double
+  def size: Int
+  def printout: String
+  def predict: Any
+}
+
+case class ClassificationStats(impurity: Double, size: Int, classCounts: Array[Int])
+    extends ImpurityStats {
+  lazy val majorityLabel: Int = ArraysUtils.maxIndex(classCounts)
+  override def toString: String = s"$impurity, $majorityLabel"
+  def printout: String = (s"[${majorityLabel}, ${size}, ${impurity}]")
+  def predict: Int = majorityLabel
+}
+
+case class RegressionStats(impurity: Double, size: Int, sum: Double, sumOfSquares: Double)
+    extends ImpurityStats {
+  lazy val mean: Double = if (size > 0) sum / size else 0.0
+  override def toString: String = s"$impurity, $size, $sum, $sumOfSquares"
+  def printout: String = s"[$mean, $size, $impurity]"
+  def predict: Double = mean
+}
+
 /**
   * Helper class to return impurity of a split
   */
@@ -61,4 +86,15 @@ trait ClassficationImpurity extends Impurity {
     * @param nCategories the number of categories (lables) in the response variable.
     */
   def createAggregator(nCategories: Int): ClassificationImpurityAggregator
+}
+
+/**
+  * Base trait for representing regression impurity measures
+  */
+trait RegressionImpurity extends Impurity {
+
+  /**
+    * Creates an aggregator for this impurity
+    */
+  def createAggregator(): RegressionImpurityAggregator
 }

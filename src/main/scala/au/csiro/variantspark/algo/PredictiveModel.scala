@@ -6,7 +6,7 @@ import it.unimi.dsi.fastutil.longs.{Long2DoubleOpenHashMap, Long2LongOpenHashMap
 import org.apache.spark.rdd.RDD
 
 trait PredictiveModel {
-  def predict(data: RDD[(Feature, Long)]): Array[Int]
+  def predict(data: RDD[(Feature, Long)]): Array[Any]
   def printout()
 }
 

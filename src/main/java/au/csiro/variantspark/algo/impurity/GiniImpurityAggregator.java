@@ -68,12 +68,14 @@ public class GiniImpurityAggregator implements ClassificationImpurityAggregator 
 	public int getCount() {
 		return count;
 	}
-	
-	@Override
-	public double splitValue(ImpurityAggregator other, SplitImpurity outSplitImp) {
-		GiniImpurityAggregator otherGini = (GiniImpurityAggregator)other;
-		outSplitImp.set(getValue(), otherGini.getValue());
-		return (outSplitImp.left()*getCount() + outSplitImp.right()*otherGini.getCount())/(getCount() + otherGini.getCount());   
-	}
 
+	@Override
+	public double splitValue(ImpurityAggregator other, SplitImpurity out) {
+		GiniImpurityAggregator otherGini = (GiniImpurityAggregator) other;
+		double leftImp = getValue();
+		double rightImp = otherGini.getValue();
+		out.set(leftImp, rightImp);
+		int totalCount = count + otherGini.count;
+		return totalCount > 0 ? (count * leftImp + otherGini.count * rightImp) / totalCount : 0.0;
+	}
 }

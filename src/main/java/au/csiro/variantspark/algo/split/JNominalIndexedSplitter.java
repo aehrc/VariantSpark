@@ -10,7 +10,7 @@ import it.unimi.dsi.fastutil.doubles.DoubleArrays;
  * Slow fallback splitter for nominal (categorical) variables.
  *
  * Uses the same CART one-vs-rest heuristic as {@link JNominalFastIndexedSplitter} but does NOT
- * require a pre-allocated {@link au.csiro.variantspark.algo.ConfusionAggregator}. Instead it
+ * require a pre-allocated {@link au.csiro.variantspark.algo.LevelAggregator}. Instead it
  * rescans {@code splitIndices} for each candidate partition, analogous to how
  * {@link JOrderedIndexedSplitter} handles ordinal features.
  *

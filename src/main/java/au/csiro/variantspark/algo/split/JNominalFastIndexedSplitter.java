@@ -1,7 +1,7 @@
 package au.csiro.variantspark.algo.split;
 
 import au.csiro.variantspark.algo.ClassificationSplitAggregator;
-import au.csiro.variantspark.algo.ConfusionAggregator;
+import au.csiro.variantspark.algo.LevelAggregator;
 import au.csiro.variantspark.algo.IndexedSplitAggregator;
 import au.csiro.variantspark.algo.SplitInfo;
 import au.csiro.variantspark.algo.SubsetSplitInfo;
@@ -27,9 +27,9 @@ public class JNominalFastIndexedSplitter extends AbstractIndexedSplitterBase {
     private final int nLevels;
     private final int nCategories;
     private final int[] labels;
-    private final ConfusionAggregator confusionAgg;
+    private final LevelAggregator confusionAgg;
 
-    public JNominalFastIndexedSplitter(ConfusionAggregator confusionAgg,
+    public JNominalFastIndexedSplitter(LevelAggregator confusionAgg,
             IndexedSplitAggregator impurityCalc, byte[] data, int nLevels) {
         super(impurityCalc);
         if (!(impurityCalc instanceof ClassificationSplitAggregator)) {

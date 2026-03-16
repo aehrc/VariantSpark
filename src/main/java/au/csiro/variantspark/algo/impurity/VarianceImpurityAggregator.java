@@ -12,7 +12,6 @@ import au.csiro.variantspark.algo.SplitImpurity;
  * See: https://en.wikipedia.org/wiki/Decision_tree_learning#Metrics
  */
 public class VarianceImpurityAggregator implements RegressionImpurityAggregator {
-
 	double sumOfValues = 0;
 	double sumOfSquares = 0;
 	int count = 0;
@@ -75,12 +74,12 @@ public class VarianceImpurityAggregator implements RegressionImpurityAggregator 
 	}
 
 	@Override
-	public double splitValue(ImpurityAggregator other, SplitImpurity outSplitImp) {
-		VarianceImpurityAggregator otherVariance = (VarianceImpurityAggregator)other;
-		outSplitImp.set(getValue(), other.getValue());
-		double totalSumOfValues = sumOfValues + otherVariance.sumOfValues;
-		double totalSumOfSquares= sumOfSquares + otherVariance.sumOfSquares;
-		double totalCount = count + otherVariance.count;
-		return totalSumOfSquares/totalCount - (totalSumOfValues/totalCount)*(totalSumOfValues/totalCount);
+	public double splitValue(ImpurityAggregator other, SplitImpurity out) {
+		VarianceImpurityAggregator otherVar = (VarianceImpurityAggregator) other;
+		double leftImp = getValue();
+		double rightImp = otherVar.getValue();
+		out.set(leftImp, rightImp);
+		int totalCount = count + otherVar.count;
+		return totalCount > 0 ? (count * leftImp + otherVar.count * rightImp) / totalCount : 0.0;
 	}
 }
