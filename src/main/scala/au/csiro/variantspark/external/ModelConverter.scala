@@ -14,13 +14,12 @@ class ModelConverter(varIndex: Map[Long, String]) {
 
   def toExternal(node: DecisionTreeNode): Node = {
     node match {
-      case LeafNode(majorityLabel, classCounts, size, nodeImpurity) =>
-        Leaf(majorityLabel, classCounts, size, nodeImpurity)
-      case SplitNode(majorityLabel, classCounts, size, nodeImpurity, splitVariableIndex,
-          splitCriteria, impurityReduction, left, right, isPermutated) => {
-        Split(majorityLabel, classCounts, size, nodeImpurity,
-          varIndex.getOrElse(splitVariableIndex, null), splitVariableIndex, isPermutated,
-          splitCriteria, impurityReduction, toExternal(left), toExternal(right))
+      case LeafNode(impurityStats) =>
+        Leaf(impurityStats)
+      case SplitNode(impurityStats, splitVariableIndex, splitCriteria, impurityReduction, left,
+          right, isPermutated) => {
+        Split(impurityStats, varIndex.getOrElse(splitVariableIndex, null), splitVariableIndex,
+          isPermutated, splitCriteria, impurityReduction, toExternal(left), toExternal(right))
       }
       case _ => throw new IllegalArgumentException("Unknow node type:" + node)
     }
