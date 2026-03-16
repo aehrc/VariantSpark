@@ -108,6 +108,13 @@ case class RandomForestModel(members: List[RandomForestMember],
       .predictions
   }
 
+  def nCategories: Int = aggregatorFactory match {
+    case VotingAggregatorFactory(n) => n
+    case _ =>
+      throw new UnsupportedOperationException(
+          "nCategories is only available for classification models")
+  }
+
   def predictProb(indexedData: RDD[(Feature, Long)]): Array[Array[Double]] =
     predictProb(indexedData, indexedData.size)
 

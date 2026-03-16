@@ -79,7 +79,7 @@ class PredictCmd
       HdfsPath(outputFile).create()
     } else ReusablePrintStream.stdout) { writer =>
       val header =
-        List("sample", "class") ::: Range(0, rfModel.labelCount).map(ci => s"p_${ci}").toList
+        List("sample", "class") ::: Range(0, rfModel.nCategories).map(ci => s"p_${ci}").toList
       writer.writeRow(header)
       writer.writeAll(predictionRows)
     }
