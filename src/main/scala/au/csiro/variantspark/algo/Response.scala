@@ -26,6 +26,6 @@ case class RegressionResponse(values: Array[Double]) extends ResponseVariable {
 }
 
 object ResponseVariable {
-  def apply(labels: Array[Int]): ResponseVariable = ClassificationResponse(labels)
-  def apply(values: Array[Double]): ResponseVariable = RegressionResponse(values)
+  implicit def apply(labels: Array[Int]): ResponseVariable = ClassificationResponse(labels)
+  implicit def apply(values: Array[Double]): ResponseVariable = RegressionResponse(values)
 }

@@ -42,7 +42,7 @@ object RFModelTrainer {
 
     val rf = new RandomForest(params)
     val rfTrained =
-      rf.batchTrain(indexedFeatures, ResponseVariable(response), nTrees, rfBatchSize)
+      rf.batchTrain(indexedFeatures, response, nTrees, rfBatchSize)
 
     // Return both model and indexed data; caller manages lifecycle
     TrainResult(rfTrained, indexedFeatures)

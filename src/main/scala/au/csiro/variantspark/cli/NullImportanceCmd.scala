@@ -198,7 +198,7 @@ class NullImportanceCmd
         }
       }
 
-      val result = rf.batchTrain(trainingData, ResponseVariable(response), nTrees, rfBatchSize)
+      val result = rf.batchTrain(trainingData, response, nTrees, rfBatchSize)
 
       echo(
           s"Random forest oob accuracy: ${result.oobError},"
