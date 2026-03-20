@@ -9,7 +9,7 @@ import it.unimi.dsi.fastutil.doubles.DoubleArrays;
 /**
  * Slow fallback splitter for nominal (categorical) variables.
  *
- * Uses the same CART one-vs-rest heuristic as {@link JNominalFastIndexedSplitter} but does NOT
+ * Uses the same CART one-vs-rest heuristic as {@link JNominalClassificationFastIndexedSplitter} but does NOT
  * require a pre-allocated {@link au.csiro.variantspark.algo.LevelAggregator}. Instead it
  * rescans {@code splitIndices} for each candidate partition, analogous to how
  * {@link JOrderedIndexedSplitter} handles ordinal features.
@@ -18,19 +18,15 @@ import it.unimi.dsi.fastutil.doubles.DoubleArrays;
  * {@link au.csiro.variantspark.algo.ThresholdIndexedSplitter} when the subset is very sparse
  * (N / L < qThreshold, default 0.02), meaning N is small.
  */
-public class JNominalIndexedSplitter extends AbstractIndexedSplitterBase {
+public class JNominalClassificationIndexedSplitter extends AbstractIndexedSplitterBase {
     private final byte[] data;
     private final int nLevels;
     private final int nCategories;
     private final int[] labels;
 
-    public JNominalIndexedSplitter(IndexedSplitAggregator impurityCalc, byte[] data,
+    public JNominalClassificationIndexedSplitter(IndexedSplitAggregator impurityCalc, byte[] data,
             int nLevels) {
         super(impurityCalc);
-        if (!(impurityCalc instanceof ClassificationSplitAggregator)) {
-            throw new IllegalArgumentException(
-                    "JNominalIndexedSplitter requires ClassificationSplitAggregator");
-        }
         ClassificationSplitAggregator classAgg = (ClassificationSplitAggregator) impurityCalc;
         this.data = data;
         this.nLevels = nLevels;

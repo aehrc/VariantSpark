@@ -22,20 +22,16 @@ import it.unimi.dsi.fastutil.doubles.DoubleArrays;
  * optimal (Breiman et al., CART 1984). For multiclass it is a well-established
  * heuristic equivalent to the twoing rule and used by LightGBM / scikit-learn.
  */
-public class JNominalFastIndexedSplitter extends AbstractIndexedSplitterBase {
+public class JNominalClassificationFastIndexedSplitter extends AbstractIndexedSplitterBase {
     private final byte[] data;
     private final int nLevels;
     private final int nCategories;
     private final int[] labels;
     private final LevelAggregator confusionAgg;
 
-    public JNominalFastIndexedSplitter(LevelAggregator confusionAgg,
+    public JNominalClassificationFastIndexedSplitter(LevelAggregator confusionAgg,
             IndexedSplitAggregator impurityCalc, byte[] data, int nLevels) {
         super(impurityCalc);
-        if (!(impurityCalc instanceof ClassificationSplitAggregator)) {
-            throw new IllegalArgumentException(
-                    "JNominalFastIndexedSplitter requires ClassificationSplitAggregator");
-        }
         ClassificationSplitAggregator classAgg = (ClassificationSplitAggregator) impurityCalc;
         this.confusionAgg = confusionAgg;
         this.data = data;
