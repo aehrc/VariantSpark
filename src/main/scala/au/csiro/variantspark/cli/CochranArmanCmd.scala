@@ -122,8 +122,8 @@ class CochranArmanCmd extends ArgsApp with SparkApp with Echoable with Logging w
     echo(s"Loaded rows: ${dumpList(source.sampleNames)}")
 
     echo(s"Loading responses from: ${featuresFile}, column: ${featureColumn}")
-    val responseSource = new CsvResponseSource(featuresFile, featureColumn, _.toInt)
-    val responses = responseSource.getResponses(source.sampleNames)
+    val responseSource = new CsvResponseSource(featuresFile, featureColumn)
+    val responses = responseSource.getResponses(source.sampleNames, _.toInt)
     echo(s"Loaded responses: ${dumpList(responses.toList)}")
 
     val dataLoadingTimer = Timer()

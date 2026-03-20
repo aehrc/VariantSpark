@@ -149,8 +149,8 @@ class NullImportanceCmd
     echoDataPreview()
 
     echo(s"Loading responses from: ${featuresFile}, column: ${featureColumn}")
-    val responseSource = new CsvResponseSource(featuresFile, featureColumn, _.toInt)
-    val response = responseSource.getResponses(featureSource.sampleNames)
+    val responseSource = new CsvResponseSource(featuresFile, featureColumn)
+    val response = responseSource.getResponses(featureSource.sampleNames, _.toInt)
     echo(s"Loaded responses: ${dumpList(response.toList)}")
 
     // discover variable type

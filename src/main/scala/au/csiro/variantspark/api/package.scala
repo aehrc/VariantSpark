@@ -10,7 +10,7 @@ import au.csiro.variantspark.input.FeatureSource
   *  import au.csiro.variantspark.api._
   *  implicit val vsContext = VSContext(spark)
   *  val features = vsContext.importVCF("data/chr22_1000.vcf")
-  *  val label = vsContext.loadLabel("data/chr22-labels.csv", "22_16050408")
+  *  val label = vsContext.loadResponse("data/chr22-labels.csv", "22_16050408")
   *  val impAnalysis = features.importanceAnalysis(label, nTrees = 100, seed = Some(13L))
   *  // retrieve top 20 variables as a Seq
   *  val top20Variables = impAnalysis.importantVariables(20)

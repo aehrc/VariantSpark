@@ -109,16 +109,9 @@ class VSContext(val spark: SparkSession) extends SqlContextHolder {
     *
     * @return ResponseSource loaded from the column of the CSV file
     */
-  def loadResponse(featuresFile: String, featureColumn: String): CsvResponseSource[Int] = {
-    new CsvResponseSource(featuresFile, featureColumn, _.toInt)
+  def loadResponse(featuresFile: String, featureColumn: String): CsvResponseSource = {
+    new CsvResponseSource(featuresFile, featureColumn)
   }
-
-  @deprecated
-  def featureSource(inputFile: String, inputType: String = null): FeatureSource =
-    importVCF(inputFile)
-
-  @deprecated
-  def labelSource: (String, String) => CsvResponseSource[Int] = loadResponse
 }
 
 object VSContext {

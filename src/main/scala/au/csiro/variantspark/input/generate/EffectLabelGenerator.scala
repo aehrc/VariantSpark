@@ -2,12 +2,13 @@ package au.csiro.variantspark.input.generate
 
 import au.csiro.pbdava.ssparkle.common.utils.Logging
 import au.csiro.pbdava.ssparkle.spark.SparkUtils.withBroadcast
-import au.csiro.variantspark.input.{FeatureSource, LabelSource}
+import au.csiro.variantspark.input.{FeatureSource, ResponseSource}
 import breeze.linalg.DenseVector
 import breeze.stats.meanAndVariance
 import breeze.stats.meanAndVariance.MeanAndVariance
 import it.unimi.dsi.util.XorShift1024StarRandomGenerator
 import org.apache.commons.math3.random.GaussianRandomGenerator
+import scala.reflect.ClassTag
 
 /**
   * Generate a dichotomous response
@@ -15,7 +16,7 @@ import org.apache.commons.math3.random.GaussianRandomGenerator
 class EffectLabelGenerator(featureSource: FeatureSource)(zeroLevel: Int,
     effects: Map[String, Double], val noiseEffectSigma: Double, val noiseEffectMean: Double = 0.1,
     val noiseVarFraction: Double = 0.0, seed: Long = 13L)
-    extends LabelSource with Logging {
+    extends ResponseSource with Logging {
 
   def logistic(d: Double): Double = 1.0 / (1.0 + Math.exp(-d))
 
@@ -100,6 +101,9 @@ class EffectLabelGenerator(featureSource: FeatureSource)(zeroLevel: Int,
     // influentialVariablesData(v).toArray)) }.foreach(println)
     classes.toArray
   }
+
+  def getResponses[T: ClassTag](sampleIds: Seq[String], convert: String => T): Array[T] =
+    getResponses(sampleIds).map(i => convert(i.toString))
 }
 
 object EffectLabelGenerator {

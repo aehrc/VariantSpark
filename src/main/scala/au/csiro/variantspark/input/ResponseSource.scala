@@ -1,9 +1,8 @@
 package au.csiro.variantspark.input
 
-// Base trait - generic response source
-trait ResponseSource[T] {
-  def getResponses(sampleIds: Seq[String]): Array[T]
-}
+import scala.reflect.ClassTag
 
-trait LabelSource extends ResponseSource[Int]
-trait ValueSource extends ResponseSource[Double]
+// Base trait - generic response source
+trait ResponseSource {
+  def getResponses[T: ClassTag](sampleIds: Seq[String], convert: String => T): Array[T]
+}

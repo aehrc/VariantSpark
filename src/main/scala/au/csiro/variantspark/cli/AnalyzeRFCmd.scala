@@ -23,7 +23,7 @@ import au.csiro.pbdava.ssparkle.spark.SparkUtils
 import org.apache.spark.serializer.JavaSerializer
 import au.csiro.variantspark.cli.args.SparkArgs
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap
-import au.csiro.variantspark.cli.args.LabelSourceArgs
+import au.csiro.variantspark.cli.args.ResponseSourceArgs
 import au.csiro.pbdava.ssparkle.common.utils.CSVUtils
 import au.csiro.pbdava.ssparkle.common.utils.LoanUtils
 

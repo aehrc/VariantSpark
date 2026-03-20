@@ -4,12 +4,15 @@ import au.csiro.variantspark.algo.{
   RandomForest,
   RandomForestModel,
   RandomForestParams,
-  ResponseVariable
+  ResponseVariable,
+  Classification,
+  Regression
 }
 import au.csiro.variantspark.data.Feature
 import au.csiro.variantspark.input.{FeatureSource, ResponseSource}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
+import scala.reflect.classTag
 
 /** Passes a trained random forest model back to the python wrapper
   */
@@ -31,18 +34,22 @@ object RFModelTrainer {
     *
     * @return TrainResult with trained model and persisted indexed features
     */
-  def trainModel(featureSource: FeatureSource, responseSource: ResponseSource[Int],
+  def trainModel(featureSource: FeatureSource, responseSource: ResponseSource,
       params: RandomForestParams, nTrees: Int, rfBatchSize: Int,
       nPartitions: Int = 0): TrainResult = {
-    val response = responseSource.getResponses(featureSource.sampleNames)
-
     // Deterministically repartition and index features using MurMur3 hash
     // on feature labels. This ensures reproducible index assignments.
     val indexedFeatures = FeatureIndexer.index(featureSource.features, nPartitions)
 
     val rf = new RandomForest(params)
-    val rfTrained =
-      rf.batchTrain(indexedFeatures, response, nTrees, rfBatchSize)
+    val rfTrained = params.problemType match {
+      case Classification =>
+        val response = responseSource.getResponses(featureSource.sampleNames, _.toInt)
+        rf.batchTrain(indexedFeatures, response, nTrees, rfBatchSize)
+      case Regression =>
+        val response = responseSource.getResponses(featureSource.sampleNames, _.toDouble)
+        rf.batchTrain(indexedFeatures, response, nTrees, rfBatchSize)
+    }
 
     // Return both model and indexed data; caller manages lifecycle
     TrainResult(rfTrained, indexedFeatures)

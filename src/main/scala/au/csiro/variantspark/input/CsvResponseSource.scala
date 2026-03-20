@@ -7,20 +7,21 @@ import org.apache.hadoop.conf.Configuration
 import au.csiro.variantspark.utils.HdfsPath
 import scala.reflect.ClassTag
 
-class CsvResponseSource[T: ClassTag](val fileName: String, val columnName: String,
-    val convert: String => T)(implicit hadoopConf: Configuration)
-    extends ResponseSource[T] {
+class CsvResponseSource(val fileName: String, val columnName: String)(
+    implicit hadoopConf: Configuration)
+    extends ResponseSource {
 
-  lazy val responseMap: Map[String, T] = {
+  lazy val rawResponseMap: Map[String, String] = {
     LoanUtils.withCloseable(CSVReader.open(new InputStreamReader(HdfsPath(fileName).open()))) {
       reader =>
         // we expect this to be small
         // so local read should be fine
         val header = reader.readNext().get
         val columnIndex = header.indexOf(columnName)
-        reader.iterator.map(row => (row.head, convert(row(columnIndex)))).toMap
+        reader.iterator.map(row => (row.head, row(columnIndex))).toMap
     }
   }
 
-  def getResponses(sampleIds: Seq[String]): Array[T] = sampleIds.map(responseMap(_)).toArray
+  def getResponses[T: ClassTag](sampleIds: Seq[String], convert: String => T): Array[T] =
+    sampleIds.map(id => convert(rawResponseMap(id))).toArray
 }
