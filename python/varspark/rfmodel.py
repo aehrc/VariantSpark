@@ -10,6 +10,12 @@ from varspark.lfdrvs import LocalFdrVs
 
 
 class RandomForestModel(object):
+    """Base class for VariantSpark random forest models. Use
+    :class:`RandomForestClassifier` or :class:`RandomForestRegressor`.
+    """
+
+    _problem_type = None  # Override in subclasses: 'Classification' or 'Regression'
+
     @params(
         self=object,
         vc=VarsparkContext,
@@ -46,7 +52,11 @@ class RandomForestModel(object):
         self.min_node_size = min_node_size
         self.n_partitions = n_partitions
         self.vs_algo = self._jvm.au.csiro.variantspark.algo
+        problem_type_jvm = getattr(
+            getattr(self.vs_algo, self._problem_type + '$'), 'MODULE$'
+        )
         self.jrf_params = self.vs_algo.RandomForestParams(
+            problem_type_jvm,
             bool(oob),
             java.jfloat_or(mtry_fraction),
             True,
@@ -134,5 +144,15 @@ class RandomForestModel(object):
         jexp.toJson(file_name, resolve_variable_names, batch_size)
 
 
+class RandomForestClassifier(RandomForestModel):
+    """Random forest model for classification (Gini impurity)."""
+    _problem_type = 'Classification'
+
+
+class RandomForestRegressor(RandomForestModel):
+    """Random forest model for regression (variance impurity)."""
+    _problem_type = 'Regression'
+
+
 # Deprecated
-RFModelContext = RandomForestModel
+RFModelContext = RandomForestClassifier

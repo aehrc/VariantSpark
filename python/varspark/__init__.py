@@ -2,7 +2,7 @@ import os
 
 try:
     from varspark.core import VarsparkContext, VariantsContext, configure_spark
-    from varspark.rfmodel import RandomForestModel, RFModelContext
+    from varspark.rfmodel import RandomForestModel, RandomForestClassifier, RandomForestRegressor, RFModelContext
 except Exception:
     if not os.environ.get('VS_FIND_JAR'):
         raise
