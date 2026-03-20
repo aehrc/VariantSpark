@@ -11,16 +11,16 @@ class TreeDataCollector(
         TestPredictorWithImportance(null, null, null)))
     extends BatchTreeModel {
   val allTypedData = MutableList[RDD[TreeFeature]]()
-  val allLabels = MutableList[Array[Int]]()
+  val allLabels = MutableList[ResponseVariable]()
   val allTryFration = MutableList[Double]()
   val allSamples = MutableList[Sample]()
   val allTreest = MutableList[PredictiveModelWithImportance]()
   val treeIter = treeStream.toIterator
 
-  override def batchTrain(indexedData: RDD[TreeFeature], labels: Array[Int], nTryFraction: Double,
-      samples: Seq[Sample]): Seq[PredictiveModelWithImportance] = {
+  override def batchTrain(indexedData: RDD[TreeFeature], response: ResponseVariable,
+      nTryFraction: Double, samples: Seq[Sample]): Seq[PredictiveModelWithImportance] = {
     allTypedData += indexedData
-    allLabels += labels
+    allLabels += response
     allTryFration += nTryFraction
     allSamples ++= samples
     val newTrees = treeIter.take(samples.size).toSeq
@@ -29,7 +29,7 @@ class TreeDataCollector(
   }
 
   override def batchPredict(indexedTypedData: RDD[TreeFeature],
-      models: Seq[PredictiveModelWithImportance], indexes: Seq[Array[Int]]): Seq[Array[Int]] = {
+      models: Seq[PredictiveModelWithImportance], indexes: Seq[Array[Int]]): Seq[Array[Any]] = {
     // TODO I should be projecting with indexes here
     // but it does not matter in this case
     models.zip(indexes).map {

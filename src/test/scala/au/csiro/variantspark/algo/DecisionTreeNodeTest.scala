@@ -7,18 +7,21 @@ class DecisionTreeNodeTest {
 
   @Test
   def testWhenLeafNodeTraverseReturnsIt() {
-    val leafNode = LeafNode(7, null, 0, 0.0)
+    val leafNode = LeafNode(ClassificationStats(0.0, 0, Array(1)))
     assertEquals(leafNode, leafNode.traverse(_ => true))
   }
 
   @Test
   def testWhenSplitNodeTraversesToCorrectLeaf() {
-    val leftLabel = 7
-    val rightLabel = 9
-    val splitNode = SplitNode(majorityLabel = 0, null, size = 10, nodeImpurity = 0.0,
-      splitVariableIndex = 1L, splitCriteria = ThresholdSplitCriteria(1.0),
-      impurityReduction = 0.0, left = LeafNode(leftLabel, null, 0, 0.0),
-      right = LeafNode(rightLabel, null, 0, 0.0))
+    val leftLeaf = LeafNode(ClassificationStats(0.0, 0, Array(0, 1)))
+    val rightLeaf = LeafNode(ClassificationStats(0.0, 0, Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 1)))
+    val splitNode = SplitNode(
+      ClassificationStats(0.0, 10, Array(1)),
+      1L,
+      ThresholdSplitCriteria(1.0),
+      0.0,
+      left = leftLeaf,
+      right = rightLeaf)
 
     assertEquals(splitNode.left, splitNode.traverse(_ => true))
     assertEquals(splitNode.right, splitNode.traverse(_ => false))

@@ -28,7 +28,11 @@ class WideRandomForrestTest extends SparkTest {
     // collector.allData.forall(_.collect().toList == testData.collect().toList))
     assertTrue("All trees trained with expected nTryFactor",
       collector.allTryFration.forall(_ == nTryFraction))
-    assertTrue("All trees trained same labels", collector.allLabels.forall(_ sameElements labels))
+    assertTrue("All trees trained same labels",
+      collector.allLabels.forall {
+      case ClassificationResponse(l) => l sameElements labels
+      case _ => false
+    })
     assertTrue("All trees trained with requested samples",
       collector.allSamples.forall(s => s.nSize == nSamples && !s.distinctIndexesOut.isEmpty))
   }
@@ -50,7 +54,11 @@ class WideRandomForrestTest extends SparkTest {
     // assertTrue("All trees trained on the same data", collector.allData.forall(_ == testData))
     assertTrue("All trees trained with expected nTryFactor",
       collector.allTryFration.forall(_ == nTryFraction))
-    assertTrue("All trees trained same labels", collector.allLabels.forall(_ sameElements labels))
+    assertTrue("All trees trained same labels",
+      collector.allLabels.forall {
+      case ClassificationResponse(l) => l sameElements labels
+      case _ => false
+    })
     // the oob errors should follow the 1 0 1 pattern
     // as even trees predict all 0 and odd trees all 1
     assertEquals("Oob errors should always decrease", model.oobErrors.sortBy(-_), model.oobErrors)

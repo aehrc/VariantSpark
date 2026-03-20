@@ -8,7 +8,7 @@ case class TestPredictorWithImportance(val predictions: Array[Int],
     val importance: Long2DoubleOpenHashMap, val splitCounts: Long2LongOpenHashMap)
     extends PredictiveModelWithImportance {
 
-  def predict(data: RDD[(Feature, Long)]): Array[Int] = predictions
+  def predict(data: RDD[(Feature, Long)]): Array[Any] = predictions.map(_.asInstanceOf[Any])
   override def variableImportanceAsFastMap: Long2DoubleOpenHashMap = importance
   override def variableSplitCountAsFastMap: Long2LongOpenHashMap = splitCounts
 

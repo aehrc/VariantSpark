@@ -72,7 +72,7 @@ object TestWideDecisionTree extends SparkApp {
     println(result.predict(testSet).toList)
     variableImportance.toSeq.sortBy(-_._2).take(50).foreach(println)
 
-    val testPredict = result.predict(testSet)
+    val testPredict = result.predict(testSet).map(_.asInstanceOf[Int])
     val testError = Metrics.classificationError(testLabels, testPredict)
     println(s"Test error: ${testError}")
 
@@ -93,7 +93,7 @@ object TestWideDecisionTree extends SparkApp {
 
       val rf = new RandomForest()
       val result = rf.batchTrain(trainSetWithIndex, trainLabels, 20, 10)
-      val testPredict = result.predict(testSet)
+      val testPredict = result.predict(testSet).map(_.asInstanceOf[Int])
       val testError = Metrics.classificationError(testLabels, testPredict)
       testError
     }

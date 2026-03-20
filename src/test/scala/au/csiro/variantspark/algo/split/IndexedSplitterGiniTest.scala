@@ -8,15 +8,15 @@ import au.csiro.variantspark.algo.{ThresholdSplitInfo, SubsetSplitInfo}
 import au.csiro.variantspark.algo.IndexedSplitAggregator
 import au.csiro.variantspark.algo.GiniImpurity
 import au.csiro.variantspark.algo.ClassificationSplitAggregator
-import au.csiro.variantspark.algo.ConfusionAggregator
+import au.csiro.variantspark.algo.ClassificationLevelAggregator
 
 abstract class IndexedSplitterGiniTest {
 
-  def splitterFromAgg(agg: IndexedSplitAggregator, confAgg: ConfusionAggregator,
+  def splitterFromAgg(agg: IndexedSplitAggregator, confAgg: ClassificationLevelAggregator,
       data: Array[Double]): IndexedSplitter
   def splitter(data: Array[Double], labels: Array[Int], nLabels: Int = 2): IndexedSplitter = {
 
-    val confusionAgg = new ConfusionAggregator(GiniImpurity, 10, nLabels, labels)
+    val confusionAgg = new ClassificationLevelAggregator(GiniImpurity, 10, nLabels, labels)
     splitterFromAgg(ClassificationSplitAggregator(GiniImpurity, labels, nLabels), confusionAgg,
       data)
   }
@@ -70,19 +70,20 @@ abstract class IndexedSplitterGiniTest {
 }
 
 class JNaiveContinousIndexedSplitterTest extends IndexedSplitterGiniTest {
-  override def splitterFromAgg(agg: IndexedSplitAggregator, confAgg: ConfusionAggregator,
-      data: Array[Double]): IndexedSplitter = new JNaiveContinousIndexedSplitter(agg, data)
+  override def splitterFromAgg(agg: IndexedSplitAggregator,
+      confAgg: ClassificationLevelAggregator, data: Array[Double]): IndexedSplitter =
+    new JNaiveContinousIndexedSplitter(agg, data)
 }
 
 class JOrderedIndexedSplitterTest extends IndexedSplitterGiniTest {
-  override def splitterFromAgg(agg: IndexedSplitAggregator, confAgg: ConfusionAggregator,
-      data: Array[Double]): IndexedSplitter =
+  override def splitterFromAgg(agg: IndexedSplitAggregator,
+      confAgg: ClassificationLevelAggregator, data: Array[Double]): IndexedSplitter =
     new JOrderedIndexedSplitter(agg, data.map(_.toByte), 4)
 }
 
 class JOrderedFastIndexedSplitterTest extends IndexedSplitterGiniTest {
-  override def splitterFromAgg(agg: IndexedSplitAggregator, confAgg: ConfusionAggregator,
-      data: Array[Double]): IndexedSplitter =
+  override def splitterFromAgg(agg: IndexedSplitAggregator,
+      confAgg: ClassificationLevelAggregator, data: Array[Double]): IndexedSplitter =
     new JOrderedFastIndexedSplitter(confAgg, agg, data.map(_.toByte), 4)
 }
 
@@ -129,14 +130,14 @@ abstract class NominalSplitterGiniTest extends IndexedSplitterGiniTest {
   }
 }
 
-class JNominalIndexedSplitterTest extends NominalSplitterGiniTest {
-  override def splitterFromAgg(agg: IndexedSplitAggregator, confAgg: ConfusionAggregator,
-      data: Array[Double]): IndexedSplitter =
-    new JNominalIndexedSplitter(agg, data.map(_.toByte), 4)
+class JNominalClassificationIndexedSplitterTest extends NominalSplitterGiniTest {
+  override def splitterFromAgg(agg: IndexedSplitAggregator,
+      confAgg: ClassificationLevelAggregator, data: Array[Double]): IndexedSplitter =
+    new JNominalClassificationIndexedSplitter(agg, data.map(_.toByte), 4)
 }
 
-class JNominalFastIndexedSplitterTest extends NominalSplitterGiniTest {
-  override def splitterFromAgg(agg: IndexedSplitAggregator, confAgg: ConfusionAggregator,
-      data: Array[Double]): IndexedSplitter =
-    new JNominalFastIndexedSplitter(confAgg, agg, data.map(_.toByte), 4)
+class JNominalClassificationFastIndexedSplitterTest extends NominalSplitterGiniTest {
+  override def splitterFromAgg(agg: IndexedSplitAggregator,
+      confAgg: ClassificationLevelAggregator, data: Array[Double]): IndexedSplitter =
+    new JNominalClassificationFastIndexedSplitter(confAgg, agg, data.map(_.toByte), 4)
 }

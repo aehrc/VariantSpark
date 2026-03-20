@@ -22,9 +22,9 @@ class WideDecisionTreeIntegratedTest extends SparkTest {
     *
     */
   def checkCNAE_9_Dataset(maxDepth: Int, dataType: VariableType = BoundedOrdinalVariable(5)) {
-    val responseSource = new CsvResponseSource("data/CNAE-9-labels.csv", "category", _.toInt)
+    val responseSource = new CsvResponseSource("data/CNAE-9-labels.csv", "category")
     val featureSource = new CsvFeatureSource(sc.textFile("data/CNAE-9-wide.csv"), dataType)
-    val responses = responseSource.getResponses(featureSource.sampleNames)
+    val responses = responseSource.getResponses(featureSource.sampleNames, _.toInt)
     val inputData = featureSource.features.zipWithIndex.cache()
     val nVars = inputData.count
     // max fife levels
@@ -35,7 +35,7 @@ class WideDecisionTreeIntegratedTest extends SparkTest {
     // check predictions
     val expected = TestCsvUtils.readColumnToIntArray("src/test/data/CNAE-9_R_predictions.csv",
       s"maxdepth_${maxDepth}")
-    assertArrayEquals(expected, prediction)
+    assertArrayEquals(expected, prediction.map(_.asInstanceOf[Int]))
 
     // check variable importances
     val expectedImportances = TestCsvUtils.readColumnToDoubleArray(
