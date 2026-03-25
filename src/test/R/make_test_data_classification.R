@@ -25,7 +25,7 @@ importances[names(treeModel30$variable.importance), 'maxdepth_30'] <- treeModel3
 importances[is.na(importances)] <- 0.0
 
 
-write.csv(predictions, '../../../src/test/data/CNAE-9_R_predictions.csv', quote=FALSE)
-write.csv(importances, '../../../src/test/data/CNAE-9_R_importance.csv', quote=FALSE)
+write.csv(predictions, '../../../src/test/data/CNAE-9_R_predictions_classification.csv', quote=FALSE)
+write.csv(importances, '../../../src/test/data/CNAE-9_R_importance_classification.csv', quote=FALSE)
 
 
