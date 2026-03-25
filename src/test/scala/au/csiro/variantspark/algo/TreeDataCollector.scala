@@ -6,12 +6,10 @@ import org.apache.spark.rdd.RDD
 
 import scala.collection.mutable.MutableList
 
-class TreeDataCollector(
-    treeStream: Stream[PredictiveModelWithImportance] = Stream.continually(
-        TestPredictorWithImportance(null, null, null)))
+class TreeDataCollector(treeStream: Stream[PredictiveModelWithImportance])
     extends BatchTreeModel {
   val allTypedData = MutableList[RDD[TreeFeature]]()
-  val allLabels = MutableList[ResponseVariable]()
+  val allResponses = MutableList[ResponseVariable]()
   val allTryFration = MutableList[Double]()
   val allSamples = MutableList[Sample]()
   val allTreest = MutableList[PredictiveModelWithImportance]()
@@ -20,7 +18,7 @@ class TreeDataCollector(
   override def batchTrain(indexedData: RDD[TreeFeature], response: ResponseVariable,
       nTryFraction: Double, samples: Seq[Sample]): Seq[PredictiveModelWithImportance] = {
     allTypedData += indexedData
-    allLabels += response
+    allResponses += response
     allTryFration += nTryFraction
     allSamples ++= samples
     val newTrees = treeIter.take(samples.size).toSeq
