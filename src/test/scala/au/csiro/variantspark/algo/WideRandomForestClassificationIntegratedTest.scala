@@ -6,13 +6,13 @@ import au.csiro.variantspark.test.SparkTest
 import org.junit.Assert._
 import org.junit.Test
 
-object WideRandomForestIntegratedTest {
+object WideRandomForestClassificationIntegratedTest {
   def NoTrees: Int = 200
   def NoSamples: Int = 1000
 }
 
-class WideRandomForestIntegratedTest extends SparkTest {
-  import WideRandomForestIntegratedTest._
+class WideRandomForestClassificationIntegratedTest extends SparkTest {
+  import WideRandomForestClassificationIntegratedTest._
 
   @Test
   def testFindsImportantVariablesInGeneratedDataset() {

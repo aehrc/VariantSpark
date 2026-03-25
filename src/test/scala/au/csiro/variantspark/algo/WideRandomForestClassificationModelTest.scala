@@ -8,7 +8,7 @@ import org.apache.spark.rdd.RDD
 import org.junit.Assert._
 import org.junit.Test
 
-class WideRandomForrestModelTest extends SparkTest {
+class WideRandomForestClassificationModelTest extends SparkTest {
   val doubleComparisonDelta = 1e-6
   val nLabels = 4
   val nSamples = 2
@@ -21,7 +21,7 @@ class WideRandomForrestModelTest extends SparkTest {
       List(Map(1L -> 1.0, 2L -> 1.0), Map(1L -> 1.0, 2L -> 0.5, 3L -> 6.0), Map(1L -> 1.0))
         .map(m => new Long2DoubleOpenHashMap(m.keys.toArray, m.values.toArray))
     val model =
-      new RandomForestModel(importances.map(TestPredictorWithImportance(null, _, null).toMember).toList,
+      new RandomForestModel(importances.map(TestClassificationPredictorWithImportance(null, _, null).toMember).toList,
         VotingAggregatorFactory(nLabels))
     val totalImportance = model.variableImportance
     assertEquals(Map(1L -> 1.0, 2L -> 0.5, 3L -> 2.0), totalImportance)
@@ -33,7 +33,7 @@ class WideRandomForrestModelTest extends SparkTest {
       List(Map(1L -> 1L, 2L -> 2L), Map(1L -> 1L, 2L -> 2L, 3L -> 6L), Map(1L -> 1L))
         .map(m => new Long2LongOpenHashMap(m.keys.toArray, m.values.toArray))
     val model =
-      new RandomForestModel(splitCounts.map(TestPredictorWithImportance(null, null, _).toMember).toList,
+      new RandomForestModel(splitCounts.map(TestClassificationPredictorWithImportance(null, null, _).toMember).toList,
         VotingAggregatorFactory(nLabels))
     val totalSplitCount = model.variableSplitCount
     assertEquals(Map(1L -> 3L, 2L -> 4L, 3L -> 6L), totalSplitCount)
@@ -49,8 +49,8 @@ class WideRandomForrestModelTest extends SparkTest {
   def whenOnePredictorPassesThePrediction() {
     val assumedPredictions = Array(1, 2)
     val model =
-      new RandomForestModel(List(TestPredictorWithImportance(assumedPredictions, null,
-            null).toMember), VotingAggregatorFactory(nLabels))
+      new RandomForestModel(List(TestClassificationPredictorWithImportance(assumedPredictions,
+            null, null).toMember), VotingAggregatorFactory(nLabels))
     val prediction = model.predict(testData)
     assertArrayEquals(assumedPredictions, prediction.map(_.asInstanceOf[Int]))
   }
@@ -61,7 +61,7 @@ class WideRandomForrestModelTest extends SparkTest {
     val model =
       new RandomForestModel(
           assumedPredictions
-            .map(TestPredictorWithImportance(_, null, null).toMember),
+            .map(TestClassificationPredictorWithImportance(_, null, null).toMember),
           VotingAggregatorFactory(nLabels))
     val prediction = model.predict(testData)
     assertArrayEquals(Array(1, 0), prediction.map(_.asInstanceOf[Int]))
@@ -73,7 +73,7 @@ class WideRandomForrestModelTest extends SparkTest {
     val model =
       new RandomForestModel(
           assumedPredictions
-            .map(TestPredictorWithImportance(_, null, null).toMember),
+            .map(TestClassificationPredictorWithImportance(_, null, null).toMember),
           VotingAggregatorFactory(nLabels))
     val classProbabilities = model.predictProb(testData)
     assertArrayEquals(Array(0.0, 1.0, 0.0, 0.0), classProbabilities(0), doubleComparisonDelta)

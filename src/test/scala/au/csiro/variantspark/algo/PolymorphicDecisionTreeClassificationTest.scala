@@ -17,9 +17,9 @@ import au.csiro.variantspark.data.ContinuousVariable
 import au.csiro.variantspark.test.TestFeatureSource
 import au.csiro.variantspark.data._
 
-class PolymorphicDecisionTreeTest extends SparkTest {
+class PolymorphicDecisionTreeClassificationTest extends SparkTest {
   @Test
-  def testTrainPolymorphicTree() {
+  def testTrainPolymorphicClassificationTree() {
     val genomicFeatureSource = new TestFeatureSource(Seq(("gen_1", List("0", "0", "1", "2")),
         ("gen_2", List("0", "1", "0", "2"))), BoundedOrdinalVariable(3), ByteArrayDataBuilder)
 
@@ -49,7 +49,7 @@ class PolymorphicDecisionTreeTest extends SparkTest {
     // with possibly typed constructors for some legacy cases
     // does not make sense really have per representation tree (does it?)
 
-    val tree = new DecisionTree()
+    val tree = new DecisionTree(DecisionTreeParams(problemType = Classification))
     tree.batchTrain(allFeatures, Array[Int](0, 1, 0, 1), 1.0,
       List(Sample.all(allFeatures.first._1.size)))
     // so again limit the legacy cases for contruction only

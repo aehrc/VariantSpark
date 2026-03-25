@@ -3,7 +3,7 @@ package au.csiro.variantspark.algo
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class DecisionTreeNodeTest {
+class DecisionTreeClassificationNodeTest {
 
   @Test
   def testWhenLeafNodeTraverseReturnsIt() {

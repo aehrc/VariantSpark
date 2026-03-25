@@ -6,7 +6,7 @@ import org.apache.spark.mllib.linalg.Vectors
 import org.junit.Assert._
 import org.junit.Test
 
-class WideRandomForrestTest extends SparkTest {
+class WideRandomForestClassificationTest extends SparkTest {
 
   val nSamples = 100
   val nLabels = nSamples
@@ -17,7 +17,8 @@ class WideRandomForrestTest extends SparkTest {
   @Test
   def testBuildsCorrectBoostedModelWithoutOob() {
     val nTryFraction = 0.6
-    val collector = new TreeDataCollector()
+    val collector = new TreeDataCollector(
+        Stream.continually(TestClassificationPredictorWithImportance(null, null, null)))
     val rf = new RandomForest(RandomForestParams(oob = false, nTryFraction = nTryFraction,
         bootstrap = true), modelBuilderFactory = collector.factory)
     val model = rf.batchTrain(testData, labels, 10)
@@ -29,7 +30,7 @@ class WideRandomForrestTest extends SparkTest {
     assertTrue("All trees trained with expected nTryFactor",
       collector.allTryFration.forall(_ == nTryFraction))
     assertTrue("All trees trained same labels",
-      collector.allLabels.forall {
+      collector.allResponses.forall {
       case ClassificationResponse(l) => l sameElements labels
       case _ => false
     })
@@ -41,10 +42,9 @@ class WideRandomForrestTest extends SparkTest {
   def testBuildsCorrectUnBoostedModelWithOob() {
     val nTryFraction = 0.6
     val nTrees = 10
-    val collector = new TreeDataCollector(
-        Stream
-          .continually(1)
-          .map(pl => TestPredictorWithImportance(Array.fill(nLabels)(pl), null, null)))
+    val collector = new TreeDataCollector(Stream
+        .continually(1)
+        .map(pl => TestClassificationPredictorWithImportance(Array.fill(nLabels)(pl), null, null)))
     val rf = new RandomForest(RandomForestParams(oob = true, nTryFraction = nTryFraction,
         bootstrap = false, subsample = 0.5), modelBuilderFactory = collector.factory)
     val model = rf.batchTrain(testData, labels, nTrees)
@@ -55,7 +55,7 @@ class WideRandomForrestTest extends SparkTest {
     assertTrue("All trees trained with expected nTryFactor",
       collector.allTryFration.forall(_ == nTryFraction))
     assertTrue("All trees trained same labels",
-      collector.allLabels.forall {
+      collector.allResponses.forall {
       case ClassificationResponse(l) => l sameElements labels
       case _ => false
     })

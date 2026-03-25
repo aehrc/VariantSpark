@@ -9,7 +9,7 @@ import au.csiro.variantspark.data.ContinuousVariable
 import au.csiro.variantspark.data._
 import au.csiro.variantspark.input._
 
-class WideDecisionTreeModelTest extends SparkTest {
+class WideDecisionTreeClassificationModelTest extends SparkTest {
 
   @Test
   def testCorrectlyPredictsComplexTree() {
