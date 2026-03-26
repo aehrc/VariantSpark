@@ -1,5 +1,6 @@
 package au.csiro.variantspark.cli.args
 
+import au.csiro.variantspark.algo.{ProblemType, Classification, Regression}
 import org.kohsuke.args4j.Option
 
 trait RandomForestArgs {
@@ -9,6 +10,18 @@ trait RandomForestArgs {
   @Option(name = "-rn", required = false,
     usage = "RandomForest: number of trees to build (def=20)", aliases = Array("--rf-n-trees"))
   val nTrees: Int = 20
+
+  @Option(name = "-rpt", required = false,
+    usage = "RandomForest: Classification/Regression modes", aliases = Array("--problem-type"))
+  val rfProblemType: String = "classification"
+
+  def problemType: ProblemType = rfProblemType match {
+    case "classification" => Classification
+    case "regression" => Regression
+    case other =>
+      throw new IllegalArgumentException(
+          s"Unknown problem type: `${other}`. Valid options: `classification`, `regression`")
+  }
 
   @Option(name = "-rmt", required = false, usage = "RandomForest: mTry(def=sqrt(<num-vars>))",
     aliases = Array("--rf-mtry"))

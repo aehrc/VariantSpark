@@ -5,6 +5,9 @@ import au.csiro.pbdava.ssparkle.common.utils.{CSVUtils, Logging, ReusablePrintSt
 import au.csiro.pbdava.ssparkle.spark.{SparkApp, SparkUtils}
 import au.csiro.sparkle.common.args4j.ArgsApp
 import au.csiro.variantspark.algo.{
+  ProblemType,
+  Classification,
+  Regression,
   RandomForest,
   RandomForestCallback,
   RandomForestParams,
@@ -94,14 +97,18 @@ class ImportanceCmd
 
     echo(s"Loading responses from: ${featuresFile}, column: ${featureColumn}")
     val responseSource = new CsvResponseSource(featuresFile, featureColumn)
-    val response = responseSource.getResponses(featureSource.sampleNames, _.toInt)
-    echo(s"Loaded responses: ${dumpList(response.toList)}")
+    val response: ResponseVariable = problemType match {
+      case Classification => responseSource.getResponses(featureSource.sampleNames, _.toInt)
+      case Regression => responseSource.getResponses(featureSource.sampleNames, _.toDouble)
+    }
+    echo(s"Loaded responses: ${response.length} samples")
     echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")
     echo(s"Random seed is: ${randomSeed}")
     val treeBuildingTimer = Timer()
-    val rf: RandomForest = new RandomForest(RandomForestParams(oob = rfEstimateOob,
-        seed = randomSeed, maxDepth = rfMaxDepth, minNodeSize = rfMinNodeSize,
-        bootstrap = !rfSampleNoReplacement, subsample = rfSubsampleFraction,
+    val rf: RandomForest = new RandomForest(RandomForestParams(problemType = problemType,
+        oob = rfEstimateOob, seed = randomSeed, maxDepth = rfMaxDepth,
+        minNodeSize = rfMinNodeSize, bootstrap = !rfSampleNoReplacement,
+        subsample = rfSubsampleFraction,
         nTryFraction = if (rfMTry > 0) rfMTry.toDouble / totalVariables else rfMTryFraction,
         correctImpurity = correctImportance, airRandomSeed = airRandomSeed))
 

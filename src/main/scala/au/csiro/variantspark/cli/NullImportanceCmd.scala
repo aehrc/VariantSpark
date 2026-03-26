@@ -32,7 +32,14 @@ import au.csiro.pbdava.ssparkle.common.utils.Timer
 import au.csiro.variantspark.utils.defRng
 import au.csiro.variantspark.input.ParquetFeatureSource
 import au.csiro.variantspark.algo.RandomForest
-import au.csiro.variantspark.algo.ResponseVariable
+import au.csiro.variantspark.algo.{
+  ResponseVariable,
+  ProblemType,
+  Classification,
+  Regression,
+  ClassificationResponse,
+  RegressionResponse
+}
 import au.csiro.variantspark.utils.IndexedRDDFunction._
 import java.io.ObjectOutputStream
 import java.io.FileOutputStream
@@ -92,6 +99,18 @@ class NullImportanceCmd
     usage = "RandomForest: number of trees to build (def=20)", aliases = Array("--rf-n-trees"))
   val nTrees: Int = 20
 
+  @Option(name = "-rpt", required = false,
+    usage = "RandomForest: Classification/Regression modes", aliases = Array("--problem-type"))
+  val rfProblemType: String = "classification"
+
+  def problemType: ProblemType = rfProblemType match {
+    case "classification" => Classification
+    case "regression" => Regression
+    case other =>
+      throw new IllegalArgumentException(
+          s"Unknown problem type: `${other}`. Valid options: `classification`, `regression`")
+  }
+
   @Option(name = "-rmt", required = false, usage = "RandomForest: mTry(def=sqrt(<num-vars>))",
     aliases = Array("--rf-mtry"))
   val rfMTry: Long = -1L
@@ -150,8 +169,11 @@ class NullImportanceCmd
 
     echo(s"Loading responses from: ${featuresFile}, column: ${featureColumn}")
     val responseSource = new CsvResponseSource(featuresFile, featureColumn)
-    val response = responseSource.getResponses(featureSource.sampleNames, _.toInt)
-    echo(s"Loaded responses: ${dumpList(response.toList)}")
+    val response: ResponseVariable = problemType match {
+      case Classification => responseSource.getResponses(featureSource.sampleNames, _.toInt)
+      case Regression => responseSource.getResponses(featureSource.sampleNames, _.toDouble)
+    }
+    echo(s"Loaded responses: ${response.length} samples")
 
     // discover variable type
     // for now assume it's ordered factor with provided number of levels
@@ -167,13 +189,20 @@ class NullImportanceCmd
       // we can do it in place as a permutation of a permutation is still a permutation
       // although it might be better to actually get the permutation as order of indexes
       echo(s"Running permutation ${pn}")
-      MathArrays.shuffle(response, permutationRng)
-      verbose(s"The permutation is: ${response.toList}")
+      response match {
+        case ClassificationResponse(labels) => MathArrays.shuffle(labels, permutationRng)
+        case RegressionResponse(values) =>
+          for (i <- values.length - 1 to 1 by -1) {
+            val j = math.abs(permutationRng.nextInt()) % (i + 1)
+            val tmp = values(i); values(i) = values(j); values(j) = tmp
+          }
+      }
+      verbose(s"Shuffled response for permutation ${pn}")
       echo(s"Training random forest with trees: ${nTrees} (batch size:  ${rfBatchSize})")
       echo(s"Random seed is: ${randomSeed}")
       val treeBuildingTimer = Timer()
-      val rf = new RandomForest(RandomForestParams(oob = rfEstimateOob, seed = randomSeed,
-          bootstrap = !rfSampleNoReplacement, subsample = rfSubsampleFraction,
+      val rf = new RandomForest(RandomForestParams(problemType = problemType, oob = rfEstimateOob,
+          seed = randomSeed, bootstrap = !rfSampleNoReplacement, subsample = rfSubsampleFraction,
           nTryFraction = if (rfMTry > 0) rfMTry.toDouble / totalVariables else rfMTryFraction))
       val trainingData = inputData
 

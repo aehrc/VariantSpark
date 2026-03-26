@@ -6,7 +6,7 @@ import au.csiro.pbdava.ssparkle.common.arg4j.{AppRunner, TestArgs}
 import au.csiro.pbdava.ssparkle.common.utils._
 import au.csiro.pbdava.ssparkle.spark.SparkApp
 import au.csiro.sparkle.common.args4j.ArgsApp
-import au.csiro.variantspark.algo.RandomForestModel
+import au.csiro.variantspark.algo.{RandomForestModel, ProblemType, Classification, Regression}
 import au.csiro.variantspark.cli.args.FeatureSourceArgs
 import au.csiro.variantspark.cmd.EchoUtils._
 import au.csiro.variantspark.cmd.Echoable
@@ -53,6 +53,7 @@ class PredictCmd
       LoanUtils.withCloseable(new FileInputStream(inputModel)) { in =>
         si.deserializeStream(in).readObject().asInstanceOf[RandomForestModel]
       }
+    val problemType: ProblemType = rfModel.params.problemType
 
     echo(s"Loaded model of size: ${rfModel.size}")
 
@@ -67,19 +68,27 @@ class PredictCmd
         + s" took: ${dataLoadingTimer.durationInSec}")
     echoDataPreview()
 
-    val classProbabilities: Array[Array[Double]] =
-      rfModel.predictProb(inputData)
-    val predictionRows = (featureSource.sampleNames zip classProbabilities)
-      .map {
-        case (sampleName, classProb) =>
-          sampleName :: classProb.indices.maxBy(classProb) :: Nil ::: classProb.toList
-      }
+    val (header, predictionRows) = problemType match {
+      case Classification =>
+        val classProbabilities = rfModel.predictProb(inputData)
+        val rows = (featureSource.sampleNames zip classProbabilities).map {
+          case (sampleName, classProb) =>
+            sampleName :: classProb.indices.maxBy(classProb) :: Nil ::: classProb.toList
+        }
+        val hdr =
+          List("sample", "class") ::: Range(0, rfModel.nCategories).map(ci => s"p_${ci}").toList
+        (hdr, rows)
+      case Regression =>
+        val predictions = rfModel.predict(inputData).map(_.asInstanceOf[Double])
+        val rows = (featureSource.sampleNames zip predictions).map {
+          case (name, pred) => List(name, pred)
+        }
+        (List("sample", "mean"), rows)
+    }
 
     CSVUtils.withStream(if (outputFile != null) {
       HdfsPath(outputFile).create()
     } else ReusablePrintStream.stdout) { writer =>
-      val header =
-        List("sample", "class") ::: Range(0, rfModel.nCategories).map(ci => s"p_${ci}").toList
       writer.writeRow(header)
       writer.writeAll(predictionRows)
     }
