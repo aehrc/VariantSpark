@@ -6,8 +6,8 @@ class ImportanceAnalysis(object):
         self._jia = _jia
         self.sql = sql
 
-    @params(self=object, limit=Nullable(int), normalized=Nullable(bool))
-    def important_variables(self, limit=10, normalized=False):
+    @params(self=object, limit=Nullable(int), normalized=Nullable(bool), scale=Nullable(float))
+    def important_variables(self, limit=10, normalized=False, scale=1.0):
         """ Gets the top limit important variables
 
         :param (int) limit: Indicates how many of the most important variables to return
@@ -16,21 +16,22 @@ class ImportanceAnalysis(object):
         :return topimportances (pd.DataFrame): Dataframe of most important variables containing a
             variant_id and its corresponding importance.
         """
-        jimpvarmap = self._jia.importantVariablesJavaMap(limit, normalized)
+        jimpvarmap = self._jia.importantVariablesJavaMap(limit, normalized, scale)
         jimpvarmapsorted = sorted(jimpvarmap.items(), key=lambda x: x[1], reverse=True)
         topimportances = pd.DataFrame(jimpvarmapsorted, columns=['variable', 'importance'])
         return topimportances
 
-    @params(self=object, precision=Nullable(int), normalized=Nullable(bool))
-    def variable_importance(self, precision=None, normalized=False):
+    @params(self=object, precision=Nullable(int), normalized=Nullable(bool), scale=Nullable(float))
+    def variable_importance(self, precision=None, normalized=False, scale=1.0):
         """ Returns a DataFrame with the gini importance of variables.
 
         :param (int) precision: Maximum floating point precision to return
         :param (bool) normalized: Indicates whether to return normalized importances
+        :param (float) scale: Scale (sum) of normalised importances 
 
         :return importances (pd.DataFrame): DataFrame of variable importances containing variant_id, importance, and split count
         """
-        jdf = self._jia.variableImportance(normalized)
+        jdf = self._jia.variableImportance(normalized, scale)
         jdf.count()
         jdf.createOrReplaceTempView("df")
         importances = self.sql.table("df").toPandas()
