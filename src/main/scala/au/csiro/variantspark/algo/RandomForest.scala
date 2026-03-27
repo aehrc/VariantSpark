@@ -28,8 +28,8 @@ case object RawVarImportanceNormalizer extends VarImportanceNormalizer {
   */
 class StandardImportanceNormalizer(val scale: Double) extends VarImportanceNormalizer {
   override def normalize(varImportance: Map[Long, Double]): Map[Long, Double] = {
-    val total = varImportance.values.sum * scale
-    varImportance.mapValues(_ / total)
+    val total = varImportance.values.sum
+    varImportance.mapValues(_ * scale / total)
   }
 }
 
@@ -112,9 +112,11 @@ case class RandomForestModel(members: List[RandomForestMember], labelCount: Int,
 
   def trees: List[PredictiveModelWithImportance] = members.map(_.predictor)
 
-  def normalizedVariableImportance(
-      norm: VarImportanceNormalizer = To100ImportanceNormalizer): Map[Long, Double] =
+  def normalizedVariableImportance(norm: VarImportanceNormalizer): Map[Long, Double] =
     norm.normalize(variableImportance)
+
+  def normalizedVariableImportance(scale: Double = 1.0): Map[Long, Double] =
+    new StandardImportanceNormalizer(scale).normalize(variableImportance)
 
   /** Sets the variable importance by averaging the importance of each variable over all trees
     *  if a variable is not used in a tree it's importance for this tree is assumed to be 0
