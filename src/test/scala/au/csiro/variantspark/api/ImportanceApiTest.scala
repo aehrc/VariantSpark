@@ -24,6 +24,8 @@ class ImportanceApiTest extends SparkTest {
     top10Variables.foreach(println _)
     assertEquals(10, top10Variables.size)
     assertEquals("22_16050408_T_C", top10Variables.head._1)
+    val importances = impAnalysis.variableImportance(normalized = true, scale = 100.0)
+    assertEquals(100.0, importances.collect().map(_.getDouble(1)).sum, 0.001)
     trainResult.releaseIndexedData()
   }
 }
