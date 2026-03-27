@@ -12,18 +12,22 @@ The code below illustrates the basic use of variant-spark:
 
 ::
 
-    from varspark import VariantsContext
+    import varspark as vs
     from pyspark.sql import SparkSession
 
-    spark = SparkSession.builder\
-        .appName("HipsterIndex") \
-        .getOrCreate()
-        
-    vs = VariantsContext(spark)
-    features = vs.import_vcf(VCF_FILE)
-    labels = vs.load_label(LABEL_FILE, LABEL_NAME)
-    model  = features.importance_analysis(labels, mtry_fraction = 0.1, seed = 13, n_trees = 200)
-    print("Oob = %s" % model.oob_error())
+    spark = vs.configure_spark(
+        SparkSession.builder.appName("HipsterIndex")
+    ).getOrCreate()
+
+    vc = vs.VarsparkContext(spark)
+    features = vc.import_vcf(VCF_FILE)
+    labels = vc.load_label(LABEL_FILE, LABEL_NAME)
+
+    rf = vs.RandomForestModel(vc, mtry_fraction=0.1, seed=13)
+    rf.fit_trees(features, labels, n_trees=200)
+    print("Oob = %s" % rf.oob_error())
+    ia = rf.importance_analysis()
+    print(ia.important_variables())
 
 
 Contents:
