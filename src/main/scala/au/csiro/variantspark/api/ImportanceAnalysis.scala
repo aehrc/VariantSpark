@@ -21,7 +21,6 @@ import scala.collection.JavaConverters._
   * @param sqlContext    The SQL context.
   * @param featureSource The feature source.
   * @param rfModel The trained random forest model
-  * @example class ImportanceAnalysis(featureSource, labelSource, nTrees = 1000)
   */
 class ImportanceAnalysis(val sqlContext: SQLContext, val rfModel: RandomForestModel,
     val indexedFeatures: RDD[(Feature, Long)]) {
@@ -43,19 +42,20 @@ class ImportanceAnalysis(val sqlContext: SQLContext, val rfModel: RandomForestMo
     StructType(Seq(StructField("variant_id", StringType, true),
         StructField("importance", DoubleType, true), StructField("splitCount", LongType, true)))
 
-  private lazy val br_normalizedVariableImportance = {
-    val indexImportance = rfModel.normalizedVariableImportance()
-    sc.broadcast(
-        new Long2DoubleOpenHashMap(
-            indexImportance.asInstanceOf[Map[java.lang.Long, java.lang.Double]].asJava))
-  }
-
   private lazy val br_variableImportance = {
     val indexImportance = rfModel.variableImportance
     sc.broadcast(
         new Long2DoubleOpenHashMap(
             indexImportance.asInstanceOf[Map[java.lang.Long, java.lang.Double]].asJava))
   }
+
+  private def br_normalizedVariableImportance(scale: Double) =
+    sc.broadcast(
+        new Long2DoubleOpenHashMap(
+            rfModel
+              .normalizedVariableImportance(scale)
+              .asInstanceOf[Map[java.lang.Long, java.lang.Double]]
+              .asJava))
 
   private lazy val br_splitCounts = {
     val splitCounts = rfModel.variableSplitCount
@@ -64,27 +64,24 @@ class ImportanceAnalysis(val sqlContext: SQLContext, val rfModel: RandomForestMo
             splitCounts.asInstanceOf[Map[java.lang.Long, java.lang.Long]].asJava))
   }
 
-  def variableImportance(normalized: Boolean = false): DataFrame = {
-    val local_br_variableImportance = if (!normalized) {
-      br_variableImportance
-    } else {
-      br_normalizedVariableImportance
-    }
+  def variableImportance(normalized: Boolean = false, scale: Double = 1.0): DataFrame = {
+    val local_br_importance =
+      if (!normalized) br_variableImportance else br_normalizedVariableImportance(scale)
     val local_br_splitCounts = br_splitCounts
 
     val importanceRDD = indexedFeatures.map({
       case (f, i) =>
-        Row(f.label, local_br_variableImportance.value.get(i), local_br_splitCounts.value.get(i))
+        Row(f.label, local_br_importance.value.get(i), local_br_splitCounts.value.get(i))
     })
     sqlContext.createDataFrame(importanceRDD, variableImportanceWithSplitCountSchema)
   }
 
-  def importantVariables(nTopLimit: Int = 100,
-      normalized: Boolean = false): Seq[(String, Double)] = {
+  def importantVariables(nTopLimit: Int = 100, normalized: Boolean = false,
+      scale: Double = 1.0): Seq[(String, Double)] = {
     val topImportantVariables = if (!normalized) {
       rfModel.variableImportance.toSeq.sortBy(-_._2).take(nTopLimit)
     } else {
-      rfModel.normalizedVariableImportance().toSeq.sortBy(-_._2).take(nTopLimit)
+      rfModel.normalizedVariableImportance(scale).toSeq.sortBy(-_._2).take(nTopLimit)
     }
     val topImportantVariableIndexes = topImportantVariables.map(_._1).toSet
 
@@ -99,10 +96,10 @@ class ImportanceAnalysis(val sqlContext: SQLContext, val rfModel: RandomForestMo
     topImportantVariables.map({ case (i, importance) => (index(i), importance) })
   }
 
-  def importantVariablesJavaMap(nTopLimit: Int = 100,
-      normalized: Boolean = false): util.Map[String, Double] = {
+  def importantVariablesJavaMap(nTopLimit: Int = 100, normalized: Boolean = false,
+      scale: Double = 1.0): util.Map[String, Double] = {
     val impVarMap =
-      collection.mutable.Map(importantVariables(nTopLimit, normalized).toMap.toSeq: _*)
+      collection.mutable.Map(importantVariables(nTopLimit, normalized, scale).toMap.toSeq: _*)
     impVarMap.map { case (k, v) => k -> double2Double(v) }
     impVarMap.asJava
   }
