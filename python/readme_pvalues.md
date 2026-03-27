@@ -36,9 +36,9 @@ in few lines of code using VariantSpark as shown in the following snippet:
 
         vc = vs.VarsparkContext(spark, silent=True)
         features = vc.import_vcf(os.path.join(PROJECT_DIR, 'data/chr22_1000.vcf'))
-        labels = vc.load_label(os.path.join(PROJECT_DIR, 'data/chr22-labels.csv'), '22_16050408')
+        labels = vc.load_response(os.path.join(PROJECT_DIR, 'data/chr22-labels.csv'), '22_16050408')
 
-        rf_model = vs.RandomForestModel(vc, seed=13, mtry_fraction=0.05, min_node_size=5,
+        rf_model = vs.RandomForestClassifier(vc, seed=13, mtry_fraction=0.05, min_node_size=5,
                                             max_depth=10)
         rf_model.fit_trees(features, labels, 100, 50)
         fdrCalc = rf_model.get_lfdr()

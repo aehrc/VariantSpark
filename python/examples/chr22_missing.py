@@ -17,9 +17,9 @@ def main():
     vc = vs.VarsparkContext(spark)
 
     data = vc.import_vcf(os.path.join(PROJECT_DIR, 'data/chr22_1000_missing.vcf'), imputation_strategy="mode")
-    labels = vc.load_label(os.path.join(PROJECT_DIR, 'data/chr22-labels.csv'), "22_16050408")
+    labels = vc.load_response(os.path.join(PROJECT_DIR, 'data/chr22-labels.csv'), "22_16050408")
 
-    rf_model = vs.RandomForestModel(vc, seed=13, mtry_fraction=0.05, min_node_size=5, max_depth=10)
+    rf_model = vs.RandomForestClassifier(vc, seed=13, mtry_fraction=0.05, min_node_size=5, max_depth=10)
     rf_model.fit_trees(data, labels, n_trees=100, batch_size=50)
 
     print("OOB error: %s" % rf_model.oob_error())

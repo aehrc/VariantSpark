@@ -5,7 +5,7 @@ import pytest
 from pyspark import SparkConf
 from pyspark.sql import SparkSession
 
-from varspark import VariantsContext, RFModelContext
+from varspark import VariantsContext, RandomForestClassifier
 from varspark.test import find_variants_jar, PROJECT_DIR
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -41,20 +41,20 @@ class VariantSparkAPITestCase(VariantSparkPySparkTestCase):
 
     def test_variants_context_parameter_type(self):
         with self.assertRaises(TypeError) as cm:
-            self.vc.load_label(label_file_path=123, col_name=456)
+            self.vc.load_response(response_file_path=123, col_name=456)
         self.assertEqual(
-            "keyword argument label_file_path = 123 doesn't match signature str",
+            "keyword argument response_file_path = 123 doesn't match signature str",
             str(cm.exception),
         )
 
     def test_rfmodel(self):
         label_data_path = os.path.join(PROJECT_DIR, "data/chr22-labels.csv")
-        label = self.vc.load_label(
-            label_file_path=label_data_path, col_name="22_16050678"
+        label = self.vc.load_response(
+            response_file_path=label_data_path, col_name="22_16050678"
         )
         feature_data_path = os.path.join(PROJECT_DIR, "data/chr22_1000.vcf")
         features = self.vc.import_vcf(vcf_file_path=feature_data_path)
-        rf = RFModelContext(
+        rf = RandomForestClassifier(
             self.vc, mtry_fraction=None, oob=True, seed=17, var_ordinal_levels=3
         )
         rf.fit_trees(features, label, n_trees=200, batch_size=50)

@@ -21,9 +21,9 @@ The code below illustrates the basic use of variant-spark:
 
     vc = vs.VarsparkContext(spark)
     features = vc.import_vcf(VCF_FILE)
-    labels = vc.load_label(LABEL_FILE, LABEL_NAME)
+    labels = vc.load_response(LABEL_FILE, LABEL_NAME)
 
-    rf = vs.RandomForestModel(vc, mtry_fraction=0.1, seed=13)
+    rf = vs.RandomForestClassifier(vc, mtry_fraction=0.1, seed=13)
     rf.fit_trees(features, labels, n_trees=200)
     print("Oob = %s" % rf.oob_error())
     ia = rf.importance_analysis()

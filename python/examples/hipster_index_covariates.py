@@ -23,7 +23,7 @@ def main():
     genotypes = vc.import_vcf(
         os.path.join(PROJECT_DIR, "data/hipsterIndex/hipster.vcf.bgz")
     )
-    labels = vc.load_label(
+    labels = vc.load_response(
         os.path.join(PROJECT_DIR, "data/hipsterIndex/hipster_labels_covariates.txt"),
         "label",
     )
@@ -41,7 +41,7 @@ def main():
     )
     data = vc.union_features_and_covariates(genotypes, covariates)
 
-    rf_model = vs.RandomForestModel(
+    rf_model = vs.RandomForestClassifier(
         vc, seed=13, mtry_fraction=0.05, min_node_size=5, max_depth=10
     )
     rf_model.fit_trees(data, labels, n_trees=100, batch_size=50)
