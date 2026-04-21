@@ -21,7 +21,8 @@ class WideDecisionTreeRegressionIntegratedTest extends SparkTest {
     * Test data are produced by 'src/test/R/make_test_data.R' R script
     *
     */
-  def checkCNAE_9_Dataset(maxDepth: Int, dataType: VariableType = BoundedOrdinalVariable(5)) {
+  def checkCNAE_9_Dataset(maxDepth: Int, dataType: VariableType = BoundedOrdinalVariable(5),
+      minRelativeImprovementFraction: Double = 1e-8, stabilityMultiplier: Double = 1e4): Unit = {
     val responseSource = new CsvResponseSource("data/CNAE-9-labels.csv", "category")
     val featureSource = new CsvFeatureSource(sc.textFile("data/CNAE-9-wide.csv"), dataType)
     val responses = responseSource.getResponses(featureSource.sampleNames, _.toDouble)
@@ -29,8 +30,10 @@ class WideDecisionTreeRegressionIntegratedTest extends SparkTest {
     val nVars = inputData.count
     // max fife levels
     val model =
-      new DecisionTree(DecisionTreeParams(problemType = Regression, maxDepth = maxDepth)).train(
-          inputData, responses)
+      new DecisionTree(DecisionTreeParams(problemType = Regression, maxDepth = maxDepth,
+          minRelativeImprovementFraction = minRelativeImprovementFraction,
+          stabilityMultiplier = stabilityMultiplier))
+        .train(inputData, responses)
     val prediction = model.predict(inputData)
 
     // check predictions
