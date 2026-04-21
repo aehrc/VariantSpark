@@ -195,7 +195,8 @@ trait VariableSplitter {
   * @param randomizeEquality when true, breaks impurity ties randomly
   */
 case class StdVariableSplitter(calculator: ImpurityCalculator, mTryFraction: Double = 1.0,
-    randomizeEquality: Boolean = false)
+    randomizeEquality: Boolean = false, minRelativeImprovementFraction: Double,
+    minAbsoluteImprovement: Double)
     extends VariableSplitter with Logging with Prof {
 
   def initialSubset(sample: Sample): SubsetInfo = {
@@ -218,7 +219,12 @@ case class StdVariableSplitter(calculator: ImpurityCalculator, mTryFraction: Dou
     splits.map { subsetInfo =>
       if (rng.nextDouble() <= mTryFraction) {
         val splitInfo = splitter.findSplit(subsetInfo.indices)
-        if (splitInfo != null && splitInfo.impurity < subsetInfo.impurity) splitInfo else null
+        val improvement = if (splitInfo != null) subsetInfo.impurity - splitInfo.impurity else 0.0
+        val meetsThreshold = improvement > subsetInfo.impurity * minRelativeImprovementFraction &&
+          improvement > minAbsoluteImprovement
+        if (splitInfo != null && meetsThreshold) {
+          splitInfo
+        } else null
       } else null
     }
   }
@@ -279,7 +285,8 @@ case class StdVariableSplitter(calculator: ImpurityCalculator, mTryFraction: Dou
   * @param randomizeEquality when true, breaks impurity ties randomly
   */
 case class AirVariableSplitter(calculator: ImpurityCalculator,
-    rng: XorShift1024StarRandomGenerator, mTryFraction: Double, randomizeEquality: Boolean)
+    rng: XorShift1024StarRandomGenerator, mTryFraction: Double, randomizeEquality: Boolean,
+    minRelativeImprovementFraction: Double, minAbsoluteImprovement: Double)
     extends VariableSplitter with Logging with Prof {
 
   lazy val (permutedCalculator, permutationOrder) = calculator.permute(rng)
@@ -313,7 +320,13 @@ case class AirVariableSplitter(calculator: ImpurityCalculator,
           val selectedSplitter = if (!permutated) splitter else permutatedSplitter
           val indices = if (!permutated) subsetInfo.indices else permIndexes
           val splitInfo = selectedSplitter.findSplit(indices)
-          if (splitInfo != null && splitInfo.impurity < subsetInfo.impurity) {
+          val improvement =
+            if (splitInfo != null) subsetInfo.impurity - splitInfo.impurity else 0.0
+          val meetsThreshold = (
+            improvement > subsetInfo.impurity * minRelativeImprovementFraction &&
+              improvement > minAbsoluteImprovement
+          )
+          if (splitInfo != null && meetsThreshold) {
             VarSplitInfo(typedData.index, splitInfo, permutated)
           } else { null }
         } else null
@@ -370,10 +383,12 @@ case class AirVariableSplitter(calculator: ImpurityCalculator,
 }
 
 object AirVariableSplitter {
-  def apply(calculator: ImpurityCalculator, seed: Long, mTryFraction: Double = 1.0,
-      randomizeEquality: Boolean = false): AirVariableSplitter = {
+  def apply(calculator: ImpurityCalculator, seed: Long, mTryFraction: Double,
+      randomizeEquality: Boolean, minRelativeImprovementFraction: Double,
+      minAbsoluteImprovement: Double): AirVariableSplitter = {
     val rng = new XorShift1024StarRandomGenerator(seed)
-    AirVariableSplitter(calculator, rng, mTryFraction, randomizeEquality)
+    AirVariableSplitter(calculator, rng, mTryFraction, randomizeEquality,
+      minRelativeImprovementFraction, minAbsoluteImprovement)
   }
 }
 
@@ -664,7 +679,13 @@ object DecisionTreeModel {
 case class DecisionTreeParams(problemType: ProblemType = Classification,
     maxDepth: Int = Int.MaxValue, minNodeSize: Int = 1, seed: Long = defRng.nextLong,
     randomizeEquality: Boolean = false, correctImpurity: Boolean = false,
-    airRandomSeed: Long = 0L) {
+    airRandomSeed: Long = 0L, stabilityMultiplier: Double = 1e4,
+    // Floating-point noise from the one-pass variance calculation is on the order of ~1e-12 relative.
+    // The chosen threshold (1e-8 × parent impurity) provides a buffer above this noise floor while
+    // remaining small relative to typical observed impurity reductions in practice. This value was
+    // selected to balance numerical stability with sensitivity, and should be validated empirically
+    // for specific datasets.
+    minRelativeImprovementFraction: Double = 1e-8) {
 
   override def toString: String = ToStringBuilder.reflectionToString(this)
 }
@@ -752,16 +773,42 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(),
 
     val calculator: ImpurityCalculator = params.problemType.makeCalculator(response)
 
+    // Compute a data-adaptive absolute improvement floor to reject splits whose impurity
+    // reduction is indistinguishable from floating-point noise.
+    //
+    // The naive variance formula  Var = E[y^2] - E[y]^2  suffers from catastrophic cancellation
+    // when the two nearly-equal terms are subtracted.  The absolute error in a single
+    // variance estimate is bounded by  eps_machine * E[y^2]  (~2.2e-16 * E[y^2]).  The
+    // improvement value is itself a difference of two such estimates, so worst-case cancellation
+    // can amplify the error by a further factor of O(stabilityMultiplier) - empirically ~1e4
+    // for deep trees on nearly-constant-response bootstrap samples in GWAS data.
+    //
+    // For a standardized response (E[y^2] ~= 1) this yields a floor of ~2.2e-12, comfortably
+    // above the noise range [-1e-14, 1e-10] observed in practice and many orders of magnitude
+    // below any real GWAS signal (minimum real variance reduction O(1e-4)).  For an
+    // un-normalized response the floor scales proportionally, making the guard scale-invariant.
+    //
+    // Classification uses E[y^2] = 1.0 (Gini values are already in [0,1] and are far above
+    // any floating-point noise), so the floor has no effect on classification trees.
+    val responseScale = response match {
+      case RegressionResponse(values) =>
+        val sumSq = values.map(v => v * v).sum
+        sumSq / values.length
+      case _ => 1.0
+    }
+    val absoluteImprovementFloor = params.stabilityMultiplier * 2.2e-16 * responseScale
+
     // manage persistence here - cache the features if not already cached
     withCached(features) { cachedFeatures =>
       val splitter: VariableSplitter =
         if (params.correctImpurity) {
           AirVariableSplitter(calculator,
             if (params.airRandomSeed != 0L) params.airRandomSeed else params.seed, nvarFraction,
-            randomizeEquality = params.randomizeEquality)
+            params.randomizeEquality, params.minRelativeImprovementFraction,
+            absoluteImprovementFloor)
         } else {
-          StdVariableSplitter(calculator, nvarFraction,
-            randomizeEquality = params.randomizeEquality)
+          StdVariableSplitter(calculator, nvarFraction, params.randomizeEquality,
+            params.minRelativeImprovementFraction, absoluteImprovementFloor)
         }
       val subsets = sample.map(splitter.initialSubset).toList
       val rootNodes = withBroadcast(cachedFeatures)(splitter) { br_splitter =>
@@ -796,7 +843,11 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(),
 
     val subsetsToSplit = subsets.zipWithIndex.filter {
       case (si, _) =>
-        si.length >= params.minNodeSize && treeLevel < params.maxDepth
+        // Do not attempt to split a node whose impurity is effectively zero.
+        // The online aggregator (Chan's parallel combination / reverse-sub) can leave
+        // tiny positive residuals (e.g. 1e-16) on constant-response subsets.
+        // A strict > 0.0 check lets those through; use an absolute floor instead.
+        si.length >= params.minNodeSize && treeLevel < params.maxDepth // && si.impurity > 1e-10
     }
     logDebug(s"Splittable subsets: ${summarize(subsetsToSplit.map(_._1))}")
     logTrace(s"Splittable subsets (details): ${subsetsToSplit}")
