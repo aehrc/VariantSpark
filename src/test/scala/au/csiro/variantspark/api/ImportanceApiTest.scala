@@ -17,7 +17,7 @@ class ImportanceApiTest extends SparkTest {
     val features = vsContext.importVCF("data/chr22_1000.vcf")
     val label = vsContext.loadResponse("data/chr22-labels.csv", "22_16050408")
     val params = RandomForestParams(seed = 17L, randomizeEquality = false)
-    val trainResult = RFModelTrainer.trainModel(features, label, params, 200, 50)
+    val trainResult = RFModelTrainer.trainModel(features, label, params, 300, 50)
     val impAnalysis =
       new ImportanceAnalysis(sqlContext, trainResult.model, trainResult.indexedFeatures)
     val top10Variables = impAnalysis.importantVariables(10, normalized = true)
