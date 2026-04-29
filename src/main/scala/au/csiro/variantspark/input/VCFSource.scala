@@ -37,7 +37,8 @@ class VCFSource(val lines: RDD[String], val headerLines: Int = 500) {
     val codec = new ExtendedVCFCodec()
     val header: VCFHeader =
       codec
-        .readActualHeader(new DelegatingLineIterator(lines.take(headerLines).toIterator))
+        .readActualHeader(new DelegatingLineIterator(
+              lines.filter(_.startsWith("#")).take(headerLines).toIterator))
         .asInstanceOf[VCFHeader]
 
     HeaderAndVersion(header, codec.getVersion)
