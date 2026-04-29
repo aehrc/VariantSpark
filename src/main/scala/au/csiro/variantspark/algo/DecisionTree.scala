@@ -798,17 +798,23 @@ class DecisionTree(val params: DecisionTreeParams = DecisionTreeParams(),
     }
     val absoluteImprovementFloor = params.stabilityMultiplier * 2.2e-16 * responseScale
 
+    // Guards are unecessary for classification, which does not experience fp noise issues
+    // both guards are unnecessary and are disabled to avoid affecting test behaviour.
+    val (effectiveRelativeFloor, effectiveAbsoluteFloor) = params.problemType match {
+      case Classification => (0.0, 0.0)
+      case _ => (params.minRelativeImprovementFraction, absoluteImprovementFloor)
+    }
+
     // manage persistence here - cache the features if not already cached
     withCached(features) { cachedFeatures =>
       val splitter: VariableSplitter =
         if (params.correctImpurity) {
           AirVariableSplitter(calculator,
             if (params.airRandomSeed != 0L) params.airRandomSeed else params.seed, nvarFraction,
-            params.randomizeEquality, params.minRelativeImprovementFraction,
-            absoluteImprovementFloor)
+            params.randomizeEquality, effectiveRelativeFloor, effectiveAbsoluteFloor)
         } else {
           StdVariableSplitter(calculator, nvarFraction, params.randomizeEquality,
-            params.minRelativeImprovementFraction, absoluteImprovementFloor)
+            effectiveRelativeFloor, effectiveAbsoluteFloor)
         }
       val subsets = sample.map(splitter.initialSubset).toList
       val rootNodes = withBroadcast(cachedFeatures)(splitter) { br_splitter =>
