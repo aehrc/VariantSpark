@@ -680,10 +680,10 @@ case class DecisionTreeParams(problemType: ProblemType = Classification,
     maxDepth: Int = Int.MaxValue, minNodeSize: Int = 1, seed: Long = defRng.nextLong,
     randomizeEquality: Boolean = false, correctImpurity: Boolean = false,
     airRandomSeed: Long = 0L, stabilityMultiplier: Double = 1e4,
-    // Floating-point noise from the one-pass variance calculation is on the order of ~1e-12 relative.
+    // Floating-point noise from the one-pass variance calculation is on order of ~1e-12 relative.
     // The chosen threshold (1e-8 × parent impurity) provides a buffer above this noise floor while
     // remaining small relative to typical observed impurity reductions in practice. This value was
-    // selected to balance numerical stability with sensitivity, and should be validated empirically
+    // selected to balance numerical stability with sensitivity, should be validated empirically
     // for specific datasets.
     minRelativeImprovementFraction: Double = 1e-8) {
 
