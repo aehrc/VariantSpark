@@ -3,7 +3,7 @@ package au.csiro.variantspark.utils
 import au.csiro.pbdava.ssparkle.spark.SparkApp
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.seqdoop.hadoop_bam.util.BGZFCodec
+import org.seqdoop.hadoop_bam.util.{BGZFCodec, BGZFEnhancedGzipCodec}
 import org.apache.hadoop.io.{LongWritable, Text}
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat
 
@@ -14,11 +14,15 @@ object BGZLoader {
     println(inputFile + " is loading to spark RDD, isBGZFile: " + isBGZ)
     if (isBGZ) {
       val bgzfCodec = classOf[BGZFCodec].getCanonicalName
+      val bgzfEnhancedCodec = classOf[BGZFEnhancedGzipCodec].getCanonicalName
       val existingCodecs =
         Option(conf.getStrings("io.compression.codecs")).getOrElse(Array.empty[String])
-      if (!existingCodecs.contains(bgzfCodec)) {
-        conf.setStrings("io.compression.codecs", (existingCodecs :+ bgzfCodec): _*)
-      }
+      val newCodecs = existingCodecs
+        .filterNot(_ == bgzfCodec)
+        .filterNot(_ == bgzfEnhancedCodec)
+        .filterNot(_ == classOf[org.apache.hadoop.io.compress.GzipCodec].getCanonicalName)
+      // BGZFEnhancedGzipCodec must be registered to override GzipCodec for .gz BGZF files
+      conf.setStrings("io.compression.codecs", (newCodecs :+ bgzfEnhancedCodec :+ bgzfCodec): _*)
       // For BGZ files, control split count via max split size if nPartitions requested
       if (nPartitions > 0) {
         val fs = org.apache.hadoop.fs.FileSystem.get(conf)
