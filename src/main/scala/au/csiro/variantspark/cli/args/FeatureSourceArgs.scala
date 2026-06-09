@@ -21,11 +21,13 @@ trait FeatureSourceFactory {
   def createSource(sparkArgs: SparkArgs): FeatureSource
 }
 
-case class VCFFeatureSourceFactory(inputFile: String, imputationStrategy: Option[String])
+case class VCFFeatureSourceFactory(inputFile: String, imputationStrategy: Option[String],
+    headerLines: Option[Int], includeIndels: Option[Boolean])
     extends FeatureSourceFactory with Echoable {
   def createSource(sparkArgs: SparkArgs): FeatureSource = {
     echo(s"Loading header from VCF file: ${inputFile}")
-    val vcfSource = VCFSource(sparkArgs.sc, inputFile)
+    val vcfSource = VCFSource(sparkArgs.sc, inputFile, sparkArgs.nPartitions,
+      headerLines = headerLines.getOrElse(500), includeIndels = includeIndels.getOrElse(false))
     verbose(s"VCF Version: ${vcfSource.version}")
     verbose(s"VCF Header: ${vcfSource.header}")
 

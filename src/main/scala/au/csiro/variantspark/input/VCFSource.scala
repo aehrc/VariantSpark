@@ -31,7 +31,8 @@ case class HeaderAndVersion(header: VCFHeader, version: VCFHeaderVersion)
   */
 case class Variant(label: String, genotypes: Array[Byte])
 
-class VCFSource(val lines: RDD[String], val headerLines: Int = 500) {
+class VCFSource(val lines: RDD[String], val headerLines: Int = 500,
+    includeIndels: Boolean = false) {
 
   lazy val headerAndVersion: HeaderAndVersion = {
     val codec = new ExtendedVCFCodec()
@@ -48,39 +49,46 @@ class VCFSource(val lines: RDD[String], val headerLines: Int = 500) {
   def version: VCFHeaderVersion = headerAndVersion.version
 
   def genotypes(): RDD[Variant] =
-    VCFSource.computeGenotypes(lines, headerAndVersion)
+    VCFSource.computeGenotypes(lines, headerAndVersion, includeIndels)
 }
 
 object VCFSource {
 
-  def apply(sc: SparkContext, fileName: String, nPartitions: Int, headerLines: Int): VCFSource = {
+  def apply(sc: SparkContext, fileName: String, nPartitions: Int, headerLines: Int,
+      includeIndels: Boolean): VCFSource = {
+    if (includeIndels) {
+      println(
+          "Indel inclusion is enabled. Input VCFs must be preprocessed with " +
+            "'bcftools norm -m any [-f reference.fa]'." +
+            "Unnormalised indels will produce duplicate features.")
+    }
 
     val numPartitions =
       if (nPartitions > 0) nPartitions else sc.defaultParallelism
 
     val data = BGZLoader.textFile(sc, fileName, numPartitions)
-    new VCFSource(data, headerLines)
+    new VCFSource(data, headerLines, includeIndels)
   }
 
   def apply(sc: SparkContext, fileName: String, nPartitions: Int): VCFSource =
-    apply(sc, fileName, nPartitions, 500)
+    apply(sc, fileName, nPartitions, 500, false)
 
   def apply(sc: SparkContext, fileName: String): VCFSource =
-    apply(sc, fileName, 0, 500)
+    apply(sc, fileName, 0, 500, false)
 
-  private def computeGenotypes(lines: RDD[String],
-      headerAndVersion: HeaderAndVersion): RDD[Variant] = {
+  private def computeGenotypes(lines: RDD[String], headerAndVersion: HeaderAndVersion,
+      includeIndels: Boolean): RDD[Variant] = {
 
     lines
       .mapPartitions { iter =>
         iter
           .filter(l => !l.startsWith("#"))
-          .flatMap(parseLineMulti)
+          .flatMap(line => parseLineMulti(line, includeIndels))
       }
   }
 
   /** Parses a VCF line and splits multiallelics into separate biallelic Variants */
-  def parseLineMulti(line: String): Seq[Variant] = {
+  def parseLineMulti(line: String, includeIndels: Boolean): Seq[Variant] = {
     val fields = line.split("\t", -1)
 
     val chrom = fields(0)
@@ -120,8 +128,12 @@ object VCFSource {
     // Create one Variant per ALT allele (SNPs only)
     alts.zipWithIndex.flatMap {
       case (alt, altIdx) =>
-        // Filter out indels/SVs - only keep biallelic SNPs
-        if (ref.length == 1 && alt.length == 1 && !alt.startsWith("<")) {
+        val isSNP = ref.length == 1 && alt.length == 1
+        val isIndel = ref.length != 1 || alt.length != 1
+        val isValid = !alt.startsWith("<") && alt != "*"
+
+        // Filter out SVs and invalid alleles, but keep indels if requested
+        if (isValid && (isSNP || (includeIndels && isIndel))) {
           val label = s"${chrom}_${pos}_${ref}_${alt}"
           val genotypes = new Array[Byte](nSamples)
 
@@ -133,7 +145,7 @@ object VCFSource {
 
           Some(Variant(label, genotypes))
         } else {
-          None // Skip indels and structural variants
+          None
         }
     }
   }

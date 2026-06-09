@@ -9,12 +9,16 @@ from varspark.featuresource import FeatureSource
 
 
 def configure_spark(builder):
-    """Applies recommended Kryo registrator for VariantSpark.
-    """
-    return builder \
-        .config('spark.serializer', 'org.apache.spark.serializer.KryoSerializer') \
-        .config('spark.kryo.registrator', 'au.csiro.variantspark.spark.VariantSparkKryoRegistrator') \
-        .config('spark.kryo.registrationRequired', 'false')
+    """Applies recommended Kryo registrator for VariantSpark."""
+    return (
+        builder.config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+        .config(
+            "spark.kryo.registrator",
+            "au.csiro.variantspark.spark.VariantSparkKryoRegistrator",
+        )
+        .config("spark.kryo.registrationRequired", "false")
+    )
+
 
 class VarsparkContext(object):
     """The main entry point for VariantSpark functionality."""
@@ -69,8 +73,16 @@ class VarsparkContext(object):
         imputation_strategy=Nullable(str),
         spark_par=Nullable(int),
         header_lines=Nullable(int),
+        include_indels=Nullable(bool),
     )
-    def import_vcf(self, vcf_file_path, imputation_strategy="none", spark_par=0, header_lines=500):
+    def import_vcf(
+        self,
+        vcf_file_path,
+        imputation_strategy="none",
+        spark_par=0,
+        header_lines=500,
+        include_indels=False,
+    ):
         """Import features from a VCF file.
 
         :param vcf_file_path String: The file path for the vcf file to import
@@ -81,18 +93,33 @@ class VarsparkContext(object):
             - mode: Missing values will be replaced with the most commonly occuring value among that feature. Recommended option
             - zeros: Missing values will be replaced with zeros. Faster than mode imputation
         :param spark_par Int: Number of spark partitions to use when reading the input VCF
-        :param header_lines: Number of lines in the header (defaults to 500)
+        :param header_lines Int: Number of lines in the header (defaults to 500)
+        :param include_indels Bool:
+            Whether or not to include indels as features.
+            By default, indels are excluded and only biallelic SNPs are included. If set to true, indels will be included
+            Input VCFs must be preprocessed with 'bcftools norm -m -any [-f reference.fa]'. Unnormalised indels will produce duplicate features.
         """
         if imputation_strategy == "none":
             print(
                 "WARNING: Imputation strategy is set to none - please ensure that there are no missing values in the data."
+            )
+        if include_indels:
+            print(
+                "WARNING: Indel inclusion is enabled. Input VCFs must be preprocessed with 'bcftools norm -m -any [-f reference.fa]'."
+                + "Unnormalised indels will produce duplicate features."
             )
         return FeatureSource(
             self._jvm,
             self._vs_api,
             self._jsql,
             self.sql,
-            self._jvsc.importVCF(vcf_file_path, imputation_strategy, spark_par, header_lines),
+            self._jvsc.importVCF(
+                vcf_file_path,
+                imputation_strategy,
+                spark_par,
+                header_lines,
+                include_indels,
+            ),
         )
 
     @params(
