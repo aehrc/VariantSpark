@@ -6,6 +6,7 @@ from typedecorator import params, Nullable, setup_typecheck
 
 from varspark.etc import find_jar
 from varspark.featuresource import FeatureSource
+from varspark.variable_type import VariableType
 
 
 def configure_spark(builder):
@@ -132,22 +133,20 @@ class VarsparkContext(object):
         """Import covariates from a CSV file.
 
         :param cov_file_path String: The file path for covariate csv file
-        :param cov_types Dict[String]:
+        :param cov_types Dict[VariableType]:
             A dictionary specifying types for each covariate, where the key is the variable name
-            and the value is the type. The value can be one of the following:
+            and the value is a :class:`~varspark.variable_type.VariableType` instance.
+            Available types:
 
-            - CONTINUOUS: A continuous variable type.
-            - DISCRETE: A discrete variable type.
-            - NOMINAL: A nominal variable type.
-            - ORDINAL: An ordinal variable type.
-            - ORDINAL(order_count): Specifies the number of ordered levels, where `order_count` represents the number of levels.
-            - NOMINAL(class_count): Specifies the number of distinct classes, where `class_count` represents the number of categories.
+            - :data:`~varspark.variable_type.Continuous` – continuous numeric variable.
+            - :data:`~varspark.variable_type.Nominal` – unordered categorical variable.
+            - :data:`~varspark.variable_type.Ordinal` – ordered categorical variable.
 
-            See VariableType.scala for more information.
+            See :mod:`varspark.variable_type` and ``VariableType.scala`` for more information.
         :param transposed bool: Whether or not the covariate csv file is transposed
         """
         if cov_types is not None:
-            cov_types_list = [f"{k},{c}" for k, c in cov_types.items()]
+            cov_types_list = [f"{k},{c!s}" for k, c in cov_types.items()]
             _jctypes = self._jvm.java.util.ArrayList()
             for item in cov_types_list:
                 _jctypes.add(item)

@@ -5,9 +5,15 @@ Created 4 Nov 2025
 
 @author: edw222
 """
+
 import os
 import varspark as vs
 from pyspark.sql import SparkSession
+from varspark.variable_type import (
+    Continuous,
+    Nominal,
+    Ordinal,
+)
 
 PROJECT_DIR = os.path.abspath(
     os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)
@@ -28,12 +34,14 @@ def main():
         "label",
     )
     covtypes = {
-        "age": "CONTINUOUS",
-        "PC0": "CONTINUOUS",
-        "PC1": "CONTINUOUS",
-        "PC2": "CONTINUOUS",
-        "sex": "NOMINAL(2)",
-        "lifestyle": "NOMINAL(4)",
+        "age": Continuous,
+        "PC0": Continuous,
+        "PC1": Continuous,
+        "PC2": Continuous,
+        "sex": Ordinal(2),
+        # Note: sex is a nominal variable, but nominal and ordinal are equivalent at 2 levels
+        # Ordinal is used here to demonstrate the API; use Nominal in practice
+        "lifestyle": Nominal(4),
     }
     covariates = vc.import_covariates(
         os.path.join(PROJECT_DIR, "data/hipsterIndex/hipster_labels_covariates.txt"),
