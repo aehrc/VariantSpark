@@ -34,7 +34,7 @@ class CovariateReproducibilityTest extends SparkTest {
     val covariates =
       vsContext.importStdCSV("data/chr22_1000_full_pheno.csv", optVariableTypes)
     val label = vsContext.loadResponse("data/chr22-labels.csv", "22_16051249")
-    val features = vsContext.unionFeaturesAndCovariates(genotypes, covariates)
+    val features = vsContext.unionFeatureSources(genotypes, covariates)
     val params = RandomForestParams(seed = 13L)
     val trainResult1 = RFModelTrainer.trainModel(features, label, params, 40, 20)
     val impAnalysis1 =

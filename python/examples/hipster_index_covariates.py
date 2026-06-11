@@ -47,7 +47,7 @@ def main():
         os.path.join(PROJECT_DIR, "data/hipsterIndex/hipster_labels_covariates.txt"),
         covtypes,
     )
-    data = vc.union_features_and_covariates(genotypes, covariates)
+    data = vc.union_feature_sources(genotypes, covariates)
 
     rf_model = vs.RandomForestClassifier(
         vc, seed=13, mtry_fraction=0.05, min_node_size=5, max_depth=10

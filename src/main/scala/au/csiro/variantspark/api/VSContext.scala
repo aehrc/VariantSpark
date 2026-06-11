@@ -18,6 +18,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import scala.collection.JavaConverters._
+import scala.annotation.varargs
 
 trait SqlContextHolder {
   def sqlContext: SQLContext
@@ -95,12 +96,16 @@ class VSContext(val spark: SparkSession) extends SqlContextHolder {
   }
 
   /** Combine FeatureSource objects (typically a genotype source and a covariate source)
-    * @param featureSource: FeatureSource object containing genotype information
-    * @param covariateSource: FeatureSource object containing covariate information
+    * @param sources: Seq of FeatureSource objects
     */
-  def unionFeaturesAndCovariates(featureSource: FeatureSource,
-      covariateSource: FeatureSource): FeatureSource = {
-    UnionedFeatureSource(featureSource, covariateSource)
+  @varargs
+  def unionFeatureSources(sources: FeatureSource*): FeatureSource = {
+    UnionedFeatureSource(sources.toSeq)
+  }
+
+  /** Java/Py4J-friendly overload */
+  def unionFeatureSources(sources: java.util.List[FeatureSource]): FeatureSource = {
+    UnionedFeatureSource(sources.asScala.toSeq)
   }
 
   /** Loads a labels form a column in a CSV file

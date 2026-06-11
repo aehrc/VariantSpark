@@ -164,16 +164,22 @@ class VarsparkContext(object):
             _jcs,
         )
 
-    @params(self=object, feature_source=FeatureSource, covariate_source=FeatureSource)
-    def union_features_and_covariates(self, feature_source, covariate_source):
+    def union_feature_sources(self, *feature_sources):
+        """
+        Combine FeatureSource objects (typically a genotype source and a covariate source,
+        but can be any number and type of sources)
+
+        :param feature_sources: FeatureSource objects to combine
+        """
+        j_list = self._jvm.java.util.ArrayList()
+        for fs in feature_sources:
+            j_list.add(fs._jfs)
         return FeatureSource(
             self._jvm,
             self._vs_api,
             self._jsql,
             self.sql,
-            self._jvsc.unionFeaturesAndCovariates(
-                feature_source._jfs, covariate_source._jfs
-            ),
+            self._jvsc.unionFeatureSources(j_list),
         )
 
     @params(self=object, response_file_path=str, col_name=str)
