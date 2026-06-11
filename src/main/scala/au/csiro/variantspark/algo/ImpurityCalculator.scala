@@ -35,7 +35,7 @@ case object Regression extends ProblemType {
   * infrastructure for one training run. Created once per tree and reused
   * across all splits.
   */
-trait ImpurityCalculator {
+trait ImpurityCalculator extends Serializable {
   def length: Int
   def calculate(splitIndices: Array[Int]): ImpurityStats
   def createSplitterFactory(): IndexedSplitterFactory
