@@ -122,17 +122,20 @@ case class CsvStdFeatureSource[V](data: RDD[String],
           }, true)
 
     // The second step is to combine all the values for each variable originating
-    // from differenrt partitions (in the order of partitions)
+    // from different partitions (in the order of partitions).
+    // NOTE: groupByKey shuffles data, so we MUST keep the partition index within
+    // the value and sort by it AFTER the shuffle to ensure deterministic ordering
+    // of sample values across runs. Without this, covariate values get permuted
+    // non-deterministically between runs, breaking reproducibility.
     transposedPartitions
-      .sortBy(_._2._1) // sort by partition Index
-      .map({ case (variableName, (partIndex, variableValues)) => (variableName, variableValues) })
-      .groupByKey() // group by variableName
-      .mapValues(variableValues =>
-          variableValues
-            .foldLeft(ArrayBuffer[String]())(_ ++= _)
-            .toArray) // combine values from this variable coming
-      // from different partitions (samples)
-      .sortBy(_._1) // sort by variable name
+      .groupByKey() // group by variableName (partition index preserved in value)
+      .mapValues(
+          variableValues =>
+            variableValues.toArray
+              .sortBy(_._1) // sort by partition index within each group
+              .flatMap(_._2) // flatten sample arrays in order
+              .toArray)
+      .sortBy(_._1) // sort by variable name (deterministic row order)
   }
 
   // TODO: [Peformance] It would be better (especiall for larger files)
